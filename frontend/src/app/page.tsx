@@ -10,142 +10,223 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
+import NavBar from "@/components/ui/NavBar";
 
-type ServiceType = "venue" | "makeup" | "photography" | "";
+type ServiceType = "venue" | "makeup" | "photography";
 
-interface FeatureCard {
-  icon: string;
-  title: string;
-  description: string;
-  bgColor: string;
-}
+export default function HomePage() {
+  const [serviceType, setServiceType] = useState<ServiceType>("venue");
+  const [locationQuery, setLocationQuery] = useState("");
 
-const featureCards: FeatureCard[] = [
-  {
-    icon: "✨",
-    title: "Curated Selection",
-    description:
-      "Only certified professionals are showcased, so you can skip the unnecessary scrolling and find exactly what you're looking for, faster.",
-    bgColor: "bg-rose-100",
-  },
-  {
-    icon: "💫",
-    title: "Expert Support",
-    description:
-      "Dedicated team to guide you through every step of the planning process",
-    bgColor: "bg-slate-100",
-  },
-  {
-    icon: "🌟",
-    title: "Best Value",
-    description: "Competitive prices and exclusive deals for our clients",
-    bgColor: "bg-amber-50",
-  },
-];
-
-const HomePage: React.FC = () => {
-  const [serviceType, setServiceType] = useState<ServiceType>("");
+  const handleSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    const params = new URLSearchParams({
+      service: serviceType,
+      location: locationQuery,
+    });
+    window.location.href = `/search?${params.toString()}`;
+  };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-rose-100 via-rose-100 to-amber-10">
+    <div className="min-h-screen">
+      {/* Navigation */}
+      <NavBar />
+
       {/* Hero Section */}
-      <div className="relative h-screen">
-        {/* Background Image */}
-        <div
-          className="absolute inset-0 bg-[url('/api/placeholder/1920/1080')] bg-cover bg-center"
-          style={{ filter: "brightness(0.7)" }}
-        />
+      <div className="relative min-h-[95vh]">
+        {/* Background Image with Gradient Overlay */}
+        <div className="absolute inset-0">
+          <div className="absolute inset-0 bg-[url('/api/placeholder/1920/1080')] bg-cover bg-center" />
+          <div className="absolute inset-0 bg-gradient-to-b from-rose-100 via-rose-100 to-rose-100" />
+        </div>
 
-        {/* Content Overlay */}
-        <div className="absolute inset-0 flex flex-col items-center justify-center px-4">
-          {/* Company Info */}
-          <div className="text-center text-black mb-12">
-            <h1 className="text-5xl font-bold mb-4 font-serif">
-              Dream Wedding Services
-            </h1>
-            <p className="text-xl max-w-2xl mx-auto">
-              Making your special day perfect with handpicked venues, talented
-              makeup artists, and professional photographers across the country.
-            </p>
-          </div>
+        {/* Hero Content */}
+        <div className="relative pt-32 pb-20 px-4 flex flex-col items-center justify-center text-center">
+          <h2 className="text-4xl md:text-6xl font-bold text-black mb-6 max-w-4xl">
+            Find your perfect wedding venue & services
+          </h2>
+          <p className="text-xl text-gray/90 mb-12 max-w-2xl">
+            Discover and book unique venues, talented makeup artists, and
+            professional photographers for your special day
+          </p>
 
-          {/* Search Section */}
-          <div className="flex flex-col md:flex-row gap-4 w-full max-w-3xl mx-auto bg-white/95 p-6 rounded-lg backdrop-blur-sm shadow-lg">
-            <Select
-              value={serviceType}
-              onValueChange={(value: ServiceType) => setServiceType(value)}
-            >
-              <SelectTrigger className="w-full md:w-48 border-rose-200 focus:ring-rose-200">
-                <SelectValue placeholder="Service Type" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="venue">Venue</SelectItem>
-                <SelectItem value="makeup">Makeup</SelectItem>
-                <SelectItem value="photography">Photography</SelectItem>
-              </SelectContent>
-            </Select>
+          {/* Search Form */}
+          <form
+            onSubmit={handleSearch}
+            className="w-full max-w-3xl bg-white p-4 rounded-2xl shadow-lg"
+          >
+            <div className="flex flex-col md:flex-row gap-4">
+              <Select
+                value={serviceType}
+                onValueChange={(value: ServiceType) => setServiceType(value)}
+              >
+                <SelectTrigger className="md:w-40 border-0 bg-transparent focus:ring-0">
+                  <SelectValue placeholder="Service Type" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="venue">Venue</SelectItem>
+                  <SelectItem value="makeup">Makeup</SelectItem>
+                  <SelectItem value="photography">Photography</SelectItem>
+                </SelectContent>
+              </Select>
 
-            <div className="relative flex-1">
-              <Input
-                type="text"
-                placeholder="Search location..."
-                className="w-full pl-10 border-slate-200 focus:ring-slate-200"
-              />
-              <Search
-                className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400"
-                size={20}
-              />
+              <div className="relative flex-1">
+                <div className="absolute left-0 top-0 bottom-0 w-px bg-gray-200 hidden md:block" />
+                <Search
+                  className="absolute left-6 top-1/2 transform -translate-y-1/2 text-gray-400"
+                  size={20}
+                />
+                <Input
+                  type="text"
+                  placeholder="Search by location"
+                  value={locationQuery}
+                  onChange={(e) => setLocationQuery(e.target.value)}
+                  className="border-0 pl-12 focus-visible:ring-0"
+                />
+              </div>
+
+              <button
+                type="submit"
+                className="bg-rose-600 hover:bg-rose-700 text-white px-8 py-2 rounded-lg transition-colors duration-300"
+              >
+                Search
+              </button>
             </div>
-          </div>
+          </form>
         </div>
       </div>
 
-      {/* Features Section */}
-      <div className="py-20 px-4 bg-white/80 backdrop-blur-sm">
-        <div className="max-w-6xl mx-auto">
-          <h2 className="text-3xl font-bold text-center mb-12 font-serif text-slate-800">
-            Why Choose Us
-          </h2>
-
+      {/* Why Choose Us */}
+      <div className="bg-white py-20 px-4">
+        <div className="max-w-7xl mx-auto">
+          <h3 className="text-2xl font-bold text-center mb-12">
+            Why Choose Dream Venues
+          </h3>
           <div className="grid md:grid-cols-3 gap-8">
-            {featureCards.map((feature, index) => (
-              <div
-                key={index}
-                className="text-center p-6 bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow duration-300"
-              >
-                <div
-                  className={`${feature.bgColor} w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4`}
-                >
-                  <span className="text-2xl">{feature.icon}</span>
+            {[
+              {
+                title: "Verified Vendors",
+                description:
+                  "Every venue and service provider is personally verified for quality and reliability",
+                icon: "✓",
+              },
+              {
+                title: "Best Prices",
+                description:
+                  "Find competitive prices and exclusive deals for your perfect wedding day",
+                icon: "💎",
+              },
+              {
+                title: "Easy Booking",
+                description:
+                  "Simple, secure booking process with dedicated support throughout",
+                icon: "🎯",
+              },
+            ].map((feature, index) => (
+              <div key={index} className="text-center">
+                <div className="w-16 h-16 bg-rose-100 rounded-full flex items-center justify-center mx-auto mb-4 text-2xl">
+                  {feature.icon}
                 </div>
-                <h3 className="text-xl font-semibold mb-2 text-slate-800">
-                  {feature.title}
-                </h3>
-                <p className="text-slate-600">{feature.description}</p>
+                <h4 className="text-xl font-semibold mb-2">{feature.title}</h4>
+                <p className="text-gray-600">{feature.description}</p>
               </div>
             ))}
           </div>
         </div>
       </div>
 
-      {/* Contact CTA */}
-      <div className="bg-gradient-to-r from-rose-100 to-amber-50 py-16 px-4">
-        <div className="max-w-4xl mx-auto text-center">
-          <h2 className="text-3xl font-bold mb-4 font-serif text-slate-800">
-            Our Goal
-          </h2>
-          <p className="text-lg text-slate-600 mb-8">
-            Our goal is simple: we want you to find everything you need for your
-            wedding easily and stress-free. From venues to vendors, we’re here
-            to streamline the process so you can focus on enjoying every moment
-            of planning your special day. Helping you create your perfect
-            wedding is our top priority, and we’re dedicated to making it as
-            smooth and joyful as possible.
-          </p>
+      {/* Footer */}
+      <footer className="bg-gray-50 py-12 px-4">
+        <div className="max-w-7xl mx-auto">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
+            <div>
+              <h5 className="font-semibold mb-4">About</h5>
+              <ul className="space-y-2">
+                <li>
+                  <button className="text-gray-600 hover:text-gray-900">
+                    About Us
+                  </button>
+                </li>
+                <li>
+                  <button className="text-gray-600 hover:text-gray-900">
+                    Blog
+                  </button>
+                </li>
+                <li>
+                  <button className="text-gray-600 hover:text-gray-900">
+                    Careers
+                  </button>
+                </li>
+              </ul>
+            </div>
+            <div>
+              <h5 className="font-semibold mb-4">Support</h5>
+              <ul className="space-y-2">
+                <li>
+                  <button className="text-gray-600 hover:text-gray-900">
+                    Help Center
+                  </button>
+                </li>
+                <li>
+                  <button className="text-gray-600 hover:text-gray-900">
+                    Safety Center
+                  </button>
+                </li>
+                <li>
+                  <button className="text-gray-600 hover:text-gray-900">
+                    Contact Us
+                  </button>
+                </li>
+              </ul>
+            </div>
+            <div>
+              <h5 className="font-semibold mb-4">Vendors</h5>
+              <ul className="space-y-2">
+                <li>
+                  <button className="text-gray-600 hover:text-gray-900">
+                    List Your Venue
+                  </button>
+                </li>
+                <li>
+                  <button className="text-gray-600 hover:text-gray-900">
+                    Vendor Login
+                  </button>
+                </li>
+                <li>
+                  <button className="text-gray-600 hover:text-gray-900">
+                    Resources
+                  </button>
+                </li>
+              </ul>
+            </div>
+            <div>
+              <h5 className="font-semibold mb-4">Legal</h5>
+              <ul className="space-y-2">
+                <li>
+                  <button className="text-gray-600 hover:text-gray-900">
+                    Privacy Policy
+                  </button>
+                </li>
+                <li>
+                  <button className="text-gray-600 hover:text-gray-900">
+                    Terms of Service
+                  </button>
+                </li>
+                <li>
+                  <button className="text-gray-600 hover:text-gray-900">
+                    Cookie Policy
+                  </button>
+                </li>
+              </ul>
+            </div>
+          </div>
+          <div className="mt-12 pt-8 border-t border-gray-200">
+            <p className="text-center text-gray-600">
+              © 2024 Dream Venues. All rights reserved.
+            </p>
+          </div>
         </div>
-      </div>
+      </footer>
     </div>
   );
-};
-
-export default HomePage;
+}
