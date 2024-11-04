@@ -11,6 +11,7 @@ import {
 } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import NavBar from "@/components/ui/NavBar";
+import Footer from "@/components/ui/Footer";
 
 type ServiceType = "venue" | "makeup" | "photography";
 
@@ -136,97 +137,7 @@ export default function HomePage() {
       </div>
 
       {/* Footer */}
-      <footer className="bg-gray-50 py-12 px-4">
-        <div className="max-w-7xl mx-auto">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
-            <div>
-              <h5 className="font-semibold mb-4">About</h5>
-              <ul className="space-y-2">
-                <li>
-                  <button className="text-gray-600 hover:text-gray-900">
-                    About Us
-                  </button>
-                </li>
-                <li>
-                  <button className="text-gray-600 hover:text-gray-900">
-                    Blog
-                  </button>
-                </li>
-                <li>
-                  <button className="text-gray-600 hover:text-gray-900">
-                    Careers
-                  </button>
-                </li>
-              </ul>
-            </div>
-            <div>
-              <h5 className="font-semibold mb-4">Support</h5>
-              <ul className="space-y-2">
-                <li>
-                  <button className="text-gray-600 hover:text-gray-900">
-                    Help Center
-                  </button>
-                </li>
-                <li>
-                  <button className="text-gray-600 hover:text-gray-900">
-                    Safety Center
-                  </button>
-                </li>
-                <li>
-                  <button className="text-gray-600 hover:text-gray-900">
-                    Contact Us
-                  </button>
-                </li>
-              </ul>
-            </div>
-            <div>
-              <h5 className="font-semibold mb-4">Vendors</h5>
-              <ul className="space-y-2">
-                <li>
-                  <button className="text-gray-600 hover:text-gray-900">
-                    List Your Venue
-                  </button>
-                </li>
-                <li>
-                  <button className="text-gray-600 hover:text-gray-900">
-                    Vendor Login
-                  </button>
-                </li>
-                <li>
-                  <button className="text-gray-600 hover:text-gray-900">
-                    Resources
-                  </button>
-                </li>
-              </ul>
-            </div>
-            <div>
-              <h5 className="font-semibold mb-4">Legal</h5>
-              <ul className="space-y-2">
-                <li>
-                  <button className="text-gray-600 hover:text-gray-900">
-                    Privacy Policy
-                  </button>
-                </li>
-                <li>
-                  <button className="text-gray-600 hover:text-gray-900">
-                    Terms of Service
-                  </button>
-                </li>
-                <li>
-                  <button className="text-gray-600 hover:text-gray-900">
-                    Cookie Policy
-                  </button>
-                </li>
-              </ul>
-            </div>
-          </div>
-          <div className="mt-12 pt-8 border-t border-gray-200">
-            <p className="text-center text-gray-600">
-              © 2024 Dream Venues. All rights reserved.
-            </p>
-          </div>
-        </div>
-      </footer>
+      <Footer />
     </div>
   );
 }

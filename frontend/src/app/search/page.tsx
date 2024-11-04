@@ -20,6 +20,7 @@ import {
 } from "@/components/ui/sheet";
 import { Slider } from "@/components/ui/slider";
 import NavBar from "@/components/ui/NavBar";
+import Footer from "@/components/ui/Footer";
 
 type ServiceType = "venue" | "makeup" | "photography";
 type SortOption = "price_asc" | "price_desc" | "default";
@@ -339,22 +340,25 @@ export default function VenuesSearchPage() {
       <div className="max-w-7xl mx-auto px-4 pb-8">
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
           {venues.map((venue) => (
-            <div
+            <a
               key={venue.id}
-              className="bg-white rounded-xl shadow-md overflow-hidden hover:shadow-lg transition-shadow duration-300"
+              href={`/venues/${venue.id}`}
+              className="bg-white rounded-xl shadow-md overflow-hidden hover:shadow-lg transition-shadow duration-300 cursor-pointer group"
             >
               <div className="relative h-48 sm:h-56">
                 <img
                   src={venue.images[0]}
                   alt={venue.name}
-                  className="w-full h-full object-cover"
+                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                 />
                 <div className="absolute top-3 right-3 bg-white px-2 py-1 rounded-lg text-sm font-medium shadow-sm">
                   <span className="text-yellow-500">★</span> {venue.rating}
                 </div>
               </div>
               <div className="p-4">
-                <h3 className="text-lg font-semibold mb-1">{venue.name}</h3>
+                <h3 className="text-lg font-semibold mb-1 group-hover:text-rose-600 transition-colors">
+                  {venue.name}
+                </h3>
                 <p className="text-slate-600 text-sm mb-2">{venue.address}</p>
                 <p className="text-slate-600 text-sm mb-3 line-clamp-2">
                   {venue.description}
@@ -368,7 +372,7 @@ export default function VenuesSearchPage() {
                   </div>
                 </div>
               </div>
-            </div>
+            </a>
           ))}
         </div>
 
@@ -386,6 +390,7 @@ export default function VenuesSearchPage() {
           </div>
         )}
       </div>
+      <Footer />
     </div>
   );
 }
