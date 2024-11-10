@@ -97,7 +97,7 @@ export default function HomePage() {
         </div>
       </div>
 
-      {/* Why Choose Us */}
+      {/* Why Choose Us
       <div className="bg-white py-20 px-4">
         <div className="max-w-7xl mx-auto">
           <h3 className="text-2xl font-bold text-center mb-12">
@@ -108,7 +108,7 @@ export default function HomePage() {
               {
                 title: "Verified Vendors",
                 description:
-                  "Every venue and service provider is personally verified for quality and reliability",
+                  "Every service provider is personally verified for quality and reliability",
                 icon: "✓",
               },
               {
@@ -134,7 +134,7 @@ export default function HomePage() {
             ))}
           </div>
         </div>
-      </div>
+      </div> */}
 
       {/* Footer */}
       <Footer />

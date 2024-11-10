@@ -92,7 +92,6 @@ const addOns: AddOn[] = [
 
 export default function VenueDetailsPage() {
   // State for the image carousel
-  const [activeIndex, setActiveIndex] = useState(0);
   const [touchStart, setTouchStart] = useState<number | null>(null);
   const [touchEnd, setTouchEnd] = useState<number | null>(null);
   const [currentSlide, setCurrentSlide] = useState(0);
