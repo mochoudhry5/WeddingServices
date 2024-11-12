@@ -1,7 +1,19 @@
 "use client";
 
 import { useState } from "react";
-import { PlayCircle, Upload, Plus, X, DollarSign } from "lucide-react";
+import { useRouter } from "next/navigation";
+import {
+  PlayCircle,
+  Upload,
+  Plus,
+  X,
+  DollarSign,
+  Building2,
+  Camera,
+  Paintbrush,
+} from "lucide-react";
+import { toast } from "sonner";
+import { supabase } from "@/lib/supabase";
 import { Input } from "@/components/ui/input";
 import {
   Select,
@@ -23,6 +35,19 @@ import {
 import NavBar from "@/components/ui/NavBar";
 import Footer from "@/components/ui/Footer";
 
+// Types
+type ServiceId = "venue" | "makeup" | "photography";
+
+interface Service {
+  id: ServiceId;
+  name: string;
+  icon: any;
+  description: string;
+  available: boolean;
+  path?: string;
+  comingSoon?: boolean;
+}
+
 interface MediaFile {
   id: string;
   file: File;
@@ -38,6 +63,78 @@ interface AddOn {
   price: number;
   guestIncrement?: number;
 }
+
+interface VenueFormData {
+  name: string;
+  address: string;
+  city: string;
+  state: string;
+  basePrice: number;
+  minGuests: number | null;
+  maxGuests: number;
+  description: string;
+  media: MediaFile[];
+  inclusions: string[];
+  customInclusions: string[];
+  addons: {
+    name: string;
+    description: string;
+    pricingType: "flat" | "per-guest";
+    price: number;
+    guestIncrement?: number;
+    isCustom: boolean;
+  }[];
+}
+
+// Constants
+const services: Service[] = [
+  {
+    id: "venue",
+    name: "Venue",
+    icon: Building2,
+    description:
+      "List your wedding venue and showcase your space to couples looking for their perfect venue.",
+    available: true,
+    path: "/venues/create",
+  },
+  {
+    id: "makeup",
+    name: "Makeup Artist",
+    icon: Paintbrush,
+    description:
+      "Offer your professional makeup services to brides and wedding parties.",
+    available: false,
+    comingSoon: true,
+  },
+  {
+    id: "photography",
+    name: "Photography",
+    icon: Camera,
+    description:
+      "Showcase your photography portfolio and connect with couples seeking their wedding photographer.",
+    available: false,
+    comingSoon: true,
+  },
+];
+
+const commonInclusions = [
+  "Tables & Chairs",
+  "Basic Lighting",
+  "Sound System",
+  "Parking",
+  "Security",
+  "Basic Decor",
+  "Cleanup Service",
+  "Bridal Suite",
+  "Kitchen Access",
+  "Wifi",
+  "AV Equipment",
+  "Event Planning",
+  "Air Conditioning",
+  "Heating",
+  "Restrooms",
+  "Changing Rooms",
+];
 
 const commonAddOns = [
   {
@@ -79,11 +176,91 @@ const commonAddOns = [
   },
 ];
 
+// Component for add-on pricing inputs
+const PricingInput = ({
+  addon,
+  value,
+  onChange,
+}: {
+  addon: string | AddOn;
+  value: any;
+  onChange: (value: any) => void;
+}) => (
+  <div className="space-y-3">
+    <Select
+      value={value.pricingType}
+      onValueChange={(newType: "flat" | "per-guest") => {
+        onChange({
+          ...value,
+          pricingType: newType,
+          guestIncrement: newType === "per-guest" ? 100 : undefined,
+        });
+      }}
+    >
+      <SelectTrigger className="w-full">
+        <SelectValue placeholder="Select pricing type" />
+      </SelectTrigger>
+      <SelectContent>
+        <SelectItem value="flat">Flat Rate</SelectItem>
+        <SelectItem value="per-guest">Per Guest</SelectItem>
+      </SelectContent>
+    </Select>
+
+    <div className="flex gap-3">
+      <div className="relative flex-1">
+        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">
+          $
+        </span>
+        <Input
+          type="number"
+          min="0"
+          value={value.price}
+          onChange={(e) => {
+            onChange({
+              ...value,
+              price: Number(e.target.value),
+            });
+          }}
+          placeholder="0"
+          className="pl-7"
+        />
+      </div>
+
+      {value.pricingType === "per-guest" && (
+        <div className="w-32">
+          <Select
+            value={value.guestIncrement?.toString()}
+            onValueChange={(newIncrement) => {
+              onChange({
+                ...value,
+                guestIncrement: Number(newIncrement),
+              });
+            }}
+          >
+            <SelectTrigger>
+              <SelectValue placeholder="Per" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="1">Per guest</SelectItem>
+              <SelectItem value="10">Per 10</SelectItem>
+              <SelectItem value="50">Per 50</SelectItem>
+              <SelectItem value="100">Per 100</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+      )}
+    </div>
+  </div>
+);
+
 export default function CreateVenueListing() {
+  const router = useRouter();
+
   // Step Management
   const [currentStep, setCurrentStep] = useState(1);
   const totalSteps = 4;
   const [showCancelDialog, setShowCancelDialog] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Basic Information State
   const [venueName, setVenueName] = useState("");
@@ -94,12 +271,14 @@ export default function CreateVenueListing() {
   const [minGuests, setMinGuests] = useState("");
   const [maxGuests, setMaxGuests] = useState("");
   const [description, setDescription] = useState("");
-  const [includedItems, setIncludedItems] = useState<string[]>([]);
-  const [customInclusions, setCustomInclusions] = useState<string[]>([]);
 
   // Media State
   const [mediaFiles, setMediaFiles] = useState<MediaFile[]>([]);
   const [draggedItem, setDraggedItem] = useState<number | null>(null);
+
+  // Inclusions State
+  const [includedItems, setIncludedItems] = useState<string[]>([]);
+  const [customInclusions, setCustomInclusions] = useState<string[]>([]);
 
   // Add-ons State
   const [selectedAddOns, setSelectedAddOns] = useState<{
@@ -109,43 +288,19 @@ export default function CreateVenueListing() {
       guestIncrement?: number;
     };
   }>({});
-
-  const commonInclusions = [
-    "Tables & Chairs",
-    "Basic Lighting",
-    "Sound System",
-    "Parking",
-    "Security",
-    "Basic Decor",
-    "Cleanup Service",
-    "Bridal Suite",
-    "Kitchen Access",
-    "Wifi",
-    "AV Equipment",
-    "Event Planning",
-    "Air Conditioning",
-    "Heating",
-    "Restrooms",
-    "Changing Rooms",
-  ];
-
   const [customAddOns, setCustomAddOns] = useState<AddOn[]>([]);
 
+  // File Upload Handlers
   const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const files = event.target.files;
     if (!files) return;
 
-    const newFiles = Array.from(files).map((file) => {
-      const fileType: "video" | "image" = file.type.startsWith("video/")
-        ? "video"
-        : "image";
-      return {
-        id: Math.random().toString(36).substr(2, 9),
-        file,
-        preview: URL.createObjectURL(file),
-        type: fileType,
-      } satisfies MediaFile;
-    });
+    const newFiles: MediaFile[] = Array.from(files).map((file) => ({
+      id: Math.random().toString(36).substr(2, 9),
+      file,
+      preview: URL.createObjectURL(file),
+      type: file.type.startsWith("video/") ? "video" : "image",
+    }));
 
     setMediaFiles((prev) => [...prev, ...newFiles]);
   };
@@ -154,7 +309,7 @@ export default function CreateVenueListing() {
     setMediaFiles((prev) => prev.filter((file) => file.id !== id));
   };
 
-  // Media Drag and Drop Handlers
+  // Drag and Drop Handlers
   const handleDragStart = (index: number) => {
     setDraggedItem(index);
   };
@@ -175,6 +330,18 @@ export default function CreateVenueListing() {
     setDraggedItem(null);
   };
 
+  // Form Validation
+  const validateCurrentStep = () => {
+    switch (currentStep) {
+      case 1:
+        return venueName && address && city && state && basePrice && maxGuests;
+      case 2:
+        return mediaFiles.length >= 1; // Change to 10 in production
+      default:
+        return true;
+    }
+  };
+
   // Navigation Handlers
   const nextStep = () => {
     if (validateCurrentStep()) {
@@ -190,95 +357,221 @@ export default function CreateVenueListing() {
     window.history.back();
   };
 
-  // Validation
-  const validateCurrentStep = () => {
-    switch (currentStep) {
-      case 1:
-        return venueName && address && city && state && basePrice && maxGuests;
-      case 2:
-        return mediaFiles.length >= 1; // Changed for testing, should be 10 in production
-      default:
-        return true;
+  // Form Submission
+  const handleSubmit = async () => {
+    try {
+      // Validate required fields
+      if (
+        !venueName ||
+        !address ||
+        !city ||
+        !state ||
+        !basePrice ||
+        !maxGuests ||
+        !description
+      ) {
+        toast.error("Please fill in all required fields");
+        return;
+      }
+
+      if (mediaFiles.length < 1) {
+        // Change to 10 in production
+        toast.error("Please upload at least 10 images");
+        return;
+      }
+
+      // First, check if user is authenticated
+      const {
+        data: { user },
+        error: authError,
+      } = await supabase.auth.getUser();
+      if (authError || !user) {
+        toast.error("Please sign in to create a venue listing");
+        return;
+      }
+
+      // Start loading state
+      setIsSubmitting(true);
+
+      // 1. Create venue record
+      const { data: venue, error: venueError } = await supabase
+        .from("venues")
+        .insert({
+          user_id: user.id,
+          name: venueName,
+          address,
+          city,
+          state,
+          base_price: parseInt(basePrice),
+          min_guests: minGuests ? parseInt(minGuests) : null,
+          max_guests: parseInt(maxGuests),
+          description,
+        })
+        .select()
+        .single();
+
+      if (venueError) {
+        console.error("Venue creation error:", venueError);
+        throw new Error(`Failed to create venue: ${venueError.message}`);
+      }
+
+      // 2. Upload media files to Supabase Storage
+      const mediaPromises = mediaFiles.map(async (file, index) => {
+        try {
+          // Generate a unique filename
+          const timestamp = Date.now();
+          const fileExt = file.file.name.split(".").pop();
+          const fileName = `${timestamp}-${index}.${fileExt}`;
+          const filePath = `${venue.id}/${fileName}`;
+
+          // Log the file details
+          console.log("Uploading file:", {
+            name: file.file.name,
+            type: file.file.type,
+            size: file.file.size,
+            path: filePath,
+          });
+
+          // Upload the file
+          const { data: uploadData, error: uploadError } =
+            await supabase.storage
+              .from("venue-media")
+              .upload(filePath, file.file, {
+                cacheControl: "3600",
+                upsert: false,
+              });
+
+          if (uploadError) {
+            console.error("Upload error details:", uploadError);
+            throw uploadError;
+          }
+
+          // Get the public URL
+          const { data: publicUrlData } = supabase.storage
+            .from("venue-media")
+            .getPublicUrl(filePath);
+
+          console.log("Upload successful:", uploadData);
+          console.log("Public URL:", publicUrlData);
+
+          // Return the media record data
+          return {
+            venue_id: venue.id,
+            file_path: filePath,
+            media_type: file.type,
+            display_order: index,
+            public_url: publicUrlData.publicUrl,
+          };
+        } catch (error) {
+          console.error(`Error uploading file ${index}:`, error);
+          throw error;
+        }
+      });
+
+      // Wait for all uploads to complete
+      const mediaResults = await Promise.all(mediaPromises).catch((error) => {
+        console.error("Media upload promise error:", error);
+        throw new Error("Failed to upload one or more media files");
+      });
+
+      console.log("All media uploaded successfully:", mediaResults);
+
+      // 3. Insert media records
+      const { error: mediaError } = await supabase
+        .from("venue_media")
+        .insert(mediaResults)
+        .select();
+
+      if (mediaError) {
+        console.error("Media record creation error:", mediaError);
+        throw new Error(
+          `Failed to create media records: ${mediaError.message}`
+        );
+      }
+      // 4. Insert inclusions
+      const allInclusions = [
+        ...includedItems.map((item) => ({
+          venue_id: venue.id,
+          name: item,
+          is_custom: false,
+        })),
+        ...customInclusions
+          .filter((item) => item.trim())
+          .map((item) => ({
+            venue_id: venue.id,
+            name: item,
+            is_custom: true,
+          })),
+      ];
+
+      if (allInclusions.length > 0) {
+        const { error: inclusionsError } = await supabase
+          .from("venue_inclusions")
+          .insert(allInclusions);
+
+        if (inclusionsError) {
+          console.error("Inclusions creation error:", inclusionsError);
+          throw new Error(
+            `Failed to create inclusions: ${inclusionsError.message}`
+          );
+        }
+      }
+
+      // 5. Insert add-ons
+      const allAddons = [
+        // Common add-ons
+        ...Object.entries(selectedAddOns).map(([name, details]) => ({
+          venue_id: venue.id,
+          name,
+          description:
+            commonAddOns.find((addon) => addon.name === name)?.description ||
+            "",
+          pricing_type: details.pricingType,
+          price: details.price,
+          guest_increment: details.guestIncrement,
+          is_custom: false,
+        })),
+        // Custom add-ons
+        ...customAddOns
+          .filter((addon) => addon.name.trim())
+          .map((addon) => ({
+            venue_id: venue.id,
+            name: addon.name,
+            description: addon.description,
+            pricing_type: addon.pricingType,
+            price: addon.price,
+            guest_increment: addon.guestIncrement,
+            is_custom: true,
+          })),
+      ];
+
+      if (allAddons.length > 0) {
+        const { error: addonsError } = await supabase
+          .from("venue_addons")
+          .insert(allAddons);
+
+        if (addonsError) {
+          console.error("Add-ons creation error:", addonsError);
+          throw new Error(`Failed to create add-ons: ${addonsError.message}`);
+        }
+      }
+
+      // Success!
+      toast.success("Venue listing created successfully!");
+      router.push(`/venues/${venue.id}`);
+    } catch (error) {
+      console.error("Error creating venue:", error);
+      toast.error(
+        error instanceof Error
+          ? error.message
+          : "Failed to create venue listing. Please try again."
+      );
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
-  // Pricing Input Component for Add-ons
-  const PricingInput = ({
-    addon,
-    value,
-    onChange,
-  }: {
-    addon: string | AddOn;
-    value: (typeof selectedAddOns)[string] | AddOn;
-    onChange: (value: any) => void;
-  }) => (
-    <div className="space-y-3">
-      <Select
-        value={value.pricingType}
-        onValueChange={(newType: "flat" | "per-guest") => {
-          onChange({
-            ...value,
-            pricingType: newType,
-            guestIncrement: newType === "per-guest" ? 100 : undefined,
-          });
-        }}
-      >
-        <SelectTrigger className="w-full">
-          <SelectValue placeholder="Select pricing type" />
-        </SelectTrigger>
-        <SelectContent>
-          <SelectItem value="flat">Flat Rate</SelectItem>
-          <SelectItem value="per-guest">Per Guest</SelectItem>
-        </SelectContent>
-      </Select>
-
-      <div className="flex gap-3">
-        <div className="relative flex-1">
-          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">
-            $
-          </span>
-          <Input
-            type="number"
-            min="0"
-            value={value.price}
-            onChange={(e) => {
-              onChange({
-                ...value,
-                price: Number(e.target.value),
-              });
-            }}
-            placeholder="0"
-            className="pl-7"
-          />
-        </div>
-
-        {value.pricingType === "per-guest" && (
-          <div className="w-32">
-            <Select
-              value={value.guestIncrement?.toString()}
-              onValueChange={(newIncrement) => {
-                onChange({
-                  ...value,
-                  guestIncrement: Number(newIncrement),
-                });
-              }}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Per" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="1">Per guest</SelectItem>
-                <SelectItem value="10">Per 10</SelectItem>
-                <SelectItem value="50">Per 50</SelectItem>
-                <SelectItem value="100">Per 100</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-        )}
-      </div>
-    </div>
-  );
-
+  // Rest of your existing UI code...
   return (
     <div className="min-h-screen flex flex-col">
       <NavBar />
@@ -555,6 +848,7 @@ export default function CreateVenueListing() {
               </div>
             )}
 
+            {/* Step 3: Inclusions */}
             {currentStep === 3 && (
               <div className="space-y-6">
                 <h2 className="text-2xl font-semibold mb-6">What's Included</h2>
@@ -637,7 +931,7 @@ export default function CreateVenueListing() {
               </div>
             )}
 
-            {/* Step 5: Add-ons */}
+            {/* Step 4: Add-ons */}
             {currentStep === 4 && (
               <div className="space-y-6">
                 <h2 className="text-2xl font-semibold mb-6">Add-on Services</h2>
@@ -813,6 +1107,7 @@ export default function CreateVenueListing() {
               type="button"
               onClick={() => setShowCancelDialog(true)}
               className="px-6 py-2 text-gray-600 hover:text-gray-800 transition-colors"
+              disabled={isSubmitting}
             >
               Cancel
             </button>
@@ -824,15 +1119,21 @@ export default function CreateVenueListing() {
                 className={`px-6 py-2 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50 transition-colors ${
                   currentStep === 1 ? "invisible" : ""
                 }`}
+                disabled={isSubmitting}
               >
                 Previous
               </button>
               <button
                 type="button"
-                onClick={nextStep}
-                className="px-6 py-2 bg-rose-600 text-white rounded-lg hover:bg-rose-700 transition-colors"
+                onClick={currentStep === totalSteps ? handleSubmit : nextStep}
+                disabled={isSubmitting}
+                className="px-6 py-2 bg-rose-600 text-white rounded-lg hover:bg-rose-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {currentStep === totalSteps ? "Submit" : "Next"}
+                {isSubmitting
+                  ? "Creating..."
+                  : currentStep === totalSteps
+                  ? "Submit"
+                  : "Next"}
               </button>
             </div>
           </div>
