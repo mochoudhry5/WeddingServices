@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { Search, SlidersHorizontal } from "lucide-react";
+import { Heart, Search, SlidersHorizontal } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import {
   Select,
@@ -19,11 +19,12 @@ import {
   SheetTrigger,
 } from "@/components/ui/sheet";
 import { Slider } from "@/components/ui/slider";
-import { MediaCarousel } from "@/components/ui/MediaCarousel";
+import MediaCarousel from "@/components/ui/MediaCarousel";
 import NavBar from "@/components/ui/NavBar";
 import Footer from "@/components/ui/Footer";
 import { supabase } from "@/lib/supabase";
 import { toast } from "sonner";
+import { useAuth } from "@/context/AuthContext";
 
 type ServiceType = "venue" | "makeup" | "photography";
 type SortOption = "price_asc" | "price_desc" | "default";
@@ -37,6 +38,7 @@ interface MediaItem {
 
 interface VenueWithDetails {
   id: string;
+  user_id: string;
   name: string;
   address: string;
   city: string;
@@ -64,6 +66,7 @@ export default function VenuesSearchPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [isFiltered, setIsFiltered] = useState(false);
   const [isSheetOpen, setIsSheetOpen] = useState(false);
+  const { user } = useAuth();
 
   // Filter state
   const [filters, setFilters] = useState<FilterState>({
@@ -405,7 +408,9 @@ export default function VenuesSearchPage() {
                 <MediaCarousel
                   media={venue.venue_media}
                   venueName={venue.name}
-                  rating={venue.rating}
+                  venueId={venue.id}
+                  venueCreator={venue.user_id}
+                  userLoggedIn={user?.id}
                 />
                 <div className="p-4">
                   <h3 className="text-lg font-semibold mb-1 group-hover:text-rose-600 transition-colors">

@@ -47,7 +47,7 @@ export default function Footer() {
         <div className="bg-white mt-12 pt-8">
           <div className="flex flex-col md:flex-col justify-between items-center">
             <p className="text-base text-gray-400 pb-2">
-              © {new Date().getFullYear()} Dream Venues. All rights reserved.
+              © {new Date().getFullYear()} Vowzie. All rights reserved.
             </p>
             <div className="flex space-x-6 mt-4 md:mt-0">
               <a href="#" className="text-gray-400 hover:text-rose-600">

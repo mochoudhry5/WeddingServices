@@ -1,9 +1,76 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { PlayCircle, ChevronLeft, ChevronRight } from "lucide-react";
 import NavBar from "@/components/ui/NavBar";
 import Footer from "@/components/ui/Footer";
+import { useParams } from "next/navigation";
+import { supabase } from "@/lib/supabase";
+import { toast } from "sonner";
+import MediaCarousel from "@/components/ui/MediaCarousel";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { useAuth } from "@/context/AuthContext";
+
+interface VenueDetails {
+  id: string;
+  name: string;
+  address: string;
+  city: string;
+  state: string;
+  base_price: number;
+  min_guests: number | null;
+  max_guests: number;
+  description: string;
+  user_id: string; // Add this
+  venue_media: VenueMedia[];
+  venue_inclusions: VenueInclusion[];
+  venue_addons: VenueAddon[];
+}
+
+interface VenueMedia {
+  file_path: string;
+  display_order: number;
+}
+
+interface VenueInclusion {
+  name: string;
+  is_custom: boolean;
+}
+
+interface VenueAddon {
+  name: string;
+  description: string;
+  pricing_type: "flat" | "per-guest";
+  price: number;
+  guest_increment?: number;
+  is_custom: boolean;
+}
+
+interface VenueDetails {
+  id: string;
+  name: string;
+  address: string;
+  city: string;
+  state: string;
+  base_price: number;
+  min_guests: number | null;
+  max_guests: number;
+  description: string;
+  venue_media: VenueMedia[];
+  venue_inclusions: VenueInclusion[];
+  venue_addons: VenueAddon[];
+}
+
+interface InquiryForm {
+  firstName: string;
+  lastName: string;
+  email: string;
+  phone: string;
+  eventDate: string;
+  guestCount: string;
+  message: string;
+}
 
 // Define interfaces for our data types
 interface MediaItem {
@@ -91,12 +158,76 @@ const addOns: AddOn[] = [
 ];
 
 export default function VenueDetailsPage() {
+  const { user } = useAuth();
   // State for the image carousel
   const [touchStart, setTouchStart] = useState<number | null>(null);
   const [touchEnd, setTouchEnd] = useState<number | null>(null);
   const [currentSlide, setCurrentSlide] = useState(0);
+  const [venue, setVenue] = useState<VenueDetails | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [inquiryForm, setInquiryForm] = useState<InquiryForm>({
+    firstName: "",
+    lastName: "",
+    email: "",
+    phone: "",
+    eventDate: "",
+    guestCount: "",
+    message: "",
+  });
   const minSwipeDistance = 50;
+  const params = useParams();
 
+  useEffect(() => {
+    if (params.id) {
+      loadVenueDetails();
+    }
+  }, [params.id]);
+
+  const loadVenueDetails = async () => {
+    try {
+      const { data: venueData, error } = await supabase
+        .from("venues")
+        .select(
+          `
+          *,
+          user_id,
+          venue_media (
+            file_path,
+            display_order
+          ),
+          venue_inclusions (
+            name,
+            is_custom
+          ),
+          venue_addons (
+            name,
+            description,
+            pricing_type,
+            price,
+            guest_increment,
+            is_custom
+          )
+        `
+        )
+        .eq("id", params.id)
+        .single();
+
+      if (error) throw error;
+
+      if (!venueData) {
+        toast.error("Venue not found");
+        return;
+      }
+
+      console.log("Venue data:", venueData); // Debug log
+      setVenue(venueData);
+    } catch (error) {
+      console.error("Error loading venue:", error);
+      toast.error("Failed to load venue details");
+    } finally {
+      setIsLoading(false);
+    }
+  };
   // Carousel controls
   const nextSlide = () => {
     setCurrentSlide((prev) => (prev + 1) % mediaItems.length);
@@ -106,6 +237,23 @@ export default function VenueDetailsPage() {
     setCurrentSlide(
       (prev) => (prev - 1 + mediaItems.length) % mediaItems.length
     );
+  };
+
+  const handleInquirySubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    // Add your inquiry submission logic here
+    toast.success("Inquiry sent successfully!");
+  };
+
+  const handleInputChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+  ) => {
+    const { name, value } = e.target;
+    setInquiryForm((prev) => ({
+      ...prev,
+      [name]: value,
+    }));
   };
 
   // Handle touch events
@@ -132,144 +280,74 @@ export default function VenueDetailsPage() {
     }
   };
 
-  return (
-    <div className="min-h-screen bg-white">
-      {/* Navigation Bar */}
-      <NavBar />
-
-      {/* Slideshow */}
-      <div className="relative bg-black">
-        {/* Main Slideshow Container */}
-        <div
-          className="relative h-[60vh] md:h-[80vh] overflow-hidden"
-          onTouchStart={onTouchStart}
-          onTouchMove={onTouchMove}
-          onTouchEnd={onTouchEnd}
-        >
-          {/* Slides */}
-          <div
-            className="flex transition-transform duration-500 ease-out h-full"
-            style={{ transform: `translateX(-${currentSlide * 100}%)` }}
-          >
-            {mediaItems.map((item, index) => (
-              <div key={item.id} className="w-full h-full flex-shrink-0">
-                {item.type === "video" ? (
-                  <div className="relative w-full h-full">
-                    <img
-                      src={item.thumbnail}
-                      alt={item.alt}
-                      className="w-full h-full object-cover"
-                    />
-                    <button
-                      className="absolute inset-0 m-auto w-20 h-20 text-white hover:text-rose-500 transition-colors z-10"
-                      aria-label="Play video"
-                    >
-                      <PlayCircle className="w-full h-full" />
-                    </button>
-                  </div>
-                ) : (
-                  <img
-                    src={item.url}
-                    alt={item.alt}
-                    className="w-full h-full object-cover"
-                  />
-                )}
-              </div>
-            ))}
-          </div>
-
-          {/* Navigation Arrows */}
-          <button
-            onClick={prevSlide}
-            className="absolute left-4 top-1/2 -translate-y-1/2 bg-black/50 hover:bg-black/70 text-white p-3 rounded-full transition-colors z-20 group"
-            aria-label="Previous slide"
-          >
-            <ChevronLeft
-              size={24}
-              className="group-hover:scale-110 transition-transform"
-            />
-          </button>
-          <button
-            onClick={nextSlide}
-            className="absolute right-4 top-1/2 -translate-y-1/2 bg-black/50 hover:bg-black/70 text-white p-3 rounded-full transition-colors z-20 group"
-            aria-label="Next slide"
-          >
-            <ChevronRight
-              size={24}
-              className="group-hover:scale-110 transition-transform"
-            />
-          </button>
-
-          {/* Dots Navigation */}
-          <div className="absolute bottom-20 left-0 right-0 flex justify-center gap-2 z-20">
-            {mediaItems.map((_, index) => (
-              <button
-                key={index}
-                onClick={() => setCurrentSlide(index)}
-                className={`w-2 h-2 rounded-full transition-all ${
-                  currentSlide === index
-                    ? "bg-white w-6"
-                    : "bg-white/50 hover:bg-white/70"
-                }`}
-                aria-label={`Go to slide ${index + 1}`}
-              />
-            ))}
-          </div>
-        </div>
-
-        {/* Thumbnail Preview - Separated */}
-        <div className="border-t border-white/20">
-          <div className="max-w-7xl mx-auto">
-            <div className="py-4 px-4">
-              <div className="flex gap-2 justify-center">
-                {mediaItems.map((item, index) => (
-                  <button
-                    key={item.id}
-                    onClick={() => setCurrentSlide(index)}
-                    className={`
-                      relative h-16 w-24 rounded-lg overflow-hidden transition-all
-                      ${
-                        index === currentSlide
-                          ? "ring-2 ring-rose-500 opacity-100"
-                          : "opacity-50 hover:opacity-100"
-                      }
-                    `}
-                  >
-                    <img
-                      src={item.type === "video" ? item.thumbnail : item.url}
-                      alt={`Preview ${index + 1}`}
-                      className="w-full h-full object-cover"
-                    />
-                    {item.type === "video" && (
-                      <div className="absolute inset-0 flex items-center justify-center bg-black/30">
-                        <PlayCircle size={20} className="text-white" />
-                      </div>
-                    )}
-                  </button>
-                ))}
-              </div>
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-slate-50">
+        <NavBar />
+        <div className="max-w-7xl mx-auto px-4 py-8">
+          <div className="animate-pulse">
+            <div className="h-[60vh] bg-slate-200 rounded-lg mb-8" />
+            <div className="space-y-4">
+              <div className="h-8 bg-slate-200 rounded w-1/2" />
+              <div className="h-4 bg-slate-200 rounded w-1/4" />
+              <div className="h-4 bg-slate-200 rounded w-3/4" />
             </div>
           </div>
         </div>
+        <Footer />
+      </div>
+    );
+  }
+
+  if (!venue) {
+    return (
+      <div className="min-h-screen bg-slate-50">
+        <NavBar />
+        <div className="max-w-7xl mx-auto px-4 py-8 text-center">
+          <h1 className="text-2xl font-bold text-gray-900">Venue not found</h1>
+        </div>
+        <Footer />
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-white">
+      <NavBar />
+
+      {/* Hero/Media Section */}
+      <div className="relative bg-black">
+        <div className="relative h-[60vh] md:h-[80vh]">
+          <MediaCarousel
+            media={venue.venue_media}
+            venueName={venue.name}
+            venueId={venue.id}
+            venueCreator={venue.user_id}
+            userLoggedIn={user?.id}
+            className="w-full h-full"
+          />
+        </div>
       </div>
 
-      {/* Main Content */}
+      {/* Content */}
       <div className="max-w-7xl mx-auto px-4 py-8">
         {/* Venue Header */}
         <div className="flex flex-col md:flex-row md:justify-between md:items-start gap-4 mb-8">
           <div>
             <h1 className="text-2xl md:text-3xl font-bold text-gray-900 mb-2">
-              Crystal Garden Manor
+              {venue.name}
             </h1>
             <p className="text-gray-600">
-              123 Elegant Ave, Beverly Hills, CA 90210
+              {venue.address}, {venue.city}, {venue.state}
             </p>
           </div>
           <div className="md:text-right">
             <p className="text-2xl md:text-3xl font-bold text-rose-600">
-              $5,000
+              ${venue.base_price.toLocaleString()}
             </p>
-            <p className="text-gray-600">Base price for up to 100 guests</p>
+            <p className="text-gray-600">
+              Base price for up to {venue.min_guests || 100} guests
+            </p>
           </div>
         </div>
 
@@ -279,61 +357,19 @@ export default function VenueDetailsPage() {
             About the Venue
           </h2>
           <p className="text-gray-600 mb-6 leading-relaxed">
-            Crystal Garden Manor is a luxurious garden venue featuring crystal
-            chandeliers and fountain views. Perfect for both indoor and outdoor
-            ceremonies, this elegant space offers a unique blend of modern
-            amenities and classic architecture. The venue can comfortably
-            accommodate up to 200 guests and provides multiple spaces for your
-            ceremony, cocktail hour, and reception.
+            {venue.description}
           </p>
           <div className="grid md:grid-cols-2 gap-8">
-            <div>
-              <h3 className="text-lg font-semibold mb-3">Venue Features</h3>
-              <ul className="space-y-2 text-gray-600">
-                <li className="flex items-center gap-2">
-                  <span className="text-rose-500">•</span>
-                  5,000 square feet of event space
-                </li>
-                <li className="flex items-center gap-2">
-                  <span className="text-rose-500">•</span>
-                  Bridal suite and groom's room
-                </li>
-                <li className="flex items-center gap-2">
-                  <span className="text-rose-500">•</span>
-                  Climate-controlled indoor areas
-                </li>
-                <li className="flex items-center gap-2">
-                  <span className="text-rose-500">•</span>
-                  Landscaped gardens with fountain
-                </li>
-                <li className="flex items-center gap-2">
-                  <span className="text-rose-500">•</span>
-                  Private parking for 100 vehicles
-                </li>
-              </ul>
-            </div>
             <div>
               <h3 className="text-lg font-semibold mb-3">Capacity</h3>
               <ul className="space-y-2 text-gray-600">
                 <li className="flex items-center gap-2">
                   <span className="text-rose-500">•</span>
-                  Seated dinner: 200 guests
+                  Minimum guests: {venue.min_guests || "No minimum"}
                 </li>
                 <li className="flex items-center gap-2">
                   <span className="text-rose-500">•</span>
-                  Cocktail style: 300 guests
-                </li>
-                <li className="flex items-center gap-2">
-                  <span className="text-rose-500">•</span>
-                  Ceremony: 250 guests
-                </li>
-                <li className="flex items-center gap-2">
-                  <span className="text-rose-500">•</span>
-                  Minimum guests: 50
-                </li>
-                <li className="flex items-center gap-2">
-                  <span className="text-rose-500">•</span>
-                  Maximum guests: 200
+                  Maximum guests: {venue.max_guests}
                 </li>
               </ul>
             </div>
@@ -341,79 +377,74 @@ export default function VenueDetailsPage() {
         </div>
 
         {/* What's Included */}
-        <div className="mb-12">
-          <h2 className="text-xl md:text-2xl font-bold mb-6">
-            What's Included
-          </h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            {amenities.map((amenity, index) => (
-              <div
-                key={index}
-                className={`p-4 rounded-lg border ${
-                  amenity.included
-                    ? "border-rose-200 bg-rose-50"
-                    : "border-gray-200 bg-gray-50"
-                }`}
-              >
-                <div className="flex items-center gap-2">
-                  <span
-                    className={
-                      amenity.included ? "text-rose-600" : "text-gray-400"
-                    }
-                  >
-                    {amenity.included ? "✓" : "×"}
-                  </span>
-                  <span
-                    className={
-                      amenity.included ? "text-gray-900" : "text-gray-500"
-                    }
-                  >
-                    {amenity.name}
-                  </span>
+        {venue.venue_inclusions?.length > 0 && (
+          <div className="mb-12">
+            <h2 className="text-xl md:text-2xl font-bold mb-6">
+              What's Included
+            </h2>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              {venue.venue_inclusions.map((inclusion, index) => (
+                <div
+                  key={index}
+                  className="p-4 rounded-lg border border-rose-200 bg-rose-50"
+                >
+                  <div className="flex items-center gap-2">
+                    <span className="text-rose-600">✓</span>
+                    <span className="text-gray-900">{inclusion.name}</span>
+                  </div>
                 </div>
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
-        </div>
+        )}
+
         {/* Add-ons */}
-        <div className="mb-12">
-          <h2 className="text-xl md:text-2xl font-bold mb-6">
-            Available Add-ons
-          </h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {addOns.map((addon, index) => (
-              <div
-                key={index}
-                className="p-6 rounded-lg border border-gray-200 hover:border-rose-200 transition-colors"
-              >
-                <div className="flex flex-col md:flex-row md:justify-between md:items-start gap-2 mb-2">
-                  <h3 className="text-lg font-semibold">{addon.name}</h3>
-                  <p className="text-rose-600 font-semibold whitespace-nowrap">
-                    ${addon.pricePerHundred.toLocaleString()}
-                    <span className="text-sm text-gray-500">/100 guests</span>
-                  </p>
+        {venue.venue_addons?.length > 0 && (
+          <div className="mb-12">
+            <h2 className="text-xl md:text-2xl font-bold mb-6">
+              Available Add-ons
+            </h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {venue.venue_addons.map((addon, index) => (
+                <div
+                  key={index}
+                  className="p-6 rounded-lg border border-gray-200 hover:border-rose-200 transition-colors"
+                >
+                  <div className="flex flex-col md:flex-row md:justify-between md:items-start gap-2 mb-2">
+                    <h3 className="text-lg font-semibold">{addon.name}</h3>
+                    <p className="text-rose-600 font-semibold whitespace-nowrap">
+                      ${addon.price.toLocaleString()}
+                      {addon.pricing_type === "per-guest" && (
+                        <span className="text-sm text-gray-500">
+                          /{addon.guest_increment || 1} guest
+                          {(addon.guest_increment || 1) > 1 ? "s" : ""}
+                        </span>
+                      )}
+                    </p>
+                  </div>
+                  <p className="text-gray-600">{addon.description}</p>
                 </div>
-                <p className="text-gray-600">{addon.description}</p>
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
-        </div>
+        )}
 
         {/* Contact Form */}
         <div className="mb-12">
-          <h2 className="text-xl md:text-2xl font-bold mb-6 items-center justify-center text-center">
+          <h2 className="text-xl md:text-2xl font-bold mb-6 text-center">
             Contact Venue
           </h2>
           <div className="max-w-2xl mx-auto bg-gray-50 p-4 md:p-6 rounded-lg">
-            <form className="space-y-4">
+            <form onSubmit={handleInquirySubmit} className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
                     First Name
                   </label>
-                  <input
-                    type="text"
-                    className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-rose-500 focus:border-transparent"
+                  <Input
+                    name="firstName"
+                    value={inquiryForm.firstName}
+                    onChange={handleInputChange}
                     required
                   />
                 </div>
@@ -421,9 +452,10 @@ export default function VenueDetailsPage() {
                   <label className="block text-sm font-medium text-gray-700 mb-1">
                     Last Name
                   </label>
-                  <input
-                    type="text"
-                    className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-rose-500 focus:border-transparent"
+                  <Input
+                    name="lastName"
+                    value={inquiryForm.lastName}
+                    onChange={handleInputChange}
                     required
                   />
                 </div>
@@ -433,9 +465,11 @@ export default function VenueDetailsPage() {
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   Email
                 </label>
-                <input
+                <Input
                   type="email"
-                  className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-rose-500 focus:border-transparent"
+                  name="email"
+                  value={inquiryForm.email}
+                  onChange={handleInputChange}
                   required
                 />
               </div>
@@ -444,9 +478,11 @@ export default function VenueDetailsPage() {
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   Phone
                 </label>
-                <input
+                <Input
                   type="tel"
-                  className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-rose-500 focus:border-transparent"
+                  name="phone"
+                  value={inquiryForm.phone}
+                  onChange={handleInputChange}
                   required
                 />
               </div>
@@ -455,9 +491,11 @@ export default function VenueDetailsPage() {
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   Event Date
                 </label>
-                <input
+                <Input
                   type="date"
-                  className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-rose-500 focus:border-transparent"
+                  name="eventDate"
+                  value={inquiryForm.eventDate}
+                  onChange={handleInputChange}
                   required
                 />
               </div>
@@ -466,10 +504,13 @@ export default function VenueDetailsPage() {
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   Estimated Guest Count
                 </label>
-                <input
+                <Input
                   type="number"
-                  min="1"
-                  className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-rose-500 focus:border-transparent"
+                  name="guestCount"
+                  value={inquiryForm.guestCount}
+                  onChange={handleInputChange}
+                  min={venue.min_guests || 1}
+                  max={venue.max_guests}
                   required
                 />
               </div>
@@ -479,19 +520,22 @@ export default function VenueDetailsPage() {
                   Message
                 </label>
                 <textarea
+                  name="message"
+                  value={inquiryForm.message}
+                  onChange={handleInputChange}
                   rows={4}
                   className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-rose-500 focus:border-transparent"
                   placeholder="Tell us about your event..."
                   required
-                ></textarea>
+                />
               </div>
 
-              <button
+              <Button
                 type="submit"
-                className="w-full bg-rose-600 hover:bg-rose-700 text-white py-3 px-4 rounded-lg transition-colors duration-300"
+                className="w-full bg-rose-600 hover:bg-rose-700"
               >
                 Send Inquiry
-              </button>
+              </Button>
             </form>
           </div>
         </div>

@@ -397,7 +397,7 @@ export default function CreateVenueListing() {
       const { data: venue, error: venueError } = await supabase
         .from("venues")
         .insert({
-          user_id: user.id,
+          user_id: user.id, // Add the user_id
           name: venueName,
           address,
           city,
@@ -415,79 +415,50 @@ export default function CreateVenueListing() {
         throw new Error(`Failed to create venue: ${venueError.message}`);
       }
 
+      if (!venue) {
+        throw new Error("Venue created but no data returned");
+      }
+
+      console.log("Venue created successfully:", venue);
+
       // 2. Upload media files to Supabase Storage
       const mediaPromises = mediaFiles.map(async (file, index) => {
-        try {
-          // Generate a unique filename
-          const timestamp = Date.now();
-          const fileExt = file.file.name.split(".").pop();
-          const fileName = `${timestamp}-${index}.${fileExt}`;
-          const filePath = `${venue.id}/${fileName}`;
+        const fileExt = file.file.name.split(".").pop();
+        const filePath = `venues/${venue.id}/${index}.${fileExt}`;
 
-          // Log the file details
-          console.log("Uploading file:", {
-            name: file.file.name,
-            type: file.file.type,
-            size: file.file.size,
-            path: filePath,
-          });
+        const { error: uploadError } = await supabase.storage
+          .from("venue-media")
+          .upload(filePath, file.file);
 
-          // Upload the file
-          const { data: uploadData, error: uploadError } =
-            await supabase.storage
-              .from("venue-media")
-              .upload(filePath, file.file, {
-                cacheControl: "3600",
-                upsert: false,
-              });
-
-          if (uploadError) {
-            console.error("Upload error details:", uploadError);
-            throw uploadError;
-          }
-
-          // Get the public URL
-          const { data: publicUrlData } = supabase.storage
-            .from("venue-media")
-            .getPublicUrl(filePath);
-
-          console.log("Upload successful:", uploadData);
-          console.log("Public URL:", publicUrlData);
-
-          // Return the media record data
-          return {
-            venue_id: venue.id,
-            file_path: filePath,
-            media_type: file.type,
-            display_order: index,
-            public_url: publicUrlData.publicUrl,
-          };
-        } catch (error) {
-          console.error(`Error uploading file ${index}:`, error);
-          throw error;
+        if (uploadError) {
+          console.error("Media upload error:", uploadError);
+          throw new Error(
+            `Failed to upload media file ${index}: ${uploadError.message}`
+          );
         }
+
+        return {
+          venue_id: venue.id,
+          file_path: filePath,
+          media_type: file.type,
+          display_order: index,
+        };
       });
 
-      // Wait for all uploads to complete
-      const mediaResults = await Promise.all(mediaPromises).catch((error) => {
-        console.error("Media upload promise error:", error);
-        throw new Error("Failed to upload one or more media files");
-      });
-
-      console.log("All media uploaded successfully:", mediaResults);
+      const mediaResults = await Promise.all(mediaPromises);
+      console.log("Media uploaded successfully:", mediaResults);
 
       // 3. Insert media records
       const { error: mediaError } = await supabase
         .from("venue_media")
-        .insert(mediaResults)
-        .select();
+        .insert(mediaResults);
 
       if (mediaError) {
-        console.error("Media record creation error:", mediaError);
         throw new Error(
           `Failed to create media records: ${mediaError.message}`
         );
       }
+
       // 4. Insert inclusions
       const allInclusions = [
         ...includedItems.map((item) => ({
