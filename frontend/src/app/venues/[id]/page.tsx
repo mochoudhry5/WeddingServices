@@ -7,7 +7,7 @@ import Footer from "@/components/ui/Footer";
 import { useParams } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import { toast } from "sonner";
-import MediaCarousel from "@/components/ui/MediaCarousel";
+import MediaCarousel from "@/components/ui/MainMediaCarousel";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/context/AuthContext";
