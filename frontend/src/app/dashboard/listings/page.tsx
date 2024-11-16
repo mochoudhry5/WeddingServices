@@ -138,7 +138,7 @@ export default function MyListingsPage() {
                     venueCreator={venue.user_id}
                     userLoggedIn={user?.id}
                   />
-                  <div className="absolute top-2 right-2 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <div className="absolute top-2 left-2 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
                     <Link
                       href={`/venues/${venue.id}/edit`}
                       className="bg-white p-2 rounded-full shadow-lg hover:bg-gray-100 transition-colors"
