@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { Heart, Search, SlidersHorizontal } from "lucide-react";
+import { Heart, Link, Search, SlidersHorizontal } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import {
   Select,
@@ -400,38 +400,45 @@ export default function VenuesSearchPage() {
         ) : venues.length > 0 ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {venues.map((venue) => (
-              <a
+              <div
                 key={venue.id}
-                href={`/venues/${venue.id}`}
-                className="bg-white rounded-xl shadow-md overflow-hidden hover:shadow-lg transition-shadow duration-300 cursor-pointer group"
+                className="bg-white rounded-xl shadow-md overflow-hidden hover:shadow-lg transition-shadow duration-300 group"
               >
-                <MediaCarousel
-                  media={venue.venue_media}
-                  venueName={venue.name}
-                  venueId={venue.id}
-                  venueCreator={venue.user_id}
-                  userLoggedIn={user?.id}
-                />
-                <div className="p-4">
-                  <h3 className="text-lg font-semibold mb-1 group-hover:text-rose-600 transition-colors">
-                    {venue.name}
-                  </h3>
-                  <p className="text-slate-600 text-sm mb-2">
-                    {venue.city}, {venue.state}
-                  </p>
-                  <p className="text-slate-600 text-sm mb-3 line-clamp-2">
-                    {venue.description}
-                  </p>
-                  <div className="flex justify-between items-center pt-2 border-t">
-                    <div className="text-sm text-slate-600">
-                      Up to {venue.max_guests} guests
-                    </div>
-                    <div className="text-lg font-semibold text-rose-600">
-                      ${venue.base_price.toLocaleString()}
+                <div className="relative">
+                  <MediaCarousel
+                    media={venue.venue_media}
+                    venueName={venue.name}
+                    venueId={venue.id}
+                    venueCreator={venue.user_id}
+                    userLoggedIn={user?.id}
+                  />
+                </div>
+
+                <a
+                  href={`/venues/${venue.id}`}
+                  className="block p-4 hover:cursor-pointer"
+                >
+                  <div className="p-4">
+                    <h3 className="text-lg font-semibold mb-1 group-hover:text-rose-600 transition-colors">
+                      {venue.name}
+                    </h3>
+                    <p className="text-slate-600 text-sm mb-2">
+                      {venue.city}, {venue.state}
+                    </p>
+                    <p className="text-slate-600 text-sm mb-3 line-clamp-2">
+                      {venue.description}
+                    </p>
+                    <div className="flex justify-between items-center pt-2 border-t">
+                      <div className="text-sm text-slate-600">
+                        Up to {venue.max_guests} guests
+                      </div>
+                      <div className="text-lg font-semibold text-rose-600">
+                        ${venue.base_price.toLocaleString()}
+                      </div>
                     </div>
                   </div>
-                </div>
-              </a>
+                </a>
+              </div>
             ))}
           </div>
         ) : (
