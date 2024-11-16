@@ -89,7 +89,7 @@ export default function NavBar() {
                 <>
                   <div className="border-t pt-4">
                     <Link
-                      href="/services/create"
+                      href="/services"
                       className="flex items-center gap-2 rounded-lg bg-rose-100 px-4 py-2 text-sm font-medium text-rose-600 hover:bg-rose-200"
                       onClick={() => setIsMobileMenuOpen(false)}
                     >
@@ -158,7 +158,7 @@ export default function NavBar() {
             <>
               {/* List Your Service Button - Desktop only */}
               <Link
-                href="/services/create"
+                href="/services"
                 className="hidden md:flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium text-rose-600 transition-colors hover:bg-rose-200"
               >
                 List Your Service
