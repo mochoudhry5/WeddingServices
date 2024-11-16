@@ -160,7 +160,7 @@ export default function MyListingsPage() {
         <div className="flex justify-between items-center mb-8">
           <h1 className="text-2xl font-bold">My Listings</h1>
           <Link
-            href="/services/create"
+            href="/services"
             className="bg-rose-600 hover:bg-rose-700 text-white px-4 py-2 rounded-lg transition-colors"
           >
             Add New Listing
@@ -244,7 +244,7 @@ export default function MyListingsPage() {
               Start by creating your first listing
             </p>
             <Link
-              href="/services/create"
+              href="/services"
               className="inline-flex items-center px-4 py-2 bg-rose-600 hover:bg-rose-700 text-white rounded-lg transition-colors"
             >
               Create Listing
