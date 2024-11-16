@@ -49,25 +49,54 @@ export default function MyListingsPage() {
 
   const loadVenues = async () => {
     try {
+      if (!user?.id) {
+        console.log("No user ID available");
+        return;
+      }
+
+      setIsLoading(true);
+      console.log("Fetching venues for user:", user.id);
+
       const { data, error } = await supabase
         .from("venues")
         .select(
           `
-          *,
-          venue_media (
-            file_path,
-            display_order
-          )
-        `
+        id,
+        user_id,
+        name,
+        address,
+        city,
+        state,
+        base_price,
+        description,
+        max_guests,
+        created_at,
+        venue_media (
+          id,
+          file_path,
+          display_order
         )
-        .eq("user_id", user?.id)
+      `
+        )
+        .eq("user_id", user.id)
         .order("created_at", { ascending: false });
 
-      if (error) throw error;
-      setVenues(data || []);
-    } catch (error) {
+      if (error) {
+        console.error("Supabase error:", error);
+        throw error;
+      }
+
+      console.log("Fetched venues:", data);
+
+      const processedVenues = (data || []).map((venue) => ({
+        ...venue,
+        venue_media: Array.isArray(venue.venue_media) ? venue.venue_media : [],
+      }));
+
+      setVenues(processedVenues);
+    } catch (error: any) {
       console.error("Error loading venues:", error);
-      toast.error("Failed to load venues");
+      toast.error(error.message || "Failed to load venues");
     } finally {
       setIsLoading(false);
     }
@@ -75,20 +104,53 @@ export default function MyListingsPage() {
 
   const handleDelete = async (venueId: string) => {
     try {
-      const { error } = await supabase
+      if (!user?.id) {
+        toast.error("You must be logged in to delete a venue");
+        return;
+      }
+
+      // Find the venue to delete
+      const venueToDelete = venues.find((venue) => venue.id === venueId);
+      if (!venueToDelete) {
+        throw new Error("Venue not found");
+      }
+
+      // Delete from storage first
+      if (venueToDelete.venue_media?.length > 0) {
+        const filePaths = venueToDelete.venue_media.map(
+          (media) => media.file_path
+        );
+
+        const { error: storageError } = await supabase.storage
+          .from("venue-media")
+          .remove(filePaths);
+
+        if (storageError) {
+          console.error("Storage deletion error:", storageError);
+          throw storageError;
+        }
+      }
+
+      // Delete the venue (venue_media will be deleted via CASCADE)
+      const { error: deleteError } = await supabase
         .from("venues")
         .delete()
-        .eq("id", venueId);
+        .eq("id", venueId)
+        .eq("user_id", user.id); // Additional security check
 
-      if (error) throw error;
+      if (deleteError) {
+        throw deleteError;
+      }
 
+      // Update local state
       setVenues(venues.filter((venue) => venue.id !== venueId));
       toast.success("Venue deleted successfully");
-    } catch (error) {
-      console.error("Error deleting venue:", error);
-      toast.error("Failed to delete venue");
+    } catch (error: any) {
+      console.error("Delete error:", error);
+      toast.error(error.message || "Failed to delete venue");
+    } finally {
+      setVenueToDelete(null);
     }
-    setVenueToDelete(null);
   };
 
   return (

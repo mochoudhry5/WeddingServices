@@ -86,24 +86,31 @@ export default function VenuesSearchPage() {
     try {
       setIsLoading(true);
 
-      let query = supabase.from("venues").select(`
-          *,
-          venue_media (
-            file_path,
-            display_order
-          )
-        `);
+      // Start with a base query
+      let query = supabase
+        .from("venues")
+        .select(
+          `
+        *,
+        venue_media (
+          id,
+          file_path,
+          display_order
+        )
+      `
+        )
+        .order("created_at", { ascending: false });
 
       if (withFilters) {
+        // Apply search filter
         if (filters.searchQuery.trim()) {
+          const searchTerm = filters.searchQuery.trim();
           query = query.or(
-            `name.ilike.%${filters.searchQuery}%,` +
-              `city.ilike.%${filters.searchQuery}%,` +
-              `state.ilike.%${filters.searchQuery}%,` +
-              `address.ilike.%${filters.searchQuery}%`
+            `name.ilike.%${searchTerm}%,city.ilike.%${searchTerm}%,state.ilike.%${searchTerm}%,address.ilike.%${searchTerm}%`
           );
         }
 
+        // Apply price range
         if (filters.priceRange[0] > 0) {
           query = query.gte("base_price", filters.priceRange[0]);
         }
@@ -111,6 +118,7 @@ export default function VenuesSearchPage() {
           query = query.lte("base_price", filters.priceRange[1]);
         }
 
+        // Apply capacity filter
         switch (filters.capacity) {
           case "0-100":
             query = query.lte("max_guests", 100);
@@ -126,6 +134,7 @@ export default function VenuesSearchPage() {
             break;
         }
 
+        // Apply sorting
         switch (filters.sortOption) {
           case "price_asc":
             query = query.order("base_price", { ascending: true });
@@ -138,20 +147,25 @@ export default function VenuesSearchPage() {
         }
       }
 
-      const { data: venuesData, error } = await query;
+      console.log("Executing query...");
+      const { data, error } = await query;
 
-      if (error) throw error;
+      if (error) {
+        console.error("Supabase Error:", error);
+        throw error;
+      }
 
-      const processedVenues =
-        venuesData?.map((venue) => ({
-          ...venue,
-          rating: 4.5 + Math.random() * 0.5,
-          venue_media: venue.venue_media || [],
-        })) || [];
+      console.log("Raw data:", data);
+
+      const processedVenues = (data || []).map((venue) => ({
+        ...venue,
+        rating: 4.5 + Math.random() * 0.5,
+        venue_media: venue.venue_media || [],
+      }));
 
       setVenues(processedVenues);
       setIsFiltered(withFilters);
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error fetching venues:", error);
       toast.error("Failed to load venues. Please try again.");
     } finally {

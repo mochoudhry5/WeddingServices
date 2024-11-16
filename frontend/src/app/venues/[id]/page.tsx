@@ -11,6 +11,7 @@ import MediaCarousel from "@/components/ui/MainMediaCarousel";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/context/AuthContext";
+import LikeButton from "@/components/ui/LikeButton";
 
 interface VenueDetails {
   id: string;
@@ -336,6 +337,13 @@ export default function VenueDetailsPage() {
           <div>
             <h1 className="text-2xl md:text-3xl font-bold text-gray-900 mb-2">
               {venue.name}
+              {user?.id !== venue.user_id ? (
+                <LikeButton
+                  venueId={venue.id}
+                  initialLiked={false}
+                  className="ml-4"
+                />
+              ) : null}
             </h1>
             <p className="text-gray-600">
               {venue.address}, {venue.city}, {venue.state}

@@ -245,6 +245,7 @@ export default function MediaCarousel({
                 (e.target as HTMLImageElement).src = "/api/placeholder/400/300";
               }}
             />
+
             {/* Fullscreen Button for Image */}
             {showControls && (
               <button
@@ -278,6 +279,15 @@ export default function MediaCarousel({
           <ChevronRight className="w-6 h-6" />
         </button>
       </div>
+
+      {userLoggedIn !== venueCreator ? (
+        <LikeButton
+          venueId={venueId}
+          initialLiked={initialLiked}
+          onUnlike={onUnlike}
+          className="absolute top-1 left-1"
+        />
+      ) : null}
     </div>
   );
 }

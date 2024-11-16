@@ -17,7 +17,7 @@ interface LikeButtonProps {
 export default function LikeButton({
   venueId,
   initialLiked = false,
-  onUnlike, // Add this
+  onUnlike,
   className = "",
 }: LikeButtonProps) {
   const { user } = useAuth();
@@ -69,10 +69,9 @@ export default function LikeButton({
           .delete()
           .eq("user_id", user.id)
           .eq("venue_id", venueId);
-
+        onUnlike?.();
         if (error) throw error;
         toast.success("Removed from liked venues");
-        onUnlike?.(); // Call onUnlike callback if provided
       } else {
         // Like
         const { error } = await supabase.from("liked_venues").insert({
@@ -97,10 +96,10 @@ export default function LikeButton({
     <button
       onClick={toggleLike}
       disabled={isLoading}
-      className={`group relative p-2 rounded-full bg-white shadow-lg hover:scale-110 transition-all duration-200 ${className}`}
+      className={`rounded-full p-1 bg-white shadow-lg hover:bg-slate-300 transition-all duration-200 ${className}`}
     >
       <Heart
-        className={`w-4 h-4 transition-colors duration-200 ${
+        className={`w-5 h-5 transition-colors duration-200 hover:fill-rose-400 ${
           isLiked
             ? "fill-rose-600 text-rose-600"
             : "fill-transparent text-gray-600 group-hover:text-rose-600"

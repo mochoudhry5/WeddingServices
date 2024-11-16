@@ -64,51 +64,80 @@ export default function LikedServicesPage() {
 
   const loadLikedVenues = async () => {
     try {
+      if (!user?.id) {
+        console.log("No user ID available");
+        setIsLoading(false);
+        return;
+      }
+
+      setIsLoading(true);
+      console.log("Fetching liked venues for user:", user.id);
+
       const { data, error } = await supabase
         .from("liked_venues")
         .select(
           `
-          venue_id,
-          liked_at,
-          venues (
+        venue_id,
+        liked_at,
+        venues:venues (
+          id,
+          user_id,
+          name,
+          address,
+          city,
+          state,
+          base_price,
+          description,
+          max_guests,
+          venue_media (
             id,
-            user_id,
-            name,
-            address,
-            city,
-            state,
-            base_price,
-            description,
-            max_guests,
-            venue_media (
-              file_path,
-              display_order
-            )
+            file_path,
+            display_order
           )
-        `
         )
-        .eq("user_id", user?.id)
+      `
+        )
+        .eq("user_id", user.id)
         .order("liked_at", { ascending: false });
 
-      if (error) throw error;
+      if (error) {
+        console.error("Supabase error:", error);
+        throw error;
+      }
 
-      // Transform the data with proper typing
+      console.log("Raw data received:", data);
+
+      if (!data || data.length === 0) {
+        console.log("No liked venues found");
+        setLikedVenues([]);
+        return;
+      }
+
+      // Transform the data
       const transformedData: LikedVenue[] = (
         data as unknown as LikedVenueResponse[]
-      ).map((item) => ({
-        ...item.venues,
-        liked_at: item.liked_at,
-      }));
+      )
+        .filter((item) => item.venues) // Filter out any null venues
+        .map((item) => ({
+          ...item.venues,
+          liked_at: item.liked_at,
+          venue_media: item.venues.venue_media || [],
+        }));
 
+      console.log("Transformed data:", transformedData);
       setLikedVenues(transformedData);
-    } catch (error) {
-      console.error("Error loading liked venues:", error);
-      toast.error("Failed to load liked venues");
+    } catch (error: any) {
+      console.error("Error loading liked venues:", {
+        message: error.message,
+        details: error.details,
+        hint: error.hint,
+        code: error.code,
+      });
+      toast.error(error.message || "Failed to load liked venues");
     } finally {
       setIsLoading(false);
     }
   };
-
   return (
     <div className="min-h-screen bg-slate-50">
       <NavBar />
