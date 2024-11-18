@@ -1,8 +1,6 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { Heart, Link, Search, SlidersHorizontal } from "lucide-react";
-import { Input } from "@/components/ui/input";
 import {
   Select,
   SelectContent,
@@ -10,6 +8,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import MediaCarousel from "@/components/ui/MediaCarousel";
+import NavBar from "@/components/ui/NavBar";
+import Footer from "@/components/ui/Footer";
+import { supabase } from "@/lib/supabase";
+import { toast } from "sonner";
+import { useAuth } from "@/context/AuthContext";
+import LocationInput from "@/components/ui/LocationInput";
 import {
   Sheet,
   SheetContent,
@@ -19,12 +24,19 @@ import {
   SheetTrigger,
 } from "@/components/ui/sheet";
 import { Slider } from "@/components/ui/slider";
-import MediaCarousel from "@/components/ui/MediaCarousel";
-import NavBar from "@/components/ui/NavBar";
-import Footer from "@/components/ui/Footer";
-import { supabase } from "@/lib/supabase";
-import { toast } from "sonner";
-import { useAuth } from "@/context/AuthContext";
+import { SlidersHorizontal } from "lucide-react";
+
+const isValidServiceType = (value: string): value is ServiceType => {
+  return ["venue", "makeup", "photography"].includes(value);
+};
+
+const isValidCapacity = (value: string): value is CapacityOption => {
+  return ["all", "0-100", "101-200", "201-300", "301+"].includes(value);
+};
+
+const isValidSortOption = (value: string): value is SortOption => {
+  return ["default", "price_asc", "price_desc"].includes(value);
+};
 
 type ServiceType = "venue" | "makeup" | "photography";
 type SortOption = "price_asc" | "price_desc" | "default";
@@ -52,8 +64,15 @@ interface VenueWithDetails {
   created_at: string;
 }
 
+interface LocationProps {
+  enteredLocation: string;
+  city: string;
+  state: string;
+  country: string;
+}
+
 interface FilterState {
-  searchQuery: string;
+  searchQuery: LocationProps;
   priceRange: number[];
   capacity: CapacityOption;
   sortOption: SortOption;
@@ -70,19 +89,39 @@ export default function VenuesSearchPage() {
 
   // Filter state
   const [filters, setFilters] = useState<FilterState>({
-    searchQuery: "",
+    searchQuery: { enteredLocation: "", city: "", state: "", country: "" },
     priceRange: [0, 10000],
     capacity: "all",
     sortOption: "default",
     serviceType: "venue",
   });
 
-  // Initial load
+  // Get URL parameters on initial load
   useEffect(() => {
-    fetchVenues();
+    const params = new URLSearchParams(window.location.search);
+    const serviceParam = params.get("service");
+    const enteredLocation = (params.get("enteredLocation") || "").trim();
+    const city = (params.get("city") || "").trim();
+    const state = (params.get("state") || "").trim();
+    const country = (params.get("country") || "").trim();
+
+    if (serviceParam || enteredLocation) {
+      const updatedFilters = {
+        ...filters,
+        serviceType: isValidServiceType(serviceParam || "")
+          ? (serviceParam as ServiceType)
+          : "venue",
+        searchQuery: { enteredLocation, city, state, country },
+      };
+
+      setFilters(updatedFilters);
+      fetchVenues(true, updatedFilters);
+    } else {
+      fetchVenues();
+    }
   }, []);
 
-  const fetchVenues = async (withFilters = false) => {
+  const fetchVenues = async (withFilters = false, filterToUse = filters) => {
     try {
       setIsLoading(true);
 
@@ -103,23 +142,25 @@ export default function VenuesSearchPage() {
 
       if (withFilters) {
         // Apply search filter
-        if (filters.searchQuery.trim()) {
-          const searchTerm = filters.searchQuery.trim();
-          query = query.or(
-            `name.ilike.%${searchTerm}%,city.ilike.%${searchTerm}%,state.ilike.%${searchTerm}%,address.ilike.%${searchTerm}%`
-          );
-        }
+        const { enteredLocation, city, state, country } =
+          filterToUse.searchQuery;
+        console.log(enteredLocation);
+        console.log(city);
+        console.log(state);
+        query = query.or(
+          `name.ilike.%${city}%,city.ilike.%${city}%,state.ilike.%${state}%,address.ilike.%${city}%`
+        );
 
         // Apply price range
-        if (filters.priceRange[0] > 0) {
+        if (filterToUse.priceRange[0] > 0) {
           query = query.gte("base_price", filters.priceRange[0]);
         }
-        if (filters.priceRange[1] < 10000) {
+        if (filterToUse.priceRange[1] < 10000) {
           query = query.lte("base_price", filters.priceRange[1]);
         }
 
         // Apply capacity filter
-        switch (filters.capacity) {
+        switch (filterToUse.capacity) {
           case "0-100":
             query = query.lte("max_guests", 100);
             break;
@@ -135,7 +176,7 @@ export default function VenuesSearchPage() {
         }
 
         // Apply sorting
-        switch (filters.sortOption) {
+        switch (filterToUse.sortOption) {
           case "price_asc":
             query = query.order("base_price", { ascending: true });
             break;
@@ -147,7 +188,6 @@ export default function VenuesSearchPage() {
         }
       }
 
-      console.log("Executing query...");
       const { data, error } = await query;
 
       if (error) {
@@ -173,24 +213,74 @@ export default function VenuesSearchPage() {
     }
   };
 
+  // Update URL when filters change
+  const updateURL = (newFilters: FilterState) => {
+    const params = new URLSearchParams();
+
+    params.set("service", newFilters.serviceType);
+
+    if (newFilters.searchQuery) {
+      params.set("enteredLocation", newFilters.searchQuery.enteredLocation);
+      params.set("city", newFilters.searchQuery.city);
+      params.set("state", newFilters.searchQuery.state);
+      params.set("country", newFilters.searchQuery.country);
+    }
+
+    // Update URL without reloading the page
+    window.history.pushState(
+      {},
+      "",
+      `${window.location.pathname}?${params.toString()}`
+    );
+  };
+
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
+
+    // Check if search is empty
+    if (!filters.searchQuery.enteredLocation.trim()) {
+      // Reset location-related search params
+      const newFilters = {
+        ...filters,
+        searchQuery: {
+          enteredLocation: "",
+          city: "",
+          state: "",
+          country: "",
+        },
+      };
+      setFilters(newFilters);
+      updateURL(newFilters);
+      fetchVenues(false); // Use false to get all venues
+      return;
+    }
+
+    // If there is a search query, proceed normally
+    updateURL(filters);
     fetchVenues(true);
   };
 
   const handleApplyFilters = () => {
+    updateURL(filters);
     fetchVenues(true);
     setIsSheetOpen(false);
   };
 
   const clearFilters = () => {
-    setFilters({
-      searchQuery: "",
+    const newFilters: FilterState = {
+      searchQuery: {
+        enteredLocation: "",
+        city: "",
+        state: "",
+        country: "",
+      },
       priceRange: [0, 10000],
       capacity: "all",
       sortOption: "default",
       serviceType: "venue",
-    });
+    };
+    setFilters(newFilters);
+    updateURL(newFilters);
     setIsSheetOpen(false);
     fetchVenues(false);
   };
@@ -199,7 +289,6 @@ export default function VenuesSearchPage() {
     <div className="min-h-screen bg-slate-50">
       <NavBar />
 
-      {/* Search Section */}
       <div className="sticky top-0 z-10 bg-white border-b border-gray-200 shadow-sm">
         <div className="max-w-7xl mx-auto px-4 py-4">
           <form onSubmit={handleSearch}>
@@ -207,9 +296,9 @@ export default function VenuesSearchPage() {
               <div className="w-full sm:w-32">
                 <Select
                   value={filters.serviceType}
-                  onValueChange={(value: ServiceType) =>
-                    setFilters((prev) => ({ ...prev, serviceType: value }))
-                  }
+                  onValueChange={(value: ServiceType) => {
+                    setFilters((prev) => ({ ...prev, serviceType: value }));
+                  }}
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="Service Type" />
@@ -222,24 +311,51 @@ export default function VenuesSearchPage() {
                 </Select>
               </div>
 
-              <div className="relative flex-1">
-                <Search
-                  className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400"
-                  size={20}
-                />
-                <Input
-                  type="text"
-                  placeholder="Search by location or venue name"
-                  value={filters.searchQuery}
-                  onChange={(e) =>
-                    setFilters((prev) => ({
-                      ...prev,
-                      searchQuery: e.target.value,
-                    }))
-                  }
-                  className="w-full pl-10"
-                />
-              </div>
+              <LocationInput
+                value={filters.searchQuery.enteredLocation}
+                onChange={(value) =>
+                  setFilters((prev) => ({
+                    ...prev,
+                    searchQuery: {
+                      ...prev.searchQuery,
+                      enteredLocation: value,
+                    },
+                  }))
+                }
+                onPlaceSelect={(place) => {
+                  // Extract city and state from place details
+                  let city = "";
+                  let state = "";
+                  let country = "";
+
+                  place.address_components?.forEach((component) => {
+                    if (component.types.includes("locality")) {
+                      city = component.long_name;
+                    }
+                    if (
+                      component.types.includes("administrative_area_level_1")
+                    ) {
+                      state = component.long_name;
+                    }
+                    if (component.types.includes("country")) {
+                      country = component.long_name;
+                    }
+                  });
+
+                  // Update all location details at once
+                  setFilters((prev) => ({
+                    ...prev,
+                    searchQuery: {
+                      enteredLocation: place.formatted_address || "",
+                      city,
+                      state,
+                      country,
+                    },
+                  }));
+                }}
+                placeholder="Search by location"
+                className="w-full pl-10"
+              />
 
               <div className="flex gap-2 sm:w-[168px]">
                 <button
@@ -303,11 +419,13 @@ export default function VenuesSearchPage() {
                         </h3>
                         <Select
                           value={filters.capacity}
-                          onValueChange={(value: CapacityOption) => {
-                            setFilters((prev) => ({
-                              ...prev,
-                              capacity: value,
-                            }));
+                          onValueChange={(value: string) => {
+                            if (isValidCapacity(value)) {
+                              setFilters((prev) => ({
+                                ...prev,
+                                capacity: value,
+                              }));
+                            }
                           }}
                         >
                           <SelectTrigger>
@@ -334,11 +452,13 @@ export default function VenuesSearchPage() {
                         <h3 className="text-sm font-medium mb-4">Sort By</h3>
                         <Select
                           value={filters.sortOption}
-                          onValueChange={(value: SortOption) => {
-                            setFilters((prev) => ({
-                              ...prev,
-                              sortOption: value,
-                            }));
+                          onValueChange={(value: string) => {
+                            if (isValidSortOption(value)) {
+                              setFilters((prev) => ({
+                                ...prev,
+                                sortOption: value,
+                              }));
+                            }
                           }}
                         >
                           <SelectTrigger>

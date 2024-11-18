@@ -1,7 +1,6 @@
 "use client";
 
 import React, { useState } from "react";
-import { Search } from "lucide-react";
 import {
   Select,
   SelectContent,
@@ -9,39 +8,108 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Input } from "@/components/ui/input";
 import NavBar from "@/components/ui/NavBar";
 import Footer from "@/components/ui/Footer";
+import LocationInput from "@/components/ui/LocationInput";
 
 type ServiceType = "venue" | "makeup" | "photography";
 
+interface GooglePlace {
+  formatted_address?: string;
+  address_components?: Array<{
+    long_name: string;
+    short_name: string;
+    types: string[];
+  }>;
+  geometry?: {
+    location: {
+      lat: () => number;
+      lng: () => number;
+    };
+    viewport?: {
+      northeast: {
+        lat: number;
+        lng: number;
+      };
+      southwest: {
+        lat: number;
+        lng: number;
+      };
+    };
+  };
+  name?: string; // Name of the place, e.g., "Central Park"
+  place_id?: string; // Unique identifier for the place
+  types?: string[]; // Array of place types, e.g., ["locality", "political"]
+  url?: string; // Google Maps URL for the place
+  vicinity?: string; // General location description, e.g., "New York, NY"
+  plus_code?: {
+    compound_code: string; // Localized code, e.g., "CWC8+W5"
+    global_code: string; // Global code, e.g., "849VCWC8+W5"
+  };
+  utc_offset_minutes?: number; // Timezone offset in minutes
+  photos?: Array<{
+    height: number;
+    width: number;
+    html_attributions: string[];
+    photo_reference: string; // Reference to fetch the photo from the API
+  }>;
+  icon?: string; // URL to the place's icon
+  icon_background_color?: string; // Background color for the icon
+  icon_mask_base_uri?: string; // Mask URI for custom styling of the icon
+}
+
 export default function HomePage() {
   const [serviceType, setServiceType] = useState<ServiceType>("venue");
-  const [locationQuery, setLocationQuery] = useState("");
+  const [countryQuery, setCountryQuery] = useState("");
+  const [stateQuery, setStateQuery] = useState("");
+  const [cityQuery, setCityQuery] = useState("");
+  const [fullQuery, setFullQuery] = useState("");
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
     const params = new URLSearchParams({
       service: serviceType,
-      location: locationQuery,
+      city: cityQuery,
+      state: stateQuery,
+      country: countryQuery,
+      enteredLocation: fullQuery,
     });
     window.location.href = `/search?${params.toString()}`;
   };
 
+  const handlePlaceSelect = (place: GooglePlace) => {
+    const { city, state, country } = extractLocationDetails(place);
+    setCityQuery(city || "");
+    setStateQuery(state || "");
+    setCountryQuery(country || "");
+  };
+
+  const extractLocationDetails = (place: GooglePlace) => {
+    const city = place.address_components?.find((component) =>
+      component.types.includes("locality")
+    )?.long_name;
+
+    const state = place.address_components?.find((component) =>
+      component.types.includes("administrative_area_level_1")
+    )?.long_name;
+
+    const country = place.address_components?.find((component) =>
+      component.types.includes("country")
+    )?.long_name;
+
+    return { city, state, country };
+  };
+
   return (
     <div className="min-h-screen">
-      {/* Navigation */}
       <NavBar />
 
-      {/* Hero Section */}
       <div className="relative min-h-[95vh]">
-        {/* Background Image with Gradient Overlay */}
         <div className="absolute inset-0">
           <div className="absolute inset-0 bg-[url('/api/placeholder/1920/1080')] bg-cover bg-center" />
           <div className="absolute inset-0 bg-gradient-to-b from-rose-100 via-rose-100 to-rose-100" />
         </div>
 
-        {/* Hero Content */}
         <div className="relative pt-32 pb-20 px-4 flex flex-col items-center justify-center text-center">
           <h2 className="text-4xl md:text-6xl font-bold text-black mb-6 max-w-4xl">
             Find your perfect wedding venue & services
@@ -51,7 +119,6 @@ export default function HomePage() {
             professional photographers for your special day
           </p>
 
-          {/* Search Form */}
           <form
             onSubmit={handleSearch}
             className="w-full max-w-3xl bg-white p-4 rounded-2xl shadow-lg"
@@ -73,15 +140,11 @@ export default function HomePage() {
 
               <div className="relative flex-1">
                 <div className="absolute left-0 top-0 bottom-0 w-px bg-gray-200 hidden md:block" />
-                <Search
-                  className="absolute left-6 top-1/2 transform -translate-y-1/2 text-gray-400"
-                  size={20}
-                />
-                <Input
-                  type="text"
+                <LocationInput
+                  value={fullQuery}
+                  onChange={setFullQuery}
+                  onPlaceSelect={handlePlaceSelect}
                   placeholder="Search by location"
-                  value={locationQuery}
-                  onChange={(e) => setLocationQuery(e.target.value)}
                   className="border-0 pl-12 focus-visible:ring-0"
                 />
               </div>
@@ -97,46 +160,6 @@ export default function HomePage() {
         </div>
       </div>
 
-      {/* Why Choose Us
-      <div className="bg-white py-20 px-4">
-        <div className="max-w-7xl mx-auto">
-          <h3 className="text-2xl font-bold text-center mb-12">
-            Why Choose Dream Venues
-          </h3>
-          <div className="grid md:grid-cols-3 gap-8">
-            {[
-              {
-                title: "Verified Vendors",
-                description:
-                  "Every service provider is personally verified for quality and reliability",
-                icon: "✓",
-              },
-              {
-                title: "Best Prices",
-                description:
-                  "Find competitive prices and exclusive deals for your perfect wedding day",
-                icon: "💎",
-              },
-              {
-                title: "Easy Booking",
-                description:
-                  "Simple, secure booking process with dedicated support throughout",
-                icon: "🎯",
-              },
-            ].map((feature, index) => (
-              <div key={index} className="text-center">
-                <div className="w-16 h-16 bg-rose-100 rounded-full flex items-center justify-center mx-auto mb-4 text-2xl">
-                  {feature.icon}
-                </div>
-                <h4 className="text-xl font-semibold mb-2">{feature.title}</h4>
-                <p className="text-gray-600">{feature.description}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </div> */}
-
-      {/* Footer */}
       <Footer />
     </div>
   );

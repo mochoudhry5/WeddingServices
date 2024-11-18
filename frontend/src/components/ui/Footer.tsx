@@ -21,8 +21,8 @@ export default function Footer() {
 
   return (
     <footer className="bg-white border-t border-gray-300">
-      <div className="max-w-7xl mx-auto px-4 py-12 sm:px-6 lg:py-16">
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
+      <div className="max-w-7xl mt-1 mx-auto px-4 py-2 sm:px-6 lg:py-7">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-1">
           {Object.entries(footerLinks).map(([category, links]) => (
             <div key={category}>
               <h3 className="text-sm font-semibold text-gray-900 tracking-wider uppercase">
@@ -44,7 +44,7 @@ export default function Footer() {
           ))}
         </div>
 
-        <div className="bg-white mt-12 pt-8">
+        <div className="bg-white mt-2 pt-8">
           <div className="flex flex-col md:flex-col justify-between items-center">
             <p className="text-base text-gray-400 pb-2">
               © {new Date().getFullYear()} Vowzie. All rights reserved.
