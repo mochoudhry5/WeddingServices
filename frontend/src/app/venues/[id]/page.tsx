@@ -424,8 +424,7 @@ export default function VenueDetailsPage() {
                       ${addon.price.toLocaleString()}
                       {addon.pricing_type === "per-guest" && (
                         <span className="text-sm text-gray-500">
-                          /{addon.guest_increment || 1} guest
-                          {(addon.guest_increment || 1) > 1 ? "s" : ""}
+                          {(addon.guest_increment == 1) ? " per guest" : ` per ${addon.guest_increment} guests`}
                         </span>
                       )}
                     </p>
