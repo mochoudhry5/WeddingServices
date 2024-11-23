@@ -23,7 +23,9 @@ interface VenueDetails {
   min_guests: number | null;
   max_guests: number;
   description: string;
-  user_id: string; // Add this
+  user_id: string;
+  hall_names: string[]; // Add this for hall names
+  number_of_halls: number; // Add this for number of halls
   venue_media: VenueMedia[];
   venue_inclusions: VenueInclusion[];
   venue_addons: VenueAddon[];
@@ -367,8 +369,9 @@ export default function VenueDetailsPage() {
           <p className="text-gray-600 mb-6 leading-relaxed">
             {venue.description}
           </p>
-          <div className="grid md:grid-cols-2 gap-8">
-            <div>
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-12">
+            {/* Capacity */}
+            <div className="flex flex-col items-center text-center border-r border-gray-200 last:border-r-0">
               <h3 className="text-lg font-semibold mb-3">Capacity</h3>
               <ul className="space-y-2 text-gray-600">
                 <li className="flex items-center gap-2">
@@ -378,6 +381,64 @@ export default function VenueDetailsPage() {
                 <li className="flex items-center gap-2">
                   <span className="text-rose-500">•</span>
                   Maximum guests: {venue.max_guests}
+                </li>
+              </ul>
+            </div>
+
+            {/* Catering Options */}
+            <div className="flex flex-col items-center text-center border-r border-gray-200 last:border-r-0">
+              <h3 className="text-lg font-semibold mb-3">Catering Options</h3>
+              <div className="text-gray-600 flex items-center gap-2">
+                <span className="text-rose-500">•</span>
+                Outside & In-House Available
+              </div>
+            </div>
+
+            {/* Number of Halls */}
+            <div className="flex flex-col items-center text-center border-r border-gray-200 last:border-r-0">
+              <h3 className="text-lg font-semibold mb-3">Number of Halls</h3>
+              <ul className="space-y-2 text-gray-600">
+                {venue.hall_names && venue.hall_names.length > 0 ? (
+                  venue.hall_names.map((hall, index) => (
+                    <li key={index} className="flex items-center gap-2">
+                      <span className="text-rose-500">•</span>
+                      {hall}
+                    </li>
+                  ))
+                ) : (
+                  <li className="flex items-center gap-2">
+                    <span className="text-rose-500">•</span>
+                    Single Hall Venue
+                  </li>
+                )}
+              </ul>
+            </div>
+
+            {/* Socials */}
+            <div className="flex flex-col items-center text-center last:border-r-0">
+              <h3 className="text-lg font-semibold mb-3">Socials</h3>
+              <ul className="space-y-2 text-gray-600">
+                <li className="flex items-center gap-2">
+                  <span className="text-rose-500">•</span>
+                  <a 
+                    href="https://www.sendlybox.com" 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="text-rose-600 hover:text-rose-700 hover:underline"
+                  >
+                    Website
+                  </a>
+                </li>
+                <li className="flex items-center gap-2">
+                  <span className="text-rose-500">•</span>
+                  <a 
+                    href="https://www.instagram.com/Townandcountryeventcenter" 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="text-rose-600 hover:text-rose-700 hover:underline"
+                  >
+                    Instagram
+                  </a>
                 </li>
               </ul>
             </div>
@@ -391,17 +452,19 @@ export default function VenueDetailsPage() {
               What's Included
             </h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-              {venue.venue_inclusions.map((inclusion, index) => (
-                <div
-                  key={index}
-                  className="p-4 rounded-lg border border-rose-200 bg-rose-50"
-                >
-                  <div className="flex items-center gap-2">
-                    <span className="text-rose-600">✓</span>
-                    <span className="text-gray-900">{inclusion.name}</span>
+              {[...venue.venue_inclusions]
+                .sort((a, b) => a.name.localeCompare(b.name))
+                .map((inclusion, index) => (
+                  <div
+                    key={index}
+                    className="p-4 rounded-lg border border-rose-200 bg-rose-50"
+                  >
+                    <div className="flex items-center gap-2">
+                      <span className="text-rose-600">✓</span>
+                      <span className="text-gray-900">{inclusion.name}</span>
+                    </div>
                   </div>
-                </div>
-              ))}
+                ))}
             </div>
           </div>
         )}
@@ -424,7 +487,9 @@ export default function VenueDetailsPage() {
                       ${addon.price.toLocaleString()}
                       {addon.pricing_type === "per-guest" && (
                         <span className="text-sm text-gray-500">
-                          {(addon.guest_increment == 1) ? " per guest" : ` per ${addon.guest_increment} guests`}
+                          {addon.guest_increment == 1
+                            ? " per guest"
+                            : ` per ${addon.guest_increment} guests`}
                         </span>
                       )}
                     </p>

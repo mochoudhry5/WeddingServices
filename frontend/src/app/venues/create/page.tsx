@@ -69,7 +69,12 @@ interface VenueFormData {
   address: string;
   city: string;
   state: string;
-  basePrice: number;
+  numberOfHalls: string;
+  hallNames: string[];
+  priceRange: {
+    min: number;
+    max: number;
+  };
   minGuests: number | null;
   maxGuests: number;
   description: string;
@@ -84,6 +89,8 @@ interface VenueFormData {
     guestIncrement?: number;
     isCustom: boolean;
   }[];
+  websiteUrl?: string;
+  instagramUrl?: string;
 }
 
 // Constants
@@ -176,7 +183,7 @@ const commonAddOns = [
   },
 ];
 
-// Component for add-on pricing inputs
+// Pricing Input Component
 const PricingInput = ({
   addon,
   value,
@@ -267,10 +274,18 @@ export default function CreateVenueListing() {
   const [address, setAddress] = useState("");
   const [city, setCity] = useState("");
   const [state, setState] = useState("");
-  const [basePrice, setBasePrice] = useState("");
+  const [numberOfHalls, setNumberOfHalls] = useState("");
+  const [hallNames, setHallNames] = useState<string[]>([""]);
+  const [priceRange, setPriceRange] = useState({
+    min: "",
+    max: "",
+  });
   const [minGuests, setMinGuests] = useState("");
   const [maxGuests, setMaxGuests] = useState("");
   const [description, setDescription] = useState("");
+  const [catering, setCatering] = useState("");
+  const [websiteUrl, setWebsiteUrl] = useState("");
+  const [instagramUrl, setInstagramUrl] = useState("");
 
   // Media State
   const [mediaFiles, setMediaFiles] = useState<MediaFile[]>([]);
@@ -334,7 +349,51 @@ export default function CreateVenueListing() {
   const validateCurrentStep = () => {
     switch (currentStep) {
       case 1:
-        return venueName && address && city && state && basePrice && maxGuests;
+        const hallNamesValid =
+          numberOfHalls === "1"
+            ? true
+            : hallNames.every((name) => name.trim()) &&
+              new Set(hallNames.map((name) => name.trim())).size ===
+                hallNames.length;
+
+        if (numberOfHalls !== "1" && !hallNamesValid) {
+          toast.error("Each hall must have a unique name");
+          return false;
+        }
+
+        // URL validation
+        const urlValidation = (url: string) => {
+          if (!url) return true; // Optional fields
+          try {
+            new URL(url);
+            return true;
+          } catch {
+            return false;
+          }
+        };
+
+        if (websiteUrl && !urlValidation(websiteUrl)) {
+          toast.error("Please enter a valid website URL");
+          return false;
+        }
+
+        if (instagramUrl && !urlValidation(instagramUrl)) {
+          toast.error("Please enter a valid Instagram URL");
+          return false;
+        }
+
+        return (
+          venueName &&
+          address &&
+          city &&
+          state &&
+          numberOfHalls &&
+          hallNamesValid &&
+          priceRange.min &&
+          priceRange.max &&
+          maxGuests &&
+          catering
+        );
       case 2:
         return mediaFiles.length >= 1; // Change to 10 in production
       default:
@@ -346,6 +405,8 @@ export default function CreateVenueListing() {
   const nextStep = () => {
     if (validateCurrentStep()) {
       setCurrentStep((prev) => Math.min(prev + 1, totalSteps));
+    } else {
+      toast.error("Please fill in all required fields");
     }
   };
 
@@ -360,15 +421,18 @@ export default function CreateVenueListing() {
   // Form Submission
   const handleSubmit = async () => {
     try {
-      // Validate required fields
       if (
         !venueName ||
         !address ||
         !city ||
         !state ||
-        !basePrice ||
+        !numberOfHalls ||
+        !hallNames.every((name) => name.trim()) ||
+        !priceRange.min ||
+        !priceRange.max ||
         !maxGuests ||
-        !description
+        !description ||
+        !catering
       ) {
         toast.error("Please fill in all required fields");
         return;
@@ -380,7 +444,6 @@ export default function CreateVenueListing() {
         return;
       }
 
-      // First, check if user is authenticated
       const {
         data: { user },
         error: authError,
@@ -390,22 +453,26 @@ export default function CreateVenueListing() {
         return;
       }
 
-      // Start loading state
       setIsSubmitting(true);
 
-      // 1. Create venue record
       const { data: venue, error: venueError } = await supabase
         .from("venues")
         .insert({
-          user_id: user.id, // Add the user_id
+          user_id: user.id,
           name: venueName,
           address,
           city,
           state,
-          base_price: parseInt(basePrice),
+          number_of_halls: parseInt(numberOfHalls),
+          hall_names: numberOfHalls === "1" ? [] : hallNames,
+          price_range_min: parseInt(priceRange.min),
+          price_range_max: parseInt(priceRange.max),
           min_guests: minGuests ? parseInt(minGuests) : null,
           max_guests: parseInt(maxGuests),
           description,
+          catering_option: catering,
+          website_url: websiteUrl || null,
+          instagram_url: instagramUrl || null,
         })
         .select()
         .single();
@@ -419,9 +486,7 @@ export default function CreateVenueListing() {
         throw new Error("Venue created but no data returned");
       }
 
-      console.log("Venue created successfully:", venue);
-
-      // 2. Upload media files to Supabase Storage
+      // Upload media files
       const mediaPromises = mediaFiles.map(async (file, index) => {
         const fileExt = file.file.name.split(".").pop();
         const filePath = `venues/${venue.id}/${index}.${fileExt}`;
@@ -446,9 +511,7 @@ export default function CreateVenueListing() {
       });
 
       const mediaResults = await Promise.all(mediaPromises);
-      console.log("Media uploaded successfully:", mediaResults);
 
-      // 3. Insert media records
       const { error: mediaError } = await supabase
         .from("venue_media")
         .insert(mediaResults);
@@ -459,7 +522,7 @@ export default function CreateVenueListing() {
         );
       }
 
-      // 4. Insert inclusions
+      // Insert inclusions
       const allInclusions = [
         ...includedItems.map((item) => ({
           venue_id: venue.id,
@@ -488,9 +551,8 @@ export default function CreateVenueListing() {
         }
       }
 
-      // 5. Insert add-ons
+      // Insert add-ons
       const allAddons = [
-        // Common add-ons
         ...Object.entries(selectedAddOns).map(([name, details]) => ({
           venue_id: venue.id,
           name,
@@ -502,7 +564,6 @@ export default function CreateVenueListing() {
           guest_increment: details.guestIncrement,
           is_custom: false,
         })),
-        // Custom add-ons
         ...customAddOns
           .filter((addon) => addon.name.trim())
           .map((addon) => ({
@@ -527,7 +588,6 @@ export default function CreateVenueListing() {
         }
       }
 
-      // Success!
       toast.success("Venue listing created successfully!");
       router.push(`/venues/${venue.id}`);
     } catch (error) {
@@ -542,7 +602,6 @@ export default function CreateVenueListing() {
     }
   };
 
-  // Rest of your existing UI code...
   return (
     <div className="min-h-screen flex flex-col">
       <NavBar />
@@ -623,26 +682,106 @@ export default function CreateVenueListing() {
                   </div>
                 </div>
 
+                {/* Number of Halls Selection */}
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Base Price (per event)*
+                    Number of Halls*
                   </label>
-                  <div className="relative">
-                    <DollarSign
-                      className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
-                      size={20}
-                    />
-                    <Input
-                      type="number"
-                      value={basePrice}
-                      onChange={(e) => setBasePrice(e.target.value)}
-                      placeholder="5000"
-                      className="pl-10 w-full"
-                      required
-                    />
+                  <Select
+                    value={numberOfHalls}
+                    onValueChange={(value) => {
+                      setNumberOfHalls(value);
+                      if (value === "1") {
+                        setHallNames([]);
+                      } else {
+                        setHallNames(new Array(parseInt(value)).fill(""));
+                      }
+                    }}
+                  >
+                    <SelectTrigger className="w-full">
+                      <SelectValue placeholder="Select number of halls" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="1">1 Hall</SelectItem>
+                      <SelectItem value="2">2 Halls</SelectItem>
+                      <SelectItem value="3">3 Halls</SelectItem>
+                      <SelectItem value="4">4 Halls</SelectItem>
+                      <SelectItem value="5">5 Halls</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {/* Hall Names Input Fields */}
+                {numberOfHalls && numberOfHalls !== "1" && (
+                  <div className="space-y-4">
+                    <label className="block text-sm font-medium text-gray-700">
+                      Hall Names*
+                    </label>
+                    <div className="grid gap-4">
+                      {hallNames.map((name, index) => (
+                        <div key={index} className="flex gap-4 items-center">
+                          <div className="flex-1">
+                            <Input
+                              type="text"
+                              value={name}
+                              onChange={(e) => {
+                                const newHallNames = [...hallNames];
+                                newHallNames[index] = e.target.value;
+                                setHallNames(newHallNames);
+                              }}
+                              placeholder={`Hall ${index + 1} name`}
+                              className="w-full"
+                              required
+                            />
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Price Range */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Price Range (per event)*
+                  </label>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="relative">
+                      <DollarSign
+                        className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
+                        size={20}
+                      />
+                      <Input
+                        type="number"
+                        value={priceRange.min}
+                        onChange={(e) =>
+                          setPriceRange({ ...priceRange, min: e.target.value })
+                        }
+                        placeholder="Min"
+                        className="pl-10 w-full"
+                        required
+                      />
+                    </div>
+                    <div className="relative">
+                      <DollarSign
+                        className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
+                        size={20}
+                      />
+                      <Input
+                        type="number"
+                        value={priceRange.max}
+                        onChange={(e) =>
+                          setPriceRange({ ...priceRange, max: e.target.value })
+                        }
+                        placeholder="Max"
+                        className="pl-10 w-full"
+                        required
+                      />
+                    </div>
                   </div>
                 </div>
 
+                {/* Guests */}
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -667,6 +806,63 @@ export default function CreateVenueListing() {
                       placeholder="200"
                       className="w-full"
                       required
+                    />
+                  </div>
+                </div>
+
+                {/* Catering Options */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Catering Options*
+                  </label>
+                  <Select
+                    value={catering}
+                    onValueChange={(value) => setCatering(value)}
+                  >
+                    <SelectTrigger className="w-full">
+                      <SelectValue placeholder="Select catering options" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="in-house">
+                        In-House Catering Only
+                      </SelectItem>
+                      <SelectItem value="outside">
+                        Outside Catering Only
+                      </SelectItem>
+                      <SelectItem value="both">
+                        In-House/Outside Catering Available
+                      </SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {/* Website URL */}
+                <div className="grid grid-cols-2 gap-4">
+                  {/* Website URL */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Website URL
+                    </label>
+                    <Input
+                      type="url"
+                      value={websiteUrl}
+                      onChange={(e) => setWebsiteUrl(e.target.value)}
+                      placeholder="https://www.yourvenue.com"
+                      className="w-full"
+                    />
+                  </div>
+
+                  {/* Instagram URL */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Instagram URL
+                    </label>
+                    <Input
+                      type="url"
+                      value={instagramUrl}
+                      onChange={(e) => setInstagramUrl(e.target.value)}
+                      placeholder="https://www.instagram.com/yourvenue"
+                      className="w-full"
                     />
                   </div>
                 </div>
@@ -744,8 +940,7 @@ export default function CreateVenueListing() {
                           type="button"
                           onClick={() => setMediaFiles([])}
                           className="text-sm text-rose-600 hover:text-rose-700"
-                        >
-                          Remove all
+                        >Remove all
                         </button>
                       </div>
 
@@ -807,12 +1002,6 @@ export default function CreateVenueListing() {
                           </div>
                         ))}
                       </div>
-
-                      {/* Helper Text */}
-                      <p className="text-xs text-gray-500 mt-2">
-                        * First image will be your main display image. Drag
-                        images to reorder.
-                      </p>
                     </div>
                   )}
                 </div>
