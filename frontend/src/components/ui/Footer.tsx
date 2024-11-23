@@ -16,7 +16,7 @@ export default function Footer() {
       { name: "Privacy Policy", href: "/footer/privacy" },
       { name: "Terms of Service", href: "/footer/terms" },
     ],
-    Services: [{ name: "List Your Service", href: "/services/create" }],
+    Services: [{ name: "List Your Service", href: "/services" }],
   };
 
   return (

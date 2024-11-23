@@ -4,6 +4,8 @@ import { useState } from "react";
 import { Building2, Camera, Paintbrush } from "lucide-react";
 import NavBar from "@/components/ui/NavBar";
 import Footer from "@/components/ui/Footer";
+import { toast } from "sonner";
+import { useAuth } from "@/context/AuthContext";
 
 type ServiceId = "venue" | "makeup" | "photography";
 
@@ -49,8 +51,14 @@ const services: Service[] = [
 
 export default function CreateServicePage() {
   const [selected, setSelected] = useState<ServiceId | null>(null);
+  const { user } = useAuth();
 
   const handleContinue = () => {
+    if (!user) {
+      toast.error("Please sign in to list your service");
+      return;
+    }
+
     const service = services.find((s) => s.id === selected);
     if (service?.available && service.path) {
       window.location.href = service.path;
