@@ -17,23 +17,15 @@ interface MediaItem {
 
 interface MediaCarouselProps {
   media: MediaItem[];
-  venueName: string;
-  venueId: string;
-  venueCreator: string;
-  userLoggedIn?: string;
-  initialLiked?: boolean;
-  onUnlike?: () => void;
+  name: string;
+  service: string;
   className?: string;
 }
 
 export default function MediaCarousel({
   media,
-  venueName,
-  venueId,
-  venueCreator,
-  userLoggedIn,
-  initialLiked = false,
-  onUnlike,
+  name,
+  service,
   className = "",
 }: MediaCarouselProps) {
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -42,8 +34,11 @@ export default function MediaCarousel({
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [progress, setProgress] = useState(0);
   const [imageLoaded, setImageLoaded] = useState(false);
-  const [imageDimensions, setImageDimensions] = useState({ width: 0, height: 0 });
-  
+  const [imageDimensions, setImageDimensions] = useState({
+    width: 0,
+    height: 0,
+  });
+
   const videoRef = useRef<HTMLVideoElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const previewVideoRefs = useRef<{ [key: number]: HTMLVideoElement }>({});
@@ -55,8 +50,9 @@ export default function MediaCarousel({
 
   const getMediaUrl = (mediaItem?: MediaItem) => {
     return mediaItem
-      ? supabase.storage.from("venue-media").getPublicUrl(mediaItem.file_path)
-          .data.publicUrl
+      ? supabase.storage
+          .from(`${service}-media`)
+          .getPublicUrl(mediaItem.file_path).data.publicUrl
       : "/api/placeholder/400/300";
   };
 
@@ -121,14 +117,14 @@ export default function MediaCarousel({
   };
 
   // Preview Component
-  const PreviewItem = ({ 
-    mediaItem, 
+  const PreviewItem = ({
+    mediaItem,
     index,
     isActive = false,
     onClick,
-    showPlayIcon = true
-  }: { 
-    mediaItem: MediaItem; 
+    showPlayIcon = true,
+  }: {
+    mediaItem: MediaItem;
     index: number;
     isActive?: boolean;
     onClick?: () => void;
@@ -136,7 +132,7 @@ export default function MediaCarousel({
   }) => {
     const type = getMediaType(mediaItem.file_path);
     const url = getMediaUrl(mediaItem);
-    
+
     if (type === "video") {
       return (
         <div className="w-full h-full relative">
@@ -156,7 +152,9 @@ export default function MediaCarousel({
           >
             <source src={url} type="video/mp4" />
           </video>
-          <div className={`absolute inset-0 ${isActive ? '' : 'bg-black/30'}`} />
+          <div
+            className={`absolute inset-0 ${isActive ? "" : "bg-black/30"}`}
+          />
           {showPlayIcon && (
             <Play className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-8 h-8 text-white/70" />
           )}
@@ -168,10 +166,10 @@ export default function MediaCarousel({
       <div className="w-full h-full relative">
         <img
           src={url}
-          alt={`${venueName} preview`}
+          alt={`${name} preview`}
           className="w-full h-full object-cover rounded-lg"
         />
-        <div className={`absolute inset-0 ${isActive ? '' : 'bg-black/30'}`} />
+        <div className={`absolute inset-0 ${isActive ? "" : "bg-black/30"}`} />
       </div>
     );
   };
@@ -189,13 +187,13 @@ export default function MediaCarousel({
       setIsFullscreen(document.fullscreenElement === containerRef.current);
     };
 
-    document.addEventListener('fullscreenchange', handleFullscreenChange);
+    document.addEventListener("fullscreenchange", handleFullscreenChange);
 
     return () => {
       videoElement.removeEventListener("play", () => setIsPlaying(true));
       videoElement.removeEventListener("pause", () => setIsPlaying(false));
       videoElement.removeEventListener("timeupdate", handleProgressUpdate);
-      document.removeEventListener('fullscreenchange', handleFullscreenChange);
+      document.removeEventListener("fullscreenchange", handleFullscreenChange);
     };
   }, []);
 
@@ -206,7 +204,7 @@ export default function MediaCarousel({
   const isPortrait = imageDimensions.height > imageDimensions.width;
 
   return (
-    <div 
+    <div
       className={`relative bg-black ${className}`}
       ref={containerRef}
       onMouseEnter={() => setShowControls(true)}
@@ -229,10 +227,12 @@ export default function MediaCarousel({
                   >
                     <source src={getMediaUrl(currentMedia)} type="video/mp4" />
                   </video>
-                  
+
                   {!isPlaying && (
-                    <div className="absolute inset-0 flex items-center justify-center bg-black/30 cursor-pointer"
-                         onClick={handleVideoClick}>
+                    <div
+                      className="absolute inset-0 flex items-center justify-center bg-black/30 cursor-pointer"
+                      onClick={handleVideoClick}
+                    >
                       <Play className="w-16 h-16 text-white" />
                     </div>
                   )}
@@ -248,10 +248,10 @@ export default function MediaCarousel({
                 <div className="relative w-full h-full flex items-center justify-center">
                   <img
                     src={getMediaUrl(currentMedia)}
-                    alt={`${venueName} - Current`}
+                    alt={`${name} - Current`}
                     className={`max-h-full transition-opacity duration-500 ease-in-out ${
-                      imageLoaded ? 'opacity-100' : 'opacity-0'
-                    } ${isPortrait ? 'w-auto h-full' : 'w-full h-auto'}`}
+                      imageLoaded ? "opacity-100" : "opacity-0"
+                    } ${isPortrait ? "w-auto h-full" : "w-full h-auto"}`}
                     onLoad={handleImageLoad}
                   />
                   {!imageLoaded && (
@@ -269,10 +269,10 @@ export default function MediaCarousel({
             <div className="absolute bottom-0 left-0 right-0 bg-black/50 p-4">
               <div className="flex justify-center gap-2 overflow-x-auto py-2">
                 {media.map((item, index) => (
-                  <div 
-                    key={index} 
+                  <div
+                    key={index}
                     className={`w-24 h-16 flex-shrink-0 cursor-pointer transition-all duration-300
-                      ${index === currentIndex ? 'ring-2 ring-blue-500' : ''}`}
+                      ${index === currentIndex ? "ring-2 ring-blue-500" : ""}`}
                     onClick={() => {
                       setImageLoaded(false);
                       setCurrentIndex(index);
@@ -294,16 +294,19 @@ export default function MediaCarousel({
         // Original layout for non-fullscreen
         <div className="flex items-center justify-center w-full h-full">
           {/* Previous Preview */}
-          <div 
+          <div
             className="hidden md:block w-1/6 h-full relative opacity-50 mr-2 cursor-pointer transition-opacity duration-300 hover:opacity-70"
             onClick={handlePrevious}
           >
-            {prevMedia && <PreviewItem mediaItem={prevMedia} index={getPreviousIndex()} />}
+            {prevMedia && (
+              <PreviewItem mediaItem={prevMedia} index={getPreviousIndex()} />
+            )}
           </div>
 
           {/* Main Content */}
-          <div className={`w-full md:w-2/3 h-full relative transition-all duration-500 ease-in-out
-            ${isPortrait ? 'md:w-1/2' : 'md:w-2/3'}`}
+          <div
+            className={`w-full md:w-2/3 h-full relative transition-all duration-500 ease-in-out
+            ${isPortrait ? "md:w-1/2" : "md:w-2/3"}`}
           >
             {mediaType === "video" ? (
               <div className="relative w-full h-full">
@@ -316,10 +319,12 @@ export default function MediaCarousel({
                 >
                   <source src={getMediaUrl(currentMedia)} type="video/mp4" />
                 </video>
-                
+
                 {!isPlaying && (
-                  <div className="absolute inset-0 flex items-center justify-center bg-black/30 cursor-pointer"
-                       onClick={handleVideoClick}>
+                  <div
+                    className="absolute inset-0 flex items-center justify-center bg-black/30 cursor-pointer"
+                    onClick={handleVideoClick}
+                  >
                     <Play className="w-16 h-16 text-white" />
                   </div>
                 )}
@@ -335,10 +340,10 @@ export default function MediaCarousel({
               <div className="relative w-full h-full flex items-center justify-center">
                 <img
                   src={getMediaUrl(currentMedia)}
-                  alt={`${venueName} - Current`}
+                  alt={`${name} - Current`}
                   className={`max-h-full transition-opacity duration-500 ease-in-out ${
-                    imageLoaded ? 'opacity-100' : 'opacity-0'
-                  } ${isPortrait ? 'w-auto h-full' : 'w-full h-auto'}`}
+                    imageLoaded ? "opacity-100" : "opacity-0"
+                  } ${isPortrait ? "w-auto h-full" : "w-full h-auto"}`}
                   onLoad={handleImageLoad}
                 />
                 {!imageLoaded && (
@@ -351,11 +356,13 @@ export default function MediaCarousel({
           </div>
 
           {/* Next Preview */}
-          <div 
+          <div
             className="hidden md:block w-1/6 h-full relative opacity-50 ml-2 cursor-pointer transition-opacity duration-300 hover:opacity-70"
             onClick={handleNext}
           >
-            {nextMedia && <PreviewItem mediaItem={nextMedia} index={getNextIndex()} />}
+            {nextMedia && (
+              <PreviewItem mediaItem={nextMedia} index={getNextIndex()} />
+            )}
           </div>
         </div>
       )}

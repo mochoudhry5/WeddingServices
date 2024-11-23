@@ -170,34 +170,16 @@ const LocationInput = ({
 
   // Effect to load user's location on mount
   useEffect(() => {
-    const checkAndLoadLocation = async () => {
-      if (!isLoaded) return;
+    const hasLoadedLocation = localStorage.getItem("hasLoadedLocation");
 
-      const locationData = localStorage.getItem("locationData");
-      const now = new Date().getTime();
-
-      if (locationData) {
-        const { timestamp } = JSON.parse(locationData);
-        const expirationTime = 24 * 60 * 60 * 1000; // 24 hours in milliseconds
-
-        // Check if the location data has expired
-        if (now - timestamp > expirationTime) {
-          // Data has expired, clear it and get new location
-          localStorage.removeItem("locationData");
-          await getCurrentLocation();
-          return;
-        }
-      } else {
-        // No location data exists, get location and save timestamp
-        const locationInfo = {
-          timestamp: now,
-        };
-        localStorage.setItem("locationData", JSON.stringify(locationInfo));
+    const loadInitialLocation = async () => {
+      if (isLoaded && !hasLoadedLocation) {
+        localStorage.setItem("hasLoadedLocation", "true");
         await getCurrentLocation();
       }
     };
 
-    checkAndLoadLocation();
+    loadInitialLocation();
   }, [isLoaded]);
 
   const initializeAutocomplete = () => {

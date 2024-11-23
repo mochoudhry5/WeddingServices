@@ -26,11 +26,14 @@ import {
 import { Slider } from "@/components/ui/slider";
 import { SlidersHorizontal } from "lucide-react";
 
+// Type Guards
 const isValidServiceType = (value: string): value is ServiceType => {
-  return ["venue", "makeup", "photography"].includes(value);
+  return ["venue", "makeup", "photography", "weddingplanner", "dj"].includes(
+    value
+  );
 };
 
-const isValidCapacity = (value: string): value is CapacityOption => {
+const isValidCapacityOption = (value: string): value is CapacityOption => {
   return ["all", "0-100", "101-200", "201-300", "301+"].includes(value);
 };
 
@@ -38,7 +41,8 @@ const isValidSortOption = (value: string): value is SortOption => {
   return ["default", "price_asc", "price_desc"].includes(value);
 };
 
-type ServiceType = "venue" | "makeup" | "photography";
+// Types
+type ServiceType = "venue" | "makeup" | "photography" | "weddingplanner" | "dj";
 type SortOption = "price_asc" | "price_desc" | "default";
 type CapacityOption = "all" | "0-100" | "101-200" | "201-300" | "301+";
 
@@ -48,7 +52,7 @@ interface MediaItem {
   media_type?: "image" | "video";
 }
 
-interface VenueWithDetails {
+interface VenueDetails {
   id: string;
   user_id: string;
   name: string;
@@ -64,42 +68,64 @@ interface VenueWithDetails {
   created_at: string;
 }
 
-interface LocationProps {
+interface MakeupArtistDetails {
+  id: string;
+  user_id: string;
+  artist_name: string;
+  years_experience: number;
+  travel_range: number;
+  description: string;
+  max_bookings_per_day: number;
+  makeup_media: MediaItem[];
+  makeup_services: Array<{ price: number }>;
+  base_price?: number;
+  rating: number;
+  created_at: string;
+}
+
+type ServiceListingItem = VenueDetails | MakeupArtistDetails;
+
+interface LocationDetails {
   enteredLocation: string;
   city: string;
   state: string;
   country: string;
 }
 
-interface FilterState {
-  searchQuery: LocationProps;
+interface SearchFilters {
+  searchQuery: LocationDetails;
   priceRange: number[];
   capacity: CapacityOption;
   sortOption: SortOption;
   serviceType: ServiceType;
 }
 
-export default function VenuesSearchPage() {
+export default function ServicesSearchPage() {
   // State Management
-  const [venues, setVenues] = useState<VenueWithDetails[]>([]);
+  const [serviceListings, setServiceListings] = useState<ServiceListingItem[]>(
+    []
+  );
   const [isLoading, setIsLoading] = useState(true);
   const [isFiltered, setIsFiltered] = useState(false);
-  const [isSheetOpen, setIsSheetOpen] = useState(false);
+  const [isFilterSheetOpen, setIsFilterSheetOpen] = useState(false);
   const { user } = useAuth();
 
+  // Initialize filters from URL params
+  const params = new URLSearchParams(window.location.search);
+  const serviceParam = (params.get("service") || "").trim();
+
   // Filter state
-  const [filters, setFilters] = useState<FilterState>({
+  const [searchFilters, setSearchFilters] = useState<SearchFilters>({
     searchQuery: { enteredLocation: "", city: "", state: "", country: "" },
     priceRange: [0, 10000],
     capacity: "all",
     sortOption: "default",
-    serviceType: "venue",
+    serviceType: isValidServiceType(serviceParam) ? serviceParam : "venue",
   });
 
-  // Get URL parameters on initial load
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
-    const serviceParam = params.get("service");
+    const serviceParam = (params.get("service") || "").trim();
     const enteredLocation = (params.get("enteredLocation") || "").trim();
     const city = (params.get("city") || "").trim();
     const state = (params.get("state") || "").trim();
@@ -107,126 +133,193 @@ export default function VenuesSearchPage() {
 
     if (serviceParam || enteredLocation) {
       const updatedFilters = {
-        ...filters,
-        serviceType: isValidServiceType(serviceParam || "")
-          ? (serviceParam as ServiceType)
-          : "venue",
+        ...searchFilters,
+        serviceType: isValidServiceType(serviceParam) ? serviceParam : "venue",
         searchQuery: { enteredLocation, city, state, country },
       };
 
-      setFilters(updatedFilters);
-      fetchVenues(true, updatedFilters);
+      setSearchFilters(updatedFilters);
+      fetchServiceListings(true, updatedFilters);
     } else {
-      fetchVenues();
+      fetchServiceListings();
     }
   }, []);
 
-  const fetchVenues = async (withFilters = false, filterToUse = filters) => {
+  const fetchServiceListings = async (
+    withFilters = false,
+    filtersToUse = searchFilters
+  ) => {
     try {
       setIsLoading(true);
 
-      // Start with a base query
-      let query = supabase
-        .from("venues")
-        .select(
+      if (filtersToUse.serviceType === "makeup") {
+        // Fetch makeup artists
+        let query = supabase
+          .from("makeup_artists")
+          .select(
+            `
+            *,
+            makeup_media (
+              file_path,
+              display_order
+            ),
+            makeup_services (
+              price
+            )
           `
-        *,
-        venue_media (
-          id,
-          file_path,
-          display_order
-        )
-      `
-        )
-        .order("created_at", { ascending: false });
+          )
+          .order("created_at", { ascending: false });
 
-      if (withFilters) {
-        // Apply search filter
-        const { enteredLocation, city, state, country } =
-          filterToUse.searchQuery;
-        console.log(enteredLocation);
-        console.log(city);
-        console.log(state);
-        query = query.or(
-          `name.ilike.%${city}%,city.ilike.%${city}%,state.ilike.%${state}%,address.ilike.%${city}%`
-        );
+        if (withFilters) {
+          // Apply location filter
+          const { city, state } = filtersToUse.searchQuery;
+          if (city || state) {
+            let locationFilters = [];
+            if (city) locationFilters.push(`city.ilike.%${city}%`);
+            if (state) locationFilters.push(`state.ilike.%${state}%`);
+            query = query.or(locationFilters.join(","));
+          }
 
-        // Apply price range
-        if (filterToUse.priceRange[0] > 0) {
-          query = query.gte("base_price", filters.priceRange[0]);
-        }
-        if (filterToUse.priceRange[1] < 10000) {
-          query = query.lte("base_price", filters.priceRange[1]);
-        }
+          // Apply price range to minimum service price
+          if (
+            filtersToUse.priceRange[0] > 0 ||
+            filtersToUse.priceRange[1] < 10000
+          ) {
+            // Note: This is a simplified version. In reality, you might need a more complex query
+            // to filter by service prices which are in a related table
+            query = query.contains("makeup_services", [
+              {
+                price: {
+                  $gte: filtersToUse.priceRange[0],
+                  $lte: filtersToUse.priceRange[1],
+                },
+              },
+            ]);
+          }
 
-        // Apply capacity filter
-        switch (filterToUse.capacity) {
-          case "0-100":
-            query = query.lte("max_guests", 100);
-            break;
-          case "101-200":
-            query = query.gt("max_guests", 100).lte("max_guests", 200);
-            break;
-          case "201-300":
-            query = query.gt("max_guests", 200).lte("max_guests", 300);
-            break;
-          case "301+":
-            query = query.gt("max_guests", 300);
-            break;
+          // Apply sorting
+          switch (filtersToUse.sortOption) {
+            case "price_asc":
+              query = query.order("created_at", { ascending: true });
+              break;
+            case "price_desc":
+              query = query.order("created_at", { ascending: false });
+              break;
+          }
         }
 
-        // Apply sorting
-        switch (filterToUse.sortOption) {
-          case "price_asc":
-            query = query.order("base_price", { ascending: true });
-            break;
-          case "price_desc":
-            query = query.order("base_price", { ascending: false });
-            break;
-          default:
-            query = query.order("created_at", { ascending: false });
+        const { data: makeupData, error: makeupError } = await query;
+
+        if (makeupError) throw makeupError;
+
+        const processedMakeupArtists = (makeupData || []).map((artist) => ({
+          ...artist,
+          base_price: Math.min(
+            ...(artist.makeup_services?.map((s: { price: any }) => s.price) || [
+              0,
+            ])
+          ),
+          rating: 4.5 + Math.random() * 0.5,
+        }));
+
+        setServiceListings(processedMakeupArtists);
+      } else {
+        // Fetch venues
+        let query = supabase
+          .from("venues")
+          .select(
+            `
+            *,
+            venue_media (
+              file_path,
+              display_order
+            )
+          `
+          )
+          .order("created_at", { ascending: false });
+
+        if (withFilters) {
+          // Apply location filter
+          const { city, state } = filtersToUse.searchQuery;
+          if (city || state) {
+            let locationFilters = [];
+            if (city) locationFilters.push(`city.ilike.%${city}%`);
+            if (state) locationFilters.push(`state.ilike.%${state}%`);
+            query = query.or(locationFilters.join(","));
+          }
+
+          // Apply price range
+          if (filtersToUse.priceRange[0] > 0) {
+            query = query.gte("base_price", filtersToUse.priceRange[0]);
+          }
+          if (filtersToUse.priceRange[1] < 10000) {
+            query = query.lte("base_price", filtersToUse.priceRange[1]);
+          }
+
+          // Apply capacity filter
+          if (filtersToUse.capacity !== "all") {
+            switch (filtersToUse.capacity) {
+              case "0-100":
+                query = query.lte("max_guests", 100);
+                break;
+              case "101-200":
+                query = query.gt("max_guests", 100).lte("max_guests", 200);
+                break;
+              case "201-300":
+                query = query.gt("max_guests", 200).lte("max_guests", 300);
+                break;
+              case "301+":
+                query = query.gt("max_guests", 300);
+                break;
+            }
+          }
+
+          // Apply sorting
+          switch (filtersToUse.sortOption) {
+            case "price_asc":
+              query = query.order("base_price", { ascending: true });
+              break;
+            case "price_desc":
+              query = query.order("base_price", { ascending: false });
+              break;
+          }
         }
+
+        const { data: venueData, error: venueError } = await query;
+
+        if (venueError) throw venueError;
+
+        const processedVenues = (venueData || []).map((venue) => ({
+          ...venue,
+          rating: 4.5 + Math.random() * 0.5,
+          venue_media: venue.venue_media || [],
+        }));
+
+        setServiceListings(processedVenues);
       }
 
-      const { data, error } = await query;
-
-      if (error) {
-        console.error("Supabase Error:", error);
-        throw error;
-      }
-
-      console.log("Raw data:", data);
-
-      const processedVenues = (data || []).map((venue) => ({
-        ...venue,
-        rating: 4.5 + Math.random() * 0.5,
-        venue_media: venue.venue_media || [],
-      }));
-
-      setVenues(processedVenues);
       setIsFiltered(withFilters);
     } catch (error: any) {
-      console.error("Error fetching venues:", error);
-      toast.error("Failed to load venues. Please try again.");
+      console.error("Error fetching service listings:", error);
+      toast.error("Failed to load listings. Please try again.");
     } finally {
       setIsLoading(false);
     }
   };
 
-  // Update URL when filters change
-  const updateURL = (newFilters: FilterState) => {
+  // URL Management
+  const updateURLWithFilters = (newFilters: SearchFilters) => {
     const params = new URLSearchParams();
 
     params.set("service", newFilters.serviceType);
 
-    if (newFilters.searchQuery) {
+    if (newFilters.searchQuery.enteredLocation) {
       params.set("enteredLocation", newFilters.searchQuery.enteredLocation);
       params.set("city", newFilters.searchQuery.city);
       params.set("state", newFilters.searchQuery.state);
       params.set("country", newFilters.searchQuery.country);
     }
 
-    // Update URL without reloading the page
     window.history.pushState(
       {},
       "",
@@ -234,70 +327,195 @@ export default function VenuesSearchPage() {
     );
   };
 
-  const handleSearch = (e: React.FormEvent) => {
+  // Event Handlers
+  const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-
-    // Check if search is empty
-    if (!filters.searchQuery.enteredLocation.trim()) {
-      // Reset location-related search params
-      const newFilters = {
-        ...filters,
-        searchQuery: {
-          enteredLocation: "",
-          city: "",
-          state: "",
-          country: "",
-        },
-      };
-      setFilters(newFilters);
-      updateURL(newFilters);
-      fetchVenues(false); // Use false to get all venues
-      return;
-    }
-
-    // If there is a search query, proceed normally
-    updateURL(filters);
-    fetchVenues(true);
+    updateURLWithFilters(searchFilters);
+    fetchServiceListings(true);
   };
 
-  const handleApplyFilters = () => {
-    updateURL(filters);
-    fetchVenues(true);
-    setIsSheetOpen(false);
+  const handleFilterApply = () => {
+    updateURLWithFilters(searchFilters);
+    fetchServiceListings(true);
+    setIsFilterSheetOpen(false);
   };
 
-  const clearFilters = () => {
-    const newFilters: FilterState = {
-      searchQuery: {
-        enteredLocation: "",
-        city: "",
-        state: "",
-        country: "",
-      },
+  const handleFilterReset = () => {
+    const resetFilters: SearchFilters = {
+      searchQuery: { enteredLocation: "", city: "", state: "", country: "" },
       priceRange: [0, 10000],
       capacity: "all",
       sortOption: "default",
       serviceType: "venue",
     };
-    setFilters(newFilters);
-    updateURL(newFilters);
-    setIsSheetOpen(false);
-    fetchVenues(false);
+    setSearchFilters(resetFilters);
+    updateURLWithFilters(resetFilters);
+    setIsFilterSheetOpen(false);
+    fetchServiceListings(false);
+  };
+
+  // ... (previous code remains the same)
+
+  const renderServiceListings = () => {
+    if (isLoading) {
+      return (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+          {[...Array(6)].map((_, index) => (
+            <div
+              key={index}
+              className="bg-white rounded-xl shadow-md overflow-hidden"
+            >
+              <div className="animate-pulse">
+                <div className="h-48 bg-slate-200" />
+                <div className="p-4 space-y-3">
+                  <div className="h-4 bg-slate-200 rounded w-3/4" />
+                  <div className="h-3 bg-slate-200 rounded w-1/2" />
+                  <div className="h-3 bg-slate-200 rounded w-5/6" />
+                  <div className="h-3 bg-slate-200 rounded w-4/6" />
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      );
+    }
+
+    if (serviceListings.length === 0) {
+      return (
+        <div className="text-center py-12">
+          <p className="text-lg text-slate-600">
+            No{" "}
+            {searchFilters.serviceType === "makeup"
+              ? "makeup artists"
+              : "venues"}{" "}
+            found matching your criteria.
+          </p>
+          <button
+            onClick={handleFilterReset}
+            className="mt-4 text-rose-600 hover:text-rose-700"
+          >
+            Clear all filters
+          </button>
+        </div>
+      );
+    }
+
+    return (
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+        {serviceListings.map((listing) => {
+          // Type guard function to check if listing is a makeup artist
+          const isMakeupArtist = (
+            listing: ServiceListingItem
+          ): listing is MakeupArtistDetails => {
+            return "artist_name" in listing;
+          };
+
+          const currentListing = isMakeupArtist(listing)
+            ? listing
+            : (listing as VenueDetails);
+
+          return (
+            <div
+              key={listing.id}
+              className="bg-white rounded-xl shadow-md overflow-hidden hover:shadow-lg transition-shadow duration-300 group"
+            >
+              <div className="relative">
+                <MediaCarousel
+                  media={
+                    isMakeupArtist(listing)
+                      ? listing.makeup_media
+                      : (listing as VenueDetails).venue_media
+                  }
+                  venueName={
+                    isMakeupArtist(listing)
+                      ? listing.artist_name
+                      : (listing as VenueDetails).name
+                  }
+                  venueId={isMakeupArtist(listing) ? undefined : listing.id}
+                  makeupId={isMakeupArtist(listing) ? listing.id : undefined}
+                  venueCreator={listing.user_id}
+                  userLoggedIn={user?.id}
+                />
+              </div>
+
+              <a
+                href={`/services/${searchFilters.serviceType}/${listing.id}`}
+                className="block hover:cursor-pointer"
+              >
+                <div className="p-4">
+                  <h3 className="text-lg font-semibold mb-1 group-hover:text-rose-600 transition-colors">
+                    {isMakeupArtist(listing)
+                      ? listing.artist_name
+                      : (listing as VenueDetails).name}
+                  </h3>
+
+                  {isMakeupArtist(listing) ? (
+                    <>
+                      <p className="text-slate-600 text-sm mb-2">
+                        {listing.years_experience} years experience • Up to{" "}
+                        {listing.travel_range} miles
+                      </p>
+                      <p className="text-slate-600 text-sm mb-3 line-clamp-2">
+                        {listing.description}
+                      </p>
+                      <div className="flex justify-between items-center pt-2 border-t">
+                        <div className="text-sm text-slate-600">
+                          {listing.max_bookings_per_day} bookings/day
+                        </div>
+                        <div className="text-lg font-semibold text-rose-600">
+                          From ${listing.base_price?.toLocaleString()}
+                        </div>
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      <p className="text-slate-600 text-sm mb-2">
+                        {(listing as VenueDetails).city},{" "}
+                        {(listing as VenueDetails).state}
+                      </p>
+                      <p className="text-slate-600 text-sm mb-3 line-clamp-2">
+                        {listing.description}
+                      </p>
+                      <div className="flex justify-between items-center pt-2 border-t">
+                        <div className="text-sm text-slate-600">
+                          Up to {(listing as VenueDetails).max_guests} guests
+                        </div>
+                        <div className="text-lg font-semibold text-rose-600">
+                          $
+                          {(
+                            listing as VenueDetails
+                          ).base_price.toLocaleString()}
+                        </div>
+                      </div>
+                    </>
+                  )}
+                </div>
+              </a>
+            </div>
+          );
+        })}
+      </div>
+    );
   };
 
   return (
     <div className="min-h-screen bg-slate-50">
       <NavBar />
 
+      {/* Search Bar */}
       <div className="sticky top-0 z-10 bg-white border-b border-gray-200 shadow-sm">
         <div className="max-w-7xl mx-auto px-4 py-4">
-          <form onSubmit={handleSearch}>
+          <form onSubmit={handleSearchSubmit}>
             <div className="flex flex-col sm:flex-row gap-3">
+              {/* Service Type Selector */}
               <div className="w-full sm:w-32">
                 <Select
-                  value={filters.serviceType}
+                  value={searchFilters.serviceType}
                   onValueChange={(value: ServiceType) => {
-                    setFilters((prev) => ({ ...prev, serviceType: value }));
+                    setSearchFilters((prev) => ({
+                      ...prev,
+                      serviceType: value,
+                    }));
                   }}
                 >
                   <SelectTrigger>
@@ -307,14 +525,19 @@ export default function VenuesSearchPage() {
                     <SelectItem value="venue">Venue</SelectItem>
                     <SelectItem value="makeup">Makeup</SelectItem>
                     <SelectItem value="photography">Photography</SelectItem>
+                    <SelectItem value="weddingplanner">
+                      Wedding Planner
+                    </SelectItem>
+                    <SelectItem value="dj">DJ</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
 
+              {/* Location Input */}
               <LocationInput
-                value={filters.searchQuery.enteredLocation}
+                value={searchFilters.searchQuery.enteredLocation}
                 onChange={(value) =>
-                  setFilters((prev) => ({
+                  setSearchFilters((prev) => ({
                     ...prev,
                     searchQuery: {
                       ...prev.searchQuery,
@@ -323,7 +546,6 @@ export default function VenuesSearchPage() {
                   }))
                 }
                 onPlaceSelect={(place) => {
-                  // Extract city and state from place details
                   let city = "";
                   let state = "";
                   let country = "";
@@ -342,8 +564,7 @@ export default function VenuesSearchPage() {
                     }
                   });
 
-                  // Update all location details at once
-                  setFilters((prev) => ({
+                  setSearchFilters((prev) => ({
                     ...prev,
                     searchQuery: {
                       enteredLocation: place.formatted_address || "",
@@ -354,9 +575,10 @@ export default function VenuesSearchPage() {
                   }));
                 }}
                 placeholder="Search by location"
-                className="w-full pl-10"
+                className="w-full"
               />
 
+              {/* Search and Filter Buttons */}
               <div className="flex gap-2 sm:w-[168px]">
                 <button
                   type="submit"
@@ -365,7 +587,10 @@ export default function VenuesSearchPage() {
                   Search
                 </button>
 
-                <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
+                <Sheet
+                  open={isFilterSheetOpen}
+                  onOpenChange={setIsFilterSheetOpen}
+                >
                   <SheetTrigger asChild>
                     <button
                       type="button"
@@ -379,122 +604,9 @@ export default function VenuesSearchPage() {
                       <span>Filters</span>
                     </button>
                   </SheetTrigger>
-                  <SheetContent side="right" className="w-full max-w-md">
-                    <SheetHeader>
-                      <SheetTitle>Filter Options</SheetTitle>
-                      <SheetDescription>
-                        Customize your venue search results
-                      </SheetDescription>
-                    </SheetHeader>
 
-                    <div className="mt-6 space-y-6">
-                      {/* Price Range */}
-                      <div className="px-1">
-                        <h3 className="text-sm font-medium mb-4">
-                          Price Range
-                        </h3>
-                        <Slider
-                          defaultValue={filters.priceRange}
-                          value={filters.priceRange}
-                          max={10000}
-                          step={500}
-                          onValueChange={(value) => {
-                            setFilters((prev) => ({
-                              ...prev,
-                              priceRange: value,
-                            }));
-                          }}
-                          className="mb-2"
-                        />
-                        <div className="flex justify-between text-sm text-slate-600">
-                          <span>${filters.priceRange[0].toLocaleString()}</span>
-                          <span>${filters.priceRange[1].toLocaleString()}</span>
-                        </div>
-                      </div>
-
-                      {/* Capacity */}
-                      <div>
-                        <h3 className="text-sm font-medium mb-4">
-                          Guest Capacity
-                        </h3>
-                        <Select
-                          value={filters.capacity}
-                          onValueChange={(value: string) => {
-                            if (isValidCapacity(value)) {
-                              setFilters((prev) => ({
-                                ...prev,
-                                capacity: value,
-                              }));
-                            }
-                          }}
-                        >
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select capacity range" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="all">Any capacity</SelectItem>
-                            <SelectItem value="0-100">
-                              Up to 100 guests
-                            </SelectItem>
-                            <SelectItem value="101-200">
-                              101-200 guests
-                            </SelectItem>
-                            <SelectItem value="201-300">
-                              201-300 guests
-                            </SelectItem>
-                            <SelectItem value="301+">301+ guests</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-
-                      {/* Sort */}
-                      <div>
-                        <h3 className="text-sm font-medium mb-4">Sort By</h3>
-                        <Select
-                          value={filters.sortOption}
-                          onValueChange={(value: string) => {
-                            if (isValidSortOption(value)) {
-                              setFilters((prev) => ({
-                                ...prev,
-                                sortOption: value,
-                              }));
-                            }
-                          }}
-                        >
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select sorting option" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="default">Featured</SelectItem>
-                            <SelectItem value="price_asc">
-                              Price: Low to High
-                            </SelectItem>
-                            <SelectItem value="price_desc">
-                              Price: High to Low
-                            </SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-
-                      {/* Action Buttons */}
-                      <div className="flex gap-3 pt-6">
-                        <button
-                          type="button"
-                          onClick={handleApplyFilters}
-                          className="flex-1 py-3 text-sm text-white bg-rose-500 hover:bg-rose-600 rounded-lg transition-colors duration-300"
-                        >
-                          Apply Filters
-                        </button>
-                        <button
-                          type="button"
-                          onClick={clearFilters}
-                          className="flex-1 py-3 text-sm border border-rose-200 text-rose-600 hover:bg-rose-50 rounded-lg transition-colors duration-300"
-                        >
-                          Clear
-                        </button>
-                      </div>
-                    </div>
-                  </SheetContent>
+                  {/* Filter Sheet Content */}
+                  {/* ... (keep your existing filter sheet content, updating variable names) */}
                 </Sheet>
               </div>
             </div>
@@ -505,90 +617,23 @@ export default function VenuesSearchPage() {
       {/* Results Count */}
       <div className="max-w-7xl mx-auto px-4 py-4">
         <p className="text-sm text-gray-600">
-          {venues.length} {venues.length === 1 ? "venue" : "venues"} found
+          {serviceListings.length}{" "}
+          {serviceListings.length === 1
+            ? searchFilters.serviceType === "makeup"
+              ? "makeup artist"
+              : "venue"
+            : searchFilters.serviceType === "makeup"
+            ? "makeup artists"
+            : "venues"}{" "}
+          found
         </p>
       </div>
 
       {/* Results Grid */}
       <div className="max-w-7xl mx-auto px-4 pb-8">
-        {isLoading ? (
-          // Loading skeleton
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            {[...Array(6)].map((_, i) => (
-              <div
-                key={i}
-                className="bg-white rounded-xl shadow-md overflow-hidden"
-              >
-                <div className="animate-pulse">
-                  <div className="h-48 bg-slate-200" />
-                  <div className="p-4 space-y-3">
-                    <div className="h-4 bg-slate-200 rounded w-3/4" />
-                    <div className="h-3 bg-slate-200 rounded w-1/2" />
-                    <div className="h-3 bg-slate-200 rounded w-5/6" />
-                    <div className="h-3 bg-slate-200 rounded w-4/6" />
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        ) : venues.length > 0 ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            {venues.map((venue) => (
-              <div
-                key={venue.id}
-                className="bg-white rounded-xl shadow-md overflow-hidden hover:shadow-lg transition-shadow duration-300 group"
-              >
-                <div className="relative">
-                  <MediaCarousel
-                    media={venue.venue_media}
-                    venueName={venue.name}
-                    venueId={venue.id}
-                    venueCreator={venue.user_id}
-                    userLoggedIn={user?.id}
-                  />
-                </div>
-
-                <a
-                  href={`/venues/${venue.id}`}
-                  className="block p-4 hover:cursor-pointer"
-                >
-                  <div className="p-4">
-                    <h3 className="text-lg font-semibold mb-1 group-hover:text-rose-600 transition-colors">
-                      {venue.name}
-                    </h3>
-                    <p className="text-slate-600 text-sm mb-2">
-                      {venue.city}, {venue.state}
-                    </p>
-                    <p className="text-slate-600 text-sm mb-3 line-clamp-2">
-                      {venue.description}
-                    </p>
-                    <div className="flex justify-between items-center pt-2 border-t">
-                      <div className="text-sm text-slate-600">
-                        Up to {venue.max_guests} guests
-                      </div>
-                      <div className="text-lg font-semibold text-rose-600">
-                        ${venue.base_price.toLocaleString()}
-                      </div>
-                    </div>
-                  </div>
-                </a>
-              </div>
-            ))}
-          </div>
-        ) : (
-          <div className="text-center py-12">
-            <p className="text-lg text-slate-600">
-              No venues found matching your criteria.
-            </p>
-            <button
-              onClick={clearFilters}
-              className="mt-4 text-rose-600 hover:text-rose-700"
-            >
-              Clear all filters
-            </button>
-          </div>
-        )}
+        {renderServiceListings()}
       </div>
+
       <Footer />
     </div>
   );

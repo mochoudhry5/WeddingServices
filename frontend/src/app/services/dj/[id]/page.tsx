@@ -323,10 +323,8 @@ export default function VenueDetailsPage() {
         <div className="relative h-[60vh] md:h-[80vh]">
           <MediaCarousel
             media={venue.venue_media}
-            venueName={venue.name}
-            venueId={venue.id}
-            venueCreator={venue.user_id}
-            userLoggedIn={user?.id}
+            name={venue.name}
+            service="venue"
             className="w-full h-full"
           />
         </div>
@@ -420,9 +418,9 @@ export default function VenueDetailsPage() {
               <ul className="space-y-2 text-gray-600">
                 <li className="flex items-center gap-2">
                   <span className="text-rose-500">•</span>
-                  <a 
-                    href="https://www.sendlybox.com" 
-                    target="_blank" 
+                  <a
+                    href="https://www.sendlybox.com"
+                    target="_blank"
                     rel="noopener noreferrer"
                     className="text-rose-600 hover:text-rose-700 hover:underline"
                   >
@@ -431,9 +429,9 @@ export default function VenueDetailsPage() {
                 </li>
                 <li className="flex items-center gap-2">
                   <span className="text-rose-500">•</span>
-                  <a 
-                    href="https://www.instagram.com/Townandcountryeventcenter" 
-                    target="_blank" 
+                  <a
+                    href="https://www.instagram.com/Townandcountryeventcenter"
+                    target="_blank"
                     rel="noopener noreferrer"
                     className="text-rose-600 hover:text-rose-700 hover:underline"
                   >

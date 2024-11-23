@@ -1,13 +1,19 @@
 "use client";
 
 import { useState } from "react";
-import { Building2, Camera, Paintbrush } from "lucide-react";
+import {
+  Building2,
+  Camera,
+  Paintbrush,
+  NotebookPen,
+  Music,
+} from "lucide-react";
 import NavBar from "@/components/ui/NavBar";
 import Footer from "@/components/ui/Footer";
 import { toast } from "sonner";
 import { useAuth } from "@/context/AuthContext";
 
-type ServiceId = "venue" | "makeup" | "photography";
+type ServiceId = "venue" | "makeup" | "photography" | "weddingplanner" | "dj";
 
 interface Service {
   id: ServiceId;
@@ -27,7 +33,7 @@ const services: Service[] = [
     description:
       "List your wedding venue and showcase your space to couples looking for their perfect venue.",
     available: true,
-    path: "/venues/create",
+    path: "/services/venue/create",
   },
   {
     id: "makeup",
@@ -35,8 +41,9 @@ const services: Service[] = [
     icon: Paintbrush,
     description:
       "Offer your professional makeup services to brides and wedding parties.",
-    available: false,
-    comingSoon: true,
+    available: true,
+    path: "/services/makeup/create",
+    comingSoon: false,
   },
   {
     id: "photography",
@@ -44,6 +51,23 @@ const services: Service[] = [
     icon: Camera,
     description:
       "Showcase your photography portfolio and connect with couples seeking their wedding photographer.",
+    available: false,
+    comingSoon: true,
+  },
+  {
+    id: "weddingplanner",
+    name: "Wedding Planner",
+    icon: NotebookPen,
+    description:
+      "Offer your skills to help provide couples a worry-less wedding.",
+    available: false,
+    comingSoon: true,
+  },
+  {
+    id: "dj",
+    name: "DJ",
+    icon: Music,
+    description: "Provide your skills to bring the vibe to the special day.",
     available: false,
     comingSoon: true,
   },
