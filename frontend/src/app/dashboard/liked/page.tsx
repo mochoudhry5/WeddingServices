@@ -1,4 +1,3 @@
-// app/dashboard/liked/page.tsx
 "use client";
 
 import { useState, useEffect } from "react";
@@ -9,222 +8,346 @@ import MediaCarousel from "@/components/ui/MediaCarousel";
 import { supabase } from "@/lib/supabase";
 import { toast } from "sonner";
 import Link from "next/link";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
-// Define all necessary types
-interface VenueMedia {
+// Base interfaces
+interface MediaItem {
   file_path: string;
   display_order: number;
 }
 
-interface Venue {
+interface BaseService {
   id: string;
   user_id: string;
-  name: string;
-  address: string;
-  city: string;
-  state: string;
-  base_price: number;
   description: string;
-  max_guests: number;
-  venue_media: VenueMedia[];
 }
 
-interface LikedVenueResponse {
-  venue_id: string;
+interface LikedItemResponse {
   liked_at: string;
-  venues: Venue;
+  [key: string]: any; // This allows for dynamic property access
 }
 
-interface LikedVenue {
-  id: string;
-  user_id: string;
+interface ServiceResponse extends LikedItemResponse {
+  venues?: VenueDetails;
+  makeup_artists?: MakeupArtistDetails;
+  // Add new service types here
+}
+
+// Service-specific interfaces
+interface VenueDetails extends BaseService {
   name: string;
-  description: string;
   city: string;
   state: string;
   base_price: number;
   max_guests: number;
-  venue_media: Array<{
-    file_path: string;
-    display_order: number;
-  }>;
-  liked_at: string;
+  venue_media: MediaItem[];
 }
+
+interface MakeupArtistDetails extends BaseService {
+  artist_name: string;
+  years_experience: number;
+  travel_range: number;
+  max_bookings_per_day: number;
+  min_service_price: number;
+  max_service_price: number;
+  makeup_media: MediaItem[];
+}
+
+// Service configuration type
+interface ServiceConfig<T extends BaseService> {
+  type: string;
+  likedTable: string;
+  entityTable: keyof ServiceResponse; // Update this line
+  foreignKey: string;
+  displayName: string;
+  pluralName: string;
+  selectQuery: string;
+  renderCard: (
+    item: T & { liked_at: string },
+    onUnlike: () => void
+  ) => JSX.Element;
+}
+
+// Service configurations
+const SERVICE_CONFIGS: Record<string, ServiceConfig<any>> = {
+  venue: {
+    type: "venue",
+    likedTable: "liked_venues",
+    entityTable: "venues" as keyof ServiceResponse,
+    foreignKey: "venue_id",
+    displayName: "Venue",
+    pluralName: "Venues",
+    selectQuery: `
+      venue_id,
+      liked_at,
+      venues:venues (
+        id,
+        user_id,
+        name,
+        city,
+        state,
+        base_price,
+        description,
+        max_guests,
+        venue_media (
+          file_path,
+          display_order
+        )
+      )
+    `,
+    renderCard: (
+      venue: VenueDetails & { liked_at: string },
+      onUnlike: () => void
+    ) => (
+      <div className="bg-white rounded-xl shadow-md overflow-hidden group">
+        <div className="relative">
+          <MediaCarousel
+            media={venue.venue_media}
+            serviceName={venue.name}
+            itemId={venue.id}
+            creatorId={venue.user_id}
+            service="venue"
+            initialLiked={true}
+            onUnlike={onUnlike}
+          />
+        </div>
+        <Link href={`/services/venue/${venue.id}`}>
+          <div className="p-4">
+            <h3 className="text-lg font-semibold mb-1 group-hover:text-rose-600 transition-colors">
+              {venue.name}
+            </h3>
+            <p className="text-slate-600 text-sm mb-2">
+              {venue.city}, {venue.state}
+            </p>
+            <p className="text-slate-600 text-sm mb-3 line-clamp-2">
+              {venue.description}
+            </p>
+            <div className="flex justify-between items-center pt-2 border-t">
+              <div className="text-sm text-slate-600">
+                Up to {venue.max_guests} guests
+              </div>
+              <div className="text-lg font-semibold text-rose-600">
+                ${venue.base_price.toLocaleString()}
+              </div>
+            </div>
+          </div>
+        </Link>
+      </div>
+    ),
+  },
+  makeup: {
+    type: "makeup",
+    likedTable: "liked_makeup",
+    entityTable: "makeup_artists" as keyof ServiceResponse,
+    foreignKey: "makeup_id",
+    displayName: "Makeup Artist",
+    pluralName: "Makeup Artists",
+    selectQuery: `
+      makeup_id,
+      liked_at,
+      makeup_artists:makeup_artists (
+        id,
+        user_id,
+        artist_name,
+        years_experience,
+        travel_range,
+        description,
+        max_bookings_per_day,
+        min_service_price,
+        max_service_price,
+        makeup_media (
+          file_path,
+          display_order
+        )
+      )
+    `,
+    renderCard: (
+      artist: MakeupArtistDetails & { liked_at: string },
+      onUnlike: () => void
+    ) => (
+      <div className="bg-white rounded-xl shadow-md overflow-hidden group">
+        <div className="relative">
+          <MediaCarousel
+            media={artist.makeup_media}
+            serviceName={artist.artist_name}
+            itemId={artist.id}
+            creatorId={artist.user_id}
+            service="makeup"
+            initialLiked={true}
+            onUnlike={onUnlike}
+          />
+        </div>
+        <Link href={`/services/makeup/${artist.id}`}>
+          <div className="p-4">
+            <h3 className="text-lg font-semibold mb-1 group-hover:text-rose-600 transition-colors">
+              {artist.artist_name}
+            </h3>
+            <p className="text-slate-600 text-sm mb-2">
+              {artist.years_experience} years experience • Up to{" "}
+              {artist.travel_range} miles
+            </p>
+            <p className="text-slate-600 text-sm mb-3 line-clamp-2">
+              {artist.description}
+            </p>
+            <div className="flex justify-between items-center pt-2 border-t">
+              <div className="text-sm text-slate-600">
+                {artist.max_bookings_per_day} bookings/day
+              </div>
+              <div className="text-lg font-semibold text-rose-600">
+                {artist.min_service_price === artist.max_service_price
+                  ? `$${artist.min_service_price.toLocaleString()}`
+                  : `$${artist.min_service_price.toLocaleString()} - $${artist.max_service_price.toLocaleString()}`}
+              </div>
+            </div>
+          </div>
+        </Link>
+      </div>
+    ),
+  },
+};
 
 export default function LikedServicesPage() {
   const { user } = useAuth();
-  const [likedVenues, setLikedVenues] = useState<LikedVenue[]>([]);
+  const [selectedService, setSelectedService] = useState<string>("venue");
+  const [likedItems, setLikedItems] = useState<
+    Array<BaseService & { liked_at: string }>
+  >([]);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     if (user) {
-      loadLikedVenues();
+      loadLikedItems();
     }
-  }, [user]);
+  }, [user, selectedService]);
 
-  const loadLikedVenues = async () => {
+  const loadLikedItems = async () => {
     try {
       if (!user?.id) {
-        console.log("No user ID available");
         setIsLoading(false);
         return;
       }
 
       setIsLoading(true);
-      console.log("Fetching liked venues for user:", user.id);
 
-      const { data, error } = await supabase
-        .from("liked_venues")
-        .select(
-          `
-        venue_id,
-        liked_at,
-        venues:venues (
-          id,
-          user_id,
-          name,
-          address,
-          city,
-          state,
-          base_price,
-          description,
-          max_guests,
-          venue_media (
-            id,
-            file_path,
-            display_order
-          )
-        )
-      `
-        )
-        .eq("user_id", user.id)
-        .order("liked_at", { ascending: false });
-
-      if (error) {
-        console.error("Supabase error:", error);
-        throw error;
+      const serviceConfig = SERVICE_CONFIGS[selectedService];
+      if (!serviceConfig) {
+        throw new Error("Invalid service type");
       }
 
-      console.log("Raw data received:", data);
+      const { data, error } = await supabase
+        .from(serviceConfig.likedTable)
+        .select(serviceConfig.selectQuery)
+        .eq("user_id", user.id)
+        .order("liked_at", { ascending: false })
+        .returns<ServiceResponse[]>(); // Add type here
+
+      if (error) throw error;
 
       if (!data || data.length === 0) {
-        console.log("No liked venues found");
-        setLikedVenues([]);
+        setLikedItems([]);
         return;
       }
 
-      // Transform the data
-      const transformedData: LikedVenue[] = (
-        data as unknown as LikedVenueResponse[]
-      )
-        .filter((item) => item.venues) // Filter out any null venues
-        .map((item) => ({
-          ...item.venues,
-          liked_at: item.liked_at,
-          venue_media: item.venues.venue_media || [],
-        }));
+      const transformedData = data
+        .filter((item: ServiceResponse) => item[serviceConfig.entityTable])
+        .map((item: ServiceResponse) => {
+          const entityData =
+            item[serviceConfig.entityTable as keyof ServiceResponse];
+          return {
+            ...entityData,
+            liked_at: item.liked_at,
+          };
+        });
 
-      console.log("Transformed data:", transformedData);
-      setLikedVenues(transformedData);
+      setLikedItems(transformedData);
     } catch (error: any) {
-      console.error("Error loading liked venues:", {
-        message: error.message,
-        details: error.details,
-        hint: error.hint,
-        code: error.code,
-      });
-      toast.error(error.message || "Failed to load liked venues");
+      console.error("Error loading liked items:", error);
+      toast.error("Failed to load liked items");
     } finally {
       setIsLoading(false);
     }
   };
+
+  const renderContent = () => {
+    if (isLoading) {
+      return (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+          {[...Array(3)].map((_, i) => (
+            <div
+              key={i}
+              className="bg-white rounded-xl shadow-md overflow-hidden"
+            >
+              <div className="animate-pulse">
+                <div className="h-48 bg-slate-200" />
+                <div className="p-4 space-y-3">
+                  <div className="h-4 bg-slate-200 rounded w-3/4" />
+                  <div className="h-3 bg-slate-200 rounded w-1/2" />
+                  <div className="h-3 bg-slate-200 rounded w-5/6" />
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      );
+    }
+
+    if (likedItems.length === 0) {
+      const config = SERVICE_CONFIGS[selectedService];
+      return (
+        <div className="text-center py-12 bg-white rounded-lg shadow">
+          <h3 className="text-lg font-medium text-gray-900 mb-2">
+            No liked {config.pluralName.toLowerCase()} yet
+          </h3>
+          <p className="text-gray-500 mb-6">
+            Start exploring and save your favorites
+          </p>
+          <Link
+            href={`/`}
+            className="inline-flex items-center px-4 py-2 bg-rose-600 hover:bg-rose-700 text-white rounded-lg transition-colors"
+          >
+            Explore {config.pluralName}
+          </Link>
+        </div>
+      );
+    }
+
+    return (
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+        {likedItems.map((item) => {
+          const config = SERVICE_CONFIGS[selectedService];
+          return (
+            <div key={item.id}>
+              {config.renderCard(item, () => {
+                setLikedItems((prev) => prev.filter((i) => i.id !== item.id));
+              })}
+            </div>
+          );
+        })}
+      </div>
+    );
+  };
+
   return (
     <div className="min-h-screen bg-slate-50">
       <NavBar />
       <div className="max-w-7xl mx-auto px-4 py-8">
         <h1 className="text-2xl font-bold mb-8">Liked Services</h1>
 
-        {isLoading ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            {[...Array(3)].map((_, i) => (
-              <div
-                key={i}
-                className="bg-white rounded-xl shadow-md overflow-hidden"
-              >
-                <div className="animate-pulse">
-                  <div className="h-48 bg-slate-200" />
-                  <div className="p-4 space-y-3">
-                    <div className="h-4 bg-slate-200 rounded w-3/4" />
-                    <div className="h-3 bg-slate-200 rounded w-1/2" />
-                    <div className="h-3 bg-slate-200 rounded w-5/6" />
-                  </div>
-                </div>
-              </div>
+        <Tabs
+          value={selectedService}
+          onValueChange={setSelectedService}
+          className="mb-8"
+        >
+          <TabsList>
+            {Object.values(SERVICE_CONFIGS).map((config) => (
+              <TabsTrigger key={config.type} value={config.type}>
+                {config.pluralName}
+              </TabsTrigger>
             ))}
-          </div>
-        ) : likedVenues.length > 0 ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            {likedVenues.map((venue) => (
-              <div
-                key={venue.id}
-                className="bg-white rounded-xl shadow-md overflow-hidden group"
-              >
-                <div className="relative">
-                  <MediaCarousel
-                    media={venue.venue_media}
-                    venueName={venue.name}
-                    venueId={venue.id}
-                    venueCreator={venue.user_id}
-                    userLoggedIn={user?.id}
-                    initialLiked={true}
-                    onUnlike={() => {
-                      // Remove venue from the list when unliked
-                      setLikedVenues((prev) =>
-                        prev.filter((v) => v.id !== venue.id)
-                      );
-                    }}
-                  />
-                </div>
-                <Link href={`/venues/${venue.id}`}>
-                  <div className="p-4">
-                    <h3 className="text-lg font-semibold mb-1 group-hover:text-rose-600 transition-colors">
-                      {venue.name}
-                    </h3>
-                    <p className="text-slate-600 text-sm mb-2">
-                      {venue.city}, {venue.state}
-                    </p>
-                    <p className="text-slate-600 text-sm mb-3 line-clamp-2">
-                      {venue.description}
-                    </p>
-                    <div className="flex justify-between items-center pt-2 border-t">
-                      <div className="text-sm text-slate-600">
-                        Up to {venue.max_guests} guests
-                      </div>
-                      <div className="text-lg font-semibold text-rose-600">
-                        ${venue.base_price}
-                      </div>
-                    </div>
-                  </div>
-                </Link>
-              </div>
-            ))}
-          </div>
-        ) : (
-          <div className="text-center py-12 bg-white rounded-lg shadow">
-            <h3 className="text-lg font-medium text-gray-900 mb-2">
-              No liked services yet
-            </h3>
-            <p className="text-gray-500 mb-6">
-              Start exploring and save your favorites
-            </p>
-            <Link
-              href="/"
-              className="inline-flex items-center px-4 py-2 bg-rose-600 hover:bg-rose-700 text-white rounded-lg transition-colors"
-            >
-              Explore Venues
-            </Link>
-          </div>
-        )}
+          </TabsList>
+        </Tabs>
+
+        {renderContent()}
       </div>
       <Footer />
     </div>

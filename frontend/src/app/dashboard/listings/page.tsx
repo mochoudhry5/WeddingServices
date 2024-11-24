@@ -195,10 +195,12 @@ export default function MyListingsPage() {
                 <div className="relative">
                   <MediaCarousel
                     media={venue.venue_media}
-                    venueName={venue.name}
-                    venueId={venue.id}
-                    venueCreator={venue.user_id}
+                    serviceName={venue.name}
+                    itemId={venue.id}
+                    creatorId={venue.user_id}
                     userLoggedIn={user?.id}
+                    service="venue"
+                    initialLiked={true}
                   />
                   <div className="absolute top-2 left-2 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
                     <Link

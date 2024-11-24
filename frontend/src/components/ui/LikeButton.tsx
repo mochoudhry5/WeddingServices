@@ -1,21 +1,54 @@
-// components/LikeButton.tsx
 "use client";
-
 import { useState, useEffect } from "react";
 import { Heart } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/context/AuthContext";
 import { toast } from "sonner";
 
+// Service configuration type
+interface ServiceConfig {
+  tableName: string;
+  idField: string;
+  entityName: string;
+  pluralName: string;
+}
+
+// Service configurations
+const SERVICE_CONFIGS: Record<string, ServiceConfig> = {
+  venue: {
+    tableName: "liked_venues",
+    idField: "venue_id",
+    entityName: "venue",
+    pluralName: "venues",
+  },
+  makeup: {
+    tableName: "liked_makeup",
+    idField: "makeup_id",
+    entityName: "makeup artist",
+    pluralName: "makeup artists",
+  },
+  // Add new services here
+  // photography: {
+  //   tableName: "liked_photography",
+  //   idField: "photographer_id",
+  //   entityName: "photographer",
+  //   pluralName: "photographers"
+  // },
+} as const;
+
+type ServiceType = keyof typeof SERVICE_CONFIGS;
+
 interface LikeButtonProps {
-  venueId: string;
+  itemId: string;
+  service: ServiceType;
   initialLiked?: boolean;
-  onUnlike?: () => void; // Add this prop
+  onUnlike?: () => void;
   className?: string;
 }
 
 export default function LikeButton({
-  venueId,
+  itemId,
+  service,
   initialLiked = false,
   onUnlike,
   className = "",
@@ -24,26 +57,26 @@ export default function LikeButton({
   const [isLiked, setIsLiked] = useState(initialLiked);
   const [isLoading, setIsLoading] = useState(false);
 
-  // Check if venue is liked on component mount
+  const serviceConfig = SERVICE_CONFIGS[service];
+
   useEffect(() => {
-    if (user) {
+    if (user && itemId) {
       checkIfLiked();
     }
-  }, [user, venueId]);
+  }, [user, itemId, service]);
 
   const checkIfLiked = async () => {
     try {
       const { data, error } = await supabase
-        .from("liked_venues")
-        .select("venue_id")
+        .from(serviceConfig.tableName)
+        .select(serviceConfig.idField)
         .eq("user_id", user?.id)
-        .eq("venue_id", venueId)
+        .eq(serviceConfig.idField, itemId)
         .single();
 
       if (error && error.code !== "PGRST116") {
         throw error;
       }
-
       setIsLiked(!!data);
     } catch (error) {
       console.error("Error checking like status:", error);
@@ -51,42 +84,43 @@ export default function LikeButton({
   };
 
   const toggleLike = async (e: React.MouseEvent) => {
-    e.preventDefault(); // Prevent navigation if button is inside a link
+    e.preventDefault();
     e.stopPropagation();
 
     if (!user) {
-      toast.error("Please sign in to like venues");
+      toast.error("Please sign in to save listings");
       return;
     }
 
     setIsLoading(true);
-
     try {
       if (isLiked) {
         // Unlike
         const { error } = await supabase
-          .from("liked_venues")
+          .from(serviceConfig.tableName)
           .delete()
           .eq("user_id", user.id)
-          .eq("venue_id", venueId);
-        onUnlike?.();
+          .eq(serviceConfig.idField, itemId);
+
         if (error) throw error;
-        toast.success("Removed from liked venues");
+        toast.success(`Removed from saved ${serviceConfig.pluralName}`);
+        onUnlike?.();
       } else {
         // Like
-        const { error } = await supabase.from("liked_venues").insert({
+        const { error } = await supabase.from(serviceConfig.tableName).insert({
           user_id: user.id,
-          venue_id: venueId,
+          [serviceConfig.idField]: itemId,
+          liked_at: new Date().toISOString(),
         });
 
         if (error) throw error;
-        toast.success("Added to liked venues");
+        toast.success(`Added to saved ${serviceConfig.pluralName}`);
       }
 
       setIsLiked(!isLiked);
     } catch (error) {
       console.error("Error toggling like:", error);
-      toast.error("Failed to update like status");
+      toast.error("Failed to update saved status");
     } finally {
       setIsLoading(false);
     }

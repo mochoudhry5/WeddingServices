@@ -78,7 +78,8 @@ interface MakeupArtistDetails {
   max_bookings_per_day: number;
   makeup_media: MediaItem[];
   makeup_services: Array<{ price: number }>;
-  base_price?: number;
+  min_service_price: number; // Add this
+  max_service_price: number; // Add this
   rating: number;
   created_at: string;
 }
@@ -99,6 +100,52 @@ interface SearchFilters {
   sortOption: SortOption;
   serviceType: ServiceType;
 }
+
+interface ServiceConfig {
+  singularName: string;
+  pluralName: string;
+  hasCapacity: boolean;
+  locationBased: boolean;
+  priceType: "flat" | "range" | "service-based";
+}
+
+const SERVICE_CONFIGS: Record<ServiceType, ServiceConfig> = {
+  venue: {
+    singularName: "venue",
+    pluralName: "venues",
+    hasCapacity: true,
+    locationBased: true,
+    priceType: "range",
+  },
+  makeup: {
+    singularName: "makeup artist",
+    pluralName: "makeup artists",
+    hasCapacity: false,
+    locationBased: false, // Uses travel range instead
+    priceType: "service-based",
+  },
+  photography: {
+    singularName: "photographer",
+    pluralName: "photographers",
+    hasCapacity: false,
+    locationBased: false,
+    priceType: "service-based",
+  },
+  weddingplanner: {
+    singularName: "wedding planner",
+    pluralName: "wedding planners",
+    hasCapacity: false,
+    locationBased: true,
+    priceType: "service-based",
+  },
+  dj: {
+    singularName: "DJ",
+    pluralName: "DJs",
+    hasCapacity: false,
+    locationBased: true,
+    priceType: "flat",
+  },
+};
 
 export default function ServicesSearchPage() {
   // State Management
@@ -153,24 +200,26 @@ export default function ServicesSearchPage() {
       setIsLoading(true);
 
       if (filtersToUse.serviceType === "makeup") {
-        // Fetch makeup artists
-        let query = supabase
-          .from("makeup_artists")
-          .select(
-            `
-            *,
-            makeup_media (
-              file_path,
-              display_order
-            ),
-            makeup_services (
-              price
-            )
-          `
+        let query = supabase.from("makeup_artists").select(`
+          *,
+          makeup_media (
+            file_path,
+            display_order
+          ),
+          makeup_services (
+            price
           )
-          .order("created_at", { ascending: false });
+          `);
 
         if (withFilters) {
+          // Apply price range filter - ensure we're handling nulls and using proper comparisons
+          if (filtersToUse.priceRange[0] > 0) {
+            query = query.gte("min_service_price", filtersToUse.priceRange[0]);
+          }
+          if (filtersToUse.priceRange[1] < 10000) {
+            query = query.lte("max_service_price", filtersToUse.priceRange[1]);
+          }
+
           // Apply location filter
           const { city, state } = filtersToUse.searchQuery;
           if (city || state) {
@@ -180,45 +229,33 @@ export default function ServicesSearchPage() {
             query = query.or(locationFilters.join(","));
           }
 
-          // Apply price range to minimum service price
-          if (
-            filtersToUse.priceRange[0] > 0 ||
-            filtersToUse.priceRange[1] < 10000
-          ) {
-            // Note: This is a simplified version. In reality, you might need a more complex query
-            // to filter by service prices which are in a related table
-            query = query.contains("makeup_services", [
-              {
-                price: {
-                  $gte: filtersToUse.priceRange[0],
-                  $lte: filtersToUse.priceRange[1],
-                },
-              },
-            ]);
-          }
-
           // Apply sorting
           switch (filtersToUse.sortOption) {
             case "price_asc":
-              query = query.order("created_at", { ascending: true });
+              query = query.order("min_service_price", { ascending: true });
               break;
             case "price_desc":
-              query = query.order("created_at", { ascending: false });
+              query = query.order("max_service_price", { ascending: false });
               break;
+            default:
+              query = query.order("created_at", { ascending: false });
           }
         }
 
         const { data: makeupData, error: makeupError } = await query;
 
-        if (makeupError) throw makeupError;
+        // Better error handling
+        if (makeupError) {
+          console.error("Supabase Error:", makeupError);
+          throw makeupError;
+        }
 
-        const processedMakeupArtists = (makeupData || []).map((artist) => ({
+        if (!makeupData) {
+          throw new Error("No data returned from query");
+        }
+
+        const processedMakeupArtists = makeupData.map((artist) => ({
           ...artist,
-          base_price: Math.min(
-            ...(artist.makeup_services?.map((s: { price: any }) => s.price) || [
-              0,
-            ])
-          ),
           rating: 4.5 + Math.random() * 0.5,
         }));
 
@@ -424,17 +461,15 @@ export default function ServicesSearchPage() {
                   media={
                     isMakeupArtist(listing)
                       ? listing.makeup_media
-                      : (listing as VenueDetails).venue_media
+                      : listing.venue_media
                   }
-                  venueName={
-                    isMakeupArtist(listing)
-                      ? listing.artist_name
-                      : (listing as VenueDetails).name
+                  serviceName={
+                    isMakeupArtist(listing) ? listing.artist_name : listing.name
                   }
-                  venueId={isMakeupArtist(listing) ? undefined : listing.id}
-                  makeupId={isMakeupArtist(listing) ? listing.id : undefined}
-                  venueCreator={listing.user_id}
+                  itemId={listing.id}
+                  creatorId={listing.user_id}
                   userLoggedIn={user?.id}
+                  service={isMakeupArtist(listing) ? "makeup" : "venue"}
                 />
               </div>
 
@@ -462,8 +497,13 @@ export default function ServicesSearchPage() {
                         <div className="text-sm text-slate-600">
                           {listing.max_bookings_per_day} bookings/day
                         </div>
-                        <div className="text-lg font-semibold text-rose-600">
-                          From ${listing.base_price?.toLocaleString()}
+                        <div className="flex justify-between items-center pt-2 border-t">
+                          <div className="text-lg font-semibold text-rose-600">
+                            {listing.min_service_price ===
+                            listing.max_service_price
+                              ? `$${listing.min_service_price.toLocaleString()}`
+                              : `$${listing.min_service_price.toLocaleString()} - $${listing.max_service_price.toLocaleString()}`}
+                          </div>
                         </div>
                       </div>
                     </>
@@ -574,7 +614,13 @@ export default function ServicesSearchPage() {
                     },
                   }));
                 }}
-                placeholder="Search by location"
+                placeholder={
+                  SERVICE_CONFIGS[searchFilters.serviceType].locationBased
+                    ? "Search by location"
+                    : `Search for ${
+                        SERVICE_CONFIGS[searchFilters.serviceType].pluralName
+                      }`
+                }
                 className="w-full"
               />
 
@@ -605,8 +651,134 @@ export default function ServicesSearchPage() {
                     </button>
                   </SheetTrigger>
 
-                  {/* Filter Sheet Content */}
-                  {/* ... (keep your existing filter sheet content, updating variable names) */}
+                  <SheetContent side="right" className="w-full max-w-md">
+                    <SheetHeader>
+                      <SheetTitle>Filter Options</SheetTitle>
+                      <SheetDescription>
+                        Customize your{" "}
+                        {
+                          SERVICE_CONFIGS[searchFilters.serviceType]
+                            .singularName
+                        }{" "}
+                        search results
+                      </SheetDescription>
+                    </SheetHeader>
+
+                    <div className="mt-6 space-y-6">
+                      {/* Price Range */}
+                      <div className="px-1">
+                        <h3 className="text-sm font-medium mb-4">
+                          Price Range
+                        </h3>
+                        <Slider
+                          defaultValue={searchFilters.priceRange}
+                          value={searchFilters.priceRange}
+                          max={10000}
+                          step={500}
+                          onValueChange={(value) => {
+                            setSearchFilters((prev) => ({
+                              ...prev,
+                              priceRange: value,
+                            }));
+                          }}
+                          className="mb-2"
+                        />
+                        <div className="flex justify-between text-sm text-slate-600">
+                          <span>
+                            ${searchFilters.priceRange[0].toLocaleString()}
+                          </span>
+                          <span>
+                            ${searchFilters.priceRange[1].toLocaleString()}
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* Capacity - Only show for venues */}
+                      {SERVICE_CONFIGS[searchFilters.serviceType]
+                        .hasCapacity && (
+                        <div>
+                          <h3 className="text-sm font-medium mb-4">
+                            Guest Capacity
+                          </h3>
+                          <Select
+                            value={searchFilters.capacity}
+                            onValueChange={(value: string) => {
+                              if (isValidCapacityOption(value)) {
+                                setSearchFilters((prev) => ({
+                                  ...prev,
+                                  capacity: value,
+                                }));
+                              }
+                            }}
+                          >
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select capacity range" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="all">Any capacity</SelectItem>
+                              <SelectItem value="0-100">
+                                Up to 100 guests
+                              </SelectItem>
+                              <SelectItem value="101-200">
+                                101-200 guests
+                              </SelectItem>
+                              <SelectItem value="201-300">
+                                201-300 guests
+                              </SelectItem>
+                              <SelectItem value="301+">301+ guests</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      )}
+
+                      {/* Sort Options */}
+                      <div>
+                        <h3 className="text-sm font-medium mb-4">Sort By</h3>
+                        <Select
+                          value={searchFilters.sortOption}
+                          onValueChange={(value: string) => {
+                            if (isValidSortOption(value)) {
+                              setSearchFilters((prev) => ({
+                                ...prev,
+                                sortOption: value,
+                              }));
+                            }
+                          }}
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select sorting option" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="default">Featured</SelectItem>
+                            <SelectItem value="price_asc">
+                              Price: Low to High
+                            </SelectItem>
+                            <SelectItem value="price_desc">
+                              Price: High to Low
+                            </SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+
+                      {/* Action Buttons */}
+                      <div className="flex gap-3 pt-6">
+                        <button
+                          type="button"
+                          onClick={handleFilterApply}
+                          className="flex-1 py-3 text-sm text-white bg-rose-500 hover:bg-rose-600 rounded-lg transition-colors duration-300"
+                        >
+                          Apply Filters
+                        </button>
+                        <button
+                          type="button"
+                          onClick={handleFilterReset}
+                          className="flex-1 py-3 text-sm border border-rose-200 text-rose-600 hover:bg-rose-50 rounded-lg transition-colors duration-300"
+                        >
+                          Clear
+                        </button>
+                      </div>
+                    </div>
+                  </SheetContent>
                 </Sheet>
               </div>
             </div>
@@ -619,12 +791,8 @@ export default function ServicesSearchPage() {
         <p className="text-sm text-gray-600">
           {serviceListings.length}{" "}
           {serviceListings.length === 1
-            ? searchFilters.serviceType === "makeup"
-              ? "makeup artist"
-              : "venue"
-            : searchFilters.serviceType === "makeup"
-            ? "makeup artists"
-            : "venues"}{" "}
+            ? SERVICE_CONFIGS[searchFilters.serviceType].singularName
+            : SERVICE_CONFIGS[searchFilters.serviceType].pluralName}{" "}
           found
         </p>
       </div>
