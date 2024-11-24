@@ -156,7 +156,7 @@ export default function MyListingsPage() {
   return (
     <div className="min-h-screen bg-slate-50">
       <NavBar />
-      <div className="max-w-7xl mx-auto px-4 py-8">
+      <div className="mb-[6%] max-w-7xl mx-auto px-4 py-8">
         <div className="flex justify-between items-center mb-8">
           <h1 className="text-2xl font-bold">My Listings</h1>
           <Link
