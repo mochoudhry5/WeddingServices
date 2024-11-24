@@ -34,6 +34,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import NavBar from "@/components/ui/NavBar";
 import Footer from "@/components/ui/Footer";
+import LocationInput from "@/components/ui/LocationInput";
 
 // Types
 interface MediaFile {
@@ -105,9 +106,15 @@ const CreateMakeupListing = () => {
   const [customSpecialty, setCustomSpecialty] = useState("");
   const [websiteUrl, setWebsiteUrl] = useState("");
   const [instagramUrl, setInstagramUrl] = useState("");
-  const [address, setAddress] = useState("");
-  const [city, setCity] = useState("");
-  const [state, setState] = useState("");
+  // Replace the individual location states with
+  const [location, setLocation] = useState({
+    enteredLocation: "",
+    address: "",
+    city: "",
+    state: "",
+    country: "",
+    placeId: "",
+  });
 
   // Media State
   const [mediaFiles, setMediaFiles] = useState<MediaFile[]>([]);
@@ -153,6 +160,10 @@ const CreateMakeupListing = () => {
           artistName &&
           experience &&
           travelRange &&
+          location.enteredLocation &&
+          location.city &&
+          location.state &&
+          location.country &&
           description &&
           specialties.length > 0
         );
@@ -191,17 +202,67 @@ const CreateMakeupListing = () => {
   const handleSubmit = async () => {
     try {
       if (
+        // Basic Information
         !artistName ||
         !experience ||
         !travelRange ||
         !description ||
         specialties.length === 0 ||
+        // Location
+        !location.enteredLocation ||
+        !location.city ||
+        !location.state ||
+        !location.country ||
+        // Media
         mediaFiles.length < 5 ||
+        // Services
         Object.keys(selectedServices).length === 0 ||
+        // Availability
         !availability.maxBookingsPerDay ||
         !availability.advanceBookingRequired ||
         !availability.cancellationPolicy
       ) {
+        // Show more specific error messages based on what's missing
+        if (
+          !artistName ||
+          !experience ||
+          !travelRange ||
+          !description ||
+          specialties.length === 0
+        ) {
+          toast.error("Please fill in all basic information fields");
+          return;
+        }
+
+        if (
+          !location.enteredLocation ||
+          !location.city ||
+          !location.state ||
+          !location.country
+        ) {
+          toast.error("Please select a valid location");
+          return;
+        }
+
+        if (mediaFiles.length < 5) {
+          toast.error("Please upload at least 5 portfolio images");
+          return;
+        }
+
+        if (Object.keys(selectedServices).length === 0) {
+          toast.error("Please add at least one service");
+          return;
+        }
+
+        if (
+          !availability.maxBookingsPerDay ||
+          !availability.advanceBookingRequired ||
+          !availability.cancellationPolicy
+        ) {
+          toast.error("Please complete all availability settings");
+          return;
+        }
+
         toast.error("Please fill in all required fields");
         return;
       }
@@ -226,6 +287,11 @@ const CreateMakeupListing = () => {
           artist_name: artistName,
           years_experience: parseInt(experience),
           travel_range: parseInt(travelRange),
+          address: location.address,
+          city: location.city,
+          state: location.state,
+          country: location.country,
+          place_id: location.placeId,
           description,
           website_url: websiteUrl || null,
           instagram_url: instagramUrl || null,
@@ -422,6 +488,95 @@ const CreateMakeupListing = () => {
                     className="w-full"
                     required
                   />
+                </div>
+                <div className="space-y-4">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Location Details*
+                  </label>
+
+                  <LocationInput
+                    value={location.enteredLocation}
+                    onChange={(value) =>
+                      setLocation((prev) => ({
+                        ...prev,
+                        enteredLocation: value,
+                      }))
+                    }
+                    onPlaceSelect={(place) => {
+                      let address = "";
+                      let city = "";
+                      let state = "";
+                      let country = "";
+
+                      place.address_components?.forEach((component) => {
+                        if (
+                          component.types.includes("street_number") ||
+                          component.types.includes("route")
+                        ) {
+                          address += address
+                            ? ` ${component.long_name}`
+                            : component.long_name;
+                        }
+                        if (component.types.includes("locality")) {
+                          city = component.long_name;
+                        }
+                        if (
+                          component.types.includes(
+                            "administrative_area_level_1"
+                          )
+                        ) {
+                          state = component.long_name;
+                        }
+                        if (component.types.includes("country")) {
+                          country = component.long_name;
+                        }
+                      });
+
+                      setLocation({
+                        enteredLocation: place.formatted_address || "",
+                        address,
+                        city,
+                        state,
+                        country,
+                        placeId: place.place_id || "",
+                      });
+                    }}
+                    placeholder="Enter your service location"
+                    className="w-full"
+                  />
+
+                  {/* Display selected location details */}
+                  {location.enteredLocation && (
+                    <div className="p-4 bg-gray-50 rounded-lg space-y-2">
+                      <h3 className="font-medium text-gray-900">
+                        Selected Location
+                      </h3>
+                      {location.address && (
+                        <p className="text-sm text-gray-600">
+                          <span className="font-medium">Address:</span>{" "}
+                          {location.address}
+                        </p>
+                      )}
+                      {location.city && (
+                        <p className="text-sm text-gray-600">
+                          <span className="font-medium">City:</span>{" "}
+                          {location.city}
+                        </p>
+                      )}
+                      {location.state && (
+                        <p className="text-sm text-gray-600">
+                          <span className="font-medium">State:</span>{" "}
+                          {location.state}
+                        </p>
+                      )}
+                      {location.country && (
+                        <p className="text-sm text-gray-600">
+                          <span className="font-medium">Country:</span>{" "}
+                          {location.country}
+                        </p>
+                      )}
+                    </div>
+                  )}
                 </div>
 
                 <div>

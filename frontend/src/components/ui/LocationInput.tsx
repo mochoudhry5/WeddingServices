@@ -285,7 +285,7 @@ const LocationInput = ({
   return (
     <div className="relative flex-1">
       <Search
-        className="absolute left-2 top-1/2 transform -translate-y-1/2 text-gray-400"
+        className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 pointer-events-none z-10"
         size={20}
       />
       <Input
@@ -301,7 +301,7 @@ const LocationInput = ({
             ? "Getting your location..."
             : placeholder || "Search by location"
         }
-        className={cn("pr-10", className)}
+        className={cn("pl-10 pr-10", className)}
         disabled={!isLoaded || isLoadingLocation}
         autoComplete="off"
       />

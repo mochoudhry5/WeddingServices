@@ -346,7 +346,7 @@ export default function ServicesSearchPage() {
       priceRange: [0, 10000],
       capacity: "all",
       sortOption: "default",
-      serviceType: "venue",
+      serviceType: searchFilters.serviceType,
     };
     setSearchFilters(resetFilters);
     updateURLWithFilters(resetFilters);
