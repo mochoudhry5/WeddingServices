@@ -339,7 +339,8 @@ export default function VenueDetailsPage() {
               {venue.name}
               {user?.id !== venue.user_id ? (
                 <LikeButton
-                  venueId={venue.id}
+                  itemId={venue.id}
+                  service="venue"
                   initialLiked={false}
                   className="ml-4"
                 />
@@ -361,13 +362,7 @@ export default function VenueDetailsPage() {
 
         {/* Description */}
         <div className="mb-12">
-          <h2 className="text-xl md:text-2xl font-bold mb-4">
-            About the Venue
-          </h2>
-          <p className="text-gray-600 mb-6 leading-relaxed">
-            {venue.description}
-          </p>
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-12">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-12">
             {/* Capacity */}
             <div className="flex flex-col items-center text-center border-r border-gray-200 last:border-r-0">
               <h3 className="text-lg font-semibold mb-3">Capacity</h3>
@@ -390,26 +385,6 @@ export default function VenueDetailsPage() {
                 <span className="text-rose-500">•</span>
                 Outside & In-House Available
               </div>
-            </div>
-
-            {/* Number of Halls */}
-            <div className="flex flex-col items-center text-center border-r border-gray-200 last:border-r-0">
-              <h3 className="text-lg font-semibold mb-3">Number of Halls</h3>
-              <ul className="space-y-2 text-gray-600">
-                {venue.hall_names && venue.hall_names.length > 0 ? (
-                  venue.hall_names.map((hall, index) => (
-                    <li key={index} className="flex items-center gap-2">
-                      <span className="text-rose-500">•</span>
-                      {hall}
-                    </li>
-                  ))
-                ) : (
-                  <li className="flex items-center gap-2">
-                    <span className="text-rose-500">•</span>
-                    Single Hall Venue
-                  </li>
-                )}
-              </ul>
             </div>
 
             {/* Socials */}
@@ -442,6 +417,11 @@ export default function VenueDetailsPage() {
             </div>
           </div>
         </div>
+
+        <h2 className="text-xl md:text-2xl font-bold mb-4">About the Venue</h2>
+        <p className="text-gray-600 mb-6 leading-relaxed">
+          {venue.description}
+        </p>
 
         {/* What's Included */}
         {venue.venue_inclusions?.length > 0 && (
