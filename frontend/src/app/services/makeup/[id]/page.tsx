@@ -213,12 +213,6 @@ export default function MakeupDetailsPage() {
 
         {/* Description */}
         <div className="mb-12">
-          <h2 className="text-xl md:text-2xl font-bold mb-4">
-            About the Artist
-          </h2>
-          <p className="text-gray-600 mb-6 leading-relaxed">
-            {makeup.description}
-          </p>
           <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-12">
             {/* Booking Info */}
             <div className="flex flex-col items-center text-center border-r border-gray-200 last:border-r-0">
@@ -276,6 +270,11 @@ export default function MakeupDetailsPage() {
             </div>
           </div>
         </div>
+
+        <h2 className="text-xl md:text-2xl font-bold mb-4">About the Artist</h2>
+        <p className="text-gray-600 mb-6 leading-relaxed">
+          {makeup.description}
+        </p>
 
         {/* Specialties */}
         {makeup.makeup_specialties?.length > 0 && (
