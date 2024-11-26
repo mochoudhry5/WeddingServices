@@ -47,6 +47,20 @@ export default function NavBar() {
       .join("");
   };
 
+  const handleSwitchToSignUp = () => {
+    setIsLoginOpen(false);
+    setTimeout(() => {
+      setIsSignUpOpen(true);
+    }, 500);
+  };
+
+  const handleSwitchToLogin = () => {
+    setIsSignUpOpen(false);
+    setTimeout(() => {
+      setIsLoginOpen(true);
+    }, 500);
+  };
+
   const MobileMenu = () =>
     user ? (
       <Sheet open={isMobileMenuOpen} onOpenChange={setIsMobileMenuOpen}>
@@ -262,6 +276,8 @@ export default function NavBar() {
         isSignUpOpen={isSignUpOpen}
         onLoginClose={() => setIsLoginOpen(false)}
         onSignUpClose={() => setIsSignUpOpen(false)}
+        onSwitchToSignUp={handleSwitchToSignUp}
+        onSwitchToLogin={handleSwitchToLogin}
       />
     </header>
   );
