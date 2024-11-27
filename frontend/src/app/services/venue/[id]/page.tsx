@@ -334,7 +334,7 @@ export default function VenueDetailsPage() {
       {/* Content */}
       <div className="max-w-7xl mx-auto">
         {/* Venue Header */}
-        {user?.id === venue.user_id && (
+        {user?.id !== venue.user_id && (
           <div className="max-w-7xl mx-auto px-4 py-4">
             <div className="bg-rose-50 border-b border-rose-200 py-2">
               <div className="max-w-3xl mx-auto px-4 flex flex-col items-center justify-center">
