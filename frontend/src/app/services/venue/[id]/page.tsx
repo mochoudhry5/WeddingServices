@@ -368,7 +368,7 @@ export default function VenueDetailsPage() {
               <p className="text-2xl md:text-3xl font-bold text-rose-600">
                 ${venue.base_price.toLocaleString()}
               </p>
-              <p className="text-gray-600">Base Price (Venue Only)</p>
+              <p className="text-gray-600">Base Price (Venue only)</p>
             </div>
           </div>
         </div>
@@ -454,7 +454,7 @@ export default function VenueDetailsPage() {
         {venue.venue_inclusions?.length > 0 && (
           <div className="mb-12">
             <h2 className="text-xl md:text-2xl font-bold mb-6">
-              What's Included
+              What's Included in the Base Price
             </h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
               {[...venue.venue_inclusions]

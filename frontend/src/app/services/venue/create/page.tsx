@@ -674,7 +674,7 @@ export default function CreateVenueListing() {
                 {/* Price Range */}
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Base Price (per event)*
+                    Base Price (Venue only)*
                   </label>
                   <div className="relative">
                     <DollarSign
@@ -921,7 +921,7 @@ export default function CreateVenueListing() {
             {/* Step 3: Inclusions */}
             {currentStep === 3 && (
               <div className="space-y-6">
-                <h2 className="text-2xl font-semibold mb-6">What's Included</h2>
+                <h2 className="text-2xl font-semibold mb-6">What's Included in the Base Price</h2>
 
                 {/* Common Inclusions */}
                 <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
