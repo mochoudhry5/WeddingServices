@@ -355,7 +355,6 @@ export default function VenueDetailsPage() {
         )}
         <div className="max-w-7xl mx-auto px-4 py-8">
           {/* Venue Header */}
-          {/* Venue Header */}
           <div className="flex flex-col md:flex-row md:justify-between md:items-start gap-4 mb-8">
             <div>
               <h1 className="text-2xl md:text-3xl font-bold text-gray-900 mb-2">
