@@ -409,34 +409,38 @@ export default function VenueDetailsPage() {
             {/* Socials */}
             <div className="flex flex-col items-center text-center last:border-r-0">
               <h3 className="text-lg font-semibold mb-3">Socials</h3>
-              <ul className="space-y-2 text-gray-600">
-                {venue.website_url && (
-                  <li className="flex items-center gap-2">
-                    <span className="text-rose-500">•</span>
-                    <a
-                      href={venue.website_url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-rose-600 hover:text-rose-700 hover:underline"
-                    >
-                      Website
-                    </a>
-                  </li>
-                )}
-                {venue.instagram_url && (
-                  <li className="flex items-center gap-2">
-                    <span className="text-rose-500">•</span>
-                    <a
-                      href={venue.instagram_url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-rose-600 hover:text-rose-700 hover:underline"
-                    >
-                      Instagram
-                    </a>
-                  </li>
-                )}
-              </ul>
+              {venue.website_url || venue.instagram_url ? (
+                <ul className="space-y-2 text-gray-600">
+                  {venue.website_url && (
+                    <li className="flex items-center gap-2">
+                      <span className="text-rose-500">•</span>
+                      <a
+                        href={venue.website_url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-rose-600 hover:text-rose-700 hover:underline"
+                      >
+                        Website
+                      </a>
+                    </li>
+                  )}
+                  {venue.instagram_url && (
+                    <li className="flex items-center gap-2">
+                      <span className="text-rose-500">•</span>
+                      <a
+                        href={venue.instagram_url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-rose-600 hover:text-rose-700 hover:underline"
+                      >
+                        Instagram
+                      </a>
+                    </li>
+                  )}
+                </ul>
+              ) : (
+                <p className="text-gray-600">No Social Links Yet!</p>
+              )}
             </div>
           </div>
         </div>

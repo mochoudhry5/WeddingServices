@@ -21,12 +21,17 @@ interface MakeupDetails {
   website_url: string | null;
   instagram_url: string | null;
   max_bookings_per_day: number;
-  advance_booking_required: string;
+  deposit: number;
   cancellation_policy: string;
   user_id: string;
   makeup_media: MakeupMedia[];
   makeup_specialties: MakeupSpecialty[];
   makeup_services: MakeupService[];
+  is_remote_business: boolean;
+  address: string | null;
+  city: string;
+  state: string;
+  country: string;
 }
 
 interface MakeupMedia {
@@ -82,24 +87,25 @@ export default function MakeupDetailsPage() {
         .from("makeup_artists")
         .select(
           `
-          *,
-          user_id,
-          makeup_media (
-            file_path,
-            display_order
-          ),
-          makeup_specialties (
-            specialty,
-            is_custom
-          ),
-          makeup_services (
-            name,
-            description,
-            price,
-            duration,
-            is_custom
-          )
-        `
+    *,
+    user_id,
+    is_remote_business,
+    makeup_media (
+      file_path,
+      display_order
+    ),
+    makeup_specialties (
+      specialty,
+      is_custom
+    ),
+    makeup_services (
+      name,
+      description,
+      price,
+      duration,
+      is_custom
+    )
+  `
         )
         .eq("id", params.id)
         .single();
@@ -193,21 +199,23 @@ export default function MakeupDetailsPage() {
             <h1 className="text-2xl md:text-3xl font-bold text-gray-900 mb-2">
               {makeup.artist_name}
               {/* {user?.id !== makeup.user_id ? (
-                <LikeButton
-                  makeupId={makeup.id}
-                  initialLiked={false}
-                  className="ml-4"
-                />
-              ) : null} */}
+        <LikeButton
+          makeupId={makeup.id}
+          initialLiked={false}
+          className="ml-4"
+        />
+      ) : null} */}
             </h1>
-            <p className="text-gray-600">
-              {makeup.years_experience} years of experience
-            </p>
-          </div>
-          <div className="md:text-right">
-            <p className="text-gray-600">
-              Travel range up to {makeup.travel_range} miles
-            </p>
+            {makeup.is_remote_business ? (
+              <p className="text-gray-600">
+                {makeup.city}, {makeup.state} (Remote)
+              </p>
+            ) : (
+              <p className="text-gray-600">
+                {makeup.address}, {makeup.city}, {makeup.state},{" "}
+                {makeup.country}
+              </p>
+            )}
           </div>
         </div>
 
@@ -216,57 +224,78 @@ export default function MakeupDetailsPage() {
           <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-12">
             {/* Booking Info */}
             <div className="flex flex-col items-center text-center border-r border-gray-200 last:border-r-0">
-              <h3 className="text-lg font-semibold mb-3">Bookings</h3>
-              <p className="text-gray-600">
-                Up to {makeup.max_bookings_per_day} bookings per day
-              </p>
+              <h3 className="text-lg font-semibold mb-3">Experience</h3>
+              <ul className="space-y-2 text-gray-600">
+                <li className="flex items-center gap-2">
+                  <span className="text-rose-500">•</span>
+                  {makeup.years_experience} years
+                </li>
+              </ul>
             </div>
 
             {/* Booking Notice */}
             <div className="flex flex-col items-center text-center border-r border-gray-200 last:border-r-0">
-              <h3 className="text-lg font-semibold mb-3">Advance Notice</h3>
-              <p className="text-gray-600">{makeup.advance_booking_required}</p>
+              <h3 className="text-lg font-semibold mb-3">Booking Deposit</h3>
+              <ul className="space-y-2 text-gray-600">
+                <li className="flex items-center gap-2">
+                  <span className="text-rose-500">•</span>${makeup.deposit}
+                </li>
+              </ul>
             </div>
 
             {/* Cancellation Policy */}
             <div className="flex flex-col items-center text-center border-r border-gray-200 last:border-r-0">
               <h3 className="text-lg font-semibold mb-3">
-                Cancellation Policy
+                Travel Radius
               </h3>
-              <p className="text-gray-600">{makeup.cancellation_policy}</p>
+              <ul className="space-y-2 text-gray-600">
+                <li className="flex items-center gap-2">
+                  <span className="text-rose-500">•</span>
+                  {makeup.travel_range} miles from {makeup.city}
+                </li>
+              </ul>
             </div>
 
             {/* Socials */}
             <div className="flex flex-col items-center text-center last:border-r-0">
               <h3 className="text-lg font-semibold mb-3">Socials</h3>
-              <ul className="space-y-2 text-gray-600">
-                {makeup.website_url && (
+              {makeup.website_url || makeup.instagram_url ? (
+                <ul className="space-y-2 text-gray-600">
+                  {makeup.website_url && (
+                    <li className="flex items-center gap-2">
+                      <span className="text-rose-500">•</span>
+                      <a
+                        href={makeup.website_url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-rose-600 hover:text-rose-700 hover:underline"
+                      >
+                        Website
+                      </a>
+                    </li>
+                  )}
+                  {makeup.instagram_url && (
+                    <li className="flex items-center gap-2">
+                      <span className="text-rose-500">•</span>
+                      <a
+                        href={makeup.instagram_url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-rose-600 hover:text-rose-700 hover:underline"
+                      >
+                        Instagram
+                      </a>
+                    </li>
+                  )}
+                </ul>
+              ) : (
+                <ul className="space-y-2 text-gray-600">
                   <li className="flex items-center gap-2">
                     <span className="text-rose-500">•</span>
-                    <a
-                      href={makeup.website_url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-rose-600 hover:text-rose-700 hover:underline"
-                    >
-                      Website
-                    </a>
+                    No Social Links Yet!
                   </li>
-                )}
-                {makeup.instagram_url && (
-                  <li className="flex items-center gap-2">
-                    <span className="text-rose-500">•</span>
-                    <a
-                      href={makeup.instagram_url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-rose-600 hover:text-rose-700 hover:underline"
-                    >
-                      Instagram
-                    </a>
-                  </li>
-                )}
-              </ul>
+                </ul>
+              )}
             </div>
           </div>
         </div>

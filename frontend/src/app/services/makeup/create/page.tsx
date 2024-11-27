@@ -106,6 +106,7 @@ const CreateMakeupListing = () => {
   const [customSpecialty, setCustomSpecialty] = useState("");
   const [websiteUrl, setWebsiteUrl] = useState("");
   const [instagramUrl, setInstagramUrl] = useState("");
+  const [isRemoteBusiness, setIsRemoteBusiness] = useState(false);
   // Replace the individual location states with
   const [location, setLocation] = useState({
     enteredLocation: "",
@@ -126,10 +127,9 @@ const CreateMakeupListing = () => {
   }>({});
   const [customServices, setCustomServices] = useState<Service[]>([]);
 
-  // Availability State
   const [availability, setAvailability] = useState({
     maxBookingsPerDay: "",
-    advanceBookingRequired: "",
+    deposit: "", // Updated field name and type
     cancellationPolicy: "",
   });
 
@@ -174,7 +174,7 @@ const CreateMakeupListing = () => {
       case 4:
         return (
           availability.maxBookingsPerDay &&
-          availability.advanceBookingRequired &&
+          availability.deposit &&
           availability.cancellationPolicy
         );
       default:
@@ -219,7 +219,7 @@ const CreateMakeupListing = () => {
         Object.keys(selectedServices).length === 0 ||
         // Availability
         !availability.maxBookingsPerDay ||
-        !availability.advanceBookingRequired ||
+        !availability.deposit ||
         !availability.cancellationPolicy
       ) {
         // Show more specific error messages based on what's missing
@@ -256,7 +256,7 @@ const CreateMakeupListing = () => {
 
         if (
           !availability.maxBookingsPerDay ||
-          !availability.advanceBookingRequired ||
+          !availability.deposit || // Updated field name
           !availability.cancellationPolicy
         ) {
           toast.error("Please complete all availability settings");
@@ -287,7 +287,7 @@ const CreateMakeupListing = () => {
           artist_name: artistName,
           years_experience: parseInt(experience),
           travel_range: parseInt(travelRange),
-          address: location.address,
+          address: isRemoteBusiness ? "" : location.address,
           city: location.city,
           state: location.state,
           country: location.country,
@@ -296,8 +296,9 @@ const CreateMakeupListing = () => {
           website_url: websiteUrl || null,
           instagram_url: instagramUrl || null,
           max_bookings_per_day: parseInt(availability.maxBookingsPerDay),
-          advance_booking_required: availability.advanceBookingRequired,
+          deposit: parseFloat(availability.deposit),
           cancellation_policy: availability.cancellationPolicy,
+          is_remote_business: isRemoteBusiness,
         })
         .select()
         .single();
@@ -489,9 +490,21 @@ const CreateMakeupListing = () => {
                     required
                   />
                 </div>
+                <div className="flex items-center space-x-4">
+                  <input
+                    type="checkbox"
+                    checked={isRemoteBusiness}
+                    onChange={(e) => setIsRemoteBusiness(e.target.checked)}
+                    className="h-4 w-4 text-rose-600 border-gray-300 rounded focus:ring-rose-500"
+                  />
+                  <label className="text-sm font-medium text-gray-700">
+                    This is a remote business (no physical location)
+                  </label>
+                </div>
+
                 <div className="space-y-4">
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Location Details*
+                    {isRemoteBusiness ? "Service Area*" : "Business Address*"}
                   </label>
 
                   <LocationInput
@@ -541,7 +554,11 @@ const CreateMakeupListing = () => {
                         placeId: place.place_id || "",
                       });
                     }}
-                    placeholder="Enter your service location"
+                    placeholder={
+                      isRemoteBusiness
+                        ? "Enter your service area (City, State, Country)"
+                        : "Enter your business address"
+                    }
                     className="w-full"
                   />
 
@@ -549,9 +566,9 @@ const CreateMakeupListing = () => {
                   {location.enteredLocation && (
                     <div className="p-4 bg-gray-50 rounded-lg space-y-2">
                       <h3 className="font-medium text-gray-900">
-                        Selected Location
+                        {isRemoteBusiness ? "Service Area" : "Business Address"}
                       </h3>
-                      {location.address && (
+                      {!isRemoteBusiness && location.address && (
                         <p className="text-sm text-gray-600">
                           <span className="font-medium">Address:</span>{" "}
                           {location.address}
@@ -578,7 +595,6 @@ const CreateMakeupListing = () => {
                     </div>
                   )}
                 </div>
-
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
                     Makeup Styles*
@@ -986,29 +1002,27 @@ const CreateMakeupListing = () => {
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Advance Booking Required*
+                    Deposit*
                   </label>
-                  <Select
-                    value={availability.advanceBookingRequired}
-                    onValueChange={(value) =>
-                      setAvailability({
-                        ...availability,
-                        advanceBookingRequired: value,
-                      })
-                    }
-                  >
-                    <SelectTrigger className="w-full">
-                      <SelectValue placeholder="Select minimum advance notice" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="1week">1 week</SelectItem>
-                      <SelectItem value="2weeks">2 weeks</SelectItem>
-                      <SelectItem value="3weeks">3 weeks</SelectItem>
-                      <SelectItem value="1month">1 month</SelectItem>
-                      <SelectItem value="2months">2 months</SelectItem>
-                      <SelectItem value="3months">3 months</SelectItem>
-                    </SelectContent>
-                  </Select>
+                  <div className="relative">
+                    <DollarSign
+                      className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
+                      size={16}
+                    />
+                    <Input
+                      type="number"
+                      value={availability.deposit}
+                      onChange={(e) =>
+                        setAvailability({
+                          ...availability,
+                          deposit: e.target.value,
+                        })
+                      }
+                      placeholder="Enter deposit amount"
+                      className="pl-8 w-full"
+                      required
+                    />
+                  </div>
                 </div>
 
                 <div>
@@ -1028,13 +1042,16 @@ const CreateMakeupListing = () => {
                       <SelectValue placeholder="Select cancellation policy" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="flexible">
-                        Flexible (48 hours)
+                      <SelectItem value="Flexible">
+                        Flexible (24-72 hours)
                       </SelectItem>
-                      <SelectItem value="moderate">
+                      <SelectItem value="Moderate">
                         Moderate (1 week)
                       </SelectItem>
-                      <SelectItem value="strict">Strict (2 weeks)</SelectItem>
+                      <SelectItem value="Strict">Strict (2 weeks)</SelectItem>
+                      <SelectItem value="No Cancellations">
+                        No Cancellations
+                      </SelectItem>
                     </SelectContent>
                   </Select>
                 </div>

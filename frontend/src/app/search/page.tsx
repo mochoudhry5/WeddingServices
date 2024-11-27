@@ -75,7 +75,8 @@ interface MakeupArtistDetails {
   years_experience: number;
   travel_range: number;
   description: string;
-  max_bookings_per_day: number;
+  city: string;
+  state: string;
   makeup_media: MediaItem[];
   makeup_services: Array<{ price: number }>;
   min_service_price: number; // Add this
@@ -495,7 +496,7 @@ export default function ServicesSearchPage() {
                       </p>
                       <div className="flex justify-between items-center pt-2 border-t">
                         <div className="text-sm text-slate-600">
-                          {listing.max_bookings_per_day} bookings/day
+                          {listing.city}, {listing.state}
                         </div>
                         <div className="flex justify-between items-center pt-2 border-t">
                           <div className="text-lg font-semibold text-rose-600">

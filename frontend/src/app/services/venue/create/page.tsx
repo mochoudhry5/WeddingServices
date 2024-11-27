@@ -353,6 +353,7 @@ export default function CreateVenueListing() {
       case 1:
         // URL validation
         const isValidUrl = (url: string): boolean => {
+          if (!url) return true;
           try {
             new URL(url);
             return true;
@@ -361,30 +362,20 @@ export default function CreateVenueListing() {
           }
         };
 
-        if (!websiteUrl) {
-          toast.error("Website URL is required");
-          return false;
-        }
-
-        if (!isValidUrl(websiteUrl)) {
+        if (websiteUrl && !isValidUrl(websiteUrl)) {
           toast.error("Please enter a valid website URL");
           return false;
         }
 
-        // Validate Instagram URL
-        if (!instagramUrl) {
-          toast.error("Instagram URL is required");
-          return false;
-        }
-
-        if (!isValidUrl(instagramUrl)) {
-          toast.error("Please enter a valid Instagram URL");
-          return false;
-        }
-
-        if (!instagramUrl.toLowerCase().includes("instagram.com")) {
-          toast.error("Please enter a valid Instagram profile URL");
-          return false;
+        if (instagramUrl) {
+          if (!isValidUrl(instagramUrl)) {
+            toast.error("Please enter a valid Instagram URL");
+            return false;
+          }
+          if (!instagramUrl.toLowerCase().includes("instagram.com")) {
+            toast.error("Please enter a valid Instagram profile URL");
+            return false;
+          }
         }
         return (
           venueName &&
@@ -393,9 +384,7 @@ export default function CreateVenueListing() {
           state &&
           basePrice &&
           maxGuests &&
-          catering &&
-          websiteUrl &&
-          instagramUrl
+          catering 
         );
       case 2:
         return mediaFiles.length >= 1; // Change to 10 in production
@@ -432,9 +421,7 @@ export default function CreateVenueListing() {
         !basePrice ||
         !maxGuests ||
         !description ||
-        !catering ||
-        !websiteUrl ||
-        !instagramUrl
+        !catering 
       ) {
         toast.error("Please fill in all required fields");
         return;
@@ -470,8 +457,8 @@ export default function CreateVenueListing() {
           max_guests: parseInt(maxGuests),
           description,
           catering_option: catering,
-          website_url: websiteUrl, // No longer optional
-          instagram_url: instagramUrl, // No longer optional
+          website_url: websiteUrl || null, // Make optional
+          instagram_url: instagramUrl || null, // Make optional
         })
         .select()
         .single();
@@ -764,30 +751,28 @@ export default function CreateVenueListing() {
                   {/* Website URL */}
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Website URL*
+                      Website URL
                     </label>
                     <Input
                       type="url"
                       value={websiteUrl}
                       onChange={(e) => setWebsiteUrl(e.target.value)}
                       placeholder="https://www.yourvenue.com"
-                      className={`w-full`}
-                      required
+                      className="w-full"
                     />
                   </div>
 
                   {/* Instagram URL */}
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Instagram URL*
+                      Instagram URL
                     </label>
                     <Input
                       type="url"
                       value={instagramUrl}
                       onChange={(e) => setInstagramUrl(e.target.value)}
                       placeholder="https://www.instagram.com/yourvenue"
-                      className={`w-full`}
-                      required
+                      className="w-full"
                     />
                   </div>
                 </div>
