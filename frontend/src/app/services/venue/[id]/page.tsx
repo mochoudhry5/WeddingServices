@@ -24,8 +24,9 @@ interface VenueDetails {
   max_guests: number;
   description: string;
   user_id: string;
-  hall_names: string[]; // Add this for hall names
-  number_of_halls: number; // Add this for number of halls
+  catering_option: "in-house" | "outside" | "both";
+  website_url: string | null;
+  instagram_url: string | null;
   venue_media: VenueMedia[];
   venue_inclusions: VenueInclusion[];
   venue_addons: VenueAddon[];
@@ -331,32 +332,45 @@ export default function VenueDetailsPage() {
       </div>
 
       {/* Content */}
-      <div className="max-w-7xl mx-auto px-4 py-8">
+      <div className="max-w-7xl mx-auto">
         {/* Venue Header */}
-        <div className="flex flex-col md:flex-row md:justify-between md:items-start gap-4 mb-8">
-          <div>
-            <h1 className="text-2xl md:text-3xl font-bold text-gray-900 mb-2">
-              {venue.name}
-              {user?.id !== venue.user_id ? (
-                <LikeButton
-                  itemId={venue.id}
-                  service="venue"
-                  initialLiked={false}
-                  className="ml-4"
-                />
-              ) : null}
-            </h1>
-            <p className="text-gray-600">
-              {venue.address}, {venue.city}, {venue.state}
-            </p>
+        {user?.id === venue.user_id && (
+          <div className="max-w-7xl mx-auto px-4 py-4">
+            <div className="bg-rose-50 border-b border-rose-200 py-2">
+              <div className="max-w-3xl mx-auto px-4 flex flex-col items-center justify-center">
+                <div className="flex items-center gap-2">
+                  <span className="text-rose-600 text-lg font-semibold">
+                    Don't forget this listing!
+                  </span>
+                  <LikeButton
+                    itemId={venue.id}
+                    service="venue"
+                    initialLiked={false}
+                    className="text-rose-600 hover:text-rose-700"
+                  />
+                </div>
+              </div>
+            </div>
           </div>
-          <div className="md:text-right">
-            <p className="text-2xl md:text-3xl font-bold text-rose-600">
-              ${venue.base_price.toLocaleString()}
-            </p>
-            <p className="text-gray-600">
-              Base price for up to {venue.min_guests || 100} guests
-            </p>
+        )}
+        <div className="max-w-7xl mx-auto px-4 py-8">
+          {/* Venue Header */}
+          {/* Venue Header */}
+          <div className="flex flex-col md:flex-row md:justify-between md:items-start gap-4 mb-8">
+            <div>
+              <h1 className="text-2xl md:text-3xl font-bold text-gray-900 mb-2">
+                {venue.name}
+              </h1>
+              <p className="text-gray-600">
+                {venue.address}, {venue.city}, {venue.state}
+              </p>
+            </div>
+            <div className="md:text-right">
+              <p className="text-2xl md:text-3xl font-bold text-rose-600">
+                ${venue.base_price.toLocaleString()}
+              </p>
+              <p className="text-gray-600">Base Price (Venue Only)</p>
+            </div>
           </div>
         </div>
 
@@ -383,7 +397,13 @@ export default function VenueDetailsPage() {
               <h3 className="text-lg font-semibold mb-3">Catering Options</h3>
               <div className="text-gray-600 flex items-center gap-2">
                 <span className="text-rose-500">•</span>
-                Outside & In-House Available
+                {
+                  {
+                    "in-house": "In-House Catering Only",
+                    outside: "Outside Catering Only",
+                    both: "In-House & Outside Catering Available",
+                  }[venue.catering_option]
+                }
               </div>
             </div>
 
@@ -391,28 +411,32 @@ export default function VenueDetailsPage() {
             <div className="flex flex-col items-center text-center last:border-r-0">
               <h3 className="text-lg font-semibold mb-3">Socials</h3>
               <ul className="space-y-2 text-gray-600">
-                <li className="flex items-center gap-2">
-                  <span className="text-rose-500">•</span>
-                  <a
-                    href="https://www.sendlybox.com"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-rose-600 hover:text-rose-700 hover:underline"
-                  >
-                    Website
-                  </a>
-                </li>
-                <li className="flex items-center gap-2">
-                  <span className="text-rose-500">•</span>
-                  <a
-                    href="https://www.instagram.com/Townandcountryeventcenter"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-rose-600 hover:text-rose-700 hover:underline"
-                  >
-                    Instagram
-                  </a>
-                </li>
+                {venue.website_url && (
+                  <li className="flex items-center gap-2">
+                    <span className="text-rose-500">•</span>
+                    <a
+                      href={venue.website_url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-rose-600 hover:text-rose-700 hover:underline"
+                    >
+                      Website
+                    </a>
+                  </li>
+                )}
+                {venue.instagram_url && (
+                  <li className="flex items-center gap-2">
+                    <span className="text-rose-500">•</span>
+                    <a
+                      href={venue.instagram_url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-rose-600 hover:text-rose-700 hover:underline"
+                    >
+                      Instagram
+                    </a>
+                  </li>
+                )}
               </ul>
             </div>
           </div>

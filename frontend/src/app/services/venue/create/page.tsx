@@ -37,6 +37,7 @@ import Footer from "@/components/ui/Footer";
 
 // Types
 type ServiceId = "venue" | "makeup" | "photography";
+type CateringOption = "in-house" | "outside" | "both";
 
 interface Service {
   id: ServiceId;
@@ -69,8 +70,6 @@ interface VenueFormData {
   address: string;
   city: string;
   state: string;
-  numberOfHalls: string;
-  hallNames: string[];
   priceRange: {
     min: number;
     max: number;
@@ -91,7 +90,14 @@ interface VenueFormData {
   }[];
   websiteUrl?: string;
   instagramUrl?: string;
+  catering: CateringOption;
 }
+
+const cateringDescriptions = {
+  'in-house':'In-house catering services provided exclusively',
+  'outside':'External catering services allowed',
+  'both': 'Both in-house and external catering services available',
+} as const;
 
 // Constants
 const services: Service[] = [
@@ -274,12 +280,7 @@ export default function CreateVenueListing() {
   const [address, setAddress] = useState("");
   const [city, setCity] = useState("");
   const [state, setState] = useState("");
-  const [numberOfHalls, setNumberOfHalls] = useState("");
-  const [hallNames, setHallNames] = useState<string[]>([""]);
-  const [priceRange, setPriceRange] = useState({
-    min: "",
-    max: "",
-  });
+  const [basePrice, setBasePrice] = useState("");
   const [minGuests, setMinGuests] = useState("");
   const [maxGuests, setMaxGuests] = useState("");
   const [description, setDescription] = useState("");
@@ -349,21 +350,8 @@ export default function CreateVenueListing() {
   const validateCurrentStep = () => {
     switch (currentStep) {
       case 1:
-        const hallNamesValid =
-          numberOfHalls === "1"
-            ? true
-            : hallNames.every((name) => name.trim()) &&
-              new Set(hallNames.map((name) => name.trim())).size ===
-                hallNames.length;
-
-        if (numberOfHalls !== "1" && !hallNamesValid) {
-          toast.error("Each hall must have a unique name");
-          return false;
-        }
-
         // URL validation
-        const urlValidation = (url: string) => {
-          if (!url) return true; // Optional fields
+        const isValidUrl = (url: string): boolean => {
           try {
             new URL(url);
             return true;
@@ -372,27 +360,41 @@ export default function CreateVenueListing() {
           }
         };
 
-        if (websiteUrl && !urlValidation(websiteUrl)) {
+        if (!websiteUrl) {
+          toast.error("Website URL is required");
+          return false;
+        }
+
+        if (!isValidUrl(websiteUrl)) {
           toast.error("Please enter a valid website URL");
           return false;
         }
 
-        if (instagramUrl && !urlValidation(instagramUrl)) {
+        // Validate Instagram URL
+        if (!instagramUrl) {
+          toast.error("Instagram URL is required");
+          return false;
+        }
+
+        if (!isValidUrl(instagramUrl)) {
           toast.error("Please enter a valid Instagram URL");
           return false;
         }
 
+        if (!instagramUrl.toLowerCase().includes("instagram.com")) {
+          toast.error("Please enter a valid Instagram profile URL");
+          return false;
+        }
         return (
           venueName &&
           address &&
           city &&
           state &&
-          numberOfHalls &&
-          hallNamesValid &&
-          priceRange.min &&
-          priceRange.max &&
+          basePrice &&
           maxGuests &&
-          catering
+          catering &&
+          websiteUrl &&
+          instagramUrl
         );
       case 2:
         return mediaFiles.length >= 1; // Change to 10 in production
@@ -426,13 +428,12 @@ export default function CreateVenueListing() {
         !address ||
         !city ||
         !state ||
-        !numberOfHalls ||
-        !hallNames.every((name) => name.trim()) ||
-        !priceRange.min ||
-        !priceRange.max ||
+        !basePrice ||
         !maxGuests ||
         !description ||
-        !catering
+        !catering ||
+        !websiteUrl ||
+        !instagramUrl
       ) {
         toast.error("Please fill in all required fields");
         return;
@@ -463,22 +464,18 @@ export default function CreateVenueListing() {
           address,
           city,
           state,
-          number_of_halls: parseInt(numberOfHalls),
-          hall_names: numberOfHalls === "1" ? [] : hallNames,
-          price_range_min: parseInt(priceRange.min),
-          price_range_max: parseInt(priceRange.max),
+          base_price: parseInt(basePrice),
           min_guests: minGuests ? parseInt(minGuests) : null,
           max_guests: parseInt(maxGuests),
           description,
           catering_option: catering,
-          website_url: websiteUrl || null,
-          instagram_url: instagramUrl || null,
+          website_url: websiteUrl, // No longer optional
+          instagram_url: instagramUrl, // No longer optional
         })
         .select()
         .single();
 
       if (venueError) {
-        console.error("Venue creation error:", venueError);
         throw new Error(`Failed to create venue: ${venueError.message}`);
       }
 
@@ -509,6 +506,11 @@ export default function CreateVenueListing() {
           display_order: index,
         };
       });
+      const cateringDescription = {
+        "in-house": "In-house catering services provided exclusively",
+        outside: "External catering services allowed",
+        both: "Both in-house and external catering services available",
+      };
 
       const mediaResults = await Promise.all(mediaPromises);
 
@@ -589,7 +591,7 @@ export default function CreateVenueListing() {
       }
 
       toast.success("Venue listing created successfully!");
-      router.push(`/venues/${venue.id}`);
+      router.push(`/services/venue/${venue.id}`);
     } catch (error) {
       console.error("Error creating venue:", error);
       toast.error(
@@ -681,103 +683,24 @@ export default function CreateVenueListing() {
                     />
                   </div>
                 </div>
-
-                {/* Number of Halls Selection */}
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Number of Halls*
-                  </label>
-                  <Select
-                    value={numberOfHalls}
-                    onValueChange={(value) => {
-                      setNumberOfHalls(value);
-                      if (value === "1") {
-                        setHallNames([]);
-                      } else {
-                        setHallNames(new Array(parseInt(value)).fill(""));
-                      }
-                    }}
-                  >
-                    <SelectTrigger className="w-full">
-                      <SelectValue placeholder="Select number of halls" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="1">1 Hall</SelectItem>
-                      <SelectItem value="2">2 Halls</SelectItem>
-                      <SelectItem value="3">3 Halls</SelectItem>
-                      <SelectItem value="4">4 Halls</SelectItem>
-                      <SelectItem value="5">5 Halls</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                {/* Hall Names Input Fields */}
-                {numberOfHalls && numberOfHalls !== "1" && (
-                  <div className="space-y-4">
-                    <label className="block text-sm font-medium text-gray-700">
-                      Hall Names*
-                    </label>
-                    <div className="grid gap-4">
-                      {hallNames.map((name, index) => (
-                        <div key={index} className="flex gap-4 items-center">
-                          <div className="flex-1">
-                            <Input
-                              type="text"
-                              value={name}
-                              onChange={(e) => {
-                                const newHallNames = [...hallNames];
-                                newHallNames[index] = e.target.value;
-                                setHallNames(newHallNames);
-                              }}
-                              placeholder={`Hall ${index + 1} name`}
-                              className="w-full"
-                              required
-                            />
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
                 {/* Price Range */}
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Price Range (per event)*
+                    Base Price (per event)*
                   </label>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="relative">
-                      <DollarSign
-                        className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
-                        size={20}
-                      />
-                      <Input
-                        type="number"
-                        value={priceRange.min}
-                        onChange={(e) =>
-                          setPriceRange({ ...priceRange, min: e.target.value })
-                        }
-                        placeholder="Min"
-                        className="pl-10 w-full"
-                        required
-                      />
-                    </div>
-                    <div className="relative">
-                      <DollarSign
-                        className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
-                        size={20}
-                      />
-                      <Input
-                        type="number"
-                        value={priceRange.max}
-                        onChange={(e) =>
-                          setPriceRange({ ...priceRange, max: e.target.value })
-                        }
-                        placeholder="Max"
-                        className="pl-10 w-full"
-                        required
-                      />
-                    </div>
+                  <div className="relative">
+                    <DollarSign
+                      className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
+                      size={20}
+                    />
+                    <Input
+                      type="number"
+                      value={basePrice}
+                      onChange={(e) => setBasePrice(e.target.value)}
+                      placeholder="5000"
+                      className="pl-10 w-full"
+                      required
+                    />
                   </div>
                 </div>
 
@@ -836,37 +759,37 @@ export default function CreateVenueListing() {
                   </Select>
                 </div>
 
-                {/* Website URL */}
                 <div className="grid grid-cols-2 gap-4">
                   {/* Website URL */}
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Website URL
+                      Website URL*
                     </label>
                     <Input
                       type="url"
                       value={websiteUrl}
                       onChange={(e) => setWebsiteUrl(e.target.value)}
                       placeholder="https://www.yourvenue.com"
-                      className="w-full"
+                       className={`w-full`}
+                      required
                     />
                   </div>
 
                   {/* Instagram URL */}
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Instagram URL
+                      Instagram URL*
                     </label>
                     <Input
                       type="url"
                       value={instagramUrl}
                       onChange={(e) => setInstagramUrl(e.target.value)}
                       placeholder="https://www.instagram.com/yourvenue"
-                      className="w-full"
+                      className={`w-full`}
+                      required
                     />
                   </div>
                 </div>
-
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
                     Description*
@@ -940,7 +863,8 @@ export default function CreateVenueListing() {
                           type="button"
                           onClick={() => setMediaFiles([])}
                           className="text-sm text-rose-600 hover:text-rose-700"
-                        >Remove all
+                        >
+                          Remove all
                         </button>
                       </div>
 
