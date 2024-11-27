@@ -94,9 +94,9 @@ interface VenueFormData {
 }
 
 const cateringDescriptions = {
-  'in-house':'In-house catering services provided exclusively',
-  'outside':'External catering services allowed',
-  'both': 'Both in-house and external catering services available',
+  "in-house": "In-house catering services provided exclusively",
+  outside: "External catering services allowed",
+  both: "Both in-house and external catering services available",
 } as const;
 
 // Constants
@@ -227,11 +227,12 @@ const PricingInput = ({
         <Input
           type="number"
           min="0"
-          value={value.price}
+          value={value.price === 0 ? "" : value.price}
           onChange={(e) => {
+            const newPrice = e.target.value.replace(/^0+/, "");
             onChange({
               ...value,
-              price: Number(e.target.value),
+              price: newPrice !== "" ? Number(newPrice) : 0,
             });
           }}
           placeholder="0"
@@ -770,7 +771,7 @@ export default function CreateVenueListing() {
                       value={websiteUrl}
                       onChange={(e) => setWebsiteUrl(e.target.value)}
                       placeholder="https://www.yourvenue.com"
-                       className={`w-full`}
+                      className={`w-full`}
                       required
                     />
                   </div>
