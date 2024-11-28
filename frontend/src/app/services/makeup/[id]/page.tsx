@@ -15,6 +15,7 @@ import LikeButton from "@/components/ui/LikeButton";
 interface MakeupDetails {
   id: string;
   artist_name: string;
+  service_type: "makeup" | "hair" | "both";
   years_experience: number;
   travel_range: number;
   description: string;
@@ -215,9 +216,18 @@ export default function MakeupDetailsPage() {
         {/* Artist Header */}
         <div className="flex flex-col md:flex-row md:justify-between md:items-start gap-4 mb-8">
           <div>
-            <h1 className="text-2xl md:text-3xl font-bold text-gray-900 mb-2">
-              {makeup.artist_name}
-            </h1>
+            <div className="flex items-center gap-3 mb-2">
+              <h1 className="text-2xl md:text-3xl font-bold text-gray-900">
+                {makeup.artist_name}
+              </h1>
+              <div className="inline-flex items-center px-3 py-1 rounded-full bg-white border border-gray-200 text-sm font-medium">
+                {makeup.service_type === "both"
+                  ? "Makeup & Hair"
+                  : makeup.service_type === "makeup"
+                  ? "Makeup"
+                  : "Hair"}
+              </div>
+            </div>
             {makeup.is_remote_business ? (
               <p className="text-gray-600">
                 {makeup.city}, {makeup.state} (Remote)
@@ -250,18 +260,23 @@ export default function MakeupDetailsPage() {
               <h3 className="text-lg font-semibold mb-3">Booking Deposit</h3>
               <ul className="space-y-2 text-gray-600">
                 <li className="flex items-center gap-2">
-                  <span className="text-rose-500">•</span>${makeup.deposit}
+                  <span className="text-rose-500">•</span>
+                  {makeup.deposit === 0
+                    ? "No Deposit Required"
+                    : `${makeup.deposit}% of total service cost`}
                 </li>
               </ul>
             </div>
 
-            {/* Cancellation Policy */}
+            {/* Travel Radius*/}
             <div className="flex flex-col items-center text-center border-r border-gray-200 last:border-r-0">
               <h3 className="text-lg font-semibold mb-3">Travel Radius</h3>
               <ul className="space-y-2 text-gray-600">
                 <li className="flex items-center gap-2">
                   <span className="text-rose-500">•</span>
-                  {makeup.travel_range} miles from {makeup.city}
+                  {makeup.travel_range === 0
+                    ? "No Travel"
+                    : `${makeup.travel_range} miles from ${makeup.city}`}
                 </li>
               </ul>
             </div>
@@ -310,7 +325,9 @@ export default function MakeupDetailsPage() {
           </div>
         </div>
 
-        <h2 className="text-xl md:text-2xl font-bold mb-4">About the Artist</h2>
+        <h2 className="text-xl md:text-2xl font-bold mb-4">
+          About the Business
+        </h2>
         <p className="text-gray-600 mb-6 leading-relaxed">
           {makeup.description}
         </p>
@@ -319,7 +336,11 @@ export default function MakeupDetailsPage() {
         {makeup.makeup_specialties?.length > 0 && (
           <div className="mb-12">
             <h2 className="text-xl md:text-2xl font-bold mb-6">
-              Makeup Styles
+              {makeup.service_type === "makeup"
+                ? "Makeup Styles"
+                : makeup.service_type === "hair"
+                ? "Hair Styles"
+                : "Makeup & Hair Styles"}
             </h2>
             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
               {makeup.makeup_specialties.map((specialty, index) => (
@@ -353,7 +374,7 @@ export default function MakeupDetailsPage() {
                     <h3 className="text-lg font-semibold">{service.name}</h3>
                     <div className="text-right">
                       <p className="text-rose-600 font-semibold">
-                        ${service.price.toLocaleString()}
+                        <span className="text-gray-500 text-sm">Starting at </span> ${service.price.toLocaleString()}
                       </p>
                       <p className="text-sm text-gray-500">
                         {service.duration} minutes

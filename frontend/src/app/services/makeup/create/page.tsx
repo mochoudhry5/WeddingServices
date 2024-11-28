@@ -79,12 +79,23 @@ const commonServices = [
   },
 ];
 
-const commonStyles = [
+type ServiceType = "makeup" | "hair" | "both";
+
+const commonMakeupStyles = [
   "Natural",
   "Bridal",
   "Glam",
   "Soft Glam",
   "Classic",
+];
+
+const commonHairStyles = [
+  "Updo",
+  "Half-up",
+  "Blowout",
+  "Waves/Curls",
+  "Braiding",
+  "Extensions",
 ];
 
 const CreateMakeupListing = () => {
@@ -104,6 +115,7 @@ const CreateMakeupListing = () => {
   const [websiteUrl, setWebsiteUrl] = useState("");
   const [instagramUrl, setInstagramUrl] = useState("");
   const [isRemoteBusiness, setIsRemoteBusiness] = useState(false);
+  const [serviceType, setServiceType] = useState<ServiceType>("makeup");
   // Replace the individual location states with
   const [location, setLocation] = useState({
     enteredLocation: "",
@@ -126,7 +138,7 @@ const CreateMakeupListing = () => {
 
   const [availability, setAvailability] = useState({
     maxBookingsPerDay: "",
-    deposit: "", // Updated field name and type
+    deposit: "", // Will store percentage as string
     cancellationPolicy: "",
   });
 
@@ -153,6 +165,32 @@ const CreateMakeupListing = () => {
   const validateCurrentStep = () => {
     switch (currentStep) {
       case 1:
+        const hasRequiredStyles = (type: ServiceType): boolean => {
+          const makeupStyles = specialties.filter((style) =>
+            commonMakeupStyles.includes(style)
+          );
+          const hairStyles = specialties.filter((style) =>
+            commonHairStyles.includes(style)
+          );
+
+          switch (type) {
+            case "makeup":
+              return makeupStyles.length > 0;
+            case "hair":
+              return hairStyles.length > 0;
+            case "both":
+              return makeupStyles.length > 0 && hairStyles.length > 0;
+          }
+        };
+
+        if (!hasRequiredStyles(serviceType)) {
+          toast.error(
+            serviceType === "both"
+              ? "Please select at least one makeup style and one hair style"
+              : `Please select at least one ${serviceType} style`
+          );
+          return false;
+        }
         return (
           artistName &&
           experience &&
@@ -293,9 +331,10 @@ const CreateMakeupListing = () => {
           website_url: websiteUrl || null,
           instagram_url: instagramUrl || null,
           max_bookings_per_day: parseInt(availability.maxBookingsPerDay),
-          deposit: parseFloat(availability.deposit),
+          deposit: parseInt(availability.deposit),
           cancellation_policy: availability.cancellationPolicy,
           is_remote_business: isRemoteBusiness,
+          service_type: serviceType, // Add the new field
         })
         .select()
         .single();
@@ -305,9 +344,24 @@ const CreateMakeupListing = () => {
           `Failed to create makeup artist listing: ${makeupError.message}`
         );
       }
-
       if (!makeup) {
         throw new Error("Makeup artist listing created but no data returned");
+      }
+
+      const specialtiesData = specialties.map((specialty) => ({
+        artist_id: makeup.id,
+        specialty,
+        is_custom: false,
+        style_type: commonMakeupStyles.includes(specialty) ? "makeup" : "hair", // Add style type
+      }));
+      const { error: specialtiesError } = await supabase
+        .from("makeup_specialties")
+        .insert(specialtiesData);
+
+      if (specialtiesError) {
+        throw new Error(
+          `Failed to create specialties: ${specialtiesError.message}`
+        );
       }
 
       // Upload media files
@@ -343,24 +397,6 @@ const CreateMakeupListing = () => {
           `Failed to create media records: ${mediaError.message}`
         );
       }
-
-      // Insert specialties
-      const specialtiesData = specialties.map((specialty) => ({
-        artist_id: makeup.id,
-        specialty,
-        is_custom: !commonStyles.includes(specialty),
-      }));
-
-      const { error: specialtiesError } = await supabase
-        .from("makeup_specialties")
-        .insert(specialtiesData);
-
-      if (specialtiesError) {
-        throw new Error(
-          `Failed to create specialties: ${specialtiesError.message}`
-        );
-      }
-
       // Insert services
       const allServices = [
         ...Object.values(selectedServices).map((service) => ({
@@ -445,7 +481,7 @@ const CreateMakeupListing = () => {
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Artist/Business Name*
+                    Business Name*
                   </label>
                   <Input
                     value={artistName}
@@ -595,40 +631,106 @@ const CreateMakeupListing = () => {
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Makeup Styles*
+                    Services Offered*
                   </label>
-                  <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                    {commonStyles.map((style) => (
-                      <label
-                        key={style}
-                        className="relative flex items-start p-4 rounded-lg border cursor-pointer hover:bg-gray-50"
-                      >
-                        <div className="flex items-center h-5">
-                          <input
-                            type="checkbox"
-                            className="h-4 w-4 text-rose-600 border-gray-300 rounded focus:ring-rose-500"
-                            checked={specialties.includes(style)}
-                            onChange={(e) => {
-                              if (e.target.checked) {
-                                setSpecialties([...specialties, style]);
-                              } else {
-                                setSpecialties(
-                                  specialties.filter((item) => item !== style)
-                                );
-                              }
-                            }}
-                          />
-                        </div>
-                        <div className="ml-3 text-sm">
-                          <span className="font-medium text-gray-900">
-                            {style}
-                          </span>
-                        </div>
-                      </label>
-                    ))}
-                  </div>
+                  <Select
+                    value={serviceType}
+                    onValueChange={(value: ServiceType) =>
+                      setServiceType(value)
+                    }
+                  >
+                    <SelectTrigger className="w-full">
+                      <SelectValue placeholder="Select services offered" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="makeup">Makeup Only</SelectItem>
+                      <SelectItem value="hair">Hair Only</SelectItem>
+                      <SelectItem value="both">Both Hair & Makeup</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
 
+                {/* Styles Selection */}
+                <div className="space-y-4">
+                  {(serviceType === "makeup" || serviceType === "both") && (
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Makeup Styles*
+                      </label>
+                      <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                        {commonMakeupStyles.map((style) => (
+                          <label
+                            key={style}
+                            className="relative flex items-start p-4 rounded-lg border cursor-pointer hover:bg-gray-50"
+                          >
+                            <div className="flex items-center h-5">
+                              <input
+                                type="checkbox"
+                                className="h-4 w-4 text-rose-600 border-gray-300 rounded focus:ring-rose-500"
+                                checked={specialties.includes(style)}
+                                onChange={(e) => {
+                                  if (e.target.checked) {
+                                    setSpecialties([...specialties, style]);
+                                  } else {
+                                    setSpecialties(
+                                      specialties.filter(
+                                        (item) => item !== style
+                                      )
+                                    );
+                                  }
+                                }}
+                              />
+                            </div>
+                            <div className="ml-3 text-sm">
+                              <span className="font-medium text-gray-900">
+                                {style}
+                              </span>
+                            </div>
+                          </label>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                  {(serviceType === "hair" || serviceType === "both") && (
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Hair Styles*
+                      </label>
+                      <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                        {commonHairStyles.map((style) => (
+                          <label
+                            key={style}
+                            className="relative flex items-start p-4 rounded-lg border cursor-pointer hover:bg-gray-50"
+                          >
+                            <div className="flex items-center h-5">
+                              <input
+                                type="checkbox"
+                                className="h-4 w-4 text-rose-600 border-gray-300 rounded focus:ring-rose-500"
+                                checked={specialties.includes(style)}
+                                onChange={(e) => {
+                                  if (e.target.checked) {
+                                    setSpecialties([...specialties, style]);
+                                  } else {
+                                    setSpecialties(
+                                      specialties.filter(
+                                        (item) => item !== style
+                                      )
+                                    );
+                                  }
+                                }}
+                              />
+                            </div>
+                            <div className="ml-3 text-sm">
+                              <span className="font-medium text-gray-900">
+                                {style}
+                              </span>
+                            </div>
+                          </label>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
                     Description*
@@ -771,7 +873,7 @@ const CreateMakeupListing = () => {
                             <div className="mt-4 grid gap-4">
                               <div>
                                 <label className="block text-sm font-medium mb-1">
-                                  Price ($)
+                                  Starting Price ($)
                                 </label>
                                 <div className="relative">
                                   <DollarSign
@@ -1000,29 +1102,61 @@ const CreateMakeupListing = () => {
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Deposit*
+                    Required Deposit (% of total service cost)*
                   </label>
                   <div className="relative">
-                    <DollarSign
-                      className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
-                      size={16}
-                    />
                     <Input
                       type="number"
-                      value={availability.deposit}
-                      onChange={(e) =>
+                      min="0"
+                      max="100"
+                      value={
+                        availability.deposit === "0" ? "" : availability.deposit
+                      }
+                      onChange={(e) => {
+                        const value = e.target.value;
+                        // Allow empty string or numbers between 0-100
+                        if (
+                          value === "" ||
+                          (parseInt(value) >= 0 && parseInt(value) <= 100)
+                        ) {
+                          setAvailability({
+                            ...availability,
+                            deposit: value,
+                          });
+                        }
+                      }}
+                      onBlur={(e) => {
+                        const value = e.target.value;
+                        // If empty or invalid, set to empty string
+                        if (value === "" || isNaN(parseInt(value))) {
+                          setAvailability({
+                            ...availability,
+                            deposit: "",
+                          });
+                          return;
+                        }
+                        // Round to nearest whole number and ensure within range
+                        const roundedValue = Math.min(
+                          100,
+                          Math.max(0, Math.round(parseFloat(value)))
+                        );
                         setAvailability({
                           ...availability,
-                          deposit: e.target.value,
-                        })
-                      }
-                      placeholder="Enter deposit amount"
-                      className="pl-8 w-full"
+                          deposit: roundedValue.toString(),
+                        });
+                      }}
+                      placeholder="Enter deposit percentage"
+                      className="pl-2 pr-8 w-full"
                       required
                     />
+                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 pointer-events-none">
+                      %
+                    </span>
                   </div>
+                  <p className="mt-1 text-sm text-gray-500">
+                    Enter a whole number between 0 and 100
+                  </p>
                 </div>
-
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
                     Cancellation Policy*

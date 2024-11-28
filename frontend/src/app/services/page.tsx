@@ -37,10 +37,10 @@ const services: Service[] = [
   },
   {
     id: "makeup",
-    name: "Makeup Artist",
+    name: "Hair & Makeup",
     icon: Paintbrush,
     description:
-      "Offer your professional makeup services to brides and wedding parties.",
+      "Offer your professional hair/makeup services to brides and wedding parties.",
     available: true,
     path: "/services/makeup/create",
     comingSoon: false,

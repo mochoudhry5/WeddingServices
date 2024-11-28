@@ -83,6 +83,7 @@ interface MakeupArtistDetails {
   max_service_price: number; // Add this
   rating: number;
   created_at: string;
+  service_type: "makeup" | "hair" | "both";
 }
 
 type ServiceListingItem = VenueDetails | MakeupArtistDetails;
@@ -112,36 +113,36 @@ interface ServiceConfig {
 
 const SERVICE_CONFIGS: Record<ServiceType, ServiceConfig> = {
   venue: {
-    singularName: "venue",
-    pluralName: "venues",
+    singularName: "Venue",
+    pluralName: "Venues",
     hasCapacity: true,
     locationBased: true,
     priceType: "range",
   },
   makeup: {
-    singularName: "makeup artist",
-    pluralName: "makeup artists",
+    singularName: "Hair & Makeup",
+    pluralName: "Hair & Makeup",
     hasCapacity: false,
     locationBased: false, // Uses travel range instead
     priceType: "service-based",
   },
   photography: {
-    singularName: "photographer",
-    pluralName: "photographers",
+    singularName: "Photographer",
+    pluralName: "Photographers",
     hasCapacity: false,
     locationBased: false,
     priceType: "service-based",
   },
   weddingplanner: {
-    singularName: "wedding planner",
-    pluralName: "wedding planners",
+    singularName: "Wedding Planner",
+    pluralName: "Wedding Planners",
     hasCapacity: false,
     locationBased: true,
     priceType: "service-based",
   },
   dj: {
     singularName: "DJ",
-    pluralName: "DJs",
+    pluralName: "DJ",
     hasCapacity: false,
     locationBased: true,
     priceType: "flat",
@@ -488,23 +489,25 @@ export default function ServicesSearchPage() {
                   {isMakeupArtist(listing) ? (
                     <>
                       <p className="text-slate-600 text-sm mb-2">
-                        {listing.years_experience} years experience • Up to{" "}
-                        {listing.travel_range} miles
+                        {listing.years_experience} years experience •{" "}
+                        {listing.service_type === "both"
+                          ? "Makeup & Hair"
+                          : listing.service_type === "makeup"
+                          ? "Makeup"
+                          : "Hair"}
                       </p>
                       <p className="text-slate-600 text-sm mb-3 line-clamp-2">
                         {listing.description}
                       </p>
-                      <div className="flex justify-between items-center pt-2 border-t">
+                      <div className="flex justify-between items-center border-t pt-2">
                         <div className="text-sm text-slate-600">
                           {listing.city}, {listing.state}
                         </div>
-                        <div className="flex justify-between items-center pt-2 border-t">
-                          <div className="text-lg font-semibold text-rose-600">
-                            {listing.min_service_price ===
-                            listing.max_service_price
-                              ? `$${listing.min_service_price.toLocaleString()}`
-                              : `$${listing.min_service_price.toLocaleString()} - $${listing.max_service_price.toLocaleString()}`}
-                          </div>
+                        <div className="text-lg font-semibold text-rose-600">
+                          {listing.min_service_price ===
+                          listing.max_service_price
+                            ? `$${listing.min_service_price.toLocaleString()}`
+                            : `$${listing.min_service_price.toLocaleString()} - $${listing.max_service_price.toLocaleString()}`}
                         </div>
                       </div>
                     </>
@@ -564,7 +567,7 @@ export default function ServicesSearchPage() {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="venue">Venue</SelectItem>
-                    <SelectItem value="makeup">Makeup</SelectItem>
+                    <SelectItem value="makeup">Hair & Makeup</SelectItem>
                     <SelectItem value="photography">Photography</SelectItem>
                     <SelectItem value="weddingplanner">
                       Wedding Planner
@@ -790,11 +793,10 @@ export default function ServicesSearchPage() {
       {/* Results Count */}
       <div className="max-w-7xl mx-auto px-4 py-4">
         <p className="text-sm text-gray-600">
-          {serviceListings.length}{" "}
+          {serviceListings.length} found in{" "}
           {serviceListings.length === 1
             ? SERVICE_CONFIGS[searchFilters.serviceType].singularName
             : SERVICE_CONFIGS[searchFilters.serviceType].pluralName}{" "}
-          found
         </p>
       </div>
 

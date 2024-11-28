@@ -489,7 +489,8 @@ export default function VenueDetailsPage() {
                   <div className="flex flex-col md:flex-row md:justify-between md:items-start gap-2 mb-2">
                     <h3 className="text-lg font-semibold">{addon.name}</h3>
                     <p className="text-rose-600 font-semibold whitespace-nowrap">
-                      ${addon.price.toLocaleString()}
+                      <span className="text-sm text-gray-500">Starting at </span> $
+                      {addon.price.toLocaleString()}
                       {addon.pricing_type === "per-guest" && (
                         <span className="text-sm text-gray-500">
                           {addon.guest_increment == 1
