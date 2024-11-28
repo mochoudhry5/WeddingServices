@@ -87,25 +87,25 @@ export default function MakeupDetailsPage() {
         .from("makeup_artists")
         .select(
           `
-    *,
-    user_id,
-    is_remote_business,
-    makeup_media (
-      file_path,
-      display_order
-    ),
-    makeup_specialties (
-      specialty,
-      is_custom
-    ),
-    makeup_services (
-      name,
-      description,
-      price,
-      duration,
-      is_custom
-    )
-  `
+            *,
+            user_id,
+            is_remote_business,
+            makeup_media (
+              file_path,
+              display_order
+            ),
+            makeup_specialties (
+              specialty,
+              is_custom
+            ),
+            makeup_services (
+              name,
+              description,
+              price,
+              duration,
+              is_custom
+            )
+          `
         )
         .eq("id", params.id)
         .single();
@@ -192,19 +192,31 @@ export default function MakeupDetailsPage() {
       </div>
 
       {/* Content */}
-      <div className="max-w-7xl mx-auto px-4 py-8">
+      <div className="max-w-7xl mx-auto">
+        {user?.id !== makeup.user_id && (
+          <div className="max-w-7xl mx-auto px-4 py-4">
+            <div className="bg-rose-50 border-b border-rose-200 py-2">
+              <div className="max-w-3xl mx-auto px-4 flex flex-col items-center justify-center">
+                <div className="flex items-center gap-2">
+                  <span className="text-rose-600 text-lg font-semibold">
+                    Don't forget this listing!
+                  </span>
+                  <LikeButton
+                    itemId={makeup.id}
+                    service="makeup"
+                    initialLiked={false}
+                    className="text-rose-600 hover:text-rose-700"
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
         {/* Artist Header */}
         <div className="flex flex-col md:flex-row md:justify-between md:items-start gap-4 mb-8">
           <div>
             <h1 className="text-2xl md:text-3xl font-bold text-gray-900 mb-2">
               {makeup.artist_name}
-              {/* {user?.id !== makeup.user_id ? (
-        <LikeButton
-          makeupId={makeup.id}
-          initialLiked={false}
-          className="ml-4"
-        />
-      ) : null} */}
             </h1>
             {makeup.is_remote_business ? (
               <p className="text-gray-600">
@@ -245,9 +257,7 @@ export default function MakeupDetailsPage() {
 
             {/* Cancellation Policy */}
             <div className="flex flex-col items-center text-center border-r border-gray-200 last:border-r-0">
-              <h3 className="text-lg font-semibold mb-3">
-                Travel Radius
-              </h3>
+              <h3 className="text-lg font-semibold mb-3">Travel Radius</h3>
               <ul className="space-y-2 text-gray-600">
                 <li className="flex items-center gap-2">
                   <span className="text-rose-500">•</span>
