@@ -24,13 +24,12 @@ interface BaseService {
 
 interface LikedItemResponse {
   liked_at: string;
-  [key: string]: any; // This allows for dynamic property access
+  [key: string]: any;
 }
 
 interface ServiceResponse extends LikedItemResponse {
   venues?: VenueDetails;
   makeup_artists?: MakeupArtistDetails;
-  // Add new service types here
 }
 
 // Service-specific interfaces
@@ -53,11 +52,10 @@ interface MakeupArtistDetails extends BaseService {
   makeup_media: MediaItem[];
 }
 
-// Service configuration type
 interface ServiceConfig<T extends BaseService> {
   type: string;
   likedTable: string;
-  entityTable: keyof ServiceResponse; // Update this line
+  entityTable: keyof ServiceResponse;
   foreignKey: string;
   displayName: string;
   pluralName: string;
@@ -68,7 +66,6 @@ interface ServiceConfig<T extends BaseService> {
   ) => JSX.Element;
 }
 
-// Service configurations
 const SERVICE_CONFIGS: Record<string, ServiceConfig<any>> = {
   venue: {
     type: "venue",
@@ -102,8 +99,8 @@ const SERVICE_CONFIGS: Record<string, ServiceConfig<any>> = {
       <div className="bg-white rounded-xl shadow-md overflow-hidden group">
         <div className="relative">
           <MediaCarousel
-            media={venue.venue_media}
-            serviceName={venue.name}
+            media={venue.venue_media || []}
+            serviceName={venue.name || "Venue"}
             itemId={venue.id}
             creatorId={venue.user_id}
             service="venue"
@@ -114,20 +111,20 @@ const SERVICE_CONFIGS: Record<string, ServiceConfig<any>> = {
         <Link href={`/services/venue/${venue.id}`}>
           <div className="p-4">
             <h3 className="text-lg font-semibold mb-1 group-hover:text-rose-600 transition-colors">
-              {venue.name}
+              {venue.name || "Unnamed Venue"}
             </h3>
             <p className="text-slate-600 text-sm mb-2">
-              {venue.city}, {venue.state}
+              {venue.city || "Unknown City"}, {venue.state || "Unknown State"}
             </p>
             <p className="text-slate-600 text-sm mb-3 line-clamp-2">
-              {venue.description}
+              {venue.description || "No description available"}
             </p>
             <div className="flex justify-between items-center pt-2 border-t">
               <div className="text-sm text-slate-600">
-                Up to {venue.max_guests} guests
+                Up to {venue.max_guests || 0} guests
               </div>
               <div className="text-lg font-semibold text-rose-600">
-                ${venue.base_price.toLocaleString()}
+                ${(venue.base_price || 0).toLocaleString()}
               </div>
             </div>
           </div>
@@ -168,8 +165,8 @@ const SERVICE_CONFIGS: Record<string, ServiceConfig<any>> = {
       <div className="bg-white rounded-xl shadow-md overflow-hidden group">
         <div className="relative">
           <MediaCarousel
-            media={artist.makeup_media}
-            serviceName={artist.artist_name}
+            media={artist.makeup_media || []}
+            serviceName={artist.artist_name || "Artist"}
             itemId={artist.id}
             creatorId={artist.user_id}
             service="makeup"
@@ -180,23 +177,25 @@ const SERVICE_CONFIGS: Record<string, ServiceConfig<any>> = {
         <Link href={`/services/makeup/${artist.id}`}>
           <div className="p-4">
             <h3 className="text-lg font-semibold mb-1 group-hover:text-rose-600 transition-colors">
-              {artist.artist_name}
+              {artist.artist_name || "Unnamed Artist"}
             </h3>
             <p className="text-slate-600 text-sm mb-2">
-              {artist.years_experience} years experience • Up to{" "}
-              {artist.travel_range} miles
+              {artist.years_experience || 0} years experience • Up to{" "}
+              {artist.travel_range || 0} miles
             </p>
             <p className="text-slate-600 text-sm mb-3 line-clamp-2">
-              {artist.description}
+              {artist.description || "No description available"}
             </p>
             <div className="flex justify-between items-center pt-2 border-t">
               <div className="text-sm text-slate-600">
-                {artist.max_bookings_per_day} bookings/day
+                {artist.max_bookings_per_day || 0} bookings/day
               </div>
               <div className="text-lg font-semibold text-rose-600">
                 {artist.min_service_price === artist.max_service_price
-                  ? `$${artist.min_service_price.toLocaleString()}`
-                  : `$${artist.min_service_price.toLocaleString()} - $${artist.max_service_price.toLocaleString()}`}
+                  ? `$${(artist.min_service_price || 0).toLocaleString()}`
+                  : `$${(artist.min_service_price || 0).toLocaleString()} - $${(
+                      artist.max_service_price || 0
+                    ).toLocaleString()}`}
               </div>
             </div>
           </div>
@@ -228,6 +227,7 @@ export default function LikedServicesPage() {
       }
 
       setIsLoading(true);
+      setLikedItems([]); // Clear existing items while loading
 
       const serviceConfig = SERVICE_CONFIGS[selectedService];
       if (!serviceConfig) {
@@ -239,7 +239,7 @@ export default function LikedServicesPage() {
         .select(serviceConfig.selectQuery)
         .eq("user_id", user.id)
         .order("liked_at", { ascending: false })
-        .returns<ServiceResponse[]>(); // Add type here
+        .returns<ServiceResponse[]>();
 
       if (error) throw error;
 
@@ -249,7 +249,11 @@ export default function LikedServicesPage() {
       }
 
       const transformedData = data
-        .filter((item: ServiceResponse) => item[serviceConfig.entityTable])
+        .filter((item: ServiceResponse) => {
+          const entityData =
+            item[serviceConfig.entityTable as keyof ServiceResponse];
+          return entityData && typeof entityData === "object";
+        })
         .map((item: ServiceResponse) => {
           const entityData =
             item[serviceConfig.entityTable as keyof ServiceResponse];
@@ -263,6 +267,7 @@ export default function LikedServicesPage() {
     } catch (error: any) {
       console.error("Error loading liked items:", error);
       toast.error("Failed to load liked items");
+      setLikedItems([]); // Clear items on error
     } finally {
       setIsLoading(false);
     }
