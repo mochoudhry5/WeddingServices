@@ -34,6 +34,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import NavBar from "@/components/ui/NavBar";
 import Footer from "@/components/ui/Footer";
+import { machine } from "os";
 
 // Types
 type ServiceId = "venue" | "makeup" | "photography";
@@ -131,29 +132,25 @@ const services: Service[] = [
 ];
 
 const commonInclusions = [
-  "Tables & Chairs",
-  "Basic Lighting",
-  "Sound System",
-  "Parking",
-  "Security",
-  "Basic Decor",
-  "Cleanup Service",
   "Bridal Suite",
-  "Kitchen Access",
-  "Wifi",
-  "AV Equipment",
-  "Event Planning",
-  "Air Conditioning",
-  "Heating",
+  "Chairs & Tables",
+  "Free Parking",
   "Restrooms",
-  "Changing Rooms",
+  "Wi-fi",
+  "Security",
+  "Audio-Visual Equipment",
+  "Climate Control",
+  "Stage and Lighting",
+  "Cleaning Services",
+  "Outdoor Area",
+  "Kitchen Access",
 ];
 
 const commonAddOns = [
   {
     name: "Catering Service",
     description:
-      "Full-service catering including appetizers, main course, and desserts",
+      "Full-service catering including appetizers, main course, and desserts along with servers.",
     suggestedPrice: 75,
     suggestedPricingType: "per-guest" as const,
   },
@@ -347,6 +344,10 @@ export default function CreateVenueListing() {
     setDraggedItem(null);
   };
 
+  const countCharacters = (text: string): number => {
+    return text.trim().length;
+  };
+
   // Form Validation
   const validateCurrentStep = () => {
     switch (currentStep) {
@@ -361,6 +362,26 @@ export default function CreateVenueListing() {
             return false;
           }
         };
+
+        const charCount = countCharacters(description);
+        if (charCount < 100) {
+          toast.error(
+            `Description must be at least 100 characters. Current count: ${charCount} characters`
+          );
+          return false;
+        }
+
+        if (minGuests && maxGuests) {
+          const minCount = parseInt(minGuests);
+          const maxCount = parseInt(maxGuests);
+
+          if (minCount >= maxCount) {
+            toast.error(
+              "Minimum guest count must be less than maximum guest count"
+            );
+            return false;
+          }
+        }
 
         if (websiteUrl && !isValidUrl(websiteUrl)) {
           toast.error("Please enter a valid website URL");
@@ -384,7 +405,7 @@ export default function CreateVenueListing() {
           state &&
           basePrice &&
           maxGuests &&
-          catering 
+          catering
         );
       case 2:
         return mediaFiles.length >= 1; // Change to 10 in production
@@ -421,12 +442,20 @@ export default function CreateVenueListing() {
         !basePrice ||
         !maxGuests ||
         !description ||
-        !catering 
+        !catering
       ) {
         toast.error("Please fill in all required fields");
         return;
       }
 
+      const charCount = countCharacters(description);
+      if (charCount < 100) {
+        toast.error(
+          `Description must be at least 100 characters. Current count: ${charCount} characters`
+        );
+        return;
+      }
+      
       if (mediaFiles.length < 1) {
         // Change to 10 in production
         toast.error("Please upload at least 10 images");
@@ -778,16 +807,20 @@ export default function CreateVenueListing() {
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Description*
+                    Description* (minimum 100 characters)
                   </label>
                   <textarea
                     value={description}
                     onChange={(e) => setDescription(e.target.value)}
                     rows={4}
-                    placeholder="Describe your venue..."
+                    placeholder="Describe your venue in detail (minimum 100 characters)..."
                     className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-rose-500 focus:border-transparent"
                     required
                   />
+                  <div className="mt-1 text-sm text-gray-500">
+                    Character count: {countCharacters(description)} / 100
+                    minimum
+                  </div>
                 </div>
               </div>
             )}
@@ -921,7 +954,9 @@ export default function CreateVenueListing() {
             {/* Step 3: Inclusions */}
             {currentStep === 3 && (
               <div className="space-y-6">
-                <h2 className="text-2xl font-semibold mb-6">What's Included in the Base Price</h2>
+                <h2 className="text-2xl font-semibold mb-6">
+                  What's Included in the Base Price
+                </h2>
 
                 {/* Common Inclusions */}
                 <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
