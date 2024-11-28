@@ -66,8 +66,8 @@ const commonServices = [
     suggestedDuration: 60,
   },
   {
-    name: "Mother of Bride/Groom",
-    description: "Elegant makeup for mothers",
+    name: "Relative of Bride/Groom",
+    description: "Elegant makeup for relatives",
     suggestedPrice: 150,
     suggestedDuration: 60,
   },
@@ -80,14 +80,11 @@ const commonServices = [
 ];
 
 const commonStyles = [
-  "Natural Glam",
-  "Full Glam",
-  "Bohemian",
-  "Classic",
-  "Modern",
+  "Natural",
+  "Bridal",
+  "Glam",
   "Soft Glam",
-  "Dramatic",
-  "Minimalist",
+  "Classic",
 ];
 
 const CreateMakeupListing = () => {

@@ -353,7 +353,7 @@ export default function VenueDetailsPage() {
             </div>
           </div>
         )}
-        <div className="max-w-7xl mx-auto px-4 py-8">
+        <div className="max-w-7xl mx-auto px-4 py-6">
           {/* Venue Header */}
           <div className="flex flex-col md:flex-row md:justify-between md:items-start gap-4 mb-8">
             <div>
@@ -368,7 +368,7 @@ export default function VenueDetailsPage() {
               <p className="text-2xl md:text-3xl font-bold text-rose-600">
                 ${venue.base_price.toLocaleString()}
               </p>
-              <p className="text-gray-600">Base Price (Venue only)</p>
+              <p className="text-gray-600">Base Price (See Included)</p>
             </div>
           </div>
         </div>
