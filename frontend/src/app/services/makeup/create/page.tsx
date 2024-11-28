@@ -560,6 +560,7 @@ const CreateMakeupListing = () => {
                         : "Enter your business address"
                     }
                     className="w-full"
+                    isRemoteLocation={isRemoteBusiness}
                   />
 
                   {/* Display selected location details */}

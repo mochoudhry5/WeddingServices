@@ -30,6 +30,7 @@ interface LocationInputProps {
   onPlaceSelect?: (place: GooglePlace) => void;
   placeholder?: string;
   className?: string;
+  isRemoteLocation?: boolean;
 }
 
 const LocationInput = ({
@@ -38,6 +39,7 @@ const LocationInput = ({
   onPlaceSelect,
   placeholder,
   className,
+  isRemoteLocation = false,
 }: LocationInputProps) => {
   const inputRef = useRef<HTMLInputElement>(null);
   const autocompleteRef = useRef<google.maps.places.Autocomplete | null>(null);
@@ -88,8 +90,8 @@ const LocationInput = ({
             },
             {
               enableHighAccuracy: true,
-              timeout: 10000, // Increased timeout to 10 seconds
-              maximumAge: 30000, // Allow cached position up to 30 seconds old
+              timeout: 10000,
+              maximumAge: 30000,
             }
           );
         }
@@ -168,36 +170,30 @@ const LocationInput = ({
     }
   };
 
-  // Effect to load user's location on mount
-  useEffect(() => {
-    const hasLoadedLocation = localStorage.getItem("hasLoadedLocation");
-
-    const loadInitialLocation = async () => {
-      if (isLoaded && !hasLoadedLocation) {
-        localStorage.setItem("hasLoadedLocation", "true");
-        await getCurrentLocation();
-      }
-    };
-
-    loadInitialLocation();
-  }, [isLoaded]);
-
   const initializeAutocomplete = () => {
     if (!inputRef.current || !isLoaded) return;
 
+    // Clean up previous autocomplete instance
+    if (autocompleteRef.current) {
+      google.maps.event.clearInstanceListeners(autocompleteRef.current);
+    }
+
+    // Configure autocomplete based on isRemoteLocation
+    const autocompleteOptions: google.maps.places.AutocompleteOptions = {
+      componentRestrictions: { country: "us" },
+      fields: [
+        "address_components",
+        "formatted_address",
+        "geometry",
+        "name",
+        "place_id",
+      ],
+      types: isRemoteLocation ? ["(cities)"] : ["address"],
+    };
+
     autocompleteRef.current = new window.google.maps.places.Autocomplete(
       inputRef.current,
-      {
-        types: ["(cities)"],
-        componentRestrictions: { country: "us" },
-        fields: [
-          "address_components",
-          "formatted_address",
-          "geometry",
-          "name",
-          "place_id",
-        ],
-      }
+      autocompleteOptions
     );
 
     // Handle place selection
@@ -212,6 +208,7 @@ const LocationInput = ({
     document.addEventListener("click", handlePacItemClick);
   };
 
+  // Handle place selection
   const handlePlaceSelection = (place: google.maps.places.PlaceResult) => {
     onChange(place.formatted_address || "");
 
@@ -257,8 +254,22 @@ const LocationInput = ({
     }
   };
 
-  // Initialize autocomplete when script is loaded
-  React.useEffect(() => {
+  // Effect to load user's location on mount
+  useEffect(() => {
+    const hasLoadedLocation = localStorage.getItem("hasLoadedLocation");
+
+    const loadInitialLocation = async () => {
+      if (isLoaded && !hasLoadedLocation) {
+        localStorage.setItem("hasLoadedLocation", "true");
+        await getCurrentLocation();
+      }
+    };
+
+    loadInitialLocation();
+  }, [isLoaded]);
+
+  // Initialize autocomplete when script is loaded or isRemoteLocation changes
+  useEffect(() => {
     if (isLoaded) {
       initializeAutocomplete();
     }
@@ -269,7 +280,7 @@ const LocationInput = ({
         google.maps.event.clearInstanceListeners(autocompleteRef.current);
       }
     };
-  }, [isLoaded]);
+  }, [isLoaded, isRemoteLocation]);
 
   // Prevent form submission on Enter
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
