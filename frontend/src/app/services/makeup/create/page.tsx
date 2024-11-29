@@ -235,7 +235,66 @@ const CreateMakeupListing = () => {
       case 2:
         return mediaFiles.length >= 5;
       case 3:
-        return Object.keys(selectedServices).length > 0;
+        if (
+          Object.keys(selectedServices).length === 0 &&
+          customServices.length === 0
+        ) {
+          toast.error("Please select at least one service");
+          return false;
+        }
+
+        // Validate selected common services
+        for (const serviceName in selectedServices) {
+          const service = selectedServices[serviceName];
+          if (!service.price || service.price <= 0) {
+            toast.error(`Please enter a valid price for ${serviceName}`);
+            return false;
+          }
+          if (!service.duration || service.duration <= 0) {
+            toast.error(`Please enter a valid duration for ${serviceName}`);
+            return false;
+          }
+        }
+
+        // Validate custom services
+        const validCustomServices = customServices.filter((service) =>
+          service.name.trim()
+        );
+        for (const service of customServices) {
+          // If any field is filled, all fields become required
+          if (
+            service.name.trim() ||
+            service.description.trim() ||
+            service.price > 0 ||
+            service.duration > 0
+          ) {
+            if (!service.name.trim()) {
+              toast.error("Please enter a name for the custom service");
+              return false;
+            }
+            if (!service.description.trim()) {
+              toast.error("Please enter a description for the custom service");
+              return false;
+            }
+            if (!service.price || service.price <= 0) {
+              toast.error(
+                `Please enter a valid price for ${
+                  service.name || "the custom service"
+                }`
+              );
+              return false;
+            }
+            if (!service.duration || service.duration <= 0) {
+              toast.error(
+                `Please enter a valid duration for ${
+                  service.name || "the custom service"
+                }`
+              );
+              return false;
+            }
+          }
+        }
+        return true;
       case 4:
         return availability.deposit && availability.cancellationPolicy;
       default:
@@ -908,7 +967,7 @@ const CreateMakeupListing = () => {
                                 <div className="mt-4 grid gap-4">
                                   <div>
                                     <label className="block text-sm font-medium mb-1">
-                                      Starting Price ($)
+                                      Starting Price ($)*
                                     </label>
                                     <div className="relative">
                                       <DollarSign
@@ -947,7 +1006,7 @@ const CreateMakeupListing = () => {
                                   </div>
                                   <div>
                                     <label className="block text-sm font-medium mb-1">
-                                      Duration (minutes)
+                                      Duration (minutes)*
                                     </label>
                                     <div className="relative">
                                       <Clock
@@ -1034,7 +1093,7 @@ const CreateMakeupListing = () => {
                                 <div className="mt-4 grid gap-4">
                                   <div>
                                     <label className="block text-sm font-medium mb-1">
-                                      Starting Price ($)
+                                      Starting Price ($)*
                                     </label>
                                     <div className="relative">
                                       <DollarSign
@@ -1073,7 +1132,7 @@ const CreateMakeupListing = () => {
                                   </div>
                                   <div>
                                     <label className="block text-sm font-medium mb-1">
-                                      Duration (minutes)
+                                      Duration (minutes)*
                                     </label>
                                     <div className="relative">
                                       <Clock
@@ -1155,7 +1214,7 @@ const CreateMakeupListing = () => {
                           <div className="flex-1 grid gap-4">
                             <div>
                               <label className="block text-sm font-medium mb-1">
-                                Service Name
+                                Service Name*
                               </label>
                               <Input
                                 value={service.name}
@@ -1172,7 +1231,7 @@ const CreateMakeupListing = () => {
                             </div>
                             <div>
                               <label className="block text-sm font-medium mb-1">
-                                Description
+                                Description*
                               </label>
                               <textarea
                                 value={service.description}
@@ -1192,7 +1251,7 @@ const CreateMakeupListing = () => {
                             <div className="grid grid-cols-2 gap-4">
                               <div>
                                 <label className="block text-sm font-medium mb-1">
-                                  Price ($)
+                                  Starting Price ($)*
                                 </label>
                                 <div className="relative">
                                   <DollarSign
@@ -1227,7 +1286,7 @@ const CreateMakeupListing = () => {
                               </div>
                               <div>
                                 <label className="block text-sm font-medium mb-1">
-                                  Duration (minutes)
+                                  Duration (minutes)*
                                 </label>
                                 <div className="relative">
                                   <Clock
