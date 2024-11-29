@@ -137,7 +137,6 @@ const CreateMakeupListing = () => {
   const [customServices, setCustomServices] = useState<Service[]>([]);
 
   const [availability, setAvailability] = useState({
-    maxBookingsPerDay: "",
     deposit: "", // Will store percentage as string
     cancellationPolicy: "",
   });
@@ -161,10 +160,22 @@ const CreateMakeupListing = () => {
     setMediaFiles((prev) => prev.filter((file) => file.id !== id));
   };
 
+  const countCharacters = (text: string): number => {
+    return text.trim().length;
+  };
+
   // Form Validation
   const validateCurrentStep = () => {
     switch (currentStep) {
       case 1:
+        if (countCharacters(description) < 100) {
+          toast.error(
+            `Description must be at least 100 characters. Current count: ${countCharacters(
+              description
+            )} characters`
+          );
+          return false;
+        }
         const hasRequiredStyles = (type: ServiceType): boolean => {
           const makeupStyles = specialties.filter((style) =>
             commonMakeupStyles.includes(style)
@@ -199,7 +210,7 @@ const CreateMakeupListing = () => {
           location.city &&
           location.state &&
           location.country &&
-          description &&
+          description.trim().length >= 100 &&
           specialties.length > 0
         );
       case 2:
@@ -207,11 +218,7 @@ const CreateMakeupListing = () => {
       case 3:
         return Object.keys(selectedServices).length > 0;
       case 4:
-        return (
-          availability.maxBookingsPerDay &&
-          availability.deposit &&
-          availability.cancellationPolicy
-        );
+        return availability.deposit && availability.cancellationPolicy;
       default:
         return true;
     }
@@ -253,7 +260,6 @@ const CreateMakeupListing = () => {
         // Services
         Object.keys(selectedServices).length === 0 ||
         // Availability
-        !availability.maxBookingsPerDay ||
         !availability.deposit ||
         !availability.cancellationPolicy
       ) {
@@ -290,7 +296,6 @@ const CreateMakeupListing = () => {
         }
 
         if (
-          !availability.maxBookingsPerDay ||
           !availability.deposit || // Updated field name
           !availability.cancellationPolicy
         ) {
@@ -330,7 +335,6 @@ const CreateMakeupListing = () => {
           description,
           website_url: websiteUrl || null,
           instagram_url: instagramUrl || null,
-          max_bookings_per_day: parseInt(availability.maxBookingsPerDay),
           deposit: parseInt(availability.deposit),
           cancellation_policy: availability.cancellationPolicy,
           is_remote_business: isRemoteBusiness,
@@ -733,7 +737,7 @@ const CreateMakeupListing = () => {
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Description*
+                    Description* (minimum 100 characters)
                   </label>
                   <textarea
                     value={description}
@@ -743,6 +747,10 @@ const CreateMakeupListing = () => {
                     className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-rose-500 focus:border-transparent"
                     required
                   />
+                  <p className="mt-1 text-sm text-gray-500">
+                    Character count: {countCharacters(description)} / 100
+                    minimum
+                  </p>
                 </div>
 
                 <div className="grid grid-cols-2 gap-4">
@@ -1073,33 +1081,6 @@ const CreateMakeupListing = () => {
             {currentStep === 4 && (
               <div className="space-y-6">
                 <h2 className="text-2xl font-semibold mb-6">Availability</h2>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Maximum Bookings Per Day*
-                  </label>
-                  <Select
-                    value={availability.maxBookingsPerDay}
-                    onValueChange={(value) =>
-                      setAvailability({
-                        ...availability,
-                        maxBookingsPerDay: value,
-                      })
-                    }
-                  >
-                    <SelectTrigger className="w-full">
-                      <SelectValue placeholder="Select maximum bookings per day" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {[1, 2, 3, 4, 5].map((num) => (
-                        <SelectItem key={num} value={num.toString()}>
-                          {num} {num === 1 ? "booking" : "bookings"}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
                     Required Deposit (% of total service cost)*
@@ -1109,12 +1090,10 @@ const CreateMakeupListing = () => {
                       type="number"
                       min="0"
                       max="100"
-                      value={
-                        availability.deposit === "0" ? "" : availability.deposit
-                      }
+                      value={availability.deposit}
                       onChange={(e) => {
                         const value = e.target.value;
-                        // Allow empty string or numbers between 0-100
+                        // Allow numbers between 0-100
                         if (
                           value === "" ||
                           (parseInt(value) >= 0 && parseInt(value) <= 100)
