@@ -56,26 +56,41 @@ const commonServices = [
   {
     name: "Bridal Makeup",
     description: "Complete bridal makeup with trials and touch-ups",
-    suggestedPrice: 300,
-    suggestedDuration: 120,
+    suggestedPrice: 0,
+    suggestedDuration: 0,
   },
   {
-    name: "Bridesmaid Makeup",
+    name: "Bridal Party Makeup",
     description: "Professional makeup for bridesmaids",
-    suggestedPrice: 150,
-    suggestedDuration: 60,
+    suggestedPrice: 0,
+    suggestedDuration: 0,
   },
   {
-    name: "Relative of Bride/Groom",
+    name: "Preview Makeup",
     description: "Elegant makeup for relatives",
-    suggestedPrice: 150,
-    suggestedDuration: 60,
+    suggestedPrice: 0,
+    suggestedDuration: 0,
+  },
+];
+
+const commonHairServices = [
+  {
+    name: "Bridal Hair",
+    description: "Complete bridal makeup with trials and touch-ups",
+    suggestedPrice: 0,
+    suggestedDuration: 0,
   },
   {
-    name: "Trial Session",
-    description: "Pre-wedding makeup trial",
-    suggestedPrice: 150,
-    suggestedDuration: 90,
+    name: "Bridal Party Hair",
+    description: "Professional makeup for bridesmaids",
+    suggestedPrice: 0,
+    suggestedDuration: 0,
+  },
+  {
+    name: "Preview Hair",
+    description: "Elegant makeup for relatives",
+    suggestedPrice: 0,
+    suggestedDuration: 0,
   },
 ];
 
@@ -163,7 +178,11 @@ const CreateMakeupListing = () => {
   const countCharacters = (text: string): number => {
     return text.trim().length;
   };
-
+  const handleNumericInput = (value: string): string => {
+    // Remove leading zeros and prevent negative numbers
+    let sanitized = value.replace(/^0+/, "").replace(/-/g, "");
+    return sanitized === "" ? "0" : sanitized;
+  };
   // Form Validation
   const validateCurrentStep = () => {
     switch (currentStep) {
@@ -847,96 +866,258 @@ const CreateMakeupListing = () => {
 
                 {/* Common Services */}
                 <div className="space-y-4">
-                  {commonServices.map((service) => (
-                    <div key={service.name} className="p-4 border rounded-lg">
-                      <div className="flex items-start space-x-4">
-                        <input
-                          type="checkbox"
-                          checked={service.name in selectedServices}
-                          onChange={(e) => {
-                            if (e.target.checked) {
-                              setSelectedServices({
-                                ...selectedServices,
-                                [service.name]: {
-                                  name: service.name,
-                                  description: service.description,
-                                  price: service.suggestedPrice,
-                                  duration: service.suggestedDuration,
-                                },
-                              });
-                            } else {
-                              const newServices = { ...selectedServices };
-                              delete newServices[service.name];
-                              setSelectedServices(newServices);
-                            }
-                          }}
-                          className="mt-1"
-                        />
-                        <div className="flex-1">
-                          <h3 className="font-medium">{service.name}</h3>
-                          <p className="text-sm text-gray-600">
-                            {service.description}
-                          </p>
-                          {service.name in selectedServices && (
-                            <div className="mt-4 grid gap-4">
-                              <div>
-                                <label className="block text-sm font-medium mb-1">
-                                  Starting Price ($)
-                                </label>
-                                <div className="relative">
-                                  <DollarSign
-                                    className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
-                                    size={16}
-                                  />
-                                  <Input
-                                    type="number"
-                                    value={selectedServices[service.name].price}
-                                    onChange={(e) => {
-                                      setSelectedServices({
-                                        ...selectedServices,
-                                        [service.name]: {
-                                          ...selectedServices[service.name],
-                                          price: Number(e.target.value),
-                                        },
-                                      });
-                                    }}
-                                    className="pl-8"
-                                  />
+                  {(serviceType === "makeup" || serviceType === "both") && (
+                    <>
+                      <h3 className="text-lg font-medium mb-4">
+                        Makeup Services
+                      </h3>
+                      {commonServices.map((service) => (
+                        <div
+                          key={service.name}
+                          className="p-4 border rounded-lg"
+                        >
+                          <div className="flex items-start space-x-4">
+                            <input
+                              type="checkbox"
+                              checked={service.name in selectedServices}
+                              onChange={(e) => {
+                                if (e.target.checked) {
+                                  setSelectedServices({
+                                    ...selectedServices,
+                                    [service.name]: {
+                                      name: service.name,
+                                      description: service.description,
+                                      price: service.suggestedPrice,
+                                      duration: service.suggestedDuration,
+                                    },
+                                  });
+                                } else {
+                                  const newServices = { ...selectedServices };
+                                  delete newServices[service.name];
+                                  setSelectedServices(newServices);
+                                }
+                              }}
+                              className="mt-1"
+                            />
+                            <div className="flex-1">
+                              <h3 className="font-medium">{service.name}</h3>
+                              <p className="text-sm text-gray-600">
+                                {service.description}
+                              </p>
+                              {service.name in selectedServices && (
+                                <div className="mt-4 grid gap-4">
+                                  <div>
+                                    <label className="block text-sm font-medium mb-1">
+                                      Starting Price ($)
+                                    </label>
+                                    <div className="relative">
+                                      <DollarSign
+                                        className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
+                                        size={16}
+                                      />
+                                      <Input
+                                        type="number"
+                                        min="0"
+                                        value={
+                                          selectedServices[service.name]
+                                            .price === 0
+                                            ? ""
+                                            : selectedServices[service.name]
+                                                .price
+                                        }
+                                        onChange={(e) => {
+                                          const sanitizedValue =
+                                            handleNumericInput(e.target.value);
+                                          setSelectedServices({
+                                            ...selectedServices,
+                                            [service.name]: {
+                                              ...selectedServices[service.name],
+                                              price: Number(sanitizedValue),
+                                            },
+                                          });
+                                        }}
+                                        onKeyDown={(e) => {
+                                          if (e.key === "-") {
+                                            e.preventDefault();
+                                          }
+                                        }}
+                                        className="pl-8"
+                                      />
+                                    </div>
+                                  </div>
+                                  <div>
+                                    <label className="block text-sm font-medium mb-1">
+                                      Duration (minutes)
+                                    </label>
+                                    <div className="relative">
+                                      <Clock
+                                        className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
+                                        size={16}
+                                      />
+                                      <Input
+                                        type="number"
+                                        min="0"
+                                        value={
+                                          selectedServices[service.name]
+                                            .duration === 0
+                                            ? ""
+                                            : selectedServices[service.name]
+                                                .duration
+                                        }
+                                        onChange={(e) => {
+                                          const sanitizedValue =
+                                            handleNumericInput(e.target.value);
+                                          setSelectedServices({
+                                            ...selectedServices,
+                                            [service.name]: {
+                                              ...selectedServices[service.name],
+                                              duration: Number(sanitizedValue),
+                                            },
+                                          });
+                                        }}
+                                        onKeyDown={(e) => {
+                                          if (e.key === "-") {
+                                            e.preventDefault();
+                                          }
+                                        }}
+                                        className="pl-8"
+                                      />
+                                    </div>
+                                  </div>
                                 </div>
-                              </div>
-                              <div>
-                                <label className="block text-sm font-medium mb-1">
-                                  Duration (minutes)
-                                </label>
-                                <div className="relative">
-                                  <Clock
-                                    className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
-                                    size={16}
-                                  />
-                                  <Input
-                                    type="number"
-                                    value={
-                                      selectedServices[service.name].duration
-                                    }
-                                    onChange={(e) => {
-                                      setSelectedServices({
-                                        ...selectedServices,
-                                        [service.name]: {
-                                          ...selectedServices[service.name],
-                                          duration: Number(e.target.value),
-                                        },
-                                      });
-                                    }}
-                                    className="pl-8"
-                                  />
-                                </div>
-                              </div>
+                              )}
                             </div>
-                          )}
+                          </div>
                         </div>
-                      </div>
-                    </div>
-                  ))}
+                      ))}
+                    </>
+                  )}
+                  {(serviceType === "hair" || serviceType === "both") && (
+                    <>
+                      <h3 className="text-lg font-medium mb-4 mt-6">
+                        Hair Services
+                      </h3>
+                      {commonHairServices.map((service) => (
+                        <div
+                          key={service.name}
+                          className="p-4 border rounded-lg"
+                        >
+                          <div className="flex items-start space-x-4">
+                            <input
+                              type="checkbox"
+                              checked={service.name in selectedServices}
+                              onChange={(e) => {
+                                if (e.target.checked) {
+                                  setSelectedServices({
+                                    ...selectedServices,
+                                    [service.name]: {
+                                      name: service.name,
+                                      description: service.description,
+                                      price: service.suggestedPrice,
+                                      duration: service.suggestedDuration,
+                                    },
+                                  });
+                                } else {
+                                  const newServices = { ...selectedServices };
+                                  delete newServices[service.name];
+                                  setSelectedServices(newServices);
+                                }
+                              }}
+                              className="mt-1"
+                            />
+                            <div className="flex-1">
+                              <h3 className="font-medium">{service.name}</h3>
+                              <p className="text-sm text-gray-600">
+                                {service.description}
+                              </p>
+                              {service.name in selectedServices && (
+                                <div className="mt-4 grid gap-4">
+                                  <div>
+                                    <label className="block text-sm font-medium mb-1">
+                                      Starting Price ($)
+                                    </label>
+                                    <div className="relative">
+                                      <DollarSign
+                                        className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
+                                        size={16}
+                                      />
+                                      <Input
+                                        type="number"
+                                        min="0"
+                                        value={
+                                          selectedServices[service.name]
+                                            .price === 0
+                                            ? ""
+                                            : selectedServices[service.name]
+                                                .price
+                                        }
+                                        onChange={(e) => {
+                                          const sanitizedValue =
+                                            handleNumericInput(e.target.value);
+                                          setSelectedServices({
+                                            ...selectedServices,
+                                            [service.name]: {
+                                              ...selectedServices[service.name],
+                                              price: Number(sanitizedValue),
+                                            },
+                                          });
+                                        }}
+                                        onKeyDown={(e) => {
+                                          if (e.key === "-") {
+                                            e.preventDefault();
+                                          }
+                                        }}
+                                        className="pl-8"
+                                      />
+                                    </div>
+                                  </div>
+                                  <div>
+                                    <label className="block text-sm font-medium mb-1">
+                                      Duration (minutes)
+                                    </label>
+                                    <div className="relative">
+                                      <Clock
+                                        className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
+                                        size={16}
+                                      />
+                                      <Input
+                                        type="number"
+                                        min="0"
+                                        value={
+                                          selectedServices[service.name]
+                                            .duration === 0
+                                            ? ""
+                                            : selectedServices[service.name]
+                                                .duration
+                                        }
+                                        onChange={(e) => {
+                                          const sanitizedValue =
+                                            handleNumericInput(e.target.value);
+                                          setSelectedServices({
+                                            ...selectedServices,
+                                            [service.name]: {
+                                              ...selectedServices[service.name],
+                                              duration: Number(sanitizedValue),
+                                            },
+                                          });
+                                        }}
+                                        onKeyDown={(e) => {
+                                          if (e.key === "-") {
+                                            e.preventDefault();
+                                          }
+                                        }}
+                                        className="pl-8"
+                                      />
+                                    </div>
+                                  </div>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </>
+                  )}
                 </div>
 
                 {/* Custom Services */}
@@ -1020,14 +1201,25 @@ const CreateMakeupListing = () => {
                                   />
                                   <Input
                                     type="number"
-                                    value={service.price}
+                                    min="0"
+                                    value={
+                                      service.price === 0 ? "" : service.price
+                                    }
                                     onChange={(e) => {
+                                      const sanitizedValue = handleNumericInput(
+                                        e.target.value
+                                      );
                                       const newServices = [...customServices];
                                       newServices[index] = {
                                         ...service,
-                                        price: Number(e.target.value),
+                                        price: Number(sanitizedValue),
                                       };
                                       setCustomServices(newServices);
+                                    }}
+                                    onKeyDown={(e) => {
+                                      if (e.key === "-") {
+                                        e.preventDefault();
+                                      }
                                     }}
                                     className="pl-8"
                                   />
@@ -1044,14 +1236,27 @@ const CreateMakeupListing = () => {
                                   />
                                   <Input
                                     type="number"
-                                    value={service.duration}
+                                    min="0"
+                                    value={
+                                      service.duration === 0
+                                        ? ""
+                                        : service.duration
+                                    }
                                     onChange={(e) => {
+                                      const sanitizedValue = handleNumericInput(
+                                        e.target.value
+                                      );
                                       const newServices = [...customServices];
                                       newServices[index] = {
                                         ...service,
-                                        duration: Number(e.target.value),
+                                        duration: Number(sanitizedValue),
                                       };
                                       setCustomServices(newServices);
+                                    }}
+                                    onKeyDown={(e) => {
+                                      if (e.key === "-") {
+                                        e.preventDefault();
+                                      }
                                     }}
                                     className="pl-8"
                                   />
