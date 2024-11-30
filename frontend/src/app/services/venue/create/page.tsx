@@ -151,37 +151,31 @@ const commonAddOns = [
     name: "Catering Service",
     description:
       "Full-service catering including appetizers, main course, and desserts along with servers.",
-    suggestedPrice: 75,
     suggestedPricingType: "per-guest" as const,
   },
   {
     name: "Bar Service",
     description: "Professional bartenders with premium beverages",
-    suggestedPrice: 45,
     suggestedPricingType: "per-guest" as const,
   },
   {
     name: "DJ Package",
     description: "Professional DJ with sound system and lighting",
-    suggestedPrice: 1200,
     suggestedPricingType: "flat" as const,
   },
   {
     name: "Decor Package",
     description: "Custom floral arrangements and venue decoration",
-    suggestedPrice: 2500,
     suggestedPricingType: "flat" as const,
   },
   {
     name: "Photography",
     description: "Professional photography coverage",
-    suggestedPrice: 2000,
     suggestedPricingType: "flat" as const,
   },
   {
     name: "Videography",
     description: "Professional video coverage",
-    suggestedPrice: 2500,
     suggestedPricingType: "flat" as const,
   },
 ];
@@ -223,16 +217,15 @@ const PricingInput = ({
         </span>
         <Input
           type="number"
-          min="0"
           value={value.price === 0 ? "" : value.price}
           onChange={(e) => {
-            const newPrice = e.target.value.replace(/^0+/, "");
+            const newPrice = e.target.value === "" ? 0 : Number(e.target.value);
             onChange({
               ...value,
-              price: newPrice !== "" ? Number(newPrice) : 0,
+              price: newPrice,
             });
           }}
-          placeholder="0"
+          placeholder="Enter price"
           className="pl-7"
         />
       </div>
@@ -455,7 +448,7 @@ export default function CreateVenueListing() {
         );
         return;
       }
-      
+
       if (mediaFiles.length < 1) {
         // Change to 10 in production
         toast.error("Please upload at least 10 images");
@@ -1060,7 +1053,7 @@ export default function CreateVenueListing() {
                                   ...selectedAddOns,
                                   [addon.name]: {
                                     pricingType: addon.suggestedPricingType,
-                                    price: addon.suggestedPrice,
+                                    price: 0,
                                     guestIncrement:
                                       addon.suggestedPricingType === "per-guest"
                                         ? 100
