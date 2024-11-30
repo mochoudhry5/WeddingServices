@@ -234,11 +234,42 @@ export default function MakeupDetailsPage() {
               </p>
             ) : (
               <p className="text-gray-600">
-                {makeup.address}, {makeup.city}, {makeup.state},{" "}
-                {makeup.country}
+                {makeup.address}, {makeup.city}, {makeup.state}
               </p>
             )}
           </div>
+
+          {/* Price Range */}
+          {makeup.makeup_services?.length > 0 && (
+            <div className="text-right">
+              <div className="text-3xl font-semibold text-rose-600">
+                {(() => {
+                  const prices = makeup.makeup_services.map(
+                    (service) => service.price
+                  );
+                  const minPrice = Math.min(...prices);
+                  const maxPrice = Math.max(...prices);
+
+                  return minPrice === maxPrice
+                    ? `$${maxPrice.toLocaleString()}`
+                    : `$${minPrice.toLocaleString()} - $${maxPrice.toLocaleString()}`;
+                })()}
+              </div>
+              <p className="text-sm text-gray-500">
+                {(() => {
+                  const prices = makeup.makeup_services.map(
+                    (service) => service.price
+                  );
+                  const minPrice = Math.min(...prices);
+                  const maxPrice = Math.max(...prices);
+
+                  return minPrice === maxPrice
+                    ? "Starting Price (See Services & Pricing)"
+                    : "Price Range (See Services & Pricing)";
+                })()}
+              </p>
+            </div>
+          )}
         </div>
 
         {/* Description */}
@@ -374,7 +405,10 @@ export default function MakeupDetailsPage() {
                     <h3 className="text-lg font-semibold">{service.name}</h3>
                     <div className="text-right">
                       <p className="text-rose-600 font-semibold">
-                        <span className="text-gray-500 text-sm">Starting at </span> ${service.price.toLocaleString()}
+                        <span className="text-gray-500 text-sm">
+                          Starting at{" "}
+                        </span>{" "}
+                        ${service.price.toLocaleString()}
                       </p>
                       <p className="text-sm text-gray-500">
                         {service.duration} minutes
