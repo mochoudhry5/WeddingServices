@@ -187,12 +187,20 @@ const CreateMakeupListing = () => {
   const validateCurrentStep = () => {
     switch (currentStep) {
       case 1:
-        if (countCharacters(description) < 100) {
-          toast.error(
-            `Description must be at least 100 characters. Current count: ${countCharacters(
-              description
-            )} characters`
-          );
+        if (!artistName) {
+          toast.error(`Business Name Must Be Entered`);
+          return false;
+        }
+        if (!experience) {
+          toast.error(`Years of Experience Must Be Entered`);
+          return false;
+        }
+        if (!travelRange) {
+          toast.error(`Travel Range Must Be Entered`);
+          return false;
+        }
+        if (!location.city || !location.state) {
+          toast.error(`Business Address Must Be Entered`);
           return false;
         }
         const hasRequiredStyles = (type: ServiceType): boolean => {
@@ -221,6 +229,15 @@ const CreateMakeupListing = () => {
           );
           return false;
         }
+
+        if (countCharacters(description) < 100) {
+          toast.error(
+            `Description must be at least 100 characters. Current count: ${countCharacters(
+              description
+            )} characters`
+          );
+          return false;
+        }
         return (
           artistName &&
           experience &&
@@ -233,7 +250,11 @@ const CreateMakeupListing = () => {
           specialties.length > 0
         );
       case 2:
-        return mediaFiles.length >= 5;
+        if (mediaFiles.length < 5) {
+          toast.error("Minimum of 5 Images must be Uploaded");
+          return false;
+        }
+        return true;
       case 3:
         if (
           Object.keys(selectedServices).length === 0 &&
@@ -345,8 +366,6 @@ const CreateMakeupListing = () => {
           }
         }
         return true;
-      case 4:
-        return availability.deposit && availability.cancellationPolicy;
       default:
         return true;
     }
@@ -356,8 +375,6 @@ const CreateMakeupListing = () => {
   const nextStep = () => {
     if (validateCurrentStep()) {
       setCurrentStep((prev) => Math.min(prev + 1, totalSteps));
-    } else {
-      toast.error("Please fill in all required fields");
     }
   };
 
@@ -392,46 +409,20 @@ const CreateMakeupListing = () => {
         !availability.cancellationPolicy
       ) {
         // Show more specific error messages based on what's missing
-        if (
-          !artistName ||
-          !experience ||
-          !travelRange ||
-          !description ||
-          specialties.length === 0
-        ) {
-          toast.error("Please fill in all basic information fields");
-          return;
-        }
-
-        if (
-          !location.enteredLocation ||
-          !location.city ||
-          !location.state ||
-          !location.country
-        ) {
-          toast.error("Please select a valid location");
-          return;
-        }
-
-        if (mediaFiles.length < 5) {
-          toast.error("Please upload at least 5 portfolio images");
-          return;
-        }
-
         if (Object.keys(selectedServices).length === 0) {
           toast.error("Please add at least one service");
           return;
         }
 
-        if (
-          !availability.deposit || // Updated field name
-          !availability.cancellationPolicy
-        ) {
-          toast.error("Please complete all availability settings");
+        if (!availability.deposit) {
+          toast.error("Required Deposit Must Be Entered");
           return;
         }
 
-        toast.error("Please fill in all required fields");
+        if (!availability.cancellationPolicy) {
+          toast.error("Cancellation Policy Must Be Selected");
+          return;
+        }
         return;
       }
 

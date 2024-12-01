@@ -441,49 +441,6 @@ export default function CreateVenueListing() {
           return false;
         }
         return true;
-      case 4:
-        // Validate common add-ons
-        for (const [name, details] of Object.entries(selectedAddOns)) {
-          if (!details.description.trim()) {
-            toast.error(`Please enter a description for ${name}`);
-            return false;
-          }
-          if (!details.price || details.price <= 0) {
-            toast.error(`Please enter a valid price for ${name}`);
-            return false;
-          }
-          if (details.pricingType === "per-guest" && !details.guestIncrement) {
-            toast.error(`Please select guest increment for ${name}`);
-            return false;
-          }
-        }
-
-        // Validate custom add-ons
-        const nonEmptyCustomAddons = customAddOns.filter(
-          (addon) =>
-            addon.name.trim() || addon.description.trim() || addon.price > 0
-        );
-
-        for (const addon of nonEmptyCustomAddons) {
-          if (!addon.name.trim()) {
-            toast.error("Please enter a name for all custom services");
-            return false;
-          }
-          if (!addon.description.trim()) {
-            toast.error(`Please enter a description for ${addon.name}`);
-            return false;
-          }
-          if (!addon.price || addon.price <= 0) {
-            toast.error(`Please enter a valid price for ${addon.name}`);
-            return false;
-          }
-          if (addon.pricingType === "per-guest" && !addon.guestIncrement) {
-            toast.error(`Please select guest increment for ${addon.name}`);
-            return false;
-          }
-        }
-        return true;
-
       default:
         return true;
     }
@@ -493,8 +450,6 @@ export default function CreateVenueListing() {
   const nextStep = () => {
     if (validateCurrentStep()) {
       setCurrentStep((prev) => Math.min(prev + 1, totalSteps));
-    } else {
-      toast.error("Please fill in all required fields");
     }
   };
 
@@ -523,18 +478,45 @@ export default function CreateVenueListing() {
         return;
       }
 
-      const charCount = countCharacters(description);
-      if (charCount < 100) {
-        toast.error(
-          `Description must be at least 100 characters. Current count: ${charCount} characters`
-        );
-        return;
+      // Validate common add-ons
+      for (const [name, details] of Object.entries(selectedAddOns)) {
+        if (!details.description.trim()) {
+          toast.error(`Please enter a description for ${name}`);
+          return;
+        }
+        if (!details.price || details.price <= 0) {
+          toast.error(`Please enter a valid price for ${name}`);
+          return;
+        }
+        if (details.pricingType === "per-guest" && !details.guestIncrement) {
+          toast.error(`Please select guest increment for ${name}`);
+          return;
+        }
       }
 
-      if (mediaFiles.length < 1) {
-        // Change to 10 in production
-        toast.error("Please upload at least 10 images");
-        return;
+      // Validate custom add-ons
+      const nonEmptyCustomAddons = customAddOns.filter(
+        (addon) =>
+          addon.name.trim() || addon.description.trim() || addon.price > 0
+      );
+
+      for (const addon of nonEmptyCustomAddons) {
+        if (!addon.name.trim()) {
+          toast.error("Please enter a name for all custom services");
+          return;
+        }
+        if (!addon.description.trim()) {
+          toast.error(`Please enter a description for ${addon.name}`);
+          return;
+        }
+        if (!addon.price || addon.price <= 0) {
+          toast.error(`Please enter a valid price for ${addon.name}`);
+          return;
+        }
+        if (addon.pricingType === "per-guest" && !addon.guestIncrement) {
+          toast.error(`Please select guest increment for ${addon.name}`);
+          return;
+        }
       }
 
       const {
@@ -561,8 +543,8 @@ export default function CreateVenueListing() {
           max_guests: parseInt(maxGuests),
           description,
           catering_option: catering,
-          website_url: websiteUrl || null, // Make optional
-          instagram_url: instagramUrl || null, // Make optional
+          website_url: websiteUrl || null,
+          instagram_url: instagramUrl || null,
         })
         .select()
         .single();
@@ -598,11 +580,6 @@ export default function CreateVenueListing() {
           display_order: index,
         };
       });
-      const cateringDescription = {
-        "in-house": "In-house catering services provided exclusively",
-        outside: "External catering services allowed",
-        both: "Both in-house and external catering services available",
-      };
 
       const mediaResults = await Promise.all(mediaPromises);
 
@@ -650,23 +627,21 @@ export default function CreateVenueListing() {
         ...Object.entries(selectedAddOns).map(([name, details]) => ({
           venue_id: venue.id,
           name,
-          description: details.description, // Use the potentially modified description
+          description: details.description,
           pricing_type: details.pricingType,
           price: details.price,
           guest_increment: details.guestIncrement,
           is_custom: false,
         })),
-        ...customAddOns
-          .filter((addon) => addon.name.trim())
-          .map((addon) => ({
-            venue_id: venue.id,
-            name: addon.name,
-            description: addon.description,
-            pricing_type: addon.pricingType,
-            price: addon.price,
-            guest_increment: addon.guestIncrement,
-            is_custom: true,
-          })),
+        ...nonEmptyCustomAddons.map((addon) => ({
+          venue_id: venue.id,
+          name: addon.name,
+          description: addon.description,
+          pricing_type: addon.pricingType,
+          price: addon.price,
+          guest_increment: addon.guestIncrement,
+          is_custom: true,
+        })),
       ];
 
       if (allAddons.length > 0) {
@@ -680,49 +655,6 @@ export default function CreateVenueListing() {
         }
       }
 
-      for (const [name, details] of Object.entries(selectedAddOns)) {
-        if (!details.description.trim()) {
-          toast.error(`Please enter a description for ${name}`);
-          return;
-        }
-
-        if (!details.price || details.price <= 0) {
-          toast.error(`Please enter a valid price for ${name}`);
-          return;
-        }
-        if (details.pricingType === "per-guest" && !details.guestIncrement) {
-          toast.error(`Please select guest increment for ${name}`);
-          return;
-        }
-      }
-
-      const nonEmptyCustomAddons = customAddOns.filter(
-        (addon) =>
-          addon.name.trim() || addon.description.trim() || addon.price > 0
-      );
-
-      for (const addon of nonEmptyCustomAddons) {
-        if (!addon.name.trim()) {
-          toast.error("Please enter a name for all custom services");
-          return;
-        }
-        if (!addon.description.trim()) {
-          toast.error(`Please enter a description for ${addon.name}`);
-          return;
-        }
-        if (!addon.price || addon.price <= 0) {
-          toast.error(`Please enter a valid price for ${addon.name}`);
-          return;
-        }
-        if (addon.pricingType === "per-guest" && !addon.guestIncrement) {
-          toast.error(`Please select guest increment for ${addon.name}`);
-          return;
-        }
-      }
-      const validCustomAddons = customAddOns.filter((addon) =>
-        addon.name.trim()
-      );
-      setCustomAddOns(validCustomAddons);
       toast.success("Venue listing created successfully!");
       router.push(`/services/venue/${venue.id}`);
     } catch (error) {
@@ -946,11 +878,11 @@ export default function CreateVenueListing() {
                         Upload Your Venue Media
                       </h3>
                       <p className="text-sm text-gray-600">
-                        Upload at least 10 images and 1 video of your venue
+                        Upload at least 5 images
                       </p>
                     </div>
                     <div className="text-sm text-gray-600">
-                      {mediaFiles.length} / {10} required images
+                      {mediaFiles.length} / {5} required images
                     </div>
                   </div>
 
