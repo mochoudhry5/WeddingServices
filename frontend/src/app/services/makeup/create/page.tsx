@@ -244,14 +244,64 @@ const CreateMakeupListing = () => {
         }
 
         // Validate selected common services
-        for (const serviceName in selectedServices) {
-          const service = selectedServices[serviceName];
+        if (
+          Object.keys(selectedServices).length === 0 &&
+          customServices.length === 0
+        ) {
+          toast.error("Please select at least one service");
+          return false;
+        }
+
+        // Validate selected common services
+        for (const [name, service] of Object.entries(selectedServices)) {
+          if (!service.description.trim()) {
+            toast.error(`Please enter a description for ${name}`);
+            return false;
+          }
           if (!service.price || service.price <= 0) {
-            toast.error(`Please enter a valid price for ${serviceName}`);
+            toast.error(`Please enter a valid price for ${name}`);
             return false;
           }
           if (!service.duration || service.duration <= 0) {
-            toast.error(`Please enter a valid duration for ${serviceName}`);
+            toast.error(`Please enter a valid duration for ${name}`);
+            return false;
+          }
+        }
+        const nonEmptyCustomServices = customServices.filter(
+          (service) =>
+            service.name.trim() ||
+            service.description.trim() ||
+            service.price > 0 ||
+            service.duration > 0
+        );
+
+        for (const service of nonEmptyCustomServices) {
+          if (!service.name.trim()) {
+            toast.error("Please enter a name for all custom services");
+            return false;
+          }
+          if (!service.description.trim()) {
+            toast.error(
+              `Please enter a description for ${
+                service.name || "the custom service"
+              }`
+            );
+            return false;
+          }
+          if (!service.price || service.price <= 0) {
+            toast.error(
+              `Please enter a valid price for ${
+                service.name || "the custom service"
+              }`
+            );
+            return false;
+          }
+          if (!service.duration || service.duration <= 0) {
+            toast.error(
+              `Please enter a valid duration for ${
+                service.name || "the custom service"
+              }`
+            );
             return false;
           }
         }
@@ -946,7 +996,7 @@ const CreateMakeupListing = () => {
                                     [service.name]: {
                                       name: service.name,
                                       description: service.description,
-                                      price: service.suggestedPrice,
+                                      price: 0,
                                       duration: service.suggestedDuration,
                                     },
                                   });
@@ -960,9 +1010,34 @@ const CreateMakeupListing = () => {
                             />
                             <div className="flex-1">
                               <h3 className="font-medium">{service.name}</h3>
-                              <p className="text-sm text-gray-600">
-                                {service.description}
-                              </p>
+                              {service.name in selectedServices ? (
+                                <div className="mt-2">
+                                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                                    Description*
+                                  </label>
+                                  <textarea
+                                    value={
+                                      selectedServices[service.name].description
+                                    }
+                                    onChange={(e) => {
+                                      setSelectedServices({
+                                        ...selectedServices,
+                                        [service.name]: {
+                                          ...selectedServices[service.name],
+                                          description: e.target.value,
+                                        },
+                                      });
+                                    }}
+                                    placeholder="Describe the service..."
+                                    rows={2}
+                                    className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-rose-500 focus:border-transparent resize-vertical text-sm"
+                                  />
+                                </div>
+                              ) : (
+                                <p className="text-sm text-gray-600">
+                                  {service.description}
+                                </p>
+                              )}
                               {service.name in selectedServices && (
                                 <div className="mt-4 grid gap-4">
                                   <div>
@@ -977,6 +1052,7 @@ const CreateMakeupListing = () => {
                                       <Input
                                         type="number"
                                         min="0"
+                                        placeholder="0"
                                         value={
                                           selectedServices[service.name]
                                             .price === 0
@@ -1015,6 +1091,7 @@ const CreateMakeupListing = () => {
                                       />
                                       <Input
                                         type="number"
+                                        placeholder="0"
                                         min="0"
                                         value={
                                           selectedServices[service.name]
@@ -1086,9 +1163,34 @@ const CreateMakeupListing = () => {
                             />
                             <div className="flex-1">
                               <h3 className="font-medium">{service.name}</h3>
-                              <p className="text-sm text-gray-600">
-                                {service.description}
-                              </p>
+                              {service.name in selectedServices ? (
+                                <div className="mt-2">
+                                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                                    Description*
+                                  </label>
+                                  <textarea
+                                    value={
+                                      selectedServices[service.name].description
+                                    }
+                                    onChange={(e) => {
+                                      setSelectedServices({
+                                        ...selectedServices,
+                                        [service.name]: {
+                                          ...selectedServices[service.name],
+                                          description: e.target.value,
+                                        },
+                                      });
+                                    }}
+                                    placeholder="Describe the service..."
+                                    rows={2}
+                                    className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-rose-500 focus:border-transparent resize-vertical text-sm"
+                                  />
+                                </div>
+                              ) : (
+                                <p className="text-sm text-gray-600">
+                                  {service.description}
+                                </p>
+                              )}
                               {service.name in selectedServices && (
                                 <div className="mt-4 grid gap-4">
                                   <div>
@@ -1103,6 +1205,7 @@ const CreateMakeupListing = () => {
                                       <Input
                                         type="number"
                                         min="0"
+                                        placeholder="0"
                                         value={
                                           selectedServices[service.name]
                                             .price === 0
@@ -1142,6 +1245,7 @@ const CreateMakeupListing = () => {
                                       <Input
                                         type="number"
                                         min="0"
+                                        placeholder="0"
                                         value={
                                           selectedServices[service.name]
                                             .duration === 0
@@ -1192,7 +1296,7 @@ const CreateMakeupListing = () => {
                             name: "",
                             description: "",
                             price: 0,
-                            duration: 60,
+                            duration: 0,
                             isCustom: true,
                           },
                         ])
@@ -1213,7 +1317,7 @@ const CreateMakeupListing = () => {
                         <div className="flex justify-between items-start">
                           <div className="flex-1 grid gap-4">
                             <div>
-                              <label className="block text-sm font-medium mb-1">
+                              <label className="block text-sm font-medium text-gray-700 mb-1">
                                 Service Name*
                               </label>
                               <Input
@@ -1227,10 +1331,11 @@ const CreateMakeupListing = () => {
                                   setCustomServices(newServices);
                                 }}
                                 placeholder="Enter service name"
+                                required
                               />
                             </div>
                             <div>
-                              <label className="block text-sm font-medium mb-1">
+                              <label className="block text-sm font-medium text-gray-700 mb-1">
                                 Description*
                               </label>
                               <textarea
@@ -1244,13 +1349,14 @@ const CreateMakeupListing = () => {
                                   setCustomServices(newServices);
                                 }}
                                 rows={2}
-                                className="w-full p-2 border rounded-lg"
-                                placeholder="Describe the service"
+                                className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-rose-500 focus:border-transparent resize-vertical text-sm"
+                                placeholder="Describe the service..."
+                                required
                               />
                             </div>
                             <div className="grid grid-cols-2 gap-4">
                               <div>
-                                <label className="block text-sm font-medium mb-1">
+                                <label className="block text-sm font-medium text-gray-700 mb-1">
                                   Starting Price ($)*
                                 </label>
                                 <div className="relative">
@@ -1260,6 +1366,7 @@ const CreateMakeupListing = () => {
                                   />
                                   <Input
                                     type="number"
+                                    placeholder="0"
                                     min="0"
                                     value={
                                       service.price === 0 ? "" : service.price
@@ -1281,11 +1388,12 @@ const CreateMakeupListing = () => {
                                       }
                                     }}
                                     className="pl-8"
+                                    required
                                   />
                                 </div>
                               </div>
                               <div>
-                                <label className="block text-sm font-medium mb-1">
+                                <label className="block text-sm font-medium text-gray-700 mb-1">
                                   Duration (minutes)*
                                 </label>
                                 <div className="relative">
@@ -1295,6 +1403,7 @@ const CreateMakeupListing = () => {
                                   />
                                   <Input
                                     type="number"
+                                    placeholder="0"
                                     min="0"
                                     value={
                                       service.duration === 0
@@ -1318,6 +1427,7 @@ const CreateMakeupListing = () => {
                                       }
                                     }}
                                     className="pl-8"
+                                    required
                                   />
                                 </div>
                               </div>
@@ -1329,7 +1439,7 @@ const CreateMakeupListing = () => {
                                 customServices.filter((_, i) => i !== index)
                               );
                             }}
-                            className="ml-4 p-2 text-gray-400 hover:text-rose-500"
+                            className="ml-4 p-2 text-gray-400 hover:text-rose-500 transition-colors"
                           >
                             <X size={20} />
                           </button>

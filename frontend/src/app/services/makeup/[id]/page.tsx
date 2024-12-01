@@ -242,32 +242,39 @@ export default function MakeupDetailsPage() {
           {/* Price Range */}
           {makeup.makeup_services?.length > 0 && (
             <div className="text-right">
-              <div className="text-3xl font-semibold text-rose-600">
-                {(() => {
-                  const prices = makeup.makeup_services.map(
-                    (service) => service.price
-                  );
-                  const minPrice = Math.min(...prices);
-                  const maxPrice = Math.max(...prices);
+              {makeup.makeup_services.every(
+                (service) =>
+                  service.price !== null && service.price !== undefined
+              ) && (
+                <>
+                  <div className="text-3xl font-semibold text-rose-600">
+                    {(() => {
+                      const prices = makeup.makeup_services.map(
+                        (service) => service.price
+                      );
+                      const minPrice = Math.min(...prices);
+                      const maxPrice = Math.max(...prices);
 
-                  return minPrice === maxPrice
-                    ? `$${maxPrice.toLocaleString()}`
-                    : `$${minPrice.toLocaleString()} - $${maxPrice.toLocaleString()}`;
-                })()}
-              </div>
-              <p className="text-sm text-gray-500">
-                {(() => {
-                  const prices = makeup.makeup_services.map(
-                    (service) => service.price
-                  );
-                  const minPrice = Math.min(...prices);
-                  const maxPrice = Math.max(...prices);
+                      return minPrice === maxPrice
+                        ? `$${maxPrice.toLocaleString()}`
+                        : `$${minPrice.toLocaleString()} - $${maxPrice.toLocaleString()}`;
+                    })()}
+                  </div>
+                  <p className="text-sm text-gray-500">
+                    {(() => {
+                      const prices = makeup.makeup_services.map(
+                        (service) => service.price
+                      );
+                      const minPrice = Math.min(...prices);
+                      const maxPrice = Math.max(...prices);
 
-                  return minPrice === maxPrice
-                    ? "Starting Price (See Services & Pricing)"
-                    : "Price Range (See Services & Pricing)";
-                })()}
-              </p>
+                      return minPrice === maxPrice
+                        ? "Starting Price (See Services & Pricing)"
+                        : "Price Range (See Services & Pricing)";
+                    })()}
+                  </p>
+                </>
+              )}
             </div>
           )}
         </div>

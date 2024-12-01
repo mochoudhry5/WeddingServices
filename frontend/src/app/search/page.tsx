@@ -503,12 +503,15 @@ export default function ServicesSearchPage() {
                         <div className="text-sm text-slate-600">
                           {listing.city}, {listing.state}
                         </div>
-                        <div className="text-lg font-semibold text-rose-600">
-                          {listing.min_service_price ===
-                          listing.max_service_price
-                            ? `$${listing.min_service_price.toLocaleString()}`
-                            : `$${listing.min_service_price.toLocaleString()} - $${listing.max_service_price.toLocaleString()}`}
-                        </div>
+                        {listing.min_service_price !== null &&
+                          listing.max_service_price !== null && (
+                            <div className="text-lg font-semibold text-rose-600">
+                              {listing.min_service_price ===
+                              listing.max_service_price
+                                ? `$${listing.min_service_price.toLocaleString()}`
+                                : `$${listing.min_service_price.toLocaleString()} - $${listing.max_service_price.toLocaleString()}`}
+                            </div>
+                          )}
                       </div>
                     </>
                   ) : (

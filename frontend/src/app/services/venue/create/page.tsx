@@ -151,37 +151,36 @@ const commonAddOns = [
     name: "Catering Service",
     description:
       "Full-service catering including appetizers, main course, and desserts along with servers.",
-    suggestedPrice: 75,
     suggestedPricingType: "per-guest" as const,
   },
   {
     name: "Bar Service",
     description: "Professional bartenders with premium beverages",
-    suggestedPrice: 45,
+    suggestedPrice: 0,
     suggestedPricingType: "per-guest" as const,
   },
   {
     name: "DJ Package",
     description: "Professional DJ with sound system and lighting",
-    suggestedPrice: 1200,
+    suggestedPrice: 0,
     suggestedPricingType: "flat" as const,
   },
   {
     name: "Decor Package",
     description: "Custom floral arrangements and venue decoration",
-    suggestedPrice: 2500,
+    suggestedPrice: 0,
     suggestedPricingType: "flat" as const,
   },
   {
     name: "Photography",
     description: "Professional photography coverage",
-    suggestedPrice: 2000,
+    suggestedPrice: 0,
     suggestedPricingType: "flat" as const,
   },
   {
     name: "Videography",
     description: "Professional video coverage",
-    suggestedPrice: 2500,
+    suggestedPrice: 0,
     suggestedPricingType: "flat" as const,
   },
 ];
@@ -218,9 +217,10 @@ const PricingInput = ({
 
     <div className="flex gap-3">
       <div className="relative flex-1">
-        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">
-          $
-        </span>
+        <DollarSign
+          className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
+          size={16}
+        />
         <Input
           type="number"
           min="0"
@@ -363,15 +363,30 @@ export default function CreateVenueListing() {
             return false;
           }
         };
-
-        const charCount = countCharacters(description);
-        if (charCount < 100) {
-          toast.error(
-            `Description must be at least 100 characters. Current count: ${charCount} characters`
-          );
+        if (!venueName) {
+          toast.error(`Venue Name Must be Entered`);
           return false;
         }
-
+        if (!address) {
+          toast.error(`Address Must be Entered`);
+          return false;
+        }
+        if (!city) {
+          toast.error(`City Must be Entered`);
+          return false;
+        }
+        if (!state) {
+          toast.error(`State Must be Entered`);
+          return false;
+        }
+        if (!basePrice) {
+          toast.error(`Base Price Must be Entered`);
+          return false;
+        }
+        if (!maxGuests) {
+          toast.error(`Maxmium Guest Count Must be Entered`);
+          return false;
+        }
         if (minGuests && maxGuests) {
           const minCount = parseInt(minGuests);
           const maxCount = parseInt(maxGuests);
@@ -382,6 +397,18 @@ export default function CreateVenueListing() {
             );
             return false;
           }
+        }
+        if (!catering) {
+          toast.error("Catering Option Must be Selected");
+          return false;
+        }
+
+        const charCount = countCharacters(description);
+        if (charCount < 100) {
+          toast.error(
+            `Description must be at least 100 characters. Current count: ${charCount} characters`
+          );
+          return false;
         }
 
         if (websiteUrl && !isValidUrl(websiteUrl)) {
@@ -409,7 +436,11 @@ export default function CreateVenueListing() {
           catering
         );
       case 2:
-        return mediaFiles.length >= 1; // Change to 10 in production
+        if (mediaFiles.length < 5) {
+          toast.error("Minimum of 5 Images must be Uploaded");
+          return false;
+        }
+        return true;
       case 4:
         // Validate common add-ons
         for (const [name, details] of Object.entries(selectedAddOns)) {
@@ -750,7 +781,6 @@ export default function CreateVenueListing() {
                     onChange={(e) => setVenueName(e.target.value)}
                     placeholder="Enter your venue name"
                     className="w-full"
-                    required
                   />
                 </div>
 
@@ -764,7 +794,6 @@ export default function CreateVenueListing() {
                     onChange={(e) => setAddress(e.target.value)}
                     placeholder="Enter venue address"
                     className="w-full mb-2"
-                    required
                   />
                   <div className="grid grid-cols-2 gap-4">
                     <Input
@@ -773,7 +802,6 @@ export default function CreateVenueListing() {
                       onChange={(e) => setCity(e.target.value)}
                       placeholder="City"
                       className="w-full"
-                      required
                     />
                     <Input
                       type="text"
@@ -781,7 +809,6 @@ export default function CreateVenueListing() {
                       onChange={(e) => setState(e.target.value)}
                       placeholder="State"
                       className="w-full"
-                      required
                     />
                   </div>
                 </div>
@@ -801,7 +828,6 @@ export default function CreateVenueListing() {
                       onChange={(e) => setBasePrice(e.target.value)}
                       placeholder="5000"
                       className="pl-10 w-full"
-                      required
                     />
                   </div>
                 </div>
@@ -830,7 +856,6 @@ export default function CreateVenueListing() {
                       onChange={(e) => setMaxGuests(e.target.value)}
                       placeholder="200"
                       className="w-full"
-                      required
                     />
                   </div>
                 </div>
@@ -900,7 +925,6 @@ export default function CreateVenueListing() {
                     rows={4}
                     placeholder="Describe your venue in detail (minimum 100 characters)..."
                     className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-rose-500 focus:border-transparent"
-                    required
                   />
                   <div className="mt-1 text-sm text-gray-500">
                     Character count: {countCharacters(description)} / 100
@@ -1145,7 +1169,7 @@ export default function CreateVenueListing() {
                                   ...selectedAddOns,
                                   [addon.name]: {
                                     pricingType: addon.suggestedPricingType,
-                                    price: addon.suggestedPrice,
+                                    price: 0,
                                     guestIncrement:
                                       addon.suggestedPricingType === "per-guest"
                                         ? 100
@@ -1187,8 +1211,7 @@ export default function CreateVenueListing() {
                                     }}
                                     placeholder="Describe the service..."
                                     rows={2}
-                                    required
-                                    className="w-full mt-2 p-2 border border-gray-300 rounded-lg focus:border-transparent resize-none text-sm"
+                                    className="w-full mt-2 p-2 border border-gray-300 rounded-lg focus:border-transparent resize-vertical text-sm"
                                   />
                                 </div>
                               ) : (
@@ -1273,7 +1296,6 @@ export default function CreateVenueListing() {
                                 }}
                                 placeholder="Enter service name"
                                 className="w-full"
-                                required
                               />
                             </div>
                             <button
@@ -1305,7 +1327,6 @@ export default function CreateVenueListing() {
                               }}
                               placeholder="Describe the service..."
                               rows={2}
-                              required
                               className="w-full p-2 border border-gray-300 rounded-lg focus:border-transparent resize-none text-sm"
                             />
                           </div>
