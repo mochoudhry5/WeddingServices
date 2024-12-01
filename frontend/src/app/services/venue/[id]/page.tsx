@@ -169,6 +169,7 @@ export default function VenueDetailsPage() {
   const [currentSlide, setCurrentSlide] = useState(0);
   const [venue, setVenue] = useState<VenueDetails | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [expandedAddon, setExpandedAddon] = useState<string | null>(null);
   const [inquiryForm, setInquiryForm] = useState<InquiryForm>({
     firstName: "",
     lastName: "",
@@ -484,23 +485,46 @@ export default function VenueDetailsPage() {
               {venue.venue_addons.map((addon, index) => (
                 <div
                   key={index}
-                  className="p-6 rounded-lg border border-gray-200 hover:border-rose-200 transition-colors"
+                  className={`p-6 rounded-lg border border-gray-200 hover:border-rose-200 transition-colors cursor-pointer`}
+                  onClick={() =>
+                    setExpandedAddon(
+                      expandedAddon === addon.name ? null : addon.name
+                    )
+                  }
                 >
-                  <div className="flex flex-col md:flex-row md:justify-between md:items-start gap-2 mb-2">
-                    <h3 className="text-lg font-semibold">{addon.name}</h3>
-                    <p className="text-rose-600 font-semibold whitespace-nowrap">
-                      <span className="text-sm text-gray-500">Starting at </span> $
-                      {addon.price.toLocaleString()}
-                      {addon.pricing_type === "per-guest" && (
-                        <span className="text-sm text-gray-500">
-                          {addon.guest_increment == 1
-                            ? " per guest"
-                            : ` per ${addon.guest_increment} guests`}
-                        </span>
-                      )}
-                    </p>
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="flex items-center gap-4 flex-1">
+                      <h3 className="text-lg font-semibold">{addon.name}</h3>
+                      <span className="text-rose-600 font-medium whitespace-nowrap">
+                      <span className="text-sm text-gray-500">Starting at</span> ${addon.price.toLocaleString()}
+                        {addon.pricing_type === "per-guest" && (
+                          <span className="text-sm text-rose-600">
+                            {addon.guest_increment === 1
+                              ? " per guest"
+                              : ` per ${addon.guest_increment} guests`}
+                          </span>
+                        )}
+                      </span>
+                    </div>
+                    <button
+                      className="text-gray-500 hover:text-gray-700 transition-colors ml-4"
+                      aria-label={
+                        expandedAddon === addon.name ? "Collapse" : "Expand"
+                      }
+                    >
+                      {expandedAddon === addon.name ? "−" : "+"}
+                    </button>
                   </div>
-                  <p className="text-gray-600">{addon.description}</p>
+
+                  <p
+                    className={`text-gray-600 transition-all duration-200 ${
+                      expandedAddon === addon.name
+                        ? "line-clamp-none"
+                        : "line-clamp-2"
+                    }`}
+                  >
+                    {addon.description}
+                  </p>
                 </div>
               ))}
             </div>
