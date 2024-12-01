@@ -300,6 +300,7 @@ export default function CreateVenueListing() {
       pricingType: "flat" | "per-guest";
       price: number;
       guestIncrement?: number;
+      description: string; // Add description field
     };
   }>({});
   const [customAddOns, setCustomAddOns] = useState<AddOn[]>([]);
@@ -409,6 +410,49 @@ export default function CreateVenueListing() {
         );
       case 2:
         return mediaFiles.length >= 1; // Change to 10 in production
+      case 4:
+        // Validate common add-ons
+        for (const [name, details] of Object.entries(selectedAddOns)) {
+          if (!details.description.trim()) {
+            toast.error(`Please enter a description for ${name}`);
+            return false;
+          }
+          if (!details.price || details.price <= 0) {
+            toast.error(`Please enter a valid price for ${name}`);
+            return false;
+          }
+          if (details.pricingType === "per-guest" && !details.guestIncrement) {
+            toast.error(`Please select guest increment for ${name}`);
+            return false;
+          }
+        }
+
+        // Validate custom add-ons
+        const nonEmptyCustomAddons = customAddOns.filter(
+          (addon) =>
+            addon.name.trim() || addon.description.trim() || addon.price > 0
+        );
+
+        for (const addon of nonEmptyCustomAddons) {
+          if (!addon.name.trim()) {
+            toast.error("Please enter a name for all custom services");
+            return false;
+          }
+          if (!addon.description.trim()) {
+            toast.error(`Please enter a description for ${addon.name}`);
+            return false;
+          }
+          if (!addon.price || addon.price <= 0) {
+            toast.error(`Please enter a valid price for ${addon.name}`);
+            return false;
+          }
+          if (addon.pricingType === "per-guest" && !addon.guestIncrement) {
+            toast.error(`Please select guest increment for ${addon.name}`);
+            return false;
+          }
+        }
+        return true;
+
       default:
         return true;
     }
@@ -455,7 +499,7 @@ export default function CreateVenueListing() {
         );
         return;
       }
-      
+
       if (mediaFiles.length < 1) {
         // Change to 10 in production
         toast.error("Please upload at least 10 images");
@@ -575,9 +619,7 @@ export default function CreateVenueListing() {
         ...Object.entries(selectedAddOns).map(([name, details]) => ({
           venue_id: venue.id,
           name,
-          description:
-            commonAddOns.find((addon) => addon.name === name)?.description ||
-            "",
+          description: details.description, // Use the potentially modified description
           pricing_type: details.pricingType,
           price: details.price,
           guest_increment: details.guestIncrement,
@@ -607,6 +649,49 @@ export default function CreateVenueListing() {
         }
       }
 
+      for (const [name, details] of Object.entries(selectedAddOns)) {
+        if (!details.description.trim()) {
+          toast.error(`Please enter a description for ${name}`);
+          return;
+        }
+
+        if (!details.price || details.price <= 0) {
+          toast.error(`Please enter a valid price for ${name}`);
+          return;
+        }
+        if (details.pricingType === "per-guest" && !details.guestIncrement) {
+          toast.error(`Please select guest increment for ${name}`);
+          return;
+        }
+      }
+
+      const nonEmptyCustomAddons = customAddOns.filter(
+        (addon) =>
+          addon.name.trim() || addon.description.trim() || addon.price > 0
+      );
+
+      for (const addon of nonEmptyCustomAddons) {
+        if (!addon.name.trim()) {
+          toast.error("Please enter a name for all custom services");
+          return;
+        }
+        if (!addon.description.trim()) {
+          toast.error(`Please enter a description for ${addon.name}`);
+          return;
+        }
+        if (!addon.price || addon.price <= 0) {
+          toast.error(`Please enter a valid price for ${addon.name}`);
+          return;
+        }
+        if (addon.pricingType === "per-guest" && !addon.guestIncrement) {
+          toast.error(`Please select guest increment for ${addon.name}`);
+          return;
+        }
+      }
+      const validCustomAddons = customAddOns.filter((addon) =>
+        addon.name.trim()
+      );
+      setCustomAddOns(validCustomAddons);
       toast.success("Venue listing created successfully!");
       router.push(`/services/venue/${venue.id}`);
     } catch (error) {
@@ -1065,6 +1150,7 @@ export default function CreateVenueListing() {
                                       addon.suggestedPricingType === "per-guest"
                                         ? 100
                                         : undefined,
+                                    description: addon.description,
                                   },
                                 });
                               } else {
@@ -1081,21 +1167,55 @@ export default function CreateVenueListing() {
                               <h3 className="text-lg font-medium text-gray-900">
                                 {addon.name}
                               </h3>
-                              <p className="text-sm text-gray-600 mt-1">
-                                {addon.description}
-                              </p>
+                              {addon.name in selectedAddOns ? (
+                                <div>
+                                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                                    Description*
+                                  </label>
+                                  <textarea
+                                    value={
+                                      selectedAddOns[addon.name].description
+                                    }
+                                    onChange={(e) => {
+                                      setSelectedAddOns({
+                                        ...selectedAddOns,
+                                        [addon.name]: {
+                                          ...selectedAddOns[addon.name],
+                                          description: e.target.value,
+                                        },
+                                      });
+                                    }}
+                                    placeholder="Describe the service..."
+                                    rows={2}
+                                    required
+                                    className="w-full mt-2 p-2 border border-gray-300 rounded-lg focus:border-transparent resize-none text-sm"
+                                  />
+                                </div>
+                              ) : (
+                                <p className="text-sm text-gray-600 mt-1">
+                                  {addon.description}
+                                </p>
+                              )}
                             </div>
                             {addon.name in selectedAddOns && (
-                              <PricingInput
-                                addon={addon.name}
-                                value={selectedAddOns[addon.name]}
-                                onChange={(newValue) => {
-                                  setSelectedAddOns({
-                                    ...selectedAddOns,
-                                    [addon.name]: newValue,
-                                  });
-                                }}
-                              />
+                              <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">
+                                  Pricing Details*
+                                </label>
+                                <PricingInput
+                                  addon={addon.name}
+                                  value={selectedAddOns[addon.name]}
+                                  onChange={(newValue) => {
+                                    setSelectedAddOns({
+                                      ...selectedAddOns,
+                                      [addon.name]: {
+                                        ...selectedAddOns[addon.name],
+                                        ...newValue,
+                                      },
+                                    });
+                                  }}
+                                />
+                              </div>
                             )}
                           </div>
                         </div>
@@ -1139,7 +1259,7 @@ export default function CreateVenueListing() {
                           <div className="flex gap-4">
                             <div className="flex-1">
                               <label className="block text-sm font-medium text-gray-700 mb-1">
-                                Service Name
+                                Service Name*
                               </label>
                               <Input
                                 value={addon.name}
@@ -1153,6 +1273,7 @@ export default function CreateVenueListing() {
                                 }}
                                 placeholder="Enter service name"
                                 className="w-full"
+                                required
                               />
                             </div>
                             <button
@@ -1170,7 +1291,7 @@ export default function CreateVenueListing() {
 
                           <div>
                             <label className="block text-sm font-medium text-gray-700 mb-1">
-                              Description
+                              Description*
                             </label>
                             <textarea
                               value={addon.description}
@@ -1184,19 +1305,25 @@ export default function CreateVenueListing() {
                               }}
                               placeholder="Describe the service..."
                               rows={2}
-                              className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-rose-500 focus:border-transparent resize-none"
+                              required
+                              className="w-full p-2 border border-gray-300 rounded-lg focus:border-transparent resize-none text-sm"
                             />
                           </div>
 
-                          <PricingInput
-                            addon={addon}
-                            value={addon}
-                            onChange={(newValue) => {
-                              const newAddOns = [...customAddOns];
-                              newAddOns[index] = { ...addon, ...newValue };
-                              setCustomAddOns(newAddOns);
-                            }}
-                          />
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                              Pricing Details*
+                            </label>
+                            <PricingInput
+                              addon={addon}
+                              value={addon}
+                              onChange={(newValue) => {
+                                const newAddOns = [...customAddOns];
+                                newAddOns[index] = { ...addon, ...newValue };
+                                setCustomAddOns(newAddOns);
+                              }}
+                            />
+                          </div>
                         </div>
                       </div>
                     ))}
@@ -1205,7 +1332,6 @@ export default function CreateVenueListing() {
               </div>
             )}
           </div>
-
           {/* Navigation Buttons */}
           <div className="flex justify-between items-center">
             <button
