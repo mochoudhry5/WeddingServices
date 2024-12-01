@@ -854,24 +854,6 @@ const CreateMakeupListing = () => {
                     </div>
                   )}
                 </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Description* (minimum 100 characters)
-                  </label>
-                  <textarea
-                    value={description}
-                    onChange={(e) => setDescription(e.target.value)}
-                    rows={4}
-                    placeholder="Tell us about your experience, style, and approach..."
-                    className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-rose-500 focus:border-transparent"
-                    required
-                  />
-                  <p className="mt-1 text-sm text-gray-500">
-                    Character count: {countCharacters(description)} / 100
-                    minimum
-                  </p>
-                </div>
-
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -897,6 +879,23 @@ const CreateMakeupListing = () => {
                       className="w-full"
                     />
                   </div>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Description* (minimum 100 characters)
+                  </label>
+                  <textarea
+                    value={description}
+                    onChange={(e) => setDescription(e.target.value)}
+                    rows={4}
+                    placeholder="Tell us about your experience, style, and approach..."
+                    className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-rose-500 focus:border-transparent"
+                    required
+                  />
+                  <p className="mt-1 text-sm text-gray-500">
+                    Character count: {countCharacters(description)} / 100
+                    minimum
+                  </p>
                 </div>
               </div>
             )}
