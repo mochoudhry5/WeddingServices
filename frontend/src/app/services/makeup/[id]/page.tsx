@@ -418,7 +418,7 @@ export default function MakeupDetailsPage() {
                         ${service.price.toLocaleString()}
                       </p>
                       <p className="text-sm text-gray-500">
-                        {service.duration} minutes
+                        (Approx. Duration {service.duration} minutes)
                       </p>
                     </div>
                   </div>
