@@ -12,6 +12,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/context/AuthContext";
 import LikeButton from "@/components/ui/LikeButton";
+import { ChevronDown } from "lucide-react";
 
 interface VenueDetails {
   id: string;
@@ -35,6 +36,9 @@ interface VenueDetails {
 interface VenueMedia {
   file_path: string;
   display_order: number;
+}
+interface VenueAddonsProps {
+  venue_addons: VenueAddon[];
 }
 
 interface VenueInclusion {
@@ -169,6 +173,12 @@ export default function VenueDetailsPage() {
   const [currentSlide, setCurrentSlide] = useState(0);
   const [venue, setVenue] = useState<VenueDetails | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [openIndex, setOpenIndex] = useState<number | null>(null);
+
+  const toggleAccordion = (index: number) => {
+    setOpenIndex(openIndex === index ? null : index);
+  };
+
   const [inquiryForm, setInquiryForm] = useState<InquiryForm>({
     firstName: "",
     lastName: "",
@@ -480,35 +490,133 @@ export default function VenueDetailsPage() {
             <h2 className="text-xl md:text-2xl font-bold mb-6">
               Available Add-ons
             </h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {venue.venue_addons.map((addon, index) => (
-                <div
-                  key={index}
-                  className="p-6 rounded-lg border border-gray-200 hover:border-rose-200 transition-colors"
-                >
-                  <div className="flex flex-col md:flex-row md:justify-between md:items-start gap-2 mb-2">
-                    <h3 className="text-lg font-semibold">{addon.name}</h3>
-                    <p className="text-rose-600 font-semibold whitespace-nowrap">
-                      <span className="text-sm text-gray-500">
-                        Starting at{" "}
-                      </span>{" "}
-                      ${addon.price.toLocaleString()}
-                      {addon.pricing_type === "per-guest" && (
-                        <span className="text-sm text-rose-600">
-                          {addon.guest_increment == 1
-                            ? " per guest"
-                            : ` per ${addon.guest_increment} guests`}
-                        </span>
-                      )}
-                    </p>
-                  </div>
-                  <p className="text-gray-600">{addon.description}</p>
-                </div>
-              ))}
+            <div className="flex flex-row gap-4">
+              {/* First Column */}
+              <div className="flex-1 flex flex-col gap-4">
+                {venue.venue_addons
+                  .filter((_, index) => index % 2 === 0)
+                  .map((addon, index) => (
+                    <div
+                      key={index * 2}
+                      className="border border-gray-200 rounded-lg overflow-hidden"
+                    >
+                      <button
+                        onClick={() => toggleAccordion(index * 2)}
+                        className="w-full p-4 flex items-center justify-between hover:bg-gray-50 transition-colors"
+                      >
+                        <div className="flex-1">
+                          <div className="flex justify-between items-center mb-2">
+                            <h3 className="text-lg font-semibold text-left">
+                              {addon.name}
+                            </h3>
+                            <p className="text-rose-600 font-semibold whitespace-nowrap ml-4">
+                              <span className="text-sm text-gray-500">
+                                Starting at
+                              </span>{" "}
+                              ${addon.price.toLocaleString()}
+                              {addon.pricing_type === "per-guest" && (
+                                <span className="text-sm text-rose-600">
+                                  {addon.guest_increment == 1
+                                    ? " per guest"
+                                    : ` per ${addon.guest_increment} guests`}
+                                </span>
+                              )}
+                            </p>
+                          </div>
+                          {openIndex !== index * 2 && (
+                            <p className="text-gray-600 text-sm text-left line-clamp-1">
+                              {addon.description}
+                            </p>
+                          )}
+                        </div>
+                        <ChevronDown
+                          className={`ml-4 h-5 w-5 text-gray-500 transition-transform ${
+                            openIndex === index * 2
+                              ? "transform rotate-180"
+                              : ""
+                          }`}
+                        />
+                      </button>
+
+                      <div
+                        className={`transition-[max-height,opacity] duration-300 ease-in-out ${
+                          openIndex === index * 2
+                            ? "max-h-[500px] opacity-100"
+                            : "max-h-0 opacity-0"
+                        } overflow-hidden`}
+                      >
+                        <div className="p-4 bg-gray-50 border-t border-gray-200">
+                          <p className="text-gray-600">{addon.description}</p>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+              </div>
+
+              {/* Second Column */}
+              <div className="flex-1 flex flex-col gap-4">
+                {venue.venue_addons
+                  .filter((_, index) => index % 2 === 1)
+                  .map((addon, index) => (
+                    <div
+                      key={index * 2 + 1}
+                      className="border border-gray-200 rounded-lg overflow-hidden"
+                    >
+                      <button
+                        onClick={() => toggleAccordion(index * 2 + 1)}
+                        className="w-full p-4 flex items-center justify-between hover:bg-gray-50 transition-colors"
+                      >
+                        <div className="flex-1">
+                          <div className="flex justify-between items-center mb-2">
+                            <h3 className="text-lg font-semibold text-left">
+                              {addon.name}
+                            </h3>
+                            <p className="text-rose-600 font-semibold whitespace-nowrap ml-4">
+                              <span className="text-sm text-gray-500">
+                                Starting at
+                              </span>{" "}
+                              ${addon.price.toLocaleString()}
+                              {addon.pricing_type === "per-guest" && (
+                                <span className="text-sm text-rose-600">
+                                  {addon.guest_increment == 1
+                                    ? " per guest"
+                                    : ` per ${addon.guest_increment} guests`}
+                                </span>
+                              )}
+                            </p>
+                          </div>
+                          {openIndex !== index * 2 + 1 && (
+                            <p className="text-gray-600 text-sm text-left line-clamp-1">
+                              {addon.description}
+                            </p>
+                          )}
+                        </div>
+                        <ChevronDown
+                          className={`ml-4 h-5 w-5 text-gray-500 transition-transform ${
+                            openIndex === index * 2 + 1
+                              ? "transform rotate-180"
+                              : ""
+                          }`}
+                        />
+                      </button>
+
+                      <div
+                        className={`transition-[max-height,opacity] duration-300 ease-in-out ${
+                          openIndex === index * 2 + 1
+                            ? "max-h-[500px] opacity-100"
+                            : "max-h-0 opacity-0"
+                        } overflow-hidden`}
+                      >
+                        <div className="p-4 bg-gray-50 border-t border-gray-200">
+                          <p className="text-gray-600">{addon.description}</p>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+              </div>
             </div>
           </div>
         )}
-
         {/* Contact Form */}
         <div className="mb-12">
           <h2 className="text-xl md:text-2xl font-bold mb-6 text-center">
