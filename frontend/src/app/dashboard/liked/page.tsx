@@ -46,7 +46,6 @@ interface MakeupArtistDetails extends BaseService {
   artist_name: string;
   years_experience: number;
   travel_range: number;
-  max_bookings_per_day: number;
   min_service_price: number;
   max_service_price: number;
   makeup_media: MediaItem[];
@@ -149,7 +148,6 @@ const SERVICE_CONFIGS: Record<string, ServiceConfig<any>> = {
         years_experience,
         travel_range,
         description,
-        max_bookings_per_day,
         min_service_price,
         max_service_price,
         makeup_media (
@@ -187,9 +185,6 @@ const SERVICE_CONFIGS: Record<string, ServiceConfig<any>> = {
               {artist.description || "No description available"}
             </p>
             <div className="flex justify-between items-center pt-2 border-t">
-              <div className="text-sm text-slate-600">
-                {artist.max_bookings_per_day || 0} bookings/day
-              </div>
               <div className="text-lg font-semibold text-rose-600">
                 {artist.min_service_price === artist.max_service_price
                   ? `$${(artist.min_service_price || 0).toLocaleString()}`
@@ -265,9 +260,22 @@ export default function LikedServicesPage() {
 
       setLikedItems(transformedData);
     } catch (error: any) {
-      console.error("Error loading liked items:", error);
-      toast.error("Failed to load liked items");
-      setLikedItems([]); // Clear items on error
+      console.error("Detailed error in loadLikedItems:", {
+        error,
+        message: error.message,
+        stack: error.stack,
+      });
+
+      let errorMessage = "Failed to load liked items";
+      if (error.message) {
+        errorMessage += `: ${error.message}`;
+      }
+      if (error.details) {
+        errorMessage += ` (${error.details})`;
+      }
+
+      toast.error(errorMessage);
+      setLikedItems([]);
     } finally {
       setIsLoading(false);
     }
