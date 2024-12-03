@@ -80,7 +80,7 @@ export function AuthModals({
           <DialogHeader className="p-6 pb-0">
             <DialogTitle asChild>
               <div className="flex flex-col items-center space-y-2 text-center">
-                <div className="text-3xl font-bold text-gray-900">Vowzie</div>
+                <div className="text-3xl font-bold text-gray-900">AnyWeds</div>
                 <h2 className="text-xl font-semibold tracking-tight">
                   {isForgotPassword ? "Reset Password" : "Welcome back"}
                 </h2>
@@ -247,7 +247,7 @@ export function AuthModals({
           <DialogHeader className="p-6 pb-0">
             <DialogTitle asChild>
               <div className="flex flex-col items-center space-y-2 text-center">
-                <div className="text-3xl font-bold text-gray-900">Vowzie</div>
+                <div className="text-3xl font-bold text-gray-900">AnyWeds</div>
                 <h2 className="text-xl font-semibold tracking-tight">
                   Create your account
                 </h2>

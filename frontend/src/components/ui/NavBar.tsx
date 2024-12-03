@@ -162,7 +162,7 @@ export default function NavBar() {
         <div className="flex items-center gap-8">
           {/* Logo */}
           <Link href="/" className="flex items-center gap-2">
-            <span className="text-3xl font-bold">Vowzie</span>
+            <span className="text-3xl font-bold">AnyWeds</span>
           </Link>
         </div>
 

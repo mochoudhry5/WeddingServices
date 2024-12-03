@@ -65,7 +65,7 @@ export default function ResetPassword() {
       <div className="w-full max-w-md">
         <div className="bg-white px-8 py-12 shadow-xl rounded-xl">
           <div className="text-center mb-8">
-            <h1 className="text-3xl font-bold text-gray-900 mb-2">Vowzie</h1>
+            <h1 className="text-3xl font-bold text-gray-900 mb-2">AnyWeds</h1>
             <h2 className="text-xl font-semibold tracking-tight mb-2">
               Reset your password
             </h2>
