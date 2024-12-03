@@ -441,6 +441,17 @@ export default function CreateVenueListing() {
           return false;
         }
         return true;
+      case 3:
+        const totalInclusions =
+          includedItems.length +
+          customInclusions.filter((item) => item.trim()).length;
+        if (totalInclusions < 3) {
+          toast.error(
+            "Please select or add at least 3 items that are included in the base price"
+          );
+          return false;
+        }
+        return true;
       default:
         return true;
     }
