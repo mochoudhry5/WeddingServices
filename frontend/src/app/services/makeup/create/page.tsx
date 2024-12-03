@@ -76,19 +76,19 @@ const commonServices = [
 const commonHairServices = [
   {
     name: "Bridal Hair",
-    description: "Complete bridal makeup with trials and touch-ups",
+    description: "Complete Hair for the day of Bridal",
     suggestedPrice: 0,
     suggestedDuration: 0,
   },
   {
     name: "Bridal Party Hair",
-    description: "Professional makeup for bridesmaids",
+    description: "Professional Hair for Bridal Party",
     suggestedPrice: 0,
     suggestedDuration: 0,
   },
   {
     name: "Preview Hair",
-    description: "Elegant makeup for relatives",
+    description: "Trial Hair Session",
     suggestedPrice: 0,
     suggestedDuration: 0,
   },
