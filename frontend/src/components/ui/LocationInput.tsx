@@ -161,7 +161,6 @@ const LocationInput = ({
       onPlaceSelect?.(place);
       toast.success("Location found successfully");
     } catch (error) {
-      console.error("Error getting location:", error);
       toast.error(
         error instanceof Error ? error.message : "Failed to get your location"
       );

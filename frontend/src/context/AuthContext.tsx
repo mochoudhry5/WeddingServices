@@ -10,6 +10,7 @@ interface AuthContextType {
   signIn: (email: string, password: string) => Promise<void>;
   signUp: (email: string, password: string) => Promise<void>;
   signOut: () => Promise<void>;
+  resetPassword: (email: string) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -53,8 +54,35 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     if (error) throw error;
   };
 
+  const resetPassword = async (email: string) => {
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: `${window.location.origin}/auth/reset-password`,
+    });
+    if (error) {
+      // Handle specific Supabase errors with custom messages
+      const errorMessage = (() => {
+        if (error.message.includes("Invalid email")) {
+          return "The email address is not valid.";
+        }
+        if (error.message.includes("User not found")) {
+          return "No account exists with this email address.";
+        }
+        if (error.message.includes("60 seconds")) {
+          return "Too many attempts. Please try again in a minute.";
+        }
+        return (
+          error.message ||
+          "Failed to send password reset email. Please try again."
+        );
+      })();
+      throw new Error(errorMessage);
+    }
+  };
+
   return (
-    <AuthContext.Provider value={{ user, loading, signIn, signUp, signOut }}>
+    <AuthContext.Provider
+      value={{ user, loading, signIn, signUp, signOut, resetPassword }}
+    >
       {!loading && children}
     </AuthContext.Provider>
   );
