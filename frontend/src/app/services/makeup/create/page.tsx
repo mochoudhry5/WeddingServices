@@ -628,7 +628,7 @@ const CreateMakeupListing = () => {
                       <SelectValue placeholder="Select years of experience" />
                     </SelectTrigger>
                     <SelectContent>
-                      {[1, 2, 3, 4, 5, 6, 7, 8, 9, "10+"].map((year) => (
+                      {["1-2", "3-5", "6-9", "10+"].map((year) => (
                         <SelectItem key={year} value={year.toString()}>
                           {year} {year === "10+" ? "years or more" : "years"}
                         </SelectItem>
