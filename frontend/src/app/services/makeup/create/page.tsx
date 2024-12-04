@@ -99,9 +99,7 @@ type ServiceType = "makeup" | "hair" | "both";
 const commonMakeupStyles = [
   "Natural",
   "Bridal",
-  "Glam",
   "Soft Glam",
-  "Classic",
 ];
 
 const commonHairStyles = [
@@ -110,7 +108,6 @@ const commonHairStyles = [
   "Blowout",
   "Waves/Curls",
   "Braiding",
-  "Extensions",
 ];
 
 const CreateMakeupListing = () => {
