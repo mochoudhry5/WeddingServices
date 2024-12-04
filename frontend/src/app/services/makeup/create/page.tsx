@@ -203,6 +203,10 @@ const CreateMakeupListing = () => {
           toast.error(`Business Address Must Be Entered`);
           return false;
         }
+        if(!serviceType){
+          toast.error(`Please Select Service Offered`);
+          return false;
+        }
         const hasRequiredStyles = (type: ServiceType): boolean => {
           const makeupStyles = specialties.filter((style) =>
             commonMakeupStyles.includes(style)
@@ -766,9 +770,9 @@ const CreateMakeupListing = () => {
                       <SelectValue placeholder="Select services offered" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="makeup">Makeup Only</SelectItem>
-                      <SelectItem value="hair">Hair Only</SelectItem>
-                      <SelectItem value="both">Both Hair & Makeup</SelectItem>
+                      <SelectItem value="makeup">Makeup</SelectItem>
+                      <SelectItem value="hair">Hair</SelectItem>
+                      <SelectItem value="both">Hair & Makeup</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
