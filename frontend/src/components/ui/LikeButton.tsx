@@ -27,13 +27,12 @@ const SERVICE_CONFIGS: Record<string, ServiceConfig> = {
     entityName: "makeup artist",
     pluralName: "makeup artists",
   },
-  // Add new services here
-  // photography: {
-  //   tableName: "liked_photography",
-  //   idField: "photographer_id",
-  //   entityName: "photographer",
-  //   pluralName: "photographers"
-  // },
+  photography: {
+    tableName: "liked_photography",
+    idField: "photography_id",
+    entityName: "photography",
+    pluralName: "photography"
+  },
 } as const;
 
 type ServiceType = keyof typeof SERVICE_CONFIGS;

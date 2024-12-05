@@ -51,8 +51,9 @@ const services: Service[] = [
     icon: Camera,
     description:
       "Showcase your photography portfolio and connect with couples seeking their wedding photographer.",
-    available: false,
-    comingSoon: true,
+    available: true,
+    path: "/services/photography/create",
+    comingSoon: false,
   },
   {
     id: "weddingplanner",
