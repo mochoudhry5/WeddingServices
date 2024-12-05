@@ -134,7 +134,7 @@ export default function HomePage() {
                 <SelectContent>
                   <SelectItem value="venue">Venue</SelectItem>
                   <SelectItem value="makeup">Hair & Makeup</SelectItem>
-                  <SelectItem value="photography">Photography</SelectItem>
+                  <SelectItem value="photography">Photography/Videography</SelectItem>
                   <SelectItem value="weddingplanner">
                     Wedding Planner
                   </SelectItem>

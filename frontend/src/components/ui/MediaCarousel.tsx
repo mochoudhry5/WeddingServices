@@ -6,7 +6,7 @@ import { supabase } from "@/lib/supabase";
 import LikeButton from "./LikeButton";
 
 // Service configuration type - should match LikeButton's SERVICE_CONFIGS
-type ServiceType = "venue" | "makeup"; // Add new service types here
+type ServiceType = "venue" | "makeup" | "photography"; // Add new service types here
 
 interface MediaItem {
   file_path: string;

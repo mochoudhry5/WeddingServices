@@ -127,8 +127,8 @@ const SERVICE_CONFIGS: Record<ServiceType, ServiceConfig> = {
     priceType: "service-based",
   },
   photography: {
-    singularName: "Photographer",
-    pluralName: "Photographers",
+    singularName: "Photographer/Videographer",
+    pluralName: "Photographers/Videographers",
     hasCapacity: false,
     locationBased: false,
     priceType: "service-based",
@@ -571,7 +571,7 @@ export default function ServicesSearchPage() {
                   <SelectContent>
                     <SelectItem value="venue">Venue</SelectItem>
                     <SelectItem value="makeup">Hair & Makeup</SelectItem>
-                    <SelectItem value="photography">Photography</SelectItem>
+                    <SelectItem value="photography">Photography/Videography</SelectItem>
                     <SelectItem value="weddingplanner">
                       Wedding Planner
                     </SelectItem>

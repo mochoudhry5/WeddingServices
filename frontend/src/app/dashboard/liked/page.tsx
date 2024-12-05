@@ -32,6 +32,14 @@ interface ServiceResponse extends LikedItemResponse {
   makeup_artists?: MakeupArtistDetails;
 }
 
+interface PhotographyDetails extends BaseService {
+  artist_name: string;
+  years_experience: string;
+  travel_range: number;
+  service_type: "photography" | "videography" | "both";
+  photography_media: MediaItem[];
+}
+
 // Service-specific interfaces
 interface VenueDetails extends BaseService {
   name: string;
@@ -193,6 +201,71 @@ const SERVICE_CONFIGS: Record<string, ServiceConfig<any>> = {
                     ).toLocaleString()}`}
               </div>
             </div>
+          </div>
+        </Link>
+      </div>
+    ),
+  },
+
+  photography: {
+    type: "photography",
+    likedTable: "liked_photography",
+    entityTable: "photography_artists" as keyof ServiceResponse,
+    foreignKey: "photography_id",
+    displayName: "Photography/Videography",
+    pluralName: "Photography/Videography",
+    selectQuery: `
+      photography_id,
+      liked_at,
+      photography_artists:photography_artists (
+        id,
+        user_id,
+        artist_name,
+        years_experience,
+        travel_range,
+        service_type,
+        description,
+        photography_media (
+          file_path,
+          display_order
+        )
+      )
+    `,
+    renderCard: (
+      artist: PhotographyDetails & { liked_at: string },
+      onUnlike: () => void
+    ) => (
+      <div className="bg-white rounded-xl shadow-md overflow-hidden group">
+        <div className="relative">
+          <MediaCarousel
+            media={artist.photography_media || []}
+            serviceName={artist.artist_name || "Artist"}
+            itemId={artist.id}
+            creatorId={artist.user_id}
+            service="photography"
+            initialLiked={true}
+            onUnlike={onUnlike}
+          />
+        </div>
+        <Link href={`/services/photography/${artist.id}`}>
+          <div className="p-4">
+            <h3 className="text-lg font-semibold mb-1 group-hover:text-rose-600 transition-colors">
+              {artist.artist_name || "Unnamed Artist"}
+            </h3>
+            <p className="text-slate-600 text-sm mb-2">
+              {artist.years_experience || 0} years experience • Up to{" "}
+              {artist.travel_range || 0} miles
+            </p>
+            <div className="text-slate-600 text-sm mb-2">
+              {artist.service_type === "both"
+                ? "Photography & Videography"
+                : artist.service_type === "photography"
+                ? "Photography"
+                : "Videography"}
+            </div>
+            <p className="text-slate-600 text-sm mb-3 line-clamp-2">
+              {artist.description || "No description available"}
+            </p>
           </div>
         </Link>
       </div>
