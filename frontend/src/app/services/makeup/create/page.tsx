@@ -96,11 +96,7 @@ const commonHairServices = [
 
 type ServiceType = "makeup" | "hair" | "both";
 
-const commonMakeupStyles = [
-  "Natural",
-  "Bridal",
-  "Soft Glam",
-];
+const commonMakeupStyles = ["Natural", "Bridal", "Soft Glam"];
 
 const commonHairStyles = [
   "Updo",
@@ -180,6 +176,25 @@ const CreateMakeupListing = () => {
     let sanitized = value.replace(/^0+/, "").replace(/-/g, "");
     return sanitized === "" ? "0" : sanitized;
   };
+  const handleDragStart = (index: number) => {
+    setDraggedItem(index);
+  };
+
+  const handleDragOver = (e: React.DragEvent, index: number) => {
+    e.preventDefault();
+    if (draggedItem === null) return;
+
+    const newFiles = [...mediaFiles];
+    const draggedFile = newFiles[draggedItem];
+    newFiles.splice(draggedItem, 1);
+    newFiles.splice(index, 0, draggedFile);
+    setMediaFiles(newFiles);
+    setDraggedItem(index);
+  };
+
+  const handleDragEnd = () => {
+    setDraggedItem(null);
+  };
   // Form Validation
   const validateCurrentStep = () => {
     switch (currentStep) {
@@ -200,7 +215,7 @@ const CreateMakeupListing = () => {
           toast.error(`Business Address Must Be Entered`);
           return false;
         }
-        if(!serviceType){
+        if (!serviceType) {
           toast.error(`Please Select Service Offered`);
           return false;
         }
@@ -904,58 +919,130 @@ const CreateMakeupListing = () => {
             {/* Step 2: Portfolio */}
             {currentStep === 2 && (
               <div className="space-y-6">
-                <div className="flex justify-between items-center">
-                  <h2 className="text-2xl font-semibold">Portfolio</h2>
-                  <div className="text-sm text-gray-600">
-                    {mediaFiles.length} / 5 required images
+                <div className="space-y-4">
+                  <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-2">
+                    <div>
+                      <h2 className="text-2xl font-semibold">Portfolio</h2>
+                      <p className="text-sm text-gray-600">
+                        Upload at least 5 images showcasing your best work
+                      </p>
+                    </div>
+                    <div className="text-sm text-gray-600">
+                      {mediaFiles.length} / 5 required images
+                    </div>
                   </div>
-                </div>
 
-                <div
-                  className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center hover:border-rose-500 transition-colors cursor-pointer"
-                  onClick={() =>
-                    document.getElementById("media-upload")?.click()
-                  }
-                >
-                  <input
-                    type="file"
-                    id="media-upload"
-                    className="hidden"
-                    multiple
-                    accept="image/*"
-                    onChange={handleFileUpload}
-                  />
-                  <Upload className="mx-auto h-12 w-12 text-gray-400" />
-                  <p className="mt-2 text-sm text-gray-600">
-                    Drop images here or click to upload
-                  </p>
-                  <p className="text-xs text-gray-500">
-                    Upload your best work to showcase your skills
-                  </p>
-                </div>
+                  {/* Upload Area */}
+                  <div
+                    className="border-2 border-dashed border-gray-300 rounded-lg p-6 md:p-8 text-center hover:border-rose-500 transition-colors cursor-pointer"
+                    onClick={() =>
+                      document.getElementById("media-upload")?.click()
+                    }
+                  >
+                    <input
+                      type="file"
+                      id="media-upload"
+                      className="hidden"
+                      multiple
+                      accept="image/*"
+                      onChange={handleFileUpload}
+                    />
+                    <div className="flex flex-col items-center">
+                      <Upload className="h-12 w-12 text-gray-400" />
+                      <span className="mt-2 text-sm text-gray-600">
+                        Drop images here or click to upload
+                      </span>
+                      <span className="mt-1 text-xs text-gray-500">
+                        Supported formats: JPG, PNG
+                      </span>
+                    </div>
+                  </div>
 
-                {mediaFiles.length > 0 && (
-                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
-                    {mediaFiles.map((file, index) => (
-                      <div
-                        key={file.id}
-                        className="relative aspect-square rounded-lg overflow-hidden"
-                      >
-                        <img
-                          src={file.preview}
-                          alt={`Portfolio ${index + 1}`}
-                          className="w-full h-full object-cover"
-                        />
+                  {/* Preview Grid */}
+                  {mediaFiles.length > 0 && (
+                    <div className="space-y-2">
+                      <div className="flex justify-between items-center">
+                        <div>
+                          <h3 className="text-sm font-medium text-gray-900">
+                            Portfolio Images
+                          </h3>
+                          <p className="text-xs text-gray-500">
+                            Drag images to reorder. First image will be your
+                            main portfolio image.
+                          </p>
+                        </div>
                         <button
-                          onClick={() => removeFile(file.id)}
-                          className="absolute top-2 right-2 p-1 bg-black/50 rounded-full text-white hover:bg-black/70"
+                          type="button"
+                          onClick={() => setMediaFiles([])}
+                          className="text-sm text-rose-600 hover:text-rose-700"
                         >
-                          <X className="w-4 h-4" />
+                          Remove all
                         </button>
                       </div>
-                    ))}
-                  </div>
-                )}
+
+                      <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+                        {mediaFiles.map((file, index) => (
+                          <div
+                            key={file.id}
+                            draggable
+                            onDragStart={() => handleDragStart(index)}
+                            onDragOver={(e) => handleDragOver(e, index)}
+                            onDragEnd={handleDragEnd}
+                            className={`relative aspect-square rounded-lg overflow-hidden bg-gray-100 cursor-move ${
+                              draggedItem === index ? "opacity-50" : ""
+                            } group hover:ring-2 hover:ring-rose-500 transition-all`}
+                          >
+                            {/* Number Badge */}
+                            <div className="absolute top-2 left-2 bg-black/50 text-white px-2 py-1 rounded text-xs z-10">
+                              {index + 1}
+                            </div>
+
+                            {/* Image */}
+                            <img
+                              src={file.preview}
+                              alt={`Portfolio ${index + 1}`}
+                              className="w-full h-full object-cover"
+                            />
+
+                            {/* Overlay with additional information */}
+                            <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity">
+                              <div className="absolute bottom-2 left-2 right-2 flex justify-between items-center">
+                                <span className="text-xs text-white">
+                                  Click and drag to reorder
+                                </span>
+                                {index === 0 && (
+                                  <span className="bg-rose-500 text-white text-xs px-2 py-1 rounded">
+                                    Main Image
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+
+                            {/* Remove Button */}
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                removeFile(file.id);
+                              }}
+                              className="absolute top-2 right-2 p-1.5 bg-black/50 rounded-full text-white hover:bg-black/70 transition-colors"
+                            >
+                              <X className="w-4 h-4" />
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Helper text */}
+                  {mediaFiles.length > 0 && (
+                    <p className="text-sm text-gray-500 mt-4">
+                      Tip: Choose your best and most representative work for the
+                      main image. This will be the first image potential clients
+                      see.
+                    </p>
+                  )}
+                </div>
               </div>
             )}
 

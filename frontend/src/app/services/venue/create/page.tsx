@@ -886,7 +886,7 @@ export default function CreateVenueListing() {
                   <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-2">
                     <div>
                       <h3 className="text-base font-medium text-gray-900">
-                        Upload Your Venue Media
+                        Upload Your Portfolio Media
                       </h3>
                       <p className="text-sm text-gray-600">
                         Upload at least 5 images
@@ -909,7 +909,7 @@ export default function CreateVenueListing() {
                       id="media-upload"
                       className="hidden"
                       multiple
-                      accept="image/*,video/*"
+                      accept="image/*"
                       onChange={handleFileUpload}
                     />
                     <div className="flex flex-col items-center">
@@ -918,7 +918,7 @@ export default function CreateVenueListing() {
                         Drop files here or click to upload
                       </span>
                       <span className="mt-1 text-xs text-gray-500">
-                        Supported formats: JPG, PNG, MP4
+                        Supported formats: JPG, PNG
                       </span>
                     </div>
                   </div>
@@ -927,9 +927,15 @@ export default function CreateVenueListing() {
                   {mediaFiles.length > 0 && (
                     <div className="space-y-2">
                       <div className="flex justify-between items-center">
-                        <h3 className="text-sm font-medium text-gray-900">
-                          Uploaded Media
-                        </h3>
+                        <div>
+                          <h3 className="text-sm font-medium text-gray-900">
+                            Portfolio Images
+                          </h3>
+                          <p className="text-xs text-gray-500">
+                            Drag images to reorder. First image will be your
+                            main portfolio image.
+                          </p>
+                        </div>
                         <button
                           type="button"
                           onClick={() => setMediaFiles([])}
@@ -949,33 +955,33 @@ export default function CreateVenueListing() {
                             onDragEnd={handleDragEnd}
                             className={`relative aspect-square rounded-lg overflow-hidden bg-gray-100 cursor-move ${
                               draggedItem === index ? "opacity-50" : ""
-                            }`}
+                            } group hover:ring-2 hover:ring-rose-500 transition-all`}
                           >
                             {/* Number Badge */}
                             <div className="absolute top-2 left-2 bg-black/50 text-white px-2 py-1 rounded text-xs z-10">
                               {index + 1}
                             </div>
 
-                            {file.type === "video" ? (
-                              <div className="relative w-full h-full">
-                                <video
-                                  src={file.preview}
-                                  className="w-full h-full object-cover"
-                                />
-                                <div className="absolute inset-0 flex items-center justify-center bg-black/30">
-                                  <PlayCircle className="w-8 h-8 text-white" />
-                                </div>
-                                <span className="absolute bottom-2 left-2 text-xs text-white bg-black/50 px-2 py-1 rounded">
-                                  Video
+                            {/* Image */}
+                            <img
+                              src={file.preview}
+                              alt={`Portfolio ${index + 1}`}
+                              className="w-full h-full object-cover"
+                            />
+
+                            {/* Overlay with additional information */}
+                            <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity">
+                              <div className="absolute bottom-2 left-2 right-2 flex justify-between items-center">
+                                <span className="text-xs text-white">
+                                  Click and drag to reorder
                                 </span>
+                                {index === 0 && (
+                                  <span className="bg-rose-500 text-white text-xs px-2 py-1 rounded">
+                                    Main Image
+                                  </span>
+                                )}
                               </div>
-                            ) : (
-                              <img
-                                src={file.preview}
-                                alt={`Preview ${index + 1}`}
-                                className="w-full h-full object-cover"
-                              />
-                            )}
+                            </div>
 
                             {/* Remove Button */}
                             <button
@@ -987,17 +993,19 @@ export default function CreateVenueListing() {
                             >
                               <X className="w-4 h-4" />
                             </button>
-
-                            {/* Main Image Badge */}
-                            {index === 0 && (
-                              <div className="absolute bottom-2 right-2 bg-rose-500 text-white text-xs px-2 py-1 rounded">
-                                Main Image
-                              </div>
-                            )}
                           </div>
                         ))}
                       </div>
                     </div>
+                  )}
+
+                  {/* Helper text */}
+                  {mediaFiles.length > 0 && (
+                    <p className="text-sm text-gray-500 mt-4">
+                      Tip: Choose your best and most representative work for the
+                      main image. This will be the first image potential clients
+                      see.
+                    </p>
                   )}
                 </div>
               </div>
