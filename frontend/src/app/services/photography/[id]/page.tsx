@@ -202,51 +202,34 @@ export default function PhotographyDetailsPage() {
 
       {/* Content */}
       <div className="max-w-7xl mx-auto px-4 py-8">
+        {user?.id !== photography.user_id && (
+          <div className="max-w-7xl mx-auto px-4 py-4">
+            <div className="bg-rose-50 border-b border-rose-200 py-2">
+              <div className="max-w-3xl mx-auto px-4 flex flex-col items-center justify-center">
+                <div className="flex items-center gap-2">
+                  <span className="text-rose-600 text-lg font-semibold">
+                    Don't forget this listing!
+                  </span>
+                  <LikeButton
+                    itemId={photography.id}
+                    service="photography"
+                    initialLiked={false}
+                    className="text-rose-600 hover:text-rose-700"
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Artist Header */}
         <div className="flex flex-col md:flex-row md:justify-between md:items-start gap-4 mb-8">
           <div>
-            <h1 className="text-2xl md:text-3xl font-bold text-gray-900 mb-2">
-              {photography.artist_name}
-              {user?.id !== photography.user_id ? (
-                <LikeButton
-                  itemId={photography.id}
-                  service="photography"
-                  initialLiked={false}
-                  className="text-rose-600 hover:text-rose-700"
-                />
-              ) : null}
-            </h1>
-            <p className="text-gray-600">
-              {!photography.is_remote_business && photography.address && (
-                <>{photography.address}, </>
-              )}
-              {photography.city}, {photography.state}
-            </p>
-          </div>
-          <div className="md:text-right">
-            <p className="text-2xl md:text-3xl font-bold text-rose-600">
-              Starting at $
-              {photography.photography_services[0]?.price?.toLocaleString()}
-            </p>
-            <p className="text-gray-600">
-              {photography.years_experience} years of experience
-            </p>
-          </div>
-        </div>
-
-        {/* Description */}
-        <div className="mb-12">
-          <h2 className="text-xl md:text-2xl font-bold mb-4">
-            About the Artist
-          </h2>
-          <p className="text-gray-600 mb-6 leading-relaxed">
-            {photography.description}
-          </p>
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-12">
-            {/* Service Type */}
-            <div className="flex flex-col items-center text-center border-r border-gray-200 last:border-r-0">
-              <h3 className="text-lg font-semibold mb-3">Services Offered</h3>
-              <div className="text-gray-600">
+            <div className="flex items-center gap-3 mb-2">
+              <h1 className="text-2xl md:text-3xl font-bold text-gray-900">
+                {photography.artist_name}
+              </h1>
+              <div className="inline-flex items-center px-3 py-1 rounded-full bg-white border border-gray-200 text-sm font-medium">
                 {photography.service_type === "both"
                   ? "Photography & Videography"
                   : photography.service_type === "photography"
@@ -254,110 +237,186 @@ export default function PhotographyDetailsPage() {
                   : "Videography"}
               </div>
             </div>
+            {photography.is_remote_business ? (
+              <p className="text-gray-600">
+                {photography.city}, {photography.state} (Remote)
+              </p>
+            ) : (
+              <p className="text-gray-600">
+                {photography.address}, {photography.city}, {photography.state}
+              </p>
+            )}
+          </div>
+          <div className="text-right">
+            {photography.photography_services?.length > 0 && (
+              <>
+                <p className="text-3xl font-semibold text-rose-600">
+                  ${photography.photography_services[0]?.price?.toLocaleString()}
+                </p>
+                <p className="text-sm text-gray-500">(See Services & Pricing)</p>
+              </>
+            )}
+          </div>
+        </div>
+
+        {/* Description */}
+        {/* Description */}
+        <div className="mb-12">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-12">
+            {/* Experience */}
+            <div className="flex flex-col items-center text-center border-r border-gray-200 last:border-r-0">
+              <h3 className="text-lg font-semibold mb-3">Experience</h3>
+              <ul className="space-y-2 text-gray-600">
+                <li className="flex items-center gap-2">
+                  <span className="text-rose-500">•</span>
+                  {photography.years_experience} years
+                </li>
+              </ul>
+            </div>
+
+            {/* Deposit */}
+            <div className="flex flex-col items-center text-center border-r border-gray-200 last:border-r-0">
+              <h3 className="text-lg font-semibold mb-3">Booking Deposit</h3>
+              <ul className="space-y-2 text-gray-600">
+                <li className="flex items-center gap-2">
+                  <span className="text-rose-500">•</span>
+                  {photography.deposit}% of total service cost
+                </li>
+              </ul>
+            </div>
 
             {/* Travel Range */}
             <div className="flex flex-col items-center text-center border-r border-gray-200 last:border-r-0">
               <h3 className="text-lg font-semibold mb-3">Travel Range</h3>
-              <div className="text-gray-600">
-                Up to {photography.travel_range} miles
-              </div>
-            </div>
-
-            {/* Styles */}
-            <div className="flex flex-col items-center text-center border-r border-gray-200 last:border-r-0">
-              <h3 className="text-lg font-semibold mb-3">Styles</h3>
               <ul className="space-y-2 text-gray-600">
-                {photoStyles.length > 0 && (
-                  <li>Photography: {photoStyles.join(", ")}</li>
-                )}
-                {videoStyles.length > 0 && (
-                  <li>Videography: {videoStyles.join(", ")}</li>
-                )}
+                <li className="flex items-center gap-2">
+                  <span className="text-rose-500">•</span>
+                  {photography.travel_range === 0
+                    ? "No Travel"
+                    : `${photography.travel_range} miles from ${photography.city}`}
+                </li>
               </ul>
             </div>
 
             {/* Socials */}
-            <div className="flex flex-col items-center text-center">
+            <div className="flex flex-col items-center text-center last:border-r-0">
               <h3 className="text-lg font-semibold mb-3">Socials</h3>
-              <ul className="space-y-2 text-gray-600">
-                {photography.website_url && (
+              {photography.website_url || photography.instagram_url ? (
+                <ul className="space-y-2 text-gray-600">
+                  {photography.website_url && (
+                    <li className="flex items-center gap-2">
+                      <span className="text-rose-500">•</span>
+                      <a
+                        href={photography.website_url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-rose-600 hover:text-rose-700 hover:underline break-all"
+                      >
+                        Website
+                      </a>
+                    </li>
+                  )}
+                  {photography.instagram_url && (
+                    <li className="flex items-center gap-2">
+                      <span className="text-rose-500">•</span>
+                      <a
+                        href={photography.instagram_url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-rose-600 hover:text-rose-700 hover:underline break-all"
+                      >
+                        Instagram
+                      </a>
+                    </li>
+                  )}
+                </ul>
+              ) : (
+                <ul className="space-y-2 text-gray-600">
                   <li className="flex items-center gap-2">
                     <span className="text-rose-500">•</span>
-                    <a
-                      href={photography.website_url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-rose-600 hover:text-rose-700 hover:underline"
-                    >
-                      Website
-                    </a>
+                    No Social Links Yet!
                   </li>
-                )}
-                {photography.instagram_url && (
-                  <li className="flex items-center gap-2">
-                    <span className="text-rose-500">•</span>
-                    <a
-                      href={photography.instagram_url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-rose-600 hover:text-rose-700 hover:underline"
-                    >
-                      Instagram
-                    </a>
-                  </li>
-                )}
-              </ul>
+                </ul>
+              )}
             </div>
           </div>
+
+          <h2 className="text-xl md:text-2xl font-bold mb-4">
+            About the Business
+          </h2>
+          <p className="text-gray-600 mb-6 leading-relaxed break-words whitespace-normal">
+            {photography.description}
+          </p>
         </div>
+
+        {/* Specialties */}
+        {(photoStyles.length > 0 || videoStyles.length > 0) && (
+          <div className="mb-12">
+            <h2 className="text-xl md:text-2xl font-bold mb-6">
+              {photography.service_type === "photography"
+                ? "Photography Styles"
+                : photography.service_type === "videography"
+                ? "Videography Styles"
+                : "Photography & Videography Styles"}
+            </h2>
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+              {photoStyles.length > 0 &&
+                photoStyles.map((style, index) => (
+                  <div
+                    key={`photo-${index}`}
+                    className="p-4 rounded-lg border border-rose-200 bg-rose-50"
+                  >
+                    <div className="flex items-center gap-2">
+                      <span className="text-rose-600">✓</span>
+                      <span className="text-gray-900">{style}</span>
+                    </div>
+                  </div>
+                ))}
+              {videoStyles.length > 0 &&
+                videoStyles.map((style, index) => (
+                  <div
+                    key={`video-${index}`}
+                    className="p-4 rounded-lg border border-rose-200 bg-rose-50"
+                  >
+                    <div className="flex items-center gap-2">
+                      <span className="text-rose-600">✓</span>
+                      <span className="text-gray-900">{style}</span>
+                    </div>
+                  </div>
+                ))}
+            </div>
+          </div>
+        )}
 
         {/* Services */}
-        <div className="mb-12">
-          <h2 className="text-xl md:text-2xl font-bold mb-6">Services</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {photography.photography_services.map((service, index) => (
-              <div
-                key={index}
-                className="p-6 rounded-lg border border-gray-200 hover:border-rose-200 transition-colors"
-              >
-                <div className="flex flex-col md:flex-row md:justify-between md:items-start gap-2 mb-2">
-                  <h3 className="text-lg font-semibold">{service.name}</h3>
-                  <div className="text-right">
-                    <p className="text-rose-600 font-semibold">
-                      ${service.price.toLocaleString()}
-                    </p>
-                    <p className="text-sm text-gray-500">
-                      Duration: {service.duration} hours
-                    </p>
+        {photography.photography_services?.length > 0 && (
+          <div className="mb-12">
+            <h2 className="text-xl md:text-2xl font-bold mb-6">
+              Services & Pricing
+            </h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {photography.photography_services.map((service, index) => (
+                <div
+                  key={index}
+                  className="p-6 rounded-lg border border-gray-200 hover:border-rose-200 transition-colors"
+                >
+                  <div className="flex flex-col md:flex-row md:justify-between md:items-start gap-2 mb-2">
+                    <h3 className="text-lg font-semibold">{service.name}</h3>
+                    <div className="text-right">
+                      <p className="text-rose-600 font-semibold">
+                        ${service.price.toLocaleString()}
+                      </p>
+                      <p className="text-sm text-gray-500">
+                        Duration: {service.duration} hours
+                      </p>
+                    </div>
                   </div>
+                  <p className="text-gray-600">{service.description}</p>
                 </div>
-                <p className="text-gray-600">{service.description}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* Booking Information */}
-        <div className="mb-12">
-          <h2 className="text-xl md:text-2xl font-bold mb-6">
-            Booking Information
-          </h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-            <div className="p-6 rounded-lg border border-gray-200">
-              <h3 className="text-lg font-semibold mb-4">Deposit Required</h3>
-              <p className="text-gray-600">
-                {photography.deposit}% of total service cost
-              </p>
-            </div>
-            <div className="p-6 rounded-lg border border-gray-200">
-              <h3 className="text-lg font-semibold mb-4">
-                Cancellation Policy
-              </h3>
-              <p className="text-gray-600">{photography.cancellation_policy}</p>
+              ))}
             </div>
           </div>
-        </div>
-
+        )}
         {/* Contact Form */}
         <div className="mb-12">
           <h2 className="text-xl md:text-2xl font-bold mb-6 text-center">
@@ -477,7 +536,7 @@ export default function PhotographyDetailsPage() {
           </div>
         </div>
 
-        {/* Policies and Additional Information */}
+        {/* Additional Information */}
         <div className="mb-12">
           <h2 className="text-xl md:text-2xl font-bold mb-6">
             Additional Information

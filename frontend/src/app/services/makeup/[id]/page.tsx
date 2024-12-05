@@ -274,7 +274,7 @@ export default function MakeupDetailsPage() {
                       const maxPrice = Math.max(...prices);
 
                       return minPrice === maxPrice
-                        ? "Starting Price (See Services & Pricing)"
+                        ? "(See Services & Pricing)"
                         : "Price Range (See Services & Pricing)";
                     })()}
                   </p>

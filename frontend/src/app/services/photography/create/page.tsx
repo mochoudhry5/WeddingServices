@@ -455,7 +455,7 @@ const CreatePhotographyListing = () => {
         .insert({
           user_id: user.id,
           artist_name: artistName,
-          years_experience: parseInt(experience),
+          years_experience: experience,
           travel_range: parseInt(travelRange),
           address: isRemoteBusiness ? "" : location.address,
           city: location.city,
