@@ -56,14 +56,14 @@ const commonServices = [
   {
     name: "Full Day Photography",
     description:
-      "Videography for the full day including bride and groom getting ready",
+      "Photography for the full day including bride and groom getting ready",
     suggestedPrice: 0,
     suggestedDuration: 0,
   },
   {
     name: "Party Photography",
     description:
-      "Videography for the full day including bride and groom getting ready",
+      "Professional Photography for the day of Party",
     suggestedPrice: 0,
     suggestedDuration: 0,
   },
@@ -79,7 +79,7 @@ const commonVideoServices = [
   },
   {
     name: "Party Videography",
-    description: "Professional Video for Party",
+    description: "Professional Videography for the day of Party",
     suggestedPrice: 0,
     suggestedDuration: 0,
   },

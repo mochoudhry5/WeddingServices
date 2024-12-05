@@ -407,6 +407,9 @@ export default function PhotographyDetailsPage() {
                     <h3 className="text-lg font-semibold">{service.name}</h3>
                     <div className="text-right">
                       <p className="text-rose-600 font-semibold">
+                        <span className="text-sm text-gray-500">
+                          Starting at{" "}
+                        </span>
                         ${service.price.toLocaleString()}
                       </p>
                       <p className="text-sm text-gray-500">
@@ -505,36 +508,12 @@ export default function PhotographyDetailsPage() {
                   required
                 />
               </div>
-
-              {/* Services Selection Checkboxes */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Interested Services
-                </label>
-                <div className="space-y-2">
-                  {photography.photography_services.map((service, index) => (
-                    <label key={index} className="flex items-center space-x-2">
-                      <input
-                        type="checkbox"
-                        className="h-4 w-4 text-rose-600 border-gray-300 rounded focus:ring-rose-500"
-                      />
-                      <span className="text-gray-700">{service.name}</span>
-                    </label>
-                  ))}
-                </div>
-              </div>
-
               <Button
                 type="submit"
                 className="w-full bg-rose-600 hover:bg-rose-700"
               >
                 Send Inquiry
               </Button>
-
-              <p className="text-sm text-gray-500 text-center">
-                By submitting this form, you agree to share your contact
-                information with the artist.
-              </p>
             </form>
           </div>
         </div>
