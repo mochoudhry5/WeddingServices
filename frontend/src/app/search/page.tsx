@@ -86,7 +86,28 @@ interface MakeupArtistDetails {
   service_type: "makeup" | "hair" | "both";
 }
 
-type ServiceListingItem = VenueDetails | MakeupArtistDetails;
+interface PhotographyDetails {
+  id: string;
+  user_id: string;
+  artist_name: string;
+  years_experience: string;
+  travel_range: number;
+  description: string;
+  city: string;
+  state: string;
+  service_type: "photography" | "videography" | "both";
+  photography_media: MediaItem[];
+  photography_services: Array<{ price: number }>;
+  min_service_price: number;
+  max_service_price: number;
+  rating: number;
+  created_at: string;
+}
+
+type ServiceListingItem =
+  | VenueDetails
+  | MakeupArtistDetails
+  | PhotographyDetails;
 
 interface LocationDetails {
   enteredLocation: string;
@@ -127,8 +148,8 @@ const SERVICE_CONFIGS: Record<ServiceType, ServiceConfig> = {
     priceType: "service-based",
   },
   photography: {
-    singularName: "Photographer/Videographer",
-    pluralName: "Photographers/Videographers",
+    singularName: "Photography/Videography",
+    pluralName: "Photography/Videography",
     hasCapacity: false,
     locationBased: false,
     priceType: "service-based",
@@ -200,8 +221,63 @@ export default function ServicesSearchPage() {
   ) => {
     try {
       setIsLoading(true);
+      if (filtersToUse.serviceType === "photography") {
+        let query = supabase.from("photography_artists").select(`
+          *,
+          photography_media (
+            file_path,
+            display_order
+          ),
+          photography_services (
+            price
+          )
+        `);
 
-      if (filtersToUse.serviceType === "makeup") {
+        if (withFilters) {
+          // Apply price range filter
+          if (filtersToUse.priceRange[0] > 0) {
+            query = query.gte("min_service_price", filtersToUse.priceRange[0]);
+          }
+          if (filtersToUse.priceRange[1] < 10000) {
+            query = query.lte("max_service_price", filtersToUse.priceRange[1]);
+          }
+
+          // Apply location filter
+          const { city, state } = filtersToUse.searchQuery;
+          if (city || state) {
+            let locationFilters = [];
+            if (city) locationFilters.push(`city.ilike.%${city}%`);
+            if (state) locationFilters.push(`state.ilike.%${state}%`);
+            query = query.or(locationFilters.join(","));
+          }
+
+          // Apply sorting
+          switch (filtersToUse.sortOption) {
+            case "price_asc":
+              query = query.order("min_service_price", { ascending: true });
+              break;
+            case "price_desc":
+              query = query.order("max_service_price", { ascending: false });
+              break;
+            default:
+              query = query.order("created_at", { ascending: false });
+          }
+        }
+
+        const { data: photographyData, error: photographyError } = await query;
+
+        if (photographyError) throw photographyError;
+
+        const processedPhotographers = (photographyData || []).map(
+          (photographer) => ({
+            ...photographer,
+            rating: 4.5 + Math.random() * 0.5,
+            photography_media: photographer.photography_media || [],
+          })
+        );
+
+        setServiceListings(processedPhotographers);
+      } else if (filtersToUse.serviceType === "makeup") {
         let query = supabase.from("makeup_artists").select(`
           *,
           makeup_media (
@@ -392,8 +468,24 @@ export default function ServicesSearchPage() {
     setIsFilterSheetOpen(false);
     fetchServiceListings(false);
   };
+  const determineServiceType = (
+    listing: ServiceListingItem
+  ): "venue" | "makeup" | "photography" => {
+    if ("name" in listing) {
+      return "venue";
+    }
 
-  // ... (previous code remains the same)
+    if ("artist_name" in listing && "makeup_media" in listing) {
+      return "makeup";
+    }
+
+    if ("artist_name" in listing && "photography_media" in listing) {
+      return "photography";
+    }
+
+    // Fallback - though we should never reach this if types are correct
+    throw new Error("Unknown service type");
+  };
 
   const renderServiceListings = () => {
     if (isLoading) {
@@ -461,17 +553,22 @@ export default function ServicesSearchPage() {
               <div className="relative">
                 <MediaCarousel
                   media={
-                    isMakeupArtist(listing)
-                      ? listing.makeup_media
-                      : listing.venue_media
+                    determineServiceType(listing) === "venue"
+                      ? (listing as VenueDetails).venue_media
+                      : determineServiceType(listing) === "makeup"
+                      ? (listing as MakeupArtistDetails).makeup_media
+                      : (listing as PhotographyDetails).photography_media
                   }
                   serviceName={
-                    isMakeupArtist(listing) ? listing.artist_name : listing.name
+                    determineServiceType(listing) === "venue"
+                      ? (listing as VenueDetails).name
+                      : (listing as MakeupArtistDetails | PhotographyDetails)
+                          .artist_name
                   }
                   itemId={listing.id}
                   creatorId={listing.user_id}
                   userLoggedIn={user?.id}
-                  service={isMakeupArtist(listing) ? "makeup" : "venue"}
+                  service={determineServiceType(listing)}
                 />
               </div>
 
@@ -571,7 +668,9 @@ export default function ServicesSearchPage() {
                   <SelectContent>
                     <SelectItem value="venue">Venue</SelectItem>
                     <SelectItem value="makeup">Hair & Makeup</SelectItem>
-                    <SelectItem value="photography">Photography/Videography</SelectItem>
+                    <SelectItem value="photography">
+                      Photography/Videography
+                    </SelectItem>
                     <SelectItem value="weddingplanner">
                       Wedding Planner
                     </SelectItem>
