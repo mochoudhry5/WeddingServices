@@ -251,9 +251,12 @@ export default function PhotographyDetailsPage() {
             {photography.photography_services?.length > 0 && (
               <>
                 <p className="text-3xl font-semibold text-rose-600">
-                  ${photography.photography_services[0]?.price?.toLocaleString()}
+                  $
+                  {photography.photography_services[0]?.price?.toLocaleString()}
                 </p>
-                <p className="text-sm text-gray-500">(See Services & Pricing)</p>
+                <p className="text-sm text-gray-500">
+                  (See Services & Pricing)
+                </p>
               </>
             )}
           </div>
@@ -533,52 +536,6 @@ export default function PhotographyDetailsPage() {
                 information with the artist.
               </p>
             </form>
-          </div>
-        </div>
-
-        {/* Additional Information */}
-        <div className="mb-12">
-          <h2 className="text-xl md:text-2xl font-bold mb-6">
-            Additional Information
-          </h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-            <div>
-              <h3 className="text-lg font-semibold mb-4">Work Area</h3>
-              <p className="text-gray-600">
-                Based in {photography.city}, {photography.state}.<br />
-                Available to travel up to {photography.travel_range} miles
-                {photography.is_remote_business &&
-                  " | Remote service available"}
-              </p>
-            </div>
-
-            <div>
-              <h3 className="text-lg font-semibold mb-4">Equipment</h3>
-              <p className="text-gray-600">
-                Professional grade cameras, lenses, and lighting equipment.
-                Backup equipment always available.
-              </p>
-            </div>
-
-            <div>
-              <h3 className="text-lg font-semibold mb-4">Delivery</h3>
-              <p className="text-gray-600">
-                High-resolution digital files delivered via online gallery.
-                Additional delivery options available upon request.
-              </p>
-            </div>
-
-            <div>
-              <h3 className="text-lg font-semibold mb-4">Experience</h3>
-              <p className="text-gray-600">
-                {photography.years_experience} years of professional experience
-                in
-                {photography.service_type === "both"
-                  ? " photography and videography"
-                  : ` ${photography.service_type}`}
-                .
-              </p>
-            </div>
           </div>
         </div>
       </div>
