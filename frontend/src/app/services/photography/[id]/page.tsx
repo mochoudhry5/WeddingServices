@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import { PlayCircle, ChevronLeft, ChevronRight } from "lucide-react";
 import NavBar from "@/components/ui/NavBar";
 import Footer from "@/components/ui/Footer";
@@ -12,6 +12,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/context/AuthContext";
 import LikeButton from "@/components/ui/LikeButton";
+import { ChevronDown } from "lucide-react";
 
 interface PhotographyDetails {
   id: string;
@@ -62,6 +63,70 @@ interface InquiryForm {
   eventDate: string;
   message: string;
 }
+const ServiceCard = ({ service }: { service: PhotographyService }) => {
+  const [isOpen, setIsOpen] = useState(false);
+  const [hasOverflow, setHasOverflow] = useState(false);
+  const descriptionRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const checkOverflow = () => {
+      const element = descriptionRef.current;
+      if (element) {
+        setHasOverflow(element.scrollHeight > element.clientHeight);
+      }
+    };
+
+    checkOverflow();
+    window.addEventListener("resize", checkOverflow);
+    return () => window.removeEventListener("resize", checkOverflow);
+  }, [service.description]);
+
+  return (
+    <div className="border border-gray-200 rounded-lg overflow-hidden shadow-sm">
+      <div
+        className={`w-full p-4 ${
+          hasOverflow ? "cursor-pointer hover:bg-gray-50" : ""
+        } transition-all duration-200`}
+        onClick={() => hasOverflow && setIsOpen(!isOpen)}
+      >
+        <div className="flex-1">
+          <div className="flex justify-between items-start mb-2">
+            <h3 className="text-lg font-semibold text-left">{service.name}</h3>
+            <div className="flex items-start gap-4">
+              <div className="text-right">
+                <p className="text-rose-600 font-semibold whitespace-nowrap">
+                  <span className="text-sm text-gray-500">Starting at </span>$
+                  {service.price.toLocaleString()}
+                </p>
+                <p className="text-sm text-gray-500">
+                  Duration: {service.duration} hours
+                </p>
+              </div>
+              {hasOverflow && (
+                <div className="pt-1">
+                  <ChevronDown
+                    className={`h-5 w-5 text-gray-500 transition-transform duration-200 ease-in-out ${
+                      isOpen ? "rotate-180" : "rotate-0"
+                    }`}
+                  />
+                </div>
+              )}
+            </div>
+          </div>
+
+          <div
+            ref={descriptionRef}
+            className={`text-gray-600 text-sm text-left transition-all duration-200 ${
+              isOpen ? "" : "line-clamp-1"
+            }`}
+          >
+            {service.description}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
 
 export default function PhotographyDetailsPage() {
   const { user } = useAuth();
@@ -170,7 +235,7 @@ export default function PhotographyDetailsPage() {
       <div className="min-h-screen bg-slate-50">
         <NavBar />
         <div className="max-w-7xl mx-auto px-4 py-8 text-center">
-          <h1 className="text-2xl font-bold text-gray-900">Artist not found</h1>
+          <h1 className="text-2xl font-bold text-gray-900">Listing Not Found</h1>
         </div>
         <Footer />
       </div>
@@ -397,29 +462,24 @@ export default function PhotographyDetailsPage() {
             <h2 className="text-xl md:text-2xl font-bold mb-6">
               Services & Pricing
             </h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {photography.photography_services.map((service, index) => (
-                <div
-                  key={index}
-                  className="p-6 rounded-lg border border-gray-200 hover:border-rose-200 transition-colors"
-                >
-                  <div className="flex flex-col md:flex-row md:justify-between md:items-start gap-2 mb-2">
-                    <h3 className="text-lg font-semibold">{service.name}</h3>
-                    <div className="text-right">
-                      <p className="text-rose-600 font-semibold">
-                        <span className="text-sm text-gray-500">
-                          Starting at{" "}
-                        </span>
-                        ${service.price.toLocaleString()}
-                      </p>
-                      <p className="text-sm text-gray-500">
-                        Duration: {service.duration} hours
-                      </p>
-                    </div>
-                  </div>
-                  <p className="text-gray-600">{service.description}</p>
-                </div>
-              ))}
+            <div className="flex flex-row gap-4">
+              {/* First Column */}
+              <div className="flex-1 flex flex-col gap-4">
+                {photography.photography_services
+                  .filter((_, index) => index % 2 === 0)
+                  .map((service, index) => (
+                    <ServiceCard key={index * 2} service={service} />
+                  ))}
+              </div>
+
+              {/* Second Column */}
+              <div className="flex-1 flex flex-col gap-4">
+                {photography.photography_services
+                  .filter((_, index) => index % 2 === 1)
+                  .map((service, index) => (
+                    <ServiceCard key={index * 2 + 1} service={service} />
+                  ))}
+              </div>
             </div>
           </div>
         )}

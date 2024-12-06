@@ -229,7 +229,7 @@ export default function VenueDetailsPage() {
       if (error) throw error;
 
       if (!venueData) {
-        toast.error("Venue not found");
+        toast.error("Listing not found");
         return;
       }
 
@@ -318,7 +318,7 @@ export default function VenueDetailsPage() {
       <div className="min-h-screen bg-slate-50">
         <NavBar />
         <div className="max-w-7xl mx-auto px-4 py-8 text-center">
-          <h1 className="text-2xl font-bold text-gray-900">Venue not found</h1>
+          <h1 className="text-2xl font-bold text-gray-900">Listing Not Found</h1>
         </div>
         <Footer />
       </div>

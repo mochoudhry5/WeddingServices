@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import NavBar from "@/components/ui/NavBar";
 import Footer from "@/components/ui/Footer";
 import { useParams } from "next/navigation";
@@ -17,7 +17,7 @@ interface MakeupDetails {
   id: string;
   artist_name: string;
   service_type: "makeup" | "hair" | "both";
-  years_experience: number;
+  years_experience: string;
   travel_range: number;
   description: string;
   website_url: string | null;
@@ -63,14 +63,76 @@ interface InquiryForm {
   message: string;
 }
 
+// Service Card Component
+const ServiceCard = ({ service }: { service: MakeupService }) => {
+  const [isOpen, setIsOpen] = useState(false);
+  const [hasOverflow, setHasOverflow] = useState(false);
+  const descriptionRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const checkOverflow = () => {
+      const element = descriptionRef.current;
+      if (element) {
+        setHasOverflow(element.scrollHeight > element.clientHeight);
+      }
+    };
+
+    checkOverflow();
+    window.addEventListener("resize", checkOverflow);
+    return () => window.removeEventListener("resize", checkOverflow);
+  }, [service.description]);
+
+  return (
+    <div className="border border-gray-200 rounded-lg overflow-hidden shadow-sm">
+      <div
+        className={`w-full p-4 ${
+          hasOverflow ? "cursor-pointer hover:bg-gray-50" : ""
+        } transition-all duration-200`}
+        onClick={() => hasOverflow && setIsOpen(!isOpen)}
+      >
+        <div className="flex-1">
+          <div className="flex justify-between items-start mb-2">
+            <h3 className="text-lg font-semibold text-left">{service.name}</h3>
+            <div className="flex items-start gap-4">
+              <div className="text-right">
+                <p className="text-rose-600 font-semibold whitespace-nowrap">
+                  <span className="text-sm text-gray-500">Starting at </span>$
+                  {service.price.toLocaleString()}
+                </p>
+                <p className="text-sm text-gray-500">
+                  (Approx. Duration {service.duration} minutes)
+                </p>
+              </div>
+              {hasOverflow && (
+                <div className="pt-1">
+                  <ChevronDown
+                    className={`h-5 w-5 text-gray-500 transition-transform duration-200 ease-in-out ${
+                      isOpen ? "rotate-180" : "rotate-0"
+                    }`}
+                  />
+                </div>
+              )}
+            </div>
+          </div>
+
+          <div
+            ref={descriptionRef}
+            className={`text-gray-600 text-sm text-left transition-all duration-200 ${
+              isOpen ? "" : "line-clamp-1"
+            }`}
+          >
+            {service.description}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 export default function MakeupDetailsPage() {
   const { user } = useAuth();
   const [makeup, setMakeup] = useState<MakeupDetails | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [openIndex, setOpenIndex] = useState<number | null>(null);
-  const toggleAccordion = (index: number) => {
-    setOpenIndex(openIndex === index ? null : index);
-  };
   const [inquiryForm, setInquiryForm] = useState<InquiryForm>({
     firstName: "",
     lastName: "",
@@ -119,7 +181,7 @@ export default function MakeupDetailsPage() {
       if (error) throw error;
 
       if (!makeupData) {
-        toast.error("Makeup artist not found");
+        toast.error("Listing Not found");
         return;
       }
 
@@ -173,7 +235,7 @@ export default function MakeupDetailsPage() {
         <NavBar />
         <div className="max-w-7xl mx-auto px-4 py-8 text-center">
           <h1 className="text-2xl font-bold text-gray-900">
-            Makeup artist not found
+            Listing Not Found
           </h1>
         </div>
         <Footer />
@@ -218,6 +280,7 @@ export default function MakeupDetailsPage() {
             </div>
           </div>
         )}
+
         {/* Artist Header */}
         <div className="flex flex-col md:flex-row md:justify-between md:items-start gap-4 mb-8">
           <div>
@@ -338,19 +401,6 @@ export default function MakeupDetailsPage() {
                         rel="noopener noreferrer"
                         className="text-rose-600 hover:text-rose-700 hover:underline"
                       >
-                        Website
-                      </a>
-                    </li>
-                  )}
-                  {makeup.instagram_url && (
-                    <li className="flex items-center gap-2">
-                      <span className="text-rose-500">•</span>
-                      <a
-                        href={makeup.instagram_url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-rose-600 hover:text-rose-700 hover:underline"
-                      >
                         Instagram
                       </a>
                     </li>
@@ -413,58 +463,7 @@ export default function MakeupDetailsPage() {
                 {makeup.makeup_services
                   .filter((_, index) => index % 2 === 0)
                   .map((service, index) => (
-                    <div
-                      key={index * 2}
-                      className="border border-gray-200 rounded-lg overflow-hidden"
-                    >
-                      <button
-                        onClick={() => toggleAccordion(index * 2)}
-                        className="w-full p-4 flex items-center justify-between hover:bg-gray-50 transition-colors"
-                      >
-                        <div className="flex-1">
-                          <div className="flex justify-between items-center mb-2">
-                            <h3 className="text-lg font-semibold text-left">
-                              {service.name}
-                            </h3>
-                            <div className="text-right">
-                              <p className="text-rose-600 font-semibold whitespace-nowrap ml-4">
-                                <span className="text-sm text-gray-500">
-                                  Starting at{" "}
-                                </span>
-                                ${service.price.toLocaleString()}
-                              </p>
-                              <p className="text-sm text-gray-500">
-                                (Approx. Duration {service.duration} minutes)
-                              </p>
-                            </div>
-                          </div>
-                          {openIndex !== index * 2 && (
-                            <p className="text-gray-600 text-sm text-left line-clamp-1">
-                              {service.description}
-                            </p>
-                          )}
-                        </div>
-                        <ChevronDown
-                          className={`ml-4 h-5 w-5 text-gray-500 transition-transform ${
-                            openIndex === index * 2
-                              ? "transform rotate-180"
-                              : ""
-                          }`}
-                        />
-                      </button>
-
-                      <div
-                        className={`transition-[max-height,opacity] duration-300 ease-in-out ${
-                          openIndex === index * 2
-                            ? "max-h-[500px] opacity-100"
-                            : "max-h-0 opacity-0"
-                        } overflow-hidden`}
-                      >
-                        <div className="p-4 bg-gray-50 border-t border-gray-200">
-                          <p className="text-gray-600">{service.description}</p>
-                        </div>
-                      </div>
-                    </div>
+                    <ServiceCard key={index * 2} service={service} />
                   ))}
               </div>
 
@@ -473,58 +472,7 @@ export default function MakeupDetailsPage() {
                 {makeup.makeup_services
                   .filter((_, index) => index % 2 === 1)
                   .map((service, index) => (
-                    <div
-                      key={index * 2 + 1}
-                      className="border border-gray-200 rounded-lg overflow-hidden"
-                    >
-                      <button
-                        onClick={() => toggleAccordion(index * 2 + 1)}
-                        className="w-full p-4 flex items-center justify-between hover:bg-gray-50 transition-colors"
-                      >
-                        <div className="flex-1">
-                          <div className="flex justify-between items-center mb-2">
-                            <h3 className="text-lg font-semibold text-left">
-                              {service.name}
-                            </h3>
-                            <div className="text-right">
-                              <p className="text-rose-600 font-semibold whitespace-nowrap ml-4">
-                                <span className="text-sm text-gray-500">
-                                  Starting at{" "}
-                                </span>
-                                ${service.price.toLocaleString()}
-                              </p>
-                              <p className="text-sm text-gray-500">
-                                (Approx. Duration {service.duration} minutes)
-                              </p>
-                            </div>
-                          </div>
-                          {openIndex !== index * 2 + 1 && (
-                            <p className="text-gray-600 text-sm text-left line-clamp-1">
-                              {service.description}
-                            </p>
-                          )}
-                        </div>
-                        <ChevronDown
-                          className={`ml-4 h-5 w-5 text-gray-500 transition-transform ${
-                            openIndex === index * 2 + 1
-                              ? "transform rotate-180"
-                              : ""
-                          }`}
-                        />
-                      </button>
-
-                      <div
-                        className={`transition-[max-height,opacity] duration-300 ease-in-out ${
-                          openIndex === index * 2 + 1
-                            ? "max-h-[500px] opacity-100"
-                            : "max-h-0 opacity-0"
-                        } overflow-hidden`}
-                      >
-                        <div className="p-4 bg-gray-50 border-t border-gray-200">
-                          <p className="text-gray-600">{service.description}</p>
-                        </div>
-                      </div>
-                    </div>
+                    <ServiceCard key={index * 2 + 1} service={service} />
                   ))}
               </div>
             </div>
