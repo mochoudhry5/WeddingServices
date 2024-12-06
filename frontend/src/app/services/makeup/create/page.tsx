@@ -172,8 +172,11 @@ const CreateMakeupListing = () => {
     return text.trim().length;
   };
   const handleNumericInput = (value: string): string => {
-    // Remove leading zeros and prevent negative numbers
-    let sanitized = value.replace(/^0+/, "").replace(/-/g, "");
+    // Remove leading zeros, prevent negative numbers, and remove decimals
+    let sanitized = value
+      .replace(/^0+/, "")
+      .replace(/-/g, "")
+      .replace(/\./g, "");
     return sanitized === "" ? "0" : sanitized;
   };
   const handleDragStart = (index: number) => {
@@ -655,8 +658,19 @@ const CreateMakeupListing = () => {
                   </label>
                   <Input
                     type="number"
+                    min="0"
+                    step="1" // Force whole numbers
                     value={travelRange}
-                    onChange={(e) => setTravelRange(e.target.value)}
+                    onChange={(e) => {
+                      const sanitizedValue = handleNumericInput(e.target.value);
+                      setTravelRange(sanitizedValue);
+                    }}
+                    onKeyDown={(e) => {
+                      // Prevent decimal point and negative sign
+                      if (e.key === "-" || e.key === ".") {
+                        e.preventDefault();
+                      }
+                    }}
                     placeholder="Enter maximum travel distance"
                     className="w-full"
                     required
@@ -1130,6 +1144,7 @@ const CreateMakeupListing = () => {
                                       <Input
                                         type="number"
                                         min="0"
+                                        step="1" // Force whole numbers
                                         placeholder="0"
                                         value={
                                           selectedServices[service.name]
@@ -1150,7 +1165,8 @@ const CreateMakeupListing = () => {
                                           });
                                         }}
                                         onKeyDown={(e) => {
-                                          if (e.key === "-") {
+                                          // Prevent decimal point and negative sign
+                                          if (e.key === "-" || e.key === ".") {
                                             e.preventDefault();
                                           }
                                         }}
@@ -1169,8 +1185,9 @@ const CreateMakeupListing = () => {
                                       />
                                       <Input
                                         type="number"
-                                        placeholder="0"
                                         min="0"
+                                        step="1" // Force whole numbers
+                                        placeholder="0"
                                         value={
                                           selectedServices[service.name]
                                             .duration === 0
@@ -1190,7 +1207,8 @@ const CreateMakeupListing = () => {
                                           });
                                         }}
                                         onKeyDown={(e) => {
-                                          if (e.key === "-") {
+                                          // Prevent decimal point and negative sign
+                                          if (e.key === "-" || e.key === ".") {
                                             e.preventDefault();
                                           }
                                         }}
@@ -1283,6 +1301,7 @@ const CreateMakeupListing = () => {
                                       <Input
                                         type="number"
                                         min="0"
+                                        step="1" // Force whole numbers
                                         placeholder="0"
                                         value={
                                           selectedServices[service.name]
@@ -1303,7 +1322,8 @@ const CreateMakeupListing = () => {
                                           });
                                         }}
                                         onKeyDown={(e) => {
-                                          if (e.key === "-") {
+                                          // Prevent decimal point and negative sign
+                                          if (e.key === "-" || e.key === ".") {
                                             e.preventDefault();
                                           }
                                         }}
@@ -1323,6 +1343,7 @@ const CreateMakeupListing = () => {
                                       <Input
                                         type="number"
                                         min="0"
+                                        step="1" // Force whole numbers
                                         placeholder="0"
                                         value={
                                           selectedServices[service.name]
@@ -1343,7 +1364,8 @@ const CreateMakeupListing = () => {
                                           });
                                         }}
                                         onKeyDown={(e) => {
-                                          if (e.key === "-") {
+                                          // Prevent decimal point and negative sign
+                                          if (e.key === "-" || e.key === ".") {
                                             e.preventDefault();
                                           }
                                         }}
@@ -1446,6 +1468,7 @@ const CreateMakeupListing = () => {
                                     type="number"
                                     placeholder="0"
                                     min="0"
+                                    step="1" // Force whole numbers
                                     value={
                                       service.price === 0 ? "" : service.price
                                     }
@@ -1461,7 +1484,8 @@ const CreateMakeupListing = () => {
                                       setCustomServices(newServices);
                                     }}
                                     onKeyDown={(e) => {
-                                      if (e.key === "-") {
+                                      // Prevent decimal point and negative sign
+                                      if (e.key === "-" || e.key === ".") {
                                         e.preventDefault();
                                       }
                                     }}
@@ -1483,6 +1507,7 @@ const CreateMakeupListing = () => {
                                     type="number"
                                     placeholder="0"
                                     min="0"
+                                    step="1" // Force whole numbers
                                     value={
                                       service.duration === 0
                                         ? ""
@@ -1500,7 +1525,8 @@ const CreateMakeupListing = () => {
                                       setCustomServices(newServices);
                                     }}
                                     onKeyDown={(e) => {
-                                      if (e.key === "-") {
+                                      // Prevent decimal point and negative sign
+                                      if (e.key === "-" || e.key === ".") {
                                         e.preventDefault();
                                       }
                                     }}
@@ -1542,18 +1568,28 @@ const CreateMakeupListing = () => {
                       type="number"
                       min="0"
                       max="100"
+                      step="1" // Force whole numbers
                       value={availability.deposit}
                       onChange={(e) => {
-                        const value = e.target.value;
-                        // Allow numbers between 0-100
+                        const sanitizedValue = handleNumericInput(
+                          e.target.value
+                        );
+                        // Only update if the value is within 0-100 range
                         if (
-                          value === "" ||
-                          (parseInt(value) >= 0 && parseInt(value) <= 100)
+                          sanitizedValue === "" ||
+                          (parseInt(sanitizedValue) >= 0 &&
+                            parseInt(sanitizedValue) <= 100)
                         ) {
                           setAvailability({
                             ...availability,
-                            deposit: value,
+                            deposit: sanitizedValue,
                           });
+                        }
+                      }}
+                      onKeyDown={(e) => {
+                        // Prevent decimal point and negative sign
+                        if (e.key === "-" || e.key === ".") {
+                          e.preventDefault();
                         }
                       }}
                       onBlur={(e) => {
@@ -1569,7 +1605,7 @@ const CreateMakeupListing = () => {
                         // Round to nearest whole number and ensure within range
                         const roundedValue = Math.min(
                           100,
-                          Math.max(0, Math.round(parseFloat(value)))
+                          Math.max(0, parseInt(value))
                         );
                         setAvailability({
                           ...availability,

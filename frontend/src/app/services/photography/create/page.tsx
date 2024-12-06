@@ -62,8 +62,7 @@ const commonServices = [
   },
   {
     name: "Party Photography",
-    description:
-      "Professional Photography for the day of Party",
+    description: "Professional Photography for the day of Party",
     suggestedPrice: 0,
     suggestedDuration: 0,
   },
@@ -167,9 +166,11 @@ const CreatePhotographyListing = () => {
     return text.trim().length;
   };
   const handleNumericInput = (value: string): string => {
-    // Remove leading zeros and prevent negative numbers
-    let sanitized = value.replace(/^0+/, "").replace(/-/g, "");
-    return sanitized === "" ? "0" : sanitized;
+    const regex = /^(\d+(\.\d{0,1})?)?$/;
+    if (regex.test(value)) {
+      return value;
+    }
+    return "";
   };
   const handleDragStart = (index: number) => {
     setDraggedItem(index);
@@ -479,14 +480,18 @@ const CreatePhotographyListing = () => {
         );
       }
       if (!photography) {
-        throw new Error("Photography/Videography listing created but no data returned");
+        throw new Error(
+          "Photography/Videography listing created but no data returned"
+        );
       }
 
       const specialtiesData = specialties.map((specialty) => ({
         artist_id: photography.id,
         specialty,
         is_custom: false,
-        style_type: commonPhotoStyles.includes(specialty) ? "photography" : "videography", // Add style type
+        style_type: commonPhotoStyles.includes(specialty)
+          ? "photography"
+          : "videography", // Add style type
       }));
       const { error: specialtiesError } = await supabase
         .from("photography_specialties")
@@ -565,10 +570,15 @@ const CreatePhotographyListing = () => {
         }
       }
 
-      toast.success("Photography/Videography artist listing created successfully!");
+      toast.success(
+        "Photography/Videography artist listing created successfully!"
+      );
       router.push(`/services/photography/${photography.id}`);
     } catch (error) {
-      console.error("Error creating Photography/Videography artist listing:", error);
+      console.error(
+        "Error creating Photography/Videography artist listing:",
+        error
+      );
       toast.error(
         error instanceof Error
           ? error.message
@@ -650,8 +660,24 @@ const CreatePhotographyListing = () => {
                   </label>
                   <Input
                     type="number"
+                    min="0"
+                    step="1" // Force whole numbers
                     value={travelRange}
-                    onChange={(e) => setTravelRange(e.target.value)}
+                    onChange={(e) => {
+                      // Remove any non-digit characters and leading zeros
+                      const sanitizedValue = e.target.value
+                        .replace(/[^\d]/g, "")
+                        .replace(/^0+(?=\d)/, "");
+                      setTravelRange(
+                        sanitizedValue === "" ? "" : sanitizedValue
+                      );
+                    }}
+                    onKeyDown={(e) => {
+                      // Prevent decimal point and negative sign
+                      if (e.key === "-" || e.key === ".") {
+                        e.preventDefault();
+                      }
+                    }}
                     placeholder="Enter maximum travel distance"
                     className="w-full"
                     required
@@ -1130,6 +1156,7 @@ const CreatePhotographyListing = () => {
                                       <Input
                                         type="number"
                                         min="0"
+                                        step="1"
                                         placeholder="0"
                                         value={
                                           selectedServices[service.name]
@@ -1139,18 +1166,20 @@ const CreatePhotographyListing = () => {
                                                 .price
                                         }
                                         onChange={(e) => {
-                                          const sanitizedValue =
-                                            handleNumericInput(e.target.value);
+                                          const sanitizedValue = e.target.value;
                                           setSelectedServices({
                                             ...selectedServices,
                                             [service.name]: {
                                               ...selectedServices[service.name],
-                                              price: Number(sanitizedValue),
+                                              price:
+                                                sanitizedValue === ""
+                                                  ? 0
+                                                  : parseInt(sanitizedValue),
                                             },
                                           });
                                         }}
                                         onKeyDown={(e) => {
-                                          if (e.key === "-") {
+                                          if (e.key === "-" || e.key === ".") {
                                             e.preventDefault();
                                           }
                                         }}
@@ -1169,8 +1198,9 @@ const CreatePhotographyListing = () => {
                                       />
                                       <Input
                                         type="number"
-                                        placeholder="0"
+                                        step="0.5"
                                         min="0"
+                                        placeholder="0"
                                         value={
                                           selectedServices[service.name]
                                             .duration === 0
@@ -1179,19 +1209,60 @@ const CreatePhotographyListing = () => {
                                                 .duration
                                         }
                                         onChange={(e) => {
-                                          const sanitizedValue =
-                                            handleNumericInput(e.target.value);
-                                          setSelectedServices({
-                                            ...selectedServices,
-                                            [service.name]: {
-                                              ...selectedServices[service.name],
-                                              duration: Number(sanitizedValue),
-                                            },
-                                          });
+                                          const sanitizedValue = e.target.value;
+                                          // Allow any numeric input temporarily during typing
+                                          if (
+                                            /^\d*\.?\d{0,1}$/.test(
+                                              sanitizedValue
+                                            )
+                                          ) {
+                                            setSelectedServices({
+                                              ...selectedServices,
+                                              [service.name]: {
+                                                ...selectedServices[
+                                                  service.name
+                                                ],
+                                                duration:
+                                                  sanitizedValue === ""
+                                                    ? 0
+                                                    : parseFloat(
+                                                        sanitizedValue
+                                                      ),
+                                              },
+                                            });
+                                          }
                                         }}
-                                        onKeyDown={(e) => {
-                                          if (e.key === "-") {
-                                            e.preventDefault();
+                                        onBlur={(e) => {
+                                          const value = e.target.value;
+                                          // On blur, format to proper decimal
+                                          if (
+                                            value === "" ||
+                                            isNaN(parseFloat(value))
+                                          ) {
+                                            setSelectedServices({
+                                              ...selectedServices,
+                                              [service.name]: {
+                                                ...selectedServices[
+                                                  service.name
+                                                ],
+                                                duration: 0,
+                                              },
+                                            });
+                                          } else {
+                                            // Round to nearest 0.5
+                                            const roundedValue =
+                                              Math.round(
+                                                parseFloat(value) * 2
+                                              ) / 2;
+                                            setSelectedServices({
+                                              ...selectedServices,
+                                              [service.name]: {
+                                                ...selectedServices[
+                                                  service.name
+                                                ],
+                                                duration: roundedValue,
+                                              },
+                                            });
                                           }
                                         }}
                                         className="pl-8"
@@ -1284,6 +1355,7 @@ const CreatePhotographyListing = () => {
                                       <Input
                                         type="number"
                                         min="0"
+                                        step="1"
                                         placeholder="0"
                                         value={
                                           selectedServices[service.name]
@@ -1293,18 +1365,20 @@ const CreatePhotographyListing = () => {
                                                 .price
                                         }
                                         onChange={(e) => {
-                                          const sanitizedValue =
-                                            handleNumericInput(e.target.value);
+                                          const sanitizedValue = e.target.value;
                                           setSelectedServices({
                                             ...selectedServices,
                                             [service.name]: {
                                               ...selectedServices[service.name],
-                                              price: Number(sanitizedValue),
+                                              price:
+                                                sanitizedValue === ""
+                                                  ? 0
+                                                  : parseInt(sanitizedValue),
                                             },
                                           });
                                         }}
                                         onKeyDown={(e) => {
-                                          if (e.key === "-") {
+                                          if (e.key === "-" || e.key === ".") {
                                             e.preventDefault();
                                           }
                                         }}
@@ -1323,6 +1397,7 @@ const CreatePhotographyListing = () => {
                                       />
                                       <Input
                                         type="number"
+                                        step="0.5"
                                         min="0"
                                         placeholder="0"
                                         value={
@@ -1333,19 +1408,60 @@ const CreatePhotographyListing = () => {
                                                 .duration
                                         }
                                         onChange={(e) => {
-                                          const sanitizedValue =
-                                            handleNumericInput(e.target.value);
-                                          setSelectedServices({
-                                            ...selectedServices,
-                                            [service.name]: {
-                                              ...selectedServices[service.name],
-                                              duration: Number(sanitizedValue),
-                                            },
-                                          });
+                                          const sanitizedValue = e.target.value;
+                                          // Allow any numeric input temporarily during typing
+                                          if (
+                                            /^\d*\.?\d{0,1}$/.test(
+                                              sanitizedValue
+                                            )
+                                          ) {
+                                            setSelectedServices({
+                                              ...selectedServices,
+                                              [service.name]: {
+                                                ...selectedServices[
+                                                  service.name
+                                                ],
+                                                duration:
+                                                  sanitizedValue === ""
+                                                    ? 0
+                                                    : parseFloat(
+                                                        sanitizedValue
+                                                      ),
+                                              },
+                                            });
+                                          }
                                         }}
-                                        onKeyDown={(e) => {
-                                          if (e.key === "-") {
-                                            e.preventDefault();
+                                        onBlur={(e) => {
+                                          const value = e.target.value;
+                                          // On blur, format to proper decimal
+                                          if (
+                                            value === "" ||
+                                            isNaN(parseFloat(value))
+                                          ) {
+                                            setSelectedServices({
+                                              ...selectedServices,
+                                              [service.name]: {
+                                                ...selectedServices[
+                                                  service.name
+                                                ],
+                                                duration: 0,
+                                              },
+                                            });
+                                          } else {
+                                            // Round to nearest 0.5
+                                            const roundedValue =
+                                              Math.round(
+                                                parseFloat(value) * 2
+                                              ) / 2;
+                                            setSelectedServices({
+                                              ...selectedServices,
+                                              [service.name]: {
+                                                ...selectedServices[
+                                                  service.name
+                                                ],
+                                                duration: roundedValue,
+                                              },
+                                            });
                                           }
                                         }}
                                         className="pl-8"
@@ -1447,22 +1563,24 @@ const CreatePhotographyListing = () => {
                                     type="number"
                                     placeholder="0"
                                     min="0"
+                                    step="1"
                                     value={
                                       service.price === 0 ? "" : service.price
                                     }
                                     onChange={(e) => {
-                                      const sanitizedValue = handleNumericInput(
-                                        e.target.value
-                                      );
+                                      const sanitizedValue = e.target.value;
                                       const newServices = [...customServices];
                                       newServices[index] = {
                                         ...service,
-                                        price: Number(sanitizedValue),
+                                        price:
+                                          sanitizedValue === ""
+                                            ? 0
+                                            : parseInt(sanitizedValue),
                                       };
                                       setCustomServices(newServices);
                                     }}
                                     onKeyDown={(e) => {
-                                      if (e.key === "-") {
+                                      if (e.key === "-" || e.key === ".") {
                                         e.preventDefault();
                                       }
                                     }}
@@ -1482,27 +1600,54 @@ const CreatePhotographyListing = () => {
                                   />
                                   <Input
                                     type="number"
-                                    placeholder="0"
+                                    step="0.5"
                                     min="0"
+                                    placeholder="0"
                                     value={
                                       service.duration === 0
                                         ? ""
                                         : service.duration
                                     }
                                     onChange={(e) => {
-                                      const sanitizedValue = handleNumericInput(
-                                        e.target.value
-                                      );
-                                      const newServices = [...customServices];
-                                      newServices[index] = {
-                                        ...service,
-                                        duration: Number(sanitizedValue),
-                                      };
-                                      setCustomServices(newServices);
+                                      const sanitizedValue = e.target.value;
+                                      // Allow any numeric input temporarily during typing
+                                      if (
+                                        /^\d*\.?\d{0,1}$/.test(sanitizedValue)
+                                      ) {
+                                        const newServices = [...customServices];
+                                        newServices[index] = {
+                                          ...service,
+                                          duration:
+                                            sanitizedValue === ""
+                                              ? 0
+                                              : parseFloat(sanitizedValue),
+                                        };
+                                        setCustomServices(newServices);
+                                      }
                                     }}
-                                    onKeyDown={(e) => {
-                                      if (e.key === "-") {
-                                        e.preventDefault();
+                                    onBlur={(e) => {
+                                      const value = e.target.value;
+                                      // On blur, format to proper decimal
+                                      if (
+                                        value === "" ||
+                                        isNaN(parseFloat(value))
+                                      ) {
+                                        const newServices = [...customServices];
+                                        newServices[index] = {
+                                          ...service,
+                                          duration: 0,
+                                        };
+                                        setCustomServices(newServices);
+                                      } else {
+                                        // Round to nearest 0.5
+                                        const roundedValue =
+                                          Math.round(parseFloat(value) * 2) / 2;
+                                        const newServices = [...customServices];
+                                        newServices[index] = {
+                                          ...service,
+                                          duration: roundedValue,
+                                        };
+                                        setCustomServices(newServices);
                                       }
                                     }}
                                     className="pl-8"
@@ -1533,7 +1678,7 @@ const CreatePhotographyListing = () => {
             {/* Step 4: Availability */}
             {currentStep === 4 && (
               <div className="space-y-6">
-                <h2 className="text-2xl font-semibold mb-6">Availability</h2>
+                <h2 className="text-2xl font-semibold mb-6">Booking</h2>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
                     Required Deposit (% of total service cost)*
@@ -1543,18 +1688,29 @@ const CreatePhotographyListing = () => {
                       type="number"
                       min="0"
                       max="100"
+                      step="1" // Force whole numbers
                       value={availability.deposit}
                       onChange={(e) => {
-                        const value = e.target.value;
-                        // Allow numbers between 0-100
+                        // Remove any non-digit characters and leading zeros
+                        const sanitizedValue = e.target.value
+                          .replace(/[^\d]/g, "")
+                          .replace(/^0+(?=\d)/, "");
+                        // Only update if the value is within 0-100 range
                         if (
-                          value === "" ||
-                          (parseInt(value) >= 0 && parseInt(value) <= 100)
+                          sanitizedValue === "" ||
+                          (parseInt(sanitizedValue) >= 0 &&
+                            parseInt(sanitizedValue) <= 100)
                         ) {
                           setAvailability({
                             ...availability,
-                            deposit: value,
+                            deposit: sanitizedValue,
                           });
+                        }
+                      }}
+                      onKeyDown={(e) => {
+                        // Prevent decimal point and negative sign
+                        if (e.key === "-" || e.key === ".") {
+                          e.preventDefault();
                         }
                       }}
                       onBlur={(e) => {
@@ -1567,10 +1723,10 @@ const CreatePhotographyListing = () => {
                           });
                           return;
                         }
-                        // Round to nearest whole number and ensure within range
+                        // Ensure within range
                         const roundedValue = Math.min(
                           100,
-                          Math.max(0, Math.round(parseFloat(value)))
+                          Math.max(0, parseInt(value))
                         );
                         setAvailability({
                           ...availability,

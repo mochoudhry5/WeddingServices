@@ -93,25 +93,14 @@ const ServiceCard = ({ service }: { service: MakeupService }) => {
         <div className="flex-1">
           <div className="flex justify-between items-start mb-2">
             <h3 className="text-lg font-semibold text-left">{service.name}</h3>
-            <div className="flex items-start gap-4">
-              <div className="text-right">
-                <p className="text-rose-600 font-semibold whitespace-nowrap">
-                  <span className="text-sm text-gray-500">Starting at </span>$
-                  {service.price.toLocaleString()}
-                </p>
-                <p className="text-sm text-gray-500">
-                  (Approx. Duration {service.duration} minutes)
-                </p>
-              </div>
-              {hasOverflow && (
-                <div className="pt-1">
-                  <ChevronDown
-                    className={`h-5 w-5 text-gray-500 transition-transform duration-200 ease-in-out ${
-                      isOpen ? "rotate-180" : "rotate-0"
-                    }`}
-                  />
-                </div>
-              )}
+            <div className="text-right">
+              <p className="text-rose-600 font-semibold whitespace-nowrap">
+                <span className="text-sm text-gray-500">Starting at </span>$
+                {service.price.toLocaleString()}
+              </p>
+              <p className="text-sm text-gray-500">
+                (Approx. Duration {service.duration} minutes)
+              </p>
             </div>
           </div>
 
@@ -338,7 +327,7 @@ export default function MakeupDetailsPage() {
 
                       return minPrice === maxPrice
                         ? "(See Services & Pricing)"
-                        : "Price Range (See Services & Pricing)";
+                        : "(See Services & Pricing)";
                     })()}
                   </p>
                 </>

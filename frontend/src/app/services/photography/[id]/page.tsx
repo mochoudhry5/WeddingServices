@@ -34,6 +34,8 @@ interface PhotographyDetails {
   photography_media: PhotographyMedia[];
   photography_services: PhotographyService[];
   photography_specialties: PhotographySpecialty[];
+  min_service_price: number;
+  max_service_price: number;
 }
 
 interface PhotographyMedia {
@@ -92,25 +94,14 @@ const ServiceCard = ({ service }: { service: PhotographyService }) => {
         <div className="flex-1">
           <div className="flex justify-between items-start mb-2">
             <h3 className="text-lg font-semibold text-left">{service.name}</h3>
-            <div className="flex items-start gap-4">
-              <div className="text-right">
-                <p className="text-rose-600 font-semibold whitespace-nowrap">
-                  <span className="text-sm text-gray-500">Starting at </span>$
-                  {service.price.toLocaleString()}
-                </p>
-                <p className="text-sm text-gray-500">
-                  Duration: {service.duration} hours
-                </p>
-              </div>
-              {hasOverflow && (
-                <div className="pt-1">
-                  <ChevronDown
-                    className={`h-5 w-5 text-gray-500 transition-transform duration-200 ease-in-out ${
-                      isOpen ? "rotate-180" : "rotate-0"
-                    }`}
-                  />
-                </div>
-              )}
+            <div className="text-right">
+              <p className="text-rose-600 font-semibold whitespace-nowrap">
+                <span className="text-sm text-gray-500">Starting at </span>$
+                {service.price.toLocaleString()}
+              </p>
+              <p className="text-sm text-gray-500">
+                Duration: {service.duration} hours
+              </p>
             </div>
           </div>
 
@@ -235,7 +226,9 @@ export default function PhotographyDetailsPage() {
       <div className="min-h-screen bg-slate-50">
         <NavBar />
         <div className="max-w-7xl mx-auto px-4 py-8 text-center">
-          <h1 className="text-2xl font-bold text-gray-900">Listing Not Found</h1>
+          <h1 className="text-2xl font-bold text-gray-900">
+            Listing Not Found
+          </h1>
         </div>
         <Footer />
       </div>
@@ -313,14 +306,19 @@ export default function PhotographyDetailsPage() {
             )}
           </div>
           <div className="text-right">
-            {photography.photography_services?.length > 0 && (
+            {photography.min_service_price && photography.max_service_price && (
               <>
                 <p className="text-3xl font-semibold text-rose-600">
-                  $
-                  {photography.photography_services[0]?.price?.toLocaleString()}
+                  {photography.min_service_price ===
+                  photography.max_service_price
+                    ? `$${photography.min_service_price.toLocaleString()}`
+                    : `$${photography.min_service_price.toLocaleString()} - $${photography.max_service_price.toLocaleString()}`}
                 </p>
                 <p className="text-sm text-gray-500">
-                  (See Services & Pricing)
+                  {photography.min_service_price ===
+                  photography.max_service_price
+                    ? "(See Service & Pricing)"
+                    : "(See Service & Pricing)"}
                 </p>
               </>
             )}

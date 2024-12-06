@@ -224,13 +224,21 @@ const PricingInput = ({
         <Input
           type="number"
           min="0"
+          step="1"
           value={value.price === 0 ? "" : value.price}
           onChange={(e) => {
-            const newPrice = e.target.value.replace(/^0+/, "");
+            const sanitizedValue = e.target.value
+              .replace(/[^\d]/g, "")
+              .replace(/^0+(?=\d)/, "");
             onChange({
               ...value,
-              price: newPrice !== "" ? Number(newPrice) : 0,
+              price: sanitizedValue === "" ? 0 : parseInt(sanitizedValue),
             });
+          }}
+          onKeyDown={(e) => {
+            if (e.key === "-" || e.key === ".") {
+              e.preventDefault();
+            }
           }}
           placeholder="0"
           className="pl-7"
@@ -767,8 +775,24 @@ export default function CreateVenueListing() {
                     />
                     <Input
                       type="number"
+                      min="0"
+                      step="1"
                       value={basePrice}
-                      onChange={(e) => setBasePrice(e.target.value)}
+                      onChange={(e) => {
+                        // Remove any non-digit characters and leading zeros
+                        const sanitizedValue = e.target.value
+                          .replace(/[^\d]/g, "")
+                          .replace(/^0+(?=\d)/, "");
+                        setBasePrice(
+                          sanitizedValue === "" ? "" : sanitizedValue
+                        );
+                      }}
+                      onKeyDown={(e) => {
+                        // Prevent decimal point and negative sign
+                        if (e.key === "-" || e.key === ".") {
+                          e.preventDefault();
+                        }
+                      }}
                       placeholder="5000"
                       className="pl-10 w-full"
                     />
@@ -783,8 +807,22 @@ export default function CreateVenueListing() {
                     </label>
                     <Input
                       type="number"
+                      min="0"
+                      step="1"
                       value={minGuests}
-                      onChange={(e) => setMinGuests(e.target.value)}
+                      onChange={(e) => {
+                        const sanitizedValue = e.target.value
+                          .replace(/[^\d]/g, "")
+                          .replace(/^0+(?=\d)/, "");
+                        setMinGuests(
+                          sanitizedValue === "" ? "" : sanitizedValue
+                        );
+                      }}
+                      onKeyDown={(e) => {
+                        if (e.key === "-" || e.key === ".") {
+                          e.preventDefault();
+                        }
+                      }}
                       placeholder="50"
                       className="w-full"
                     />
@@ -795,8 +833,22 @@ export default function CreateVenueListing() {
                     </label>
                     <Input
                       type="number"
+                      min="0"
+                      step="1"
                       value={maxGuests}
-                      onChange={(e) => setMaxGuests(e.target.value)}
+                      onChange={(e) => {
+                        const sanitizedValue = e.target.value
+                          .replace(/[^\d]/g, "")
+                          .replace(/^0+(?=\d)/, "");
+                        setMaxGuests(
+                          sanitizedValue === "" ? "" : sanitizedValue
+                        );
+                      }}
+                      onKeyDown={(e) => {
+                        if (e.key === "-" || e.key === ".") {
+                          e.preventDefault();
+                        }
+                      }}
                       placeholder="200"
                       className="w-full"
                     />
