@@ -31,6 +31,7 @@ interface VenueDetails {
   venue_media: VenueMedia[];
   venue_inclusions: VenueInclusion[];
   venue_addons: VenueAddon[];
+  venue_type: "indoor" | "outdoor" | "both";
 }
 
 interface VenueMedia {
@@ -424,40 +425,49 @@ export default function VenueDetailsPage() {
             </div>
           </div>
         )}
+
         <div className="max-w-7xl mx-auto px-4 py-6">
           {/* Venue Header */}
           <div className="flex flex-col md:flex-row md:justify-between md:items-start gap-4 mb-8">
             <div>
-              <h1 className="text-2xl md:text-3xl font-bold text-gray-900 mb-2">
-                {venue.name}
-              </h1>
+              <div className="flex items-center gap-3 mb-2">
+                <h1 className="text-2xl md:text-3xl font-bold text-gray-900">
+                  {venue.name}
+                </h1>
+              </div>
               <p className="text-gray-600">
                 {venue.address}, {venue.city}, {venue.state}
               </p>
             </div>
             <div className="md:text-right">
-              <p className="text-2xl md:text-3xl font-bold text-rose-600">
+              <div className="text-3xl font-semibold text-rose-600">
                 ${venue.base_price.toLocaleString()}
-              </p>
-              <p className="text-gray-600">Base Price (See Included)</p>
+              </div>
+              <p className="text-sm text-gray-500">Venue Only (See Included)</p>
             </div>
           </div>
         </div>
 
-        {/* Description */}
+        {/* Description Section with updated styling */}
         <div className="mb-12">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-12">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-12">
             {/* Capacity */}
             <div className="flex flex-col items-center text-center border-r border-gray-200 last:border-r-0">
               <h3 className="text-lg font-semibold mb-3">Capacity</h3>
               <ul className="space-y-2 text-gray-600">
-                <li className="flex items-center gap-2">
-                  <span className="text-rose-500">•</span>
-                  Minimum guests: {venue.min_guests || "No minimum"}
+                <li>
+                  <div className="flex items-center gap-2">
+                    <span className="text-rose-500">•</span>
+                    <span>
+                      Minimum guests: {venue.min_guests || "No minimum"}
+                    </span>
+                  </div>
                 </li>
-                <li className="flex items-center gap-2">
-                  <span className="text-rose-500">•</span>
-                  Maximum guests: {venue.max_guests}
+                <li>
+                  <div className="flex items-center gap-2">
+                    <span className="text-rose-500">•</span>
+                    <span>Maximum guests: {venue.max_guests}</span>
+                  </div>
                 </li>
               </ul>
             </div>
@@ -465,16 +475,43 @@ export default function VenueDetailsPage() {
             {/* Catering Options */}
             <div className="flex flex-col items-center text-center border-r border-gray-200 last:border-r-0">
               <h3 className="text-lg font-semibold mb-3">Catering Options</h3>
-              <div className="text-gray-600 flex items-center gap-2">
-                <span className="text-rose-500">•</span>
-                {
-                  {
-                    "in-house": "In-House Catering Only",
-                    outside: "Outside Catering Only",
-                    both: "In-House & Outside Catering Available",
-                  }[venue.catering_option]
-                }
-              </div>
+              <ul className="space-y-2 text-gray-600">
+                <li>
+                  <div className="flex items-center gap-2">
+                    <span className="text-rose-500">•</span>
+                    <span>
+                      {
+                        {
+                          "in-house": "In-House Catering Only",
+                          outside: "Outside Catering Only",
+                          both: "In-House & Outside Catering Available",
+                        }[venue.catering_option]
+                      }
+                    </span>
+                  </div>
+                </li>
+              </ul>
+            </div>
+
+            {/* Venue Type */}
+            <div className="flex flex-col items-center text-center border-r border-gray-200 last:border-r-0">
+              <h3 className="text-lg font-semibold mb-3">Venue Type</h3>
+              <ul className="space-y-2 text-gray-600">
+                <li>
+                  <div className="flex items-center gap-2">
+                    <span className="text-rose-500">•</span>
+                    <span>
+                      {
+                        {
+                          indoor: "Indoor Only",
+                          outdoor: "Outdoor Only",
+                          both: "Indoor & Outdoor",
+                        }[venue.venue_type]
+                      }
+                    </span>
+                  </div>
+                </li>
+              </ul>
             </div>
 
             {/* Socials */}
@@ -483,34 +520,45 @@ export default function VenueDetailsPage() {
               {venue.website_url || venue.instagram_url ? (
                 <ul className="space-y-2 text-gray-600">
                   {venue.website_url && (
-                    <li className="flex items-center gap-2">
-                      <span className="text-rose-500">•</span>
-                      <a
-                        href={venue.website_url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-rose-600 hover:text-rose-700 hover:underline"
-                      >
-                        Website
-                      </a>
+                    <li>
+                      <div className="flex items-center gap-2">
+                        <span className="text-rose-500">•</span>
+                        <a
+                          href={venue.website_url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-rose-600 hover:text-rose-700 hover:underline"
+                        >
+                          Website
+                        </a>
+                      </div>
                     </li>
                   )}
                   {venue.instagram_url && (
-                    <li className="flex items-center gap-2">
-                      <span className="text-rose-500">•</span>
-                      <a
-                        href={venue.instagram_url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-rose-600 hover:text-rose-700 hover:underline"
-                      >
-                        Instagram
-                      </a>
+                    <li>
+                      <div className="flex items-center gap-2">
+                        <span className="text-rose-500">•</span>
+                        <a
+                          href={venue.instagram_url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-rose-600 hover:text-rose-700 hover:underline"
+                        >
+                          Instagram
+                        </a>
+                      </div>
                     </li>
                   )}
                 </ul>
               ) : (
-                <p className="text-gray-600">No Social Links Yet!</p>
+                <ul className="space-y-2 text-gray-600">
+                  <li>
+                    <div className="flex items-center gap-2">
+                      <span className="text-rose-500">•</span>
+                      <span>No Social Links Yet!</span>
+                    </div>
+                  </li>
+                </ul>
               )}
             </div>
           </div>

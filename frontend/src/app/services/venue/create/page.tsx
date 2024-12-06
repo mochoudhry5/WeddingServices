@@ -293,6 +293,7 @@ export default function CreateVenueListing() {
   const [catering, setCatering] = useState("");
   const [websiteUrl, setWebsiteUrl] = useState("");
   const [instagramUrl, setInstagramUrl] = useState("");
+  const [venueType, setVenueType] = useState("");
 
   // Media State
   const [mediaFiles, setMediaFiles] = useState<MediaFile[]>([]);
@@ -410,7 +411,10 @@ export default function CreateVenueListing() {
           toast.error("Catering Option Must be Selected");
           return false;
         }
-
+        if (!venueType) {
+          toast.error("Venue Type Must be Selected");
+          return false;
+        }
         const charCount = countCharacters(description);
         if (charCount < 100) {
           toast.error(
@@ -483,20 +487,6 @@ export default function CreateVenueListing() {
   // Form Submission
   const handleSubmit = async () => {
     try {
-      if (
-        !venueName ||
-        !address ||
-        !city ||
-        !state ||
-        !basePrice ||
-        !maxGuests ||
-        !description ||
-        !catering
-      ) {
-        toast.error("Please fill in all required fields");
-        return;
-      }
-
       // Validate common add-ons
       for (const [name, details] of Object.entries(selectedAddOns)) {
         if (!details.description.trim()) {
@@ -564,6 +554,7 @@ export default function CreateVenueListing() {
           catering_option: catering,
           website_url: websiteUrl || null,
           instagram_url: instagramUrl || null,
+          venue_type: venueType,
         })
         .select()
         .single();
@@ -856,31 +847,55 @@ export default function CreateVenueListing() {
                 </div>
 
                 {/* Catering Options */}
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Catering Options*
-                  </label>
-                  <Select
-                    value={catering}
-                    onValueChange={(value) => setCatering(value)}
-                  >
-                    <SelectTrigger className="w-full">
-                      <SelectValue placeholder="Select catering options" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="in-house">
-                        In-House Catering Only
-                      </SelectItem>
-                      <SelectItem value="outside">
-                        Outside Catering Only
-                      </SelectItem>
-                      <SelectItem value="both">
-                        In-House/Outside Catering Available
-                      </SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  {/* Catering Options */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Catering Options*
+                    </label>
+                    <Select
+                      value={catering}
+                      onValueChange={(value) => setCatering(value)}
+                    >
+                      <SelectTrigger className="w-full">
+                        <SelectValue placeholder="Select catering options" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="in-house">
+                          In-House Catering Only
+                        </SelectItem>
+                        <SelectItem value="outside">
+                          Outside Catering Only
+                        </SelectItem>
+                        <SelectItem value="both">
+                          In-House/Outside Catering Available
+                        </SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
 
+                  {/* Venue Type */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Venue Type*
+                    </label>
+                    <Select
+                      value={venueType}
+                      onValueChange={(value) => setVenueType(value)}
+                    >
+                      <SelectTrigger className="w-full">
+                        <SelectValue placeholder="Select venue type" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="indoor">Indoor</SelectItem>
+                        <SelectItem value="outdoor">Outdoor</SelectItem>
+                        <SelectItem value="both">
+                          Indoor & Outdoor Available
+                        </SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
                 <div className="grid grid-cols-2 gap-4">
                   {/* Website URL */}
                   <div>
