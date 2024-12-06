@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import { PlayCircle, ChevronLeft, ChevronRight } from "lucide-react";
 import NavBar from "@/components/ui/NavBar";
 import Footer from "@/components/ui/Footer";
@@ -165,6 +165,65 @@ const addOns: AddOn[] = [
   },
 ];
 
+const ServiceCard = ({ service }: { service: VenueAddon }) => {
+  const [isOpen, setIsOpen] = useState(false);
+  const [hasOverflow, setHasOverflow] = useState(false);
+  const descriptionRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const checkOverflow = () => {
+      const element = descriptionRef.current;
+      if (element) {
+        setHasOverflow(element.scrollHeight > element.clientHeight);
+      }
+    };
+
+    checkOverflow();
+    window.addEventListener("resize", checkOverflow);
+    return () => window.removeEventListener("resize", checkOverflow);
+  }, [service.description]);
+
+  return (
+    <div className="border border-gray-200 rounded-lg overflow-hidden shadow-sm">
+      <div
+        className={`w-full p-4 ${
+          hasOverflow ? "cursor-pointer hover:bg-gray-50" : ""
+        } transition-all duration-200`}
+        onClick={() => hasOverflow && setIsOpen(!isOpen)}
+      >
+        <div className="flex-1">
+          <div className="flex justify-between items-start mb-2">
+            <h3 className="text-lg font-semibold text-left">{service.name}</h3>
+            <div className="text-right">
+              <p className="text-rose-600 font-semibold whitespace-nowrap">
+                <span className="text-sm text-gray-500">Starting at </span>$
+                {service.price.toLocaleString()}
+                {"guest_increment" in service &&
+                  service.pricing_type === "per-guest" && (
+                    <span className="text-sm text-rose-600">
+                      {service.guest_increment === 1
+                        ? " per guest"
+                        : ` per ${service.guest_increment} guests`}
+                    </span>
+                  )}
+              </p>
+            </div>
+          </div>
+
+          <div
+            ref={descriptionRef}
+            className={`text-gray-600 text-sm text-left transition-all duration-200 ${
+              isOpen ? "" : "line-clamp-1"
+            }`}
+          >
+            {service.description}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 export default function VenueDetailsPage() {
   const { user } = useAuth();
   // State for the image carousel
@@ -318,7 +377,9 @@ export default function VenueDetailsPage() {
       <div className="min-h-screen bg-slate-50">
         <NavBar />
         <div className="max-w-7xl mx-auto px-4 py-8 text-center">
-          <h1 className="text-2xl font-bold text-gray-900">Listing Not Found</h1>
+          <h1 className="text-2xl font-bold text-gray-900">
+            Listing Not Found
+          </h1>
         </div>
         <Footer />
       </div>
@@ -496,60 +557,7 @@ export default function VenueDetailsPage() {
                 {venue.venue_addons
                   .filter((_, index) => index % 2 === 0)
                   .map((addon, index) => (
-                    <div
-                      key={index * 2}
-                      className="border border-gray-200 rounded-lg overflow-hidden"
-                    >
-                      <button
-                        onClick={() => toggleAccordion(index * 2)}
-                        className="w-full p-4 flex items-center justify-between hover:bg-gray-50 transition-colors"
-                      >
-                        <div className="flex-1">
-                          <div className="flex justify-between items-center mb-2">
-                            <h3 className="text-lg font-semibold text-left">
-                              {addon.name}
-                            </h3>
-                            <p className="text-rose-600 font-semibold whitespace-nowrap ml-4">
-                              <span className="text-sm text-gray-500">
-                                Starting at
-                              </span>{" "}
-                              ${addon.price.toLocaleString()}
-                              {addon.pricing_type === "per-guest" && (
-                                <span className="text-sm text-rose-600">
-                                  {addon.guest_increment == 1
-                                    ? " per guest"
-                                    : ` per ${addon.guest_increment} guests`}
-                                </span>
-                              )}
-                            </p>
-                          </div>
-                          {openIndex !== index * 2 && (
-                            <p className="text-gray-600 text-sm text-left line-clamp-1">
-                              {addon.description}
-                            </p>
-                          )}
-                        </div>
-                        <ChevronDown
-                          className={`ml-4 h-5 w-5 text-gray-500 transition-transform ${
-                            openIndex === index * 2
-                              ? "transform rotate-180"
-                              : ""
-                          }`}
-                        />
-                      </button>
-
-                      <div
-                        className={`transition-[max-height,opacity] duration-300 ease-in-out ${
-                          openIndex === index * 2
-                            ? "max-h-[500px] opacity-100"
-                            : "max-h-0 opacity-0"
-                        } overflow-hidden`}
-                      >
-                        <div className="p-4 bg-gray-50 border-t border-gray-200">
-                          <p className="text-gray-600">{addon.description}</p>
-                        </div>
-                      </div>
-                    </div>
+                    <ServiceCard key={index * 2} service={addon} />
                   ))}
               </div>
 
@@ -558,60 +566,7 @@ export default function VenueDetailsPage() {
                 {venue.venue_addons
                   .filter((_, index) => index % 2 === 1)
                   .map((addon, index) => (
-                    <div
-                      key={index * 2 + 1}
-                      className="border border-gray-200 rounded-lg overflow-hidden"
-                    >
-                      <button
-                        onClick={() => toggleAccordion(index * 2 + 1)}
-                        className="w-full p-4 flex items-center justify-between hover:bg-gray-50 transition-colors"
-                      >
-                        <div className="flex-1">
-                          <div className="flex justify-between items-center mb-2">
-                            <h3 className="text-lg font-semibold text-left">
-                              {addon.name}
-                            </h3>
-                            <p className="text-rose-600 font-semibold whitespace-nowrap ml-4">
-                              <span className="text-sm text-gray-500">
-                                Starting at
-                              </span>{" "}
-                              ${addon.price.toLocaleString()}
-                              {addon.pricing_type === "per-guest" && (
-                                <span className="text-sm text-rose-600">
-                                  {addon.guest_increment == 1
-                                    ? " per guest"
-                                    : ` per ${addon.guest_increment} guests`}
-                                </span>
-                              )}
-                            </p>
-                          </div>
-                          {openIndex !== index * 2 + 1 && (
-                            <p className="text-gray-600 text-sm text-left line-clamp-1">
-                              {addon.description}
-                            </p>
-                          )}
-                        </div>
-                        <ChevronDown
-                          className={`ml-4 h-5 w-5 text-gray-500 transition-transform ${
-                            openIndex === index * 2 + 1
-                              ? "transform rotate-180"
-                              : ""
-                          }`}
-                        />
-                      </button>
-
-                      <div
-                        className={`transition-[max-height,opacity] duration-300 ease-in-out ${
-                          openIndex === index * 2 + 1
-                            ? "max-h-[500px] opacity-100"
-                            : "max-h-0 opacity-0"
-                        } overflow-hidden`}
-                      >
-                        <div className="p-4 bg-gray-50 border-t border-gray-200">
-                          <p className="text-gray-600">{addon.description}</p>
-                        </div>
-                      </div>
-                    </div>
+                    <ServiceCard key={index * 2 + 1} service={addon} />
                   ))}
               </div>
             </div>

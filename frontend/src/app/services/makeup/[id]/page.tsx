@@ -99,7 +99,7 @@ const ServiceCard = ({ service }: { service: MakeupService }) => {
                 {service.price.toLocaleString()}
               </p>
               <p className="text-sm text-gray-500">
-                (Approx. Duration {service.duration} minutes)
+                Duration {service.duration} minutes
               </p>
             </div>
           </div>
