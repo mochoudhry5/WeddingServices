@@ -28,7 +28,7 @@ import { SlidersHorizontal } from "lucide-react";
 
 // Type Guards
 const isValidServiceType = (value: string): value is ServiceType => {
-  return ["venue", "makeup", "photography", "weddingplanner", "dj"].includes(
+  return ["venue", "hairMakeup", "photoVideo", "weddingplanner", "dj"].includes(
     value
   );
 };
@@ -42,7 +42,12 @@ const isValidSortOption = (value: string): value is SortOption => {
 };
 
 // Types
-type ServiceType = "venue" | "makeup" | "photography" | "weddingplanner" | "dj";
+type ServiceType =
+  | "venue"
+  | "hairMakeup"
+  | "photoVideo"
+  | "weddingplanner"
+  | "dj";
 type SortOption = "price_asc" | "price_desc" | "default";
 type CapacityOption = "all" | "0-100" | "101-200" | "201-300" | "301+";
 
@@ -55,7 +60,7 @@ interface MediaItem {
 interface VenueDetails {
   id: string;
   user_id: string;
-  name: string;
+  business_name: string;
   address: string;
   city: string;
   state: string;
@@ -68,36 +73,53 @@ interface VenueDetails {
   created_at: string;
 }
 
-interface MakeupArtistDetails {
+interface HairMakeupDetails {
   id: string;
   user_id: string;
-  artist_name: string;
+  business_name: string;
   years_experience: number;
   travel_range: number;
   description: string;
   city: string;
   state: string;
-  makeup_media: MediaItem[];
-  makeup_services: Array<{ price: number }>;
-  min_service_price: number; // Add this
-  max_service_price: number; // Add this
+  hair_makeup_media: MediaItem[];
+  hair_makeup_services: Array<{ price: number }>;
+  min_service_price: number;
+  max_service_price: number;
   rating: number;
   created_at: string;
   service_type: "makeup" | "hair" | "both";
 }
 
-interface PhotographyDetails {
+interface PhotoVideoDetails {
   id: string;
   user_id: string;
-  artist_name: string;
+  business_name: string;
   years_experience: string;
   travel_range: number;
   description: string;
   city: string;
   state: string;
   service_type: "photography" | "videography" | "both";
-  photography_media: MediaItem[];
-  photography_services: Array<{ price: number }>;
+  photo_video_media: MediaItem[];
+  photo_video_services: Array<{ price: number }>;
+  min_service_price: number;
+  max_service_price: number;
+  rating: number;
+  created_at: string;
+}
+
+interface DJDetails {
+  id: string;
+  user_id: string;
+  business_name: string;
+  years_experience: string;
+  travel_range: number;
+  description: string;
+  city: string;
+  state: string;
+  dj_media: MediaItem[];
+  dj_services: Array<{ price: number }>;
   min_service_price: number;
   max_service_price: number;
   rating: number;
@@ -106,8 +128,9 @@ interface PhotographyDetails {
 
 type ServiceListingItem =
   | VenueDetails
-  | MakeupArtistDetails
-  | PhotographyDetails;
+  | HairMakeupDetails
+  | PhotoVideoDetails
+  | DJDetails;
 
 interface LocationDetails {
   enteredLocation: string;
@@ -140,16 +163,16 @@ const SERVICE_CONFIGS: Record<ServiceType, ServiceConfig> = {
     locationBased: true,
     priceType: "range",
   },
-  makeup: {
+  hairMakeup: {
     singularName: "Hair & Makeup",
     pluralName: "Hair & Makeup",
     hasCapacity: false,
-    locationBased: false, // Uses travel range instead
+    locationBased: false,
     priceType: "service-based",
   },
-  photography: {
-    singularName: "Photography/Videography",
-    pluralName: "Photography/Videography",
+  photoVideo: {
+    singularName: "Photography & Videography",
+    pluralName: "Photography & Videography",
     hasCapacity: false,
     locationBased: false,
     priceType: "service-based",
@@ -163,7 +186,7 @@ const SERVICE_CONFIGS: Record<ServiceType, ServiceConfig> = {
   },
   dj: {
     singularName: "DJ",
-    pluralName: "DJ",
+    pluralName: "DJs",
     hasCapacity: false,
     locationBased: true,
     priceType: "flat",
@@ -221,14 +244,14 @@ export default function ServicesSearchPage() {
   ) => {
     try {
       setIsLoading(true);
-      if (filtersToUse.serviceType === "photography") {
-        let query = supabase.from("photography_artists").select(`
+      if (filtersToUse.serviceType === "photoVideo") {
+        let query = supabase.from("photo_video_listing").select(`
           *,
-          photography_media (
+          photo_video_media (
             file_path,
             display_order
           ),
-          photography_services (
+          photo_video_services (
             price
           )
         `);
@@ -264,27 +287,88 @@ export default function ServicesSearchPage() {
           }
         }
 
-        const { data: photographyData, error: photographyError } = await query;
+        const { data: photoVideoData, error: photoVideoError } = await query;
 
-        if (photographyError) throw photographyError;
+        if (photoVideoError) throw photoVideoError;
 
-        const processedPhotographers = (photographyData || []).map(
-          (photographer) => ({
-            ...photographer,
+        const processedPhotoVideo = (photoVideoData || []).map(
+          (photoVideo) => ({
+            ...photoVideo,
             rating: 4.5 + Math.random() * 0.5,
-            photography_media: photographer.photography_media || [],
+            photography_media: photoVideo.photo_video_media || [],
           })
         );
 
-        setServiceListings(processedPhotographers);
-      } else if (filtersToUse.serviceType === "makeup") {
-        let query = supabase.from("makeup_artists").select(`
+        setServiceListings(processedPhotoVideo);
+      } else if (filtersToUse.serviceType === "hairMakeup") {
+        let query = supabase.from("hair_makeup_listing").select(`
           *,
-          makeup_media (
+          hair_makeup_media (
             file_path,
             display_order
           ),
-          makeup_services (
+          hair_makeup_services (
+            price
+          )
+          `);
+
+        if (withFilters) {
+          // Apply price range filter - ensure we're handling nulls and using proper comparisons
+          if (filtersToUse.priceRange[0] > 0) {
+            query = query.gte("min_service_price", filtersToUse.priceRange[0]);
+          }
+          if (filtersToUse.priceRange[1] < 10000) {
+            query = query.lte("max_service_price", filtersToUse.priceRange[1]);
+          }
+
+          // Apply location filter
+          const { city, state } = filtersToUse.searchQuery;
+          if (city || state) {
+            let locationFilters = [];
+            if (city) locationFilters.push(`city.ilike.%${city}%`);
+            if (state) locationFilters.push(`state.ilike.%${state}%`);
+            query = query.or(locationFilters.join(","));
+          }
+
+          // Apply sorting
+          switch (filtersToUse.sortOption) {
+            case "price_asc":
+              query = query.order("min_service_price", { ascending: true });
+              break;
+            case "price_desc":
+              query = query.order("max_service_price", { ascending: false });
+              break;
+            default:
+              query = query.order("created_at", { ascending: false });
+          }
+        }
+
+        const { data: makeupData, error: makeupError } = await query;
+
+        // Better error handling
+        if (makeupError) {
+          console.error("Supabase Error:", makeupError);
+          throw makeupError;
+        }
+
+        if (!makeupData) {
+          throw new Error("No data returned from query");
+        }
+
+        const processedMakeupArtists = makeupData.map((artist) => ({
+          ...artist,
+          rating: 4.5 + Math.random() * 0.5,
+        }));
+
+        setServiceListings(processedMakeupArtists);
+      } else if (filtersToUse.serviceType === "dj") {
+        let query = supabase.from("dj_listing").select(`
+          *,
+          dj_media (
+            file_path,
+            display_order
+          ),
+          dj_services (
             price
           )
           `);
@@ -341,7 +425,7 @@ export default function ServicesSearchPage() {
       } else {
         // Fetch venues
         let query = supabase
-          .from("venues")
+          .from("venue_listing")
           .select(
             `
             *,
@@ -468,22 +552,42 @@ export default function ServicesSearchPage() {
     setIsFilterSheetOpen(false);
     fetchServiceListings(false);
   };
-  const determineServiceType = (
+  type ServiceDetails = {
+    serviceType: "venue" | "hair-makeup" | "photo-video" | "dj";
+    media: MediaItem[];
+  };
+  const determineServiceDetails = (
     listing: ServiceListingItem
-  ): "venue" | "makeup" | "photography" => {
-    if ("name" in listing) {
-      return "venue";
+  ): ServiceDetails => {
+    if ("venue_media" in listing) {
+      return {
+        serviceType: "venue",
+        media: listing.venue_media,
+      };
     }
 
-    if ("artist_name" in listing && "makeup_media" in listing) {
-      return "makeup";
+    if ("hair_makeup_media" in listing) {
+      return {
+        serviceType: "hair-makeup",
+        media: listing.hair_makeup_media,
+      };
     }
 
-    if ("artist_name" in listing && "photography_media" in listing) {
-      return "photography";
+    if ("photo_video_media" in listing) {
+      return {
+        serviceType: "photo-video",
+        media: listing.photo_video_media,
+      };
     }
 
-    // Fallback - though we should never reach this if types are correct
+    if ("dj_media" in listing) {
+      return {
+        serviceType: "dj",
+        media: listing.dj_media,
+      };
+    }
+
+    // Fallback case (should never happen with proper types)
     throw new Error("Unknown service type");
   };
 
@@ -516,7 +620,7 @@ export default function ServicesSearchPage() {
         <div className="text-center py-12">
           <p className="text-lg text-slate-600">
             No{" "}
-            {searchFilters.serviceType === "makeup"
+            {searchFilters.serviceType === "hairMakeup"
               ? "makeup artists"
               : "venues"}{" "}
             found matching your criteria.
@@ -535,15 +639,33 @@ export default function ServicesSearchPage() {
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
         {serviceListings.map((listing) => {
           // Type guard function to check if listing is a makeup artist
-          const isMakeupArtist = (
+          const isRange = (
             listing: ServiceListingItem
-          ): listing is MakeupArtistDetails => {
-            return "artist_name" in listing;
+          ): listing is HairMakeupDetails => {
+            return (
+              "hair_makeup_media" in listing ||
+              "photo_video_media" in listing ||
+              "dj_media" in listing
+            );
           };
 
-          const currentListing = isMakeupArtist(listing)
+          const isHairMakeup = (
+            listing: ServiceListingItem
+          ): listing is HairMakeupDetails => {
+            return "hair_makeup_media" in listing;
+          };
+
+          const isPhotoVideo= (
+            listing: ServiceListingItem
+          ): listing is PhotoVideoDetails => {
+            return "photo_video_media" in listing;
+          };
+
+          const currentListing = isHairMakeup(listing)
             ? listing
             : (listing as VenueDetails);
+
+          const { serviceType, media } = determineServiceDetails(listing);
 
           return (
             <div
@@ -552,23 +674,12 @@ export default function ServicesSearchPage() {
             >
               <div className="relative">
                 <MediaCarousel
-                  media={
-                    determineServiceType(listing) === "venue"
-                      ? (listing as VenueDetails).venue_media
-                      : determineServiceType(listing) === "makeup"
-                      ? (listing as MakeupArtistDetails).makeup_media
-                      : (listing as PhotographyDetails).photography_media
-                  }
-                  serviceName={
-                    determineServiceType(listing) === "venue"
-                      ? (listing as VenueDetails).name
-                      : (listing as MakeupArtistDetails | PhotographyDetails)
-                          .artist_name
-                  }
+                  media={media}
+                  serviceName={listing.business_name}
                   itemId={listing.id}
                   creatorId={listing.user_id}
                   userLoggedIn={user?.id}
-                  service={determineServiceType(listing)}
+                  service={serviceType}
                 />
               </div>
 
@@ -578,21 +689,31 @@ export default function ServicesSearchPage() {
               >
                 <div className="p-4">
                   <h3 className="text-lg font-semibold mb-1 group-hover:text-rose-600 transition-colors">
-                    {isMakeupArtist(listing)
-                      ? listing.artist_name
-                      : (listing as VenueDetails).name}
+                    {listing.business_name}
                   </h3>
 
-                  {isMakeupArtist(listing) ? (
+                  {isRange(listing) ? (
                     <>
-                      <p className="text-slate-600 text-sm mb-2">
-                        {listing.years_experience} years experience •{" "}
-                        {listing.service_type === "both"
-                          ? "Makeup & Hair"
-                          : listing.service_type === "makeup"
-                          ? "Makeup"
-                          : "Hair"}
-                      </p>
+                      {isHairMakeup(listing) && (
+                        <p className="text-slate-600 text-sm mb-2">
+                          {listing.years_experience} years experience •{" "}
+                          {listing.service_type === "both"
+                            ? "Hair & Makeup"
+                            : listing.service_type === "makeup"
+                            ? "Makeup"
+                            : "Hair"}
+                        </p>
+                      )}
+                      {isPhotoVideo(listing) && (
+                        <p className="text-slate-600 text-sm mb-2">
+                          {listing.years_experience} years experience •{" "}
+                          {listing.service_type === "both"
+                            ? "Photography & Videography"
+                            : listing.service_type === "photography"
+                            ? "Photography"
+                            : "Videography"}
+                        </p>
+                      )}
                       <p className="text-slate-600 text-sm mb-3 line-clamp-2">
                         {listing.description}
                       </p>
@@ -667,9 +788,9 @@ export default function ServicesSearchPage() {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="venue">Venue</SelectItem>
-                    <SelectItem value="makeup">Hair & Makeup</SelectItem>
-                    <SelectItem value="photography">
-                      Photography/Videography
+                    <SelectItem value="hairMakeup">Hair & Makeup</SelectItem>
+                    <SelectItem value="photoVideo">
+                      Photography & Videography
                     </SelectItem>
                     <SelectItem value="weddingplanner">
                       Wedding Planner

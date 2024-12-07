@@ -30,20 +30,21 @@ interface LikedItemResponse {
 
 interface ServiceResponse extends LikedItemResponse {
   venues?: VenueDetails;
-  makeup_artists?: MakeupArtistDetails;
+  hair_makeup?: HairMakeupDetails;
+  photo_video?: PhotoVideoDetails;
 }
 
-interface PhotographyDetails extends BaseService {
-  artist_name: string;
+interface PhotoVideoDetails extends BaseService {
+  business_name: string;
   years_experience: string;
   travel_range: number;
   service_type: "photography" | "videography" | "both";
-  photography_media: MediaItem[];
+  photo_video_media: MediaItem[];
 }
 
 // Service-specific interfaces
 interface VenueDetails extends BaseService {
-  name: string;
+  business_name: string;
   city: string;
   state: string;
   base_price: number;
@@ -51,13 +52,13 @@ interface VenueDetails extends BaseService {
   venue_media: MediaItem[];
 }
 
-interface MakeupArtistDetails extends BaseService {
-  artist_name: string;
+interface HairMakeupDetails extends BaseService {
+  business_name: string;
   years_experience: number;
   travel_range: number;
   min_service_price: number;
   max_service_price: number;
-  makeup_media: MediaItem[];
+  hair_makeup_media: MediaItem[];
 }
 
 interface ServiceConfig<T extends BaseService> {
@@ -77,18 +78,18 @@ interface ServiceConfig<T extends BaseService> {
 const SERVICE_CONFIGS: Record<string, ServiceConfig<any>> = {
   venue: {
     type: "venue",
-    likedTable: "liked_venues",
-    entityTable: "venues" as keyof ServiceResponse,
+    likedTable: "venue_liked",
+    entityTable: "venue_listing" as keyof ServiceResponse,
     foreignKey: "venue_id",
     displayName: "Venue",
     pluralName: "Venues",
     selectQuery: `
       venue_id,
       liked_at,
-      venues:venues (
+      venue_listing:venue_listing (
         id,
         user_id,
-        name,
+        business_name,
         city,
         state,
         base_price,
@@ -108,7 +109,7 @@ const SERVICE_CONFIGS: Record<string, ServiceConfig<any>> = {
         <div className="relative">
           <MediaCarousel
             media={venue.venue_media || []}
-            serviceName={venue.name || "Venue"}
+            serviceName={venue.business_name || "Venue"}
             itemId={venue.id}
             creatorId={venue.user_id}
             service="venue"
@@ -119,7 +120,7 @@ const SERVICE_CONFIGS: Record<string, ServiceConfig<any>> = {
         <Link href={`/services/venue/${venue.id}`}>
           <div className="p-4">
             <h3 className="text-lg font-semibold mb-1 group-hover:text-rose-600 transition-colors">
-              {venue.name || "Unnamed Venue"}
+              {venue.business_name || "Unnamed Venue"}
             </h3>
             <p className="text-slate-600 text-sm mb-2">
               {venue.city || "Unknown City"}, {venue.state || "Unknown State"}
@@ -140,65 +141,67 @@ const SERVICE_CONFIGS: Record<string, ServiceConfig<any>> = {
       </div>
     ),
   },
-  makeup: {
-    type: "makeup",
-    likedTable: "liked_makeup",
-    entityTable: "makeup_artists" as keyof ServiceResponse,
-    foreignKey: "makeup_id",
-    displayName: "Makeup Artist",
-    pluralName: "Makeup Artists",
+ haireMakeup: {
+    type: "hairMakeup",
+    likedTable: "hair_makeup_liked",
+    entityTable: "hair_makeup_listing" as keyof ServiceResponse,
+    foreignKey: "hair_makeup_id",
+    displayName: "Hair & Makeup",
+    pluralName: "Hair & Makeup",
     selectQuery: `
-      makeup_id,
+      hair_makeup_id,
       liked_at,
-      makeup_artists:makeup_artists (
+      hair_makeup_listing:hair_makeup_listing (
         id,
         user_id,
-        artist_name,
+        business_name,
         years_experience,
         travel_range,
         description,
         min_service_price,
         max_service_price,
-        makeup_media (
+        hair_makeup_media (
           file_path,
           display_order
         )
       )
     `,
     renderCard: (
-      artist: MakeupArtistDetails & { liked_at: string },
+      hairMakeup: HairMakeupDetails & { liked_at: string },
       onUnlike: () => void
     ) => (
       <div className="bg-white rounded-xl shadow-md overflow-hidden group">
         <div className="relative">
           <MediaCarousel
-            media={artist.makeup_media || []}
-            serviceName={artist.artist_name || "Artist"}
-            itemId={artist.id}
-            creatorId={artist.user_id}
-            service="makeup"
+            media={hairMakeup.hair_makeup_media || []}
+            serviceName={hairMakeup.business_name || "Artist"}
+            itemId={hairMakeup.id}
+            creatorId={hairMakeup.user_id}
+            service="hairMakeup"
             initialLiked={true}
             onUnlike={onUnlike}
           />
         </div>
-        <Link href={`/services/makeup/${artist.id}`}>
+        <Link href={`/services/makeup/${hairMakeup.id}`}>
           <div className="p-4">
             <h3 className="text-lg font-semibold mb-1 group-hover:text-rose-600 transition-colors">
-              {artist.artist_name || "Unnamed Artist"}
+              {hairMakeup.business_name || "Unnamed Artist"}
             </h3>
             <p className="text-slate-600 text-sm mb-2">
-              {artist.years_experience || 0} years experience • Up to{" "}
-              {artist.travel_range || 0} miles
+              {hairMakeup.years_experience || 0} years experience • Up to{" "}
+              {hairMakeup.travel_range || 0} miles
             </p>
             <p className="text-slate-600 text-sm mb-3 line-clamp-2">
-              {artist.description || "No description available"}
+              {hairMakeup.description || "No description available"}
             </p>
             <div className="flex justify-between items-center pt-2 border-t">
               <div className="text-lg font-semibold text-rose-600">
-                {artist.min_service_price === artist.max_service_price
-                  ? `$${(artist.min_service_price || 0).toLocaleString()}`
-                  : `$${(artist.min_service_price || 0).toLocaleString()} - $${(
-                      artist.max_service_price || 0
+                {hairMakeup.min_service_price === hairMakeup.max_service_price
+                  ? `$${(hairMakeup.min_service_price || 0).toLocaleString()}`
+                  : `$${(
+                      hairMakeup.min_service_price || 0
+                    ).toLocaleString()} - $${(
+                      hairMakeup.max_service_price || 0
                     ).toLocaleString()}`}
               </div>
             </div>
@@ -208,64 +211,64 @@ const SERVICE_CONFIGS: Record<string, ServiceConfig<any>> = {
     ),
   },
 
-  photography: {
-    type: "photography",
-    likedTable: "liked_photography",
-    entityTable: "photography_artists" as keyof ServiceResponse,
-    foreignKey: "photography_id",
-    displayName: "Photography/Videography",
-    pluralName: "Photography/Videography",
+  photoVideo: {
+    type: "photoVideo",
+    likedTable: "photo_video_liked",
+    entityTable: "photo_video_listing" as keyof ServiceResponse,
+    foreignKey: "photo_video_id",
+    displayName: "Photography & Videography",
+    pluralName: "Photography & Videography",
     selectQuery: `
-      photography_id,
+      photo_video_id,
       liked_at,
-      photography_artists:photography_artists (
+      photo_video_listing:photo_video_listing (
         id,
         user_id,
-        artist_name,
+        business_name,
         years_experience,
         travel_range,
         service_type,
         description,
-        photography_media (
+        photo_video_media (
           file_path,
           display_order
         )
       )
     `,
     renderCard: (
-      artist: PhotographyDetails & { liked_at: string },
+      photoVideo: PhotoVideoDetails & { liked_at: string },
       onUnlike: () => void
     ) => (
       <div className="bg-white rounded-xl shadow-md overflow-hidden group">
         <div className="relative">
           <MediaCarousel
-            media={artist.photography_media || []}
-            serviceName={artist.artist_name || "Artist"}
-            itemId={artist.id}
-            creatorId={artist.user_id}
-            service="photography"
+            media={photoVideo.photo_video_media || []}
+            serviceName={photoVideo.business_name || "Artist"}
+            itemId={photoVideo.id}
+            creatorId={photoVideo.user_id}
+            service="photoVideo"
             initialLiked={true}
             onUnlike={onUnlike}
           />
         </div>
-        <Link href={`/services/photography/${artist.id}`}>
+        <Link href={`/services/photography/${photoVideo.id}`}>
           <div className="p-4">
             <h3 className="text-lg font-semibold mb-1 group-hover:text-rose-600 transition-colors">
-              {artist.artist_name || "Unnamed Artist"}
+              {photoVideo.business_name || "Unnamed Artist"}
             </h3>
             <p className="text-slate-600 text-sm mb-2">
-              {artist.years_experience || 0} years experience • Up to{" "}
-              {artist.travel_range || 0} miles
+              {photoVideo.years_experience || 0} years experience • Up to{" "}
+              {photoVideo.travel_range || 0} miles
             </p>
             <div className="text-slate-600 text-sm mb-2">
-              {artist.service_type === "both"
+              {photoVideo.service_type === "both"
                 ? "Photography & Videography"
-                : artist.service_type === "photography"
+                : photoVideo.service_type === "photography"
                 ? "Photography"
                 : "Videography"}
             </div>
             <p className="text-slate-600 text-sm mb-3 line-clamp-2">
-              {artist.description || "No description available"}
+              {photoVideo.description || "No description available"}
             </p>
           </div>
         </Link>

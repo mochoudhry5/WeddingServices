@@ -1,17 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import React, { useState } from "react";
 import { useRouter } from "next/navigation";
-import {
-  PlayCircle,
-  Upload,
-  Plus,
-  X,
-  DollarSign,
-  Building2,
-  Camera,
-  Paintbrush,
-} from "lucide-react";
+import { Upload, Plus, X, DollarSign, Clock } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/lib/supabase";
 import { Input } from "@/components/ui/input";
@@ -34,20 +25,9 @@ import {
 } from "@/components/ui/alert-dialog";
 import NavBar from "@/components/ui/NavBar";
 import Footer from "@/components/ui/Footer";
+import LocationInput from "@/components/ui/LocationInput";
 
 // Types
-type ServiceId = "venue" | "makeup" | "photography";
-
-interface Service {
-  id: ServiceId;
-  name: string;
-  icon: any;
-  description: string;
-  available: boolean;
-  path?: string;
-  comingSoon?: boolean;
-}
-
 interface MediaFile {
   id: string;
   file: File;
@@ -55,255 +35,73 @@ interface MediaFile {
   type: "image" | "video";
 }
 
-interface AddOn {
-  id: string;
+interface Service {
   name: string;
   description: string;
-  pricingType: "flat" | "per-guest";
   price: number;
-  guestIncrement?: number;
+  duration: number;
+  isCustom?: boolean;
 }
 
-interface VenueFormData {
-  name: string;
-  address: string;
-  city: string;
-  state: string;
-  numberOfHalls: string;
-  hallNames: string[];
-  priceRange: {
-    min: number;
-    max: number;
-  };
-  minGuests: number | null;
-  maxGuests: number;
-  description: string;
-  media: MediaFile[];
-  inclusions: string[];
-  customInclusions: string[];
-  addons: {
-    name: string;
-    description: string;
-    pricingType: "flat" | "per-guest";
-    price: number;
-    guestIncrement?: number;
-    isCustom: boolean;
-  }[];
-  websiteUrl?: string;
-  instagramUrl?: string;
-}
-
-// Constants
-const services: Service[] = [
+const commonServices = [
   {
-    id: "venue",
-    name: "Venue",
-    icon: Building2,
-    description:
-      "List your wedding venue and showcase your space to couples looking for their perfect venue.",
-    available: true,
-    path: "/venues/create",
+    name: "DJ Session",
+    description: "DJ for a full party.",
+    suggestedPrice: 0,
+    suggestedDuration: 0,
   },
   {
-    id: "makeup",
-    name: "Makeup Artist",
-    icon: Paintbrush,
+    name: "Sparklers",
     description:
-      "Offer your professional makeup services to brides and wedding parties.",
-    available: false,
-    comingSoon: true,
-  },
-  {
-    id: "photography",
-    name: "Photography",
-    icon: Camera,
-    description:
-      "Showcase your photography portfolio and connect with couples seeking their wedding photographer.",
-    available: false,
-    comingSoon: true,
+      "High end Sparklers to be set off during different tracks (5 times).",
+    suggestedPrice: 0,
+    suggestedDuration: 0,
   },
 ];
 
-const commonInclusions = [
-  "Tables & Chairs",
-  "Basic Lighting",
-  "Sound System",
-  "Parking",
-  "Security",
-  "Basic Decor",
-  "Cleanup Service",
-  "Bridal Suite",
-  "Kitchen Access",
-  "Wifi",
-  "AV Equipment",
-  "Event Planning",
-  "Air Conditioning",
-  "Heating",
-  "Restrooms",
-  "Changing Rooms",
-];
+const commonDJStyles = ["Pakistani", "Punjabi", "Afghanistani", "Latin"];
 
-const commonAddOns = [
-  {
-    name: "Catering Service",
-    description:
-      "Full-service catering including appetizers, main course, and desserts",
-    suggestedPrice: 75,
-    suggestedPricingType: "per-guest" as const,
-  },
-  {
-    name: "Bar Service",
-    description: "Professional bartenders with premium beverages",
-    suggestedPrice: 45,
-    suggestedPricingType: "per-guest" as const,
-  },
-  {
-    name: "DJ Package",
-    description: "Professional DJ with sound system and lighting",
-    suggestedPrice: 1200,
-    suggestedPricingType: "flat" as const,
-  },
-  {
-    name: "Decor Package",
-    description: "Custom floral arrangements and venue decoration",
-    suggestedPrice: 2500,
-    suggestedPricingType: "flat" as const,
-  },
-  {
-    name: "Photography",
-    description: "Professional photography coverage",
-    suggestedPrice: 2000,
-    suggestedPricingType: "flat" as const,
-  },
-  {
-    name: "Videography",
-    description: "Professional video coverage",
-    suggestedPrice: 2500,
-    suggestedPricingType: "flat" as const,
-  },
-];
-
-// Pricing Input Component
-const PricingInput = ({
-  addon,
-  value,
-  onChange,
-}: {
-  addon: string | AddOn;
-  value: any;
-  onChange: (value: any) => void;
-}) => (
-  <div className="space-y-3">
-    <Select
-      value={value.pricingType}
-      onValueChange={(newType: "flat" | "per-guest") => {
-        onChange({
-          ...value,
-          pricingType: newType,
-          guestIncrement: newType === "per-guest" ? 100 : undefined,
-        });
-      }}
-    >
-      <SelectTrigger className="w-full">
-        <SelectValue placeholder="Select pricing type" />
-      </SelectTrigger>
-      <SelectContent>
-        <SelectItem value="flat">Flat Rate</SelectItem>
-        <SelectItem value="per-guest">Per Guest</SelectItem>
-      </SelectContent>
-    </Select>
-
-    <div className="flex gap-3">
-      <div className="relative flex-1">
-        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">
-          $
-        </span>
-        <Input
-          type="number"
-          min="0"
-          value={value.price}
-          onChange={(e) => {
-            onChange({
-              ...value,
-              price: Number(e.target.value),
-            });
-          }}
-          placeholder="0"
-          className="pl-7"
-        />
-      </div>
-
-      {value.pricingType === "per-guest" && (
-        <div className="w-32">
-          <Select
-            value={value.guestIncrement?.toString()}
-            onValueChange={(newIncrement) => {
-              onChange({
-                ...value,
-                guestIncrement: Number(newIncrement),
-              });
-            }}
-          >
-            <SelectTrigger>
-              <SelectValue placeholder="Per" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="1">Per guest</SelectItem>
-              <SelectItem value="10">Per 10</SelectItem>
-              <SelectItem value="50">Per 50</SelectItem>
-              <SelectItem value="100">Per 100</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-      )}
-    </div>
-  </div>
-);
-
-export default function CreateVenueListing() {
+const CreateDJListing = () => {
   const router = useRouter();
-
-  // Step Management
   const [currentStep, setCurrentStep] = useState(1);
   const totalSteps = 4;
   const [showCancelDialog, setShowCancelDialog] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Basic Information State
-  const [venueName, setVenueName] = useState("");
-  const [address, setAddress] = useState("");
-  const [city, setCity] = useState("");
-  const [state, setState] = useState("");
-  const [numberOfHalls, setNumberOfHalls] = useState("");
-  const [hallNames, setHallNames] = useState<string[]>([""]);
-  const [priceRange, setPriceRange] = useState({
-    min: "",
-    max: "",
-  });
-  const [minGuests, setMinGuests] = useState("");
-  const [maxGuests, setMaxGuests] = useState("");
+  const [businessName, setBusinessName] = useState("");
+  const [experience, setExperience] = useState("");
+  const [travelRange, setTravelRange] = useState("");
   const [description, setDescription] = useState("");
-  const [catering, setCatering] = useState("");
+  const [specialties, setSpecialties] = useState<string[]>([]);
+  const [customSpecialty, setCustomSpecialty] = useState("");
   const [websiteUrl, setWebsiteUrl] = useState("");
   const [instagramUrl, setInstagramUrl] = useState("");
+  const [isRemoteBusiness, setIsRemoteBusiness] = useState(false);
+  // Replace the individual location states with
+  const [location, setLocation] = useState({
+    enteredLocation: "",
+    address: "",
+    city: "",
+    state: "",
+    country: "",
+    placeId: "",
+  });
 
   // Media State
   const [mediaFiles, setMediaFiles] = useState<MediaFile[]>([]);
   const [draggedItem, setDraggedItem] = useState<number | null>(null);
 
-  // Inclusions State
-  const [includedItems, setIncludedItems] = useState<string[]>([]);
-  const [customInclusions, setCustomInclusions] = useState<string[]>([]);
-
-  // Add-ons State
-  const [selectedAddOns, setSelectedAddOns] = useState<{
-    [key: string]: {
-      pricingType: "flat" | "per-guest";
-      price: number;
-      guestIncrement?: number;
-    };
+  // Services State
+  const [selectedServices, setSelectedServices] = useState<{
+    [key: string]: Service;
   }>({});
-  const [customAddOns, setCustomAddOns] = useState<AddOn[]>([]);
+  const [customServices, setCustomServices] = useState<Service[]>([]);
+
+  const [availability, setAvailability] = useState({
+    deposit: "", // Will store percentage as string
+    cancellationPolicy: "",
+  });
 
   // File Upload Handlers
   const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -324,7 +122,9 @@ export default function CreateVenueListing() {
     setMediaFiles((prev) => prev.filter((file) => file.id !== id));
   };
 
-  // Drag and Drop Handlers
+  const countCharacters = (text: string): number => {
+    return text.trim().length;
+  };
   const handleDragStart = (index: number) => {
     setDraggedItem(index);
   };
@@ -344,58 +144,157 @@ export default function CreateVenueListing() {
   const handleDragEnd = () => {
     setDraggedItem(null);
   };
-
   // Form Validation
   const validateCurrentStep = () => {
     switch (currentStep) {
       case 1:
-        const hallNamesValid =
-          numberOfHalls === "1"
-            ? true
-            : hallNames.every((name) => name.trim()) &&
-              new Set(hallNames.map((name) => name.trim())).size ===
-                hallNames.length;
-
-        if (numberOfHalls !== "1" && !hallNamesValid) {
-          toast.error("Each hall must have a unique name");
+        if (!businessName) {
+          toast.error(`Business Name Must Be Entered`);
           return false;
         }
-
-        // URL validation
-        const urlValidation = (url: string) => {
-          if (!url) return true; // Optional fields
-          try {
-            new URL(url);
-            return true;
-          } catch {
-            return false;
-          }
-        };
-
-        if (websiteUrl && !urlValidation(websiteUrl)) {
-          toast.error("Please enter a valid website URL");
+        if (!experience) {
+          toast.error(`Years of Experience Must Be Entered`);
           return false;
         }
-
-        if (instagramUrl && !urlValidation(instagramUrl)) {
-          toast.error("Please enter a valid Instagram URL");
+        if (!travelRange) {
+          toast.error(`Travel Range Must Be Entered`);
           return false;
         }
-
+        if (!location.city || !location.state) {
+          toast.error(`Business Address Must Be Entered`);
+          return false;
+        }
+        if (specialties.length === 0) {
+          toast.error(`At least one DJ style must be selected`);
+          return false;
+        }
+        if (countCharacters(description) < 100) {
+          toast.error(
+            `Description must be at least 100 characters. Current count: ${countCharacters(
+              description
+            )} characters`
+          );
+          return false;
+        }
         return (
-          venueName &&
-          address &&
-          city &&
-          state &&
-          numberOfHalls &&
-          hallNamesValid &&
-          priceRange.min &&
-          priceRange.max &&
-          maxGuests &&
-          catering
+          businessName &&
+          experience &&
+          travelRange &&
+          location.enteredLocation &&
+          location.city &&
+          location.state &&
+          location.country &&
+          description.trim().length >= 100 &&
+          specialties.length > 0
         );
       case 2:
-        return mediaFiles.length >= 1; // Change to 10 in production
+        if (mediaFiles.length < 5) {
+          toast.error("Minimum of 5 Images must be Uploaded");
+          return false;
+        }
+        return true;
+      case 3:
+        if (
+          Object.keys(selectedServices).length === 0 &&
+          customServices.length === 0
+        ) {
+          toast.error("Please select or add at least one service");
+          return false;
+        }
+
+        // Validate selected common services
+        for (const [name, service] of Object.entries(selectedServices)) {
+          if (!service.description.trim()) {
+            toast.error(`Please enter a description for ${name}`);
+            return false;
+          }
+          if (!service.price || service.price <= 0) {
+            toast.error(`Please enter a valid price for ${name}`);
+            return false;
+          }
+          if (!service.duration || service.duration <= 0) {
+            toast.error(`Please enter a valid duration for ${name}`);
+            return false;
+          }
+        }
+        const nonEmptyCustomServices = customServices.filter(
+          (service) =>
+            service.name.trim() ||
+            service.description.trim() ||
+            service.price > 0 ||
+            service.duration > 0
+        );
+
+        for (const service of nonEmptyCustomServices) {
+          if (!service.name.trim()) {
+            toast.error("Please enter a name for all custom services");
+            return false;
+          }
+          if (!service.description.trim()) {
+            toast.error(
+              `Please enter a description for ${
+                service.name || "the custom service"
+              }`
+            );
+            return false;
+          }
+          if (!service.price || service.price <= 0) {
+            toast.error(
+              `Please enter a valid price for ${
+                service.name || "the custom service"
+              }`
+            );
+            return false;
+          }
+          if (!service.duration || service.duration <= 0) {
+            toast.error(
+              `Please enter a valid duration for ${
+                service.name || "the custom service"
+              }`
+            );
+            return false;
+          }
+        }
+
+        // Validate custom services
+        const validCustomServices = customServices.filter((service) =>
+          service.name.trim()
+        );
+        for (const service of customServices) {
+          // If any field is filled, all fields become required
+          if (
+            service.name.trim() ||
+            service.description.trim() ||
+            service.price > 0 ||
+            service.duration > 0
+          ) {
+            if (!service.name.trim()) {
+              toast.error("Please enter a name for the custom service");
+              return false;
+            }
+            if (!service.description.trim()) {
+              toast.error("Please enter a description for the custom service");
+              return false;
+            }
+            if (!service.price || service.price <= 0) {
+              toast.error(
+                `Please enter a valid price for ${
+                  service.name || "the custom service"
+                }`
+              );
+              return false;
+            }
+            if (!service.duration || service.duration <= 0) {
+              toast.error(
+                `Please enter a valid duration for ${
+                  service.name || "the custom service"
+                }`
+              );
+              return false;
+            }
+          }
+        }
+        return true;
       default:
         return true;
     }
@@ -405,8 +304,6 @@ export default function CreateVenueListing() {
   const nextStep = () => {
     if (validateCurrentStep()) {
       setCurrentStep((prev) => Math.min(prev + 1, totalSteps));
-    } else {
-      toast.error("Please fill in all required fields");
     }
   };
 
@@ -418,94 +315,99 @@ export default function CreateVenueListing() {
     window.history.back();
   };
 
-  // Form Submission
   const handleSubmit = async () => {
     try {
-      if (
-        !venueName ||
-        !address ||
-        !city ||
-        !state ||
-        !numberOfHalls ||
-        !hallNames.every((name) => name.trim()) ||
-        !priceRange.min ||
-        !priceRange.max ||
-        !maxGuests ||
-        !description ||
-        !catering
-      ) {
-        toast.error("Please fill in all required fields");
+      // Show more specific error messages based on what's missing
+      if (Object.keys(selectedServices).length === 0) {
+        toast.error("Please add at least one service");
         return;
       }
 
-      if (mediaFiles.length < 1) {
-        // Change to 10 in production
-        toast.error("Please upload at least 10 images");
+      if (!availability.deposit) {
+        toast.error("Required Deposit Must Be Entered");
         return;
       }
 
-      const {
-        data: { user },
-        error: authError,
-      } = await supabase.auth.getUser();
-      if (authError || !user) {
-        toast.error("Please sign in to create a venue listing");
+      if (!availability.cancellationPolicy) {
+        toast.error("Cancellation Policy Must Be Selected");
         return;
       }
 
       setIsSubmitting(true);
 
-      const { data: venue, error: venueError } = await supabase
-        .from("venues")
+      // Get current user
+      const {
+        data: { user },
+        error: authError,
+      } = await supabase.auth.getUser();
+      if (authError || !user) {
+        toast.error("Please sign in to create a listing");
+        return;
+      }
+
+      // Create DJ listing
+      const { data: dj, error: djError } = await supabase
+        .from("dj_listing")
         .insert({
           user_id: user.id,
-          name: venueName,
-          address,
-          city,
-          state,
-          number_of_halls: parseInt(numberOfHalls),
-          hall_names: numberOfHalls === "1" ? [] : hallNames,
-          price_range_min: parseInt(priceRange.min),
-          price_range_max: parseInt(priceRange.max),
-          min_guests: minGuests ? parseInt(minGuests) : null,
-          max_guests: parseInt(maxGuests),
-          description,
-          catering_option: catering,
+          business_name: businessName,
+          years_experience: experience,
+          travel_range: parseInt(travelRange),
+          is_remote_business: isRemoteBusiness,
+          address: isRemoteBusiness ? "" : location.address,
+          city: location.city,
+          state: location.state,
+          country: location.country,
+          place_id: location.placeId,
           website_url: websiteUrl || null,
           instagram_url: instagramUrl || null,
+          description,
+          deposit: parseInt(availability.deposit),
+          cancellation_policy: availability.cancellationPolicy,
         })
         .select()
         .single();
 
-      if (venueError) {
-        console.error("Venue creation error:", venueError);
-        throw new Error(`Failed to create venue: ${venueError.message}`);
+      if (djError) {
+        throw new Error(`Failed to create DJ listing: ${djError.message}`);
+      }
+      if (!dj) {
+        throw new Error("DJ listing created but no data returned");
       }
 
-      if (!venue) {
-        throw new Error("Venue created but no data returned");
+      const specialtiesData = specialties.map((specialty) => ({
+        business_id: dj.id,
+        specialty,
+        is_custom: false,
+      }));
+      const { error: specialtiesError } = await supabase
+        .from("dj_specialties")
+        .insert(specialtiesData);
+
+      if (specialtiesError) {
+        throw new Error(
+          `Failed to create specialties: ${specialtiesError.message}`
+        );
       }
 
       // Upload media files
       const mediaPromises = mediaFiles.map(async (file, index) => {
         const fileExt = file.file.name.split(".").pop();
-        const filePath = `venues/${venue.id}/${index}.${fileExt}`;
+        const filePath = `dj/${dj.id}/${index}.${fileExt}`;
 
         const { error: uploadError } = await supabase.storage
-          .from("venue-media")
+          .from("dj-media")
           .upload(filePath, file.file);
 
         if (uploadError) {
-          console.error("Media upload error:", uploadError);
           throw new Error(
             `Failed to upload media file ${index}: ${uploadError.message}`
           );
         }
 
         return {
-          venue_id: venue.id,
+          business_id: dj.id,
           file_path: filePath,
-          media_type: file.type,
           display_order: index,
         };
       });
@@ -513,7 +415,7 @@ export default function CreateVenueListing() {
       const mediaResults = await Promise.all(mediaPromises);
 
       const { error: mediaError } = await supabase
-        .from("venue_media")
+        .from("dj_media")
         .insert(mediaResults);
 
       if (mediaError) {
@@ -521,81 +423,48 @@ export default function CreateVenueListing() {
           `Failed to create media records: ${mediaError.message}`
         );
       }
-
-      // Insert inclusions
-      const allInclusions = [
-        ...includedItems.map((item) => ({
-          venue_id: venue.id,
-          name: item,
+      // Insert services
+      const allServices = [
+        ...Object.values(selectedServices).map((service) => ({
+          business_id: dj.id,
+          name: service.name,
+          description: service.description,
+          price: service.price,
+          duration: service.duration,
           is_custom: false,
         })),
-        ...customInclusions
-          .filter((item) => item.trim())
-          .map((item) => ({
-            venue_id: venue.id,
-            name: item,
+        ...customServices
+          .filter((service) => service.name.trim())
+          .map((service) => ({
+            business_id: dj.id,
+            name: service.name,
+            description: service.description,
+            price: service.price,
+            duration: service.duration,
             is_custom: true,
           })),
       ];
 
-      if (allInclusions.length > 0) {
-        const { error: inclusionsError } = await supabase
-          .from("venue_inclusions")
-          .insert(allInclusions);
+      if (allServices.length > 0) {
+        const { error: servicesError } = await supabase
+          .from("dj_services")
+          .insert(allServices);
 
-        if (inclusionsError) {
-          console.error("Inclusions creation error:", inclusionsError);
+        if (servicesError) {
           throw new Error(
-            `Failed to create inclusions: ${inclusionsError.message}`
+            `Failed to create services: ${servicesError.message}`
           );
         }
       }
 
-      // Insert add-ons
-      const allAddons = [
-        ...Object.entries(selectedAddOns).map(([name, details]) => ({
-          venue_id: venue.id,
-          name,
-          description:
-            commonAddOns.find((addon) => addon.name === name)?.description ||
-            "",
-          pricing_type: details.pricingType,
-          price: details.price,
-          guest_increment: details.guestIncrement,
-          is_custom: false,
-        })),
-        ...customAddOns
-          .filter((addon) => addon.name.trim())
-          .map((addon) => ({
-            venue_id: venue.id,
-            name: addon.name,
-            description: addon.description,
-            pricing_type: addon.pricingType,
-            price: addon.price,
-            guest_increment: addon.guestIncrement,
-            is_custom: true,
-          })),
-      ];
-
-      if (allAddons.length > 0) {
-        const { error: addonsError } = await supabase
-          .from("venue_addons")
-          .insert(allAddons);
-
-        if (addonsError) {
-          console.error("Add-ons creation error:", addonsError);
-          throw new Error(`Failed to create add-ons: ${addonsError.message}`);
-        }
-      }
-
-      toast.success("Venue listing created successfully!");
-      router.push(`/venues/${venue.id}`);
+      toast.success("DJ listing created successfully!");
+      router.push(`/services/dj/${dj.id}`);
     } catch (error) {
-      console.error("Error creating venue:", error);
+      console.error("Error creating DJ listing:", error);
       toast.error(
         error instanceof Error
           ? error.message
-          : "Failed to create venue listing. Please try again."
+          : "Failed to create DJ listing. Please try again."
       );
     } finally {
       setIsSubmitting(false);
@@ -620,14 +489,14 @@ export default function CreateVenueListing() {
               ))}
             </div>
             <div className="flex justify-between text-sm text-gray-600 px-1">
-              <div className="text-center w-1/5">Basic Info</div>
-              <div className="text-center w-1/5">Media</div>
-              <div className="text-center w-1/5">Inclusions</div>
-              <div className="text-center w-1/5">Add-ons</div>
+              <div className="text-center w-1/4">Basic Info</div>
+              <div className="text-center w-1/4">Portfolio</div>
+              <div className="text-center w-1/4">Services</div>
+              <div className="text-center w-1/4">Availability</div>
             </div>
           </div>
 
-          {/* Form Steps */}
+          {/* Form Content */}
           <div className="bg-white rounded-xl shadow-sm p-6 mb-6">
             {/* Step 1: Basic Information */}
             {currentStep === 1 && (
@@ -638,13 +507,12 @@ export default function CreateVenueListing() {
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Venue Name*
+                    Business Name*
                   </label>
                   <Input
-                    type="text"
-                    value={venueName}
-                    onChange={(e) => setVenueName(e.target.value)}
-                    placeholder="Enter your venue name"
+                    value={businessName}
+                    onChange={(e) => setBusinessName(e.target.value)}
+                    placeholder="Enter your name or business name"
                     className="w-full"
                     required
                   />
@@ -652,193 +520,196 @@ export default function CreateVenueListing() {
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Address*
+                    Years of Experience*
                   </label>
-                  <Input
-                    type="text"
-                    value={address}
-                    onChange={(e) => setAddress(e.target.value)}
-                    placeholder="Enter venue address"
-                    className="w-full mb-2"
-                    required
-                  />
-                  <div className="grid grid-cols-2 gap-4">
-                    <Input
-                      type="text"
-                      value={city}
-                      onChange={(e) => setCity(e.target.value)}
-                      placeholder="City"
-                      className="w-full"
-                      required
-                    />
-                    <Input
-                      type="text"
-                      value={state}
-                      onChange={(e) => setState(e.target.value)}
-                      placeholder="State"
-                      className="w-full"
-                      required
-                    />
-                  </div>
-                </div>
-
-                {/* Number of Halls Selection */}
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Number of Halls*
-                  </label>
-                  <Select
-                    value={numberOfHalls}
-                    onValueChange={(value) => {
-                      setNumberOfHalls(value);
-                      if (value === "1") {
-                        setHallNames([]);
-                      } else {
-                        setHallNames(new Array(parseInt(value)).fill(""));
-                      }
-                    }}
-                  >
+                  <Select value={experience} onValueChange={setExperience}>
                     <SelectTrigger className="w-full">
-                      <SelectValue placeholder="Select number of halls" />
+                      <SelectValue placeholder="Select years of experience" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="1">1 Hall</SelectItem>
-                      <SelectItem value="2">2 Halls</SelectItem>
-                      <SelectItem value="3">3 Halls</SelectItem>
-                      <SelectItem value="4">4 Halls</SelectItem>
-                      <SelectItem value="5">5 Halls</SelectItem>
+                      {["1-2", "3-5", "6-9", "10+"].map((year) => (
+                        <SelectItem key={year} value={year.toString()}>
+                          {year} {year === "10+" ? "years or more" : "years"}
+                        </SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
                 </div>
 
-                {/* Hall Names Input Fields */}
-                {numberOfHalls && numberOfHalls !== "1" && (
-                  <div className="space-y-4">
-                    <label className="block text-sm font-medium text-gray-700">
-                      Hall Names*
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Travel Range (miles)*
+                  </label>
+                  <Input
+                    type="number"
+                    min="0"
+                    step="1" // Force whole numbers
+                    value={travelRange}
+                    onChange={(e) => {
+                      // Remove any non-digit characters and leading zeros
+                      const sanitizedValue = e.target.value
+                        .replace(/[^\d]/g, "")
+                        .replace(/^0+(?=\d)/, "");
+                      setTravelRange(
+                        sanitizedValue === "" ? "" : sanitizedValue
+                      );
+                    }}
+                    onKeyDown={(e) => {
+                      // Prevent decimal point and negative sign
+                      if (e.key === "-" || e.key === ".") {
+                        e.preventDefault();
+                      }
+                    }}
+                    placeholder="Enter maximum travel distance"
+                    className="w-full"
+                    required
+                  />
+                </div>
+                <div className="flex items-center space-x-4">
+                  <input
+                    type="checkbox"
+                    checked={isRemoteBusiness}
+                    onChange={(e) => setIsRemoteBusiness(e.target.checked)}
+                    className="h-4 w-4 text-rose-600 border-gray-300 rounded focus:ring-rose-500"
+                  />
+                  <label className="text-sm font-medium text-gray-700">
+                    This is a remote business (no physical location)
+                  </label>
+                </div>
+
+                <div className="space-y-4">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    {isRemoteBusiness ? "Service Area*" : "Business Address*"}
+                  </label>
+
+                  <LocationInput
+                    value={location.enteredLocation}
+                    onChange={(value) =>
+                      setLocation((prev) => ({
+                        ...prev,
+                        enteredLocation: value,
+                      }))
+                    }
+                    onPlaceSelect={(place) => {
+                      let address = "";
+                      let city = "";
+                      let state = "";
+                      let country = "";
+
+                      place.address_components?.forEach((component) => {
+                        if (
+                          component.types.includes("street_number") ||
+                          component.types.includes("route")
+                        ) {
+                          address += address
+                            ? ` ${component.long_name}`
+                            : component.long_name;
+                        }
+                        if (component.types.includes("locality")) {
+                          city = component.long_name;
+                        }
+                        if (
+                          component.types.includes(
+                            "administrative_area_level_1"
+                          )
+                        ) {
+                          state = component.long_name;
+                        }
+                        if (component.types.includes("country")) {
+                          country = component.long_name;
+                        }
+                      });
+
+                      setLocation({
+                        enteredLocation: place.formatted_address || "",
+                        address,
+                        city,
+                        state,
+                        country,
+                        placeId: place.place_id || "",
+                      });
+                    }}
+                    placeholder={
+                      isRemoteBusiness
+                        ? "Enter your service area (City, State, Country)"
+                        : "Enter your business address"
+                    }
+                    className="w-full"
+                    isRemoteLocation={isRemoteBusiness}
+                  />
+
+                  {/* Display selected location details */}
+                  {location.enteredLocation && (
+                    <div className="p-4 bg-gray-50 rounded-lg space-y-2">
+                      <h3 className="font-medium text-gray-900">
+                        {isRemoteBusiness ? "Service Area" : "Business Address"}
+                      </h3>
+                      {!isRemoteBusiness && location.address && (
+                        <p className="text-sm text-gray-600">
+                          <span className="font-medium">Address:</span>{" "}
+                          {location.address}
+                        </p>
+                      )}
+                      {location.city && (
+                        <p className="text-sm text-gray-600">
+                          <span className="font-medium">City:</span>{" "}
+                          {location.city}
+                        </p>
+                      )}
+                      {location.state && (
+                        <p className="text-sm text-gray-600">
+                          <span className="font-medium">State:</span>{" "}
+                          {location.state}
+                        </p>
+                      )}
+                      {location.country && (
+                        <p className="text-sm text-gray-600">
+                          <span className="font-medium">Country:</span>{" "}
+                          {location.country}
+                        </p>
+                      )}
+                    </div>
+                  )}
+                </div>
+                {/* Styles Selection */}
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      DJ Styles*
                     </label>
-                    <div className="grid gap-4">
-                      {hallNames.map((name, index) => (
-                        <div key={index} className="flex gap-4 items-center">
-                          <div className="flex-1">
-                            <Input
-                              type="text"
-                              value={name}
+                    <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                      {commonDJStyles.map((style) => (
+                        <label
+                          key={style}
+                          className="relative flex items-start p-4 rounded-lg border cursor-pointer hover:bg-gray-50"
+                        >
+                          <div className="flex items-center h-5">
+                            <input
+                              type="checkbox"
+                              className="h-4 w-4 text-rose-600 border-gray-300 rounded focus:ring-rose-500"
+                              checked={specialties.includes(style)}
                               onChange={(e) => {
-                                const newHallNames = [...hallNames];
-                                newHallNames[index] = e.target.value;
-                                setHallNames(newHallNames);
+                                if (e.target.checked) {
+                                  setSpecialties([...specialties, style]);
+                                } else {
+                                  setSpecialties(
+                                    specialties.filter((item) => item !== style)
+                                  );
+                                }
                               }}
-                              placeholder={`Hall ${index + 1} name`}
-                              className="w-full"
-                              required
                             />
                           </div>
-                        </div>
+                          <div className="ml-3 text-sm">
+                            <span className="font-medium text-gray-900">
+                              {style}
+                            </span>
+                          </div>
+                        </label>
                       ))}
                     </div>
                   </div>
-                )}
-
-                {/* Price Range */}
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Price Range (per event)*
-                  </label>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="relative">
-                      <DollarSign
-                        className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
-                        size={20}
-                      />
-                      <Input
-                        type="number"
-                        value={priceRange.min}
-                        onChange={(e) =>
-                          setPriceRange({ ...priceRange, min: e.target.value })
-                        }
-                        placeholder="Min"
-                        className="pl-10 w-full"
-                        required
-                      />
-                    </div>
-                    <div className="relative">
-                      <DollarSign
-                        className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
-                        size={20}
-                      />
-                      <Input
-                        type="number"
-                        value={priceRange.max}
-                        onChange={(e) =>
-                          setPriceRange({ ...priceRange, max: e.target.value })
-                        }
-                        placeholder="Max"
-                        className="pl-10 w-full"
-                        required
-                      />
-                    </div>
-                  </div>
                 </div>
-
-                {/* Guests */}
                 <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Minimum Guests
-                    </label>
-                    <Input
-                      type="number"
-                      value={minGuests}
-                      onChange={(e) => setMinGuests(e.target.value)}
-                      placeholder="50"
-                      className="w-full"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Maximum Guests*
-                    </label>
-                    <Input
-                      type="number"
-                      value={maxGuests}
-                      onChange={(e) => setMaxGuests(e.target.value)}
-                      placeholder="200"
-                      className="w-full"
-                      required
-                    />
-                  </div>
-                </div>
-
-                {/* Catering Options */}
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Catering Options*
-                  </label>
-                  <Select
-                    value={catering}
-                    onValueChange={(value) => setCatering(value)}
-                  >
-                    <SelectTrigger className="w-full">
-                      <SelectValue placeholder="Select catering options" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="in-house">
-                        In-House Catering Only
-                      </SelectItem>
-                      <SelectItem value="outside">
-                        Outside Catering Only
-                      </SelectItem>
-                      <SelectItem value="both">
-                        In-House/Outside Catering Available
-                      </SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                {/* Website URL */}
-                <div className="grid grid-cols-2 gap-4">
-                  {/* Website URL */}
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
                       Website URL
@@ -847,12 +718,10 @@ export default function CreateVenueListing() {
                       type="url"
                       value={websiteUrl}
                       onChange={(e) => setWebsiteUrl(e.target.value)}
-                      placeholder="https://www.yourvenue.com"
+                      placeholder="https://www.yourbusiness.com"
                       className="w-full"
                     />
                   </div>
-
-                  {/* Instagram URL */}
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
                       Instagram URL
@@ -861,45 +730,44 @@ export default function CreateVenueListing() {
                       type="url"
                       value={instagramUrl}
                       onChange={(e) => setInstagramUrl(e.target.value)}
-                      placeholder="https://www.instagram.com/yourvenue"
+                      placeholder="https://www.instagram.com/yourbusiness"
                       className="w-full"
                     />
                   </div>
                 </div>
-
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Description*
+                    Description* (minimum 100 characters)
                   </label>
                   <textarea
                     value={description}
                     onChange={(e) => setDescription(e.target.value)}
                     rows={4}
-                    placeholder="Describe your venue..."
+                    placeholder="Tell us about your experience, style, and approach..."
                     className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-rose-500 focus:border-transparent"
                     required
                   />
+                  <p className="mt-1 text-sm text-gray-500">
+                    Character count: {countCharacters(description)} / 100
+                    minimum
+                  </p>
                 </div>
               </div>
             )}
 
-            {/* Step 2: Media Upload */}
+            {/* Step 2: Portfolio */}
             {currentStep === 2 && (
               <div className="space-y-6">
-                <h2 className="text-2xl font-semibold mb-6">Media Upload</h2>
-
                 <div className="space-y-4">
                   <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-2">
                     <div>
-                      <h3 className="text-base font-medium text-gray-900">
-                        Upload Your Venue Media
-                      </h3>
+                      <h2 className="text-2xl font-semibold">Portfolio</h2>
                       <p className="text-sm text-gray-600">
-                        Upload at least 10 images and 1 video of your venue
+                        Upload at least 5 images showcasing your best work
                       </p>
                     </div>
                     <div className="text-sm text-gray-600">
-                      {mediaFiles.length} / {10} required images
+                      {mediaFiles.length} / 5 required images
                     </div>
                   </div>
 
@@ -915,16 +783,16 @@ export default function CreateVenueListing() {
                       id="media-upload"
                       className="hidden"
                       multiple
-                      accept="image/*,video/*"
+                      accept="image/*"
                       onChange={handleFileUpload}
                     />
                     <div className="flex flex-col items-center">
                       <Upload className="h-12 w-12 text-gray-400" />
                       <span className="mt-2 text-sm text-gray-600">
-                        Drop files here or click to upload
+                        Drop images here or click to upload
                       </span>
                       <span className="mt-1 text-xs text-gray-500">
-                        Supported formats: JPG, PNG, MP4
+                        Supported formats: JPG, PNG
                       </span>
                     </div>
                   </div>
@@ -933,18 +801,25 @@ export default function CreateVenueListing() {
                   {mediaFiles.length > 0 && (
                     <div className="space-y-2">
                       <div className="flex justify-between items-center">
-                        <h3 className="text-sm font-medium text-gray-900">
-                          Uploaded Media
-                        </h3>
+                        <div>
+                          <h3 className="text-sm font-medium text-gray-900">
+                            Portfolio Images
+                          </h3>
+                          <p className="text-xs text-gray-500">
+                            Drag images to reorder. First image will be your
+                            main portfolio image.
+                          </p>
+                        </div>
                         <button
                           type="button"
                           onClick={() => setMediaFiles([])}
                           className="text-sm text-rose-600 hover:text-rose-700"
-                        >Remove all
+                        >
+                          Remove all
                         </button>
                       </div>
 
-                      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 max-h-[400px] overflow-y-auto p-2">
+                      <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
                         {mediaFiles.map((file, index) => (
                           <div
                             key={file.id}
@@ -954,33 +829,33 @@ export default function CreateVenueListing() {
                             onDragEnd={handleDragEnd}
                             className={`relative aspect-square rounded-lg overflow-hidden bg-gray-100 cursor-move ${
                               draggedItem === index ? "opacity-50" : ""
-                            }`}
+                            } group hover:ring-2 hover:ring-rose-500 transition-all`}
                           >
                             {/* Number Badge */}
                             <div className="absolute top-2 left-2 bg-black/50 text-white px-2 py-1 rounded text-xs z-10">
                               {index + 1}
                             </div>
 
-                            {file.type === "video" ? (
-                              <div className="relative w-full h-full">
-                                <video
-                                  src={file.preview}
-                                  className="w-full h-full object-cover"
-                                />
-                                <div className="absolute inset-0 flex items-center justify-center bg-black/30">
-                                  <PlayCircle className="w-8 h-8 text-white" />
-                                </div>
-                                <span className="absolute bottom-2 left-2 text-xs text-white bg-black/50 px-2 py-1 rounded">
-                                  Video
+                            {/* Image */}
+                            <img
+                              src={file.preview}
+                              alt={`Portfolio ${index + 1}`}
+                              className="w-full h-full object-cover"
+                            />
+
+                            {/* Overlay with additional information */}
+                            <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity">
+                              <div className="absolute bottom-2 left-2 right-2 flex justify-between items-center">
+                                <span className="text-xs text-white">
+                                  Click and drag to reorder
                                 </span>
+                                {index === 0 && (
+                                  <span className="bg-rose-500 text-white text-xs px-2 py-1 rounded">
+                                    Main Image
+                                  </span>
+                                )}
                               </div>
-                            ) : (
-                              <img
-                                src={file.preview}
-                                alt={`Preview ${index + 1}`}
-                                className="w-full h-full object-cover"
-                              />
-                            )}
+                            </div>
 
                             {/* Remove Button */}
                             <button
@@ -992,270 +867,508 @@ export default function CreateVenueListing() {
                             >
                               <X className="w-4 h-4" />
                             </button>
-
-                            {/* Main Image Badge */}
-                            {index === 0 && (
-                              <div className="absolute bottom-2 right-2 bg-rose-500 text-white text-xs px-2 py-1 rounded">
-                                Main Image
-                              </div>
-                            )}
                           </div>
                         ))}
                       </div>
                     </div>
                   )}
+
+                  {/* Helper text */}
+                  {mediaFiles.length > 0 && (
+                    <p className="text-sm text-gray-500 mt-4">
+                      Tip: Choose your best and most representative work for the
+                      main image. This will be the first image potential clients
+                      see.
+                    </p>
+                  )}
                 </div>
               </div>
             )}
 
-            {/* Step 3: Inclusions */}
+            {/* Step 3: Services */}
             {currentStep === 3 && (
               <div className="space-y-6">
-                <h2 className="text-2xl font-semibold mb-6">What's Included</h2>
+                <h2 className="text-2xl font-semibold mb-6">Services</h2>
 
-                {/* Common Inclusions */}
-                <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                  {commonInclusions.map((inclusion) => (
-                    <label
-                      key={inclusion}
-                      className="relative flex items-start p-4 rounded-lg border cursor-pointer hover:bg-gray-50"
-                    >
-                      <div className="flex items-center h-5">
-                        <input
-                          type="checkbox"
-                          className="h-4 w-4 text-rose-600 border-gray-300 rounded focus:ring-rose-500"
-                          checked={includedItems.includes(inclusion)}
-                          onChange={(e) => {
-                            if (e.target.checked) {
-                              setIncludedItems([...includedItems, inclusion]);
-                            } else {
-                              setIncludedItems(
-                                includedItems.filter(
-                                  (item) => item !== inclusion
-                                )
-                              );
-                            }
-                          }}
-                        />
-                      </div>
-                      <div className="ml-3 text-sm">
-                        <span className="font-medium text-gray-900">
-                          {inclusion}
-                        </span>
-                      </div>
-                    </label>
-                  ))}
-                </div>
-
-                {/* Custom Inclusions */}
-                <div className="mt-8">
-                  <h3 className="text-lg font-medium mb-4">Add Custom Items</h3>
-                  <div className="space-y-4">
-                    {customInclusions.map((inclusion, index) => (
-                      <div key={index} className="flex gap-2">
-                        <Input
-                          value={inclusion}
-                          onChange={(e) => {
-                            const newInclusions = [...customInclusions];
-                            newInclusions[index] = e.target.value;
-                            setCustomInclusions(newInclusions);
-                          }}
-                          placeholder="Enter item name"
-                          className="flex-1"
-                        />
-                        <button
-                          onClick={() => {
-                            setCustomInclusions(
-                              customInclusions.filter((_, i) => i !== index)
-                            );
-                          }}
-                          className="p-2 text-gray-500 hover:text-rose-500"
-                          type="button"
-                        >
-                          <X size={20} />
-                        </button>
-                      </div>
-                    ))}
-                    <button
-                      type="button"
-                      onClick={() =>
-                        setCustomInclusions([...customInclusions, ""])
-                      }
-                      className="flex items-center gap-2 text-rose-600 hover:text-rose-700"
-                    >
-                      <Plus size={20} />
-                      <span>Add Custom Item</span>
-                    </button>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* Step 4: Add-ons */}
-            {currentStep === 4 && (
-              <div className="space-y-6">
-                <h2 className="text-2xl font-semibold mb-6">Add-on Services</h2>
-
-                {/* Common Add-ons */}
+                {/* Common Services */}
                 <div className="space-y-4">
-                  {commonAddOns.map((addon) => (
-                    <div
-                      key={addon.name}
-                      className="p-4 rounded-lg border border-gray-200 hover:border-gray-300 transition-colors"
-                    >
-                      <div className="flex items-start gap-4">
-                        <div className="flex items-center h-5 pt-1">
+                  <>
+                    <h3 className="text-lg font-medium mb-4">DJ Services</h3>
+                    {commonServices.map((service) => (
+                      <div key={service.name} className="p-4 border rounded-lg">
+                        <div className="flex items-start space-x-4">
                           <input
                             type="checkbox"
-                            className="h-4 w-4 text-rose-600 border-gray-300 rounded focus:ring-rose-500"
-                            checked={addon.name in selectedAddOns}
+                            checked={service.name in selectedServices}
                             onChange={(e) => {
                               if (e.target.checked) {
-                                setSelectedAddOns({
-                                  ...selectedAddOns,
-                                  [addon.name]: {
-                                    pricingType: addon.suggestedPricingType,
-                                    price: addon.suggestedPrice,
-                                    guestIncrement:
-                                      addon.suggestedPricingType === "per-guest"
-                                        ? 100
-                                        : undefined,
+                                setSelectedServices({
+                                  ...selectedServices,
+                                  [service.name]: {
+                                    name: service.name,
+                                    description: service.description,
+                                    price: 0,
+                                    duration: service.suggestedDuration,
                                   },
                                 });
                               } else {
-                                const newSelected = { ...selectedAddOns };
-                                delete newSelected[addon.name];
-                                setSelectedAddOns(newSelected);
+                                const newServices = { ...selectedServices };
+                                delete newServices[service.name];
+                                setSelectedServices(newServices);
                               }
                             }}
+                            className="mt-1"
                           />
-                        </div>
-                        <div className="flex-1">
-                          <div className="flex flex-col gap-4">
-                            <div>
-                              <h3 className="text-lg font-medium text-gray-900">
-                                {addon.name}
-                              </h3>
-                              <p className="text-sm text-gray-600 mt-1">
-                                {addon.description}
+                          <div className="flex-1">
+                            <h3 className="font-medium">{service.name}</h3>
+                            {service.name in selectedServices ? (
+                              <div className="mt-2">
+                                <label className="block text-sm font-medium text-gray-700 mb-1">
+                                  Description*
+                                </label>
+                                <textarea
+                                  value={
+                                    selectedServices[service.name].description
+                                  }
+                                  onChange={(e) => {
+                                    setSelectedServices({
+                                      ...selectedServices,
+                                      [service.name]: {
+                                        ...selectedServices[service.name],
+                                        description: e.target.value,
+                                      },
+                                    });
+                                  }}
+                                  placeholder="Describe the service..."
+                                  rows={2}
+                                  className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-rose-500 focus:border-transparent resize-vertical text-sm"
+                                />
+                              </div>
+                            ) : (
+                              <p className="text-sm text-gray-600">
+                                {service.description}
                               </p>
-                            </div>
-                            {addon.name in selectedAddOns && (
-                              <PricingInput
-                                addon={addon.name}
-                                value={selectedAddOns[addon.name]}
-                                onChange={(newValue) => {
-                                  setSelectedAddOns({
-                                    ...selectedAddOns,
-                                    [addon.name]: newValue,
-                                  });
-                                }}
-                              />
+                            )}
+                            {service.name in selectedServices && (
+                              <div className="mt-4 grid gap-4">
+                                <div>
+                                  <label className="block text-sm font-medium mb-1">
+                                    Starting Price ($)*
+                                  </label>
+                                  <div className="relative">
+                                    <DollarSign
+                                      className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
+                                      size={16}
+                                    />
+                                    <Input
+                                      type="number"
+                                      min="0"
+                                      step="1"
+                                      placeholder="0"
+                                      value={
+                                        selectedServices[service.name].price ===
+                                        0
+                                          ? ""
+                                          : selectedServices[service.name].price
+                                      }
+                                      onChange={(e) => {
+                                        const sanitizedValue = e.target.value;
+                                        setSelectedServices({
+                                          ...selectedServices,
+                                          [service.name]: {
+                                            ...selectedServices[service.name],
+                                            price:
+                                              sanitizedValue === ""
+                                                ? 0
+                                                : parseInt(sanitizedValue),
+                                          },
+                                        });
+                                      }}
+                                      onKeyDown={(e) => {
+                                        if (e.key === "-" || e.key === ".") {
+                                          e.preventDefault();
+                                        }
+                                      }}
+                                      className="pl-8"
+                                    />
+                                  </div>
+                                </div>
+                                <div>
+                                  <label className="block text-sm font-medium mb-1">
+                                    Duration (hours)*
+                                  </label>
+                                  <div className="relative">
+                                    <Clock
+                                      className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
+                                      size={16}
+                                    />
+                                    <Input
+                                      type="number"
+                                      step="0.5"
+                                      min="0"
+                                      placeholder="0"
+                                      value={
+                                        selectedServices[service.name]
+                                          .duration === 0
+                                          ? ""
+                                          : selectedServices[service.name]
+                                              .duration
+                                      }
+                                      onChange={(e) => {
+                                        const sanitizedValue = e.target.value;
+                                        // Allow any numeric input temporarily during typing
+                                        if (
+                                          /^\d*\.?\d{0,1}$/.test(sanitizedValue)
+                                        ) {
+                                          setSelectedServices({
+                                            ...selectedServices,
+                                            [service.name]: {
+                                              ...selectedServices[service.name],
+                                              duration:
+                                                sanitizedValue === ""
+                                                  ? 0
+                                                  : parseFloat(sanitizedValue),
+                                            },
+                                          });
+                                        }
+                                      }}
+                                      onBlur={(e) => {
+                                        const value = e.target.value;
+                                        // On blur, format to proper decimal
+                                        if (
+                                          value === "" ||
+                                          isNaN(parseFloat(value))
+                                        ) {
+                                          setSelectedServices({
+                                            ...selectedServices,
+                                            [service.name]: {
+                                              ...selectedServices[service.name],
+                                              duration: 0,
+                                            },
+                                          });
+                                        } else {
+                                          // Round to nearest 0.5
+                                          const roundedValue =
+                                            Math.round(parseFloat(value) * 2) /
+                                            2;
+                                          setSelectedServices({
+                                            ...selectedServices,
+                                            [service.name]: {
+                                              ...selectedServices[service.name],
+                                              duration: roundedValue,
+                                            },
+                                          });
+                                        }
+                                      }}
+                                      className="pl-8"
+                                    />
+                                  </div>
+                                </div>
+                              </div>
                             )}
                           </div>
                         </div>
                       </div>
-                    </div>
-                  ))}
+                    ))}
+                  </>
                 </div>
 
-                {/* Custom Add-ons */}
+                {/* Custom Services */}
                 <div className="mt-8">
                   <div className="flex justify-between items-center mb-4">
                     <h3 className="text-lg font-medium">Custom Services</h3>
                     <button
                       type="button"
                       onClick={() =>
-                        setCustomAddOns([
-                          ...customAddOns,
+                        setCustomServices([
+                          ...customServices,
                           {
-                            id: Math.random().toString(36).substr(2, 9),
                             name: "",
                             description: "",
-                            pricingType: "flat",
                             price: 0,
+                            duration: 0,
+                            isCustom: true,
                           },
                         ])
                       }
                       className="flex items-center gap-2 text-rose-600 hover:text-rose-700"
                     >
                       <Plus size={20} />
-                      <span>Add Service</span>
+                      <span>Add Custom Service</span>
                     </button>
                   </div>
 
                   <div className="space-y-4">
-                    {customAddOns.map((addon, index) => (
+                    {customServices.map((service, index) => (
                       <div
-                        key={addon.id}
+                        key={index}
                         className="p-4 border rounded-lg bg-gray-50"
                       >
-                        <div className="grid gap-4">
-                          <div className="flex gap-4">
-                            <div className="flex-1">
+                        <div className="flex justify-between items-start">
+                          <div className="flex-1 grid gap-4">
+                            <div>
                               <label className="block text-sm font-medium text-gray-700 mb-1">
-                                Service Name
+                                Service Name*
                               </label>
                               <Input
-                                value={addon.name}
+                                value={service.name}
                                 onChange={(e) => {
-                                  const newAddOns = [...customAddOns];
-                                  newAddOns[index] = {
-                                    ...addon,
+                                  const newServices = [...customServices];
+                                  newServices[index] = {
+                                    ...service,
                                     name: e.target.value,
                                   };
-                                  setCustomAddOns(newAddOns);
+                                  setCustomServices(newServices);
                                 }}
                                 placeholder="Enter service name"
-                                className="w-full"
+                                required
                               />
                             </div>
-                            <button
-                              type="button"
-                              onClick={() => {
-                                setCustomAddOns(
-                                  customAddOns.filter((_, i) => i !== index)
-                                );
-                              }}
-                              className="self-start p-2 text-gray-400 hover:text-rose-500 transition-colors"
-                            >
-                              <X size={20} />
-                            </button>
+                            <div>
+                              <label className="block text-sm font-medium text-gray-700 mb-1">
+                                Description*
+                              </label>
+                              <textarea
+                                value={service.description}
+                                onChange={(e) => {
+                                  const newServices = [...customServices];
+                                  newServices[index] = {
+                                    ...service,
+                                    description: e.target.value,
+                                  };
+                                  setCustomServices(newServices);
+                                }}
+                                rows={2}
+                                className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-rose-500 focus:border-transparent resize-vertical text-sm"
+                                placeholder="Describe the service..."
+                                required
+                              />
+                            </div>
+                            <div className="grid grid-cols-2 gap-4">
+                              <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">
+                                  Starting Price ($)*
+                                </label>
+                                <div className="relative">
+                                  <DollarSign
+                                    className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
+                                    size={16}
+                                  />
+                                  <Input
+                                    type="number"
+                                    placeholder="0"
+                                    min="0"
+                                    step="1"
+                                    value={
+                                      service.price === 0 ? "" : service.price
+                                    }
+                                    onChange={(e) => {
+                                      const sanitizedValue = e.target.value;
+                                      const newServices = [...customServices];
+                                      newServices[index] = {
+                                        ...service,
+                                        price:
+                                          sanitizedValue === ""
+                                            ? 0
+                                            : parseInt(sanitizedValue),
+                                      };
+                                      setCustomServices(newServices);
+                                    }}
+                                    onKeyDown={(e) => {
+                                      if (e.key === "-" || e.key === ".") {
+                                        e.preventDefault();
+                                      }
+                                    }}
+                                    className="pl-8"
+                                    required
+                                  />
+                                </div>
+                              </div>
+                              <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">
+                                  Duration (hours)*
+                                </label>
+                                <div className="relative">
+                                  <Clock
+                                    className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
+                                    size={16}
+                                  />
+                                  <Input
+                                    type="number"
+                                    step="0.5"
+                                    min="0"
+                                    placeholder="0"
+                                    value={
+                                      service.duration === 0
+                                        ? ""
+                                        : service.duration
+                                    }
+                                    onChange={(e) => {
+                                      const sanitizedValue = e.target.value;
+                                      // Allow any numeric input temporarily during typing
+                                      if (
+                                        /^\d*\.?\d{0,1}$/.test(sanitizedValue)
+                                      ) {
+                                        const newServices = [...customServices];
+                                        newServices[index] = {
+                                          ...service,
+                                          duration:
+                                            sanitizedValue === ""
+                                              ? 0
+                                              : parseFloat(sanitizedValue),
+                                        };
+                                        setCustomServices(newServices);
+                                      }
+                                    }}
+                                    onBlur={(e) => {
+                                      const value = e.target.value;
+                                      // On blur, format to proper decimal
+                                      if (
+                                        value === "" ||
+                                        isNaN(parseFloat(value))
+                                      ) {
+                                        const newServices = [...customServices];
+                                        newServices[index] = {
+                                          ...service,
+                                          duration: 0,
+                                        };
+                                        setCustomServices(newServices);
+                                      } else {
+                                        // Round to nearest 0.5
+                                        const roundedValue =
+                                          Math.round(parseFloat(value) * 2) / 2;
+                                        const newServices = [...customServices];
+                                        newServices[index] = {
+                                          ...service,
+                                          duration: roundedValue,
+                                        };
+                                        setCustomServices(newServices);
+                                      }
+                                    }}
+                                    className="pl-8"
+                                    required
+                                  />
+                                </div>
+                              </div>
+                            </div>
                           </div>
-
-                          <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">
-                              Description
-                            </label>
-                            <textarea
-                              value={addon.description}
-                              onChange={(e) => {
-                                const newAddOns = [...customAddOns];
-                                newAddOns[index] = {
-                                  ...addon,
-                                  description: e.target.value,
-                                };
-                                setCustomAddOns(newAddOns);
-                              }}
-                              placeholder="Describe the service..."
-                              rows={2}
-                              className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-rose-500 focus:border-transparent resize-none"
-                            />
-                          </div>
-
-                          <PricingInput
-                            addon={addon}
-                            value={addon}
-                            onChange={(newValue) => {
-                              const newAddOns = [...customAddOns];
-                              newAddOns[index] = { ...addon, ...newValue };
-                              setCustomAddOns(newAddOns);
+                          <button
+                            onClick={() => {
+                              setCustomServices(
+                                customServices.filter((_, i) => i !== index)
+                              );
                             }}
-                          />
+                            className="ml-4 p-2 text-gray-400 hover:text-rose-500 transition-colors"
+                          >
+                            <X size={20} />
+                          </button>
                         </div>
                       </div>
                     ))}
                   </div>
+                </div>
+              </div>
+            )}
+
+            {/* Step 4: Availability */}
+            {currentStep === 4 && (
+              <div className="space-y-6">
+                <h2 className="text-2xl font-semibold mb-6">Booking</h2>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Required Deposit (% of total service cost)*
+                  </label>
+                  <div className="relative">
+                    <Input
+                      type="number"
+                      min="0"
+                      max="100"
+                      step="1" // Force whole numbers
+                      value={availability.deposit}
+                      onChange={(e) => {
+                        // Remove any non-digit characters and leading zeros
+                        const sanitizedValue = e.target.value
+                          .replace(/[^\d]/g, "")
+                          .replace(/^0+(?=\d)/, "");
+                        // Only update if the value is within 0-100 range
+                        if (
+                          sanitizedValue === "" ||
+                          (parseInt(sanitizedValue) >= 0 &&
+                            parseInt(sanitizedValue) <= 100)
+                        ) {
+                          setAvailability({
+                            ...availability,
+                            deposit: sanitizedValue,
+                          });
+                        }
+                      }}
+                      onKeyDown={(e) => {
+                        // Prevent decimal point and negative sign
+                        if (e.key === "-" || e.key === ".") {
+                          e.preventDefault();
+                        }
+                      }}
+                      onBlur={(e) => {
+                        const value = e.target.value;
+                        // If empty or invalid, set to empty string
+                        if (value === "" || isNaN(parseInt(value))) {
+                          setAvailability({
+                            ...availability,
+                            deposit: "",
+                          });
+                          return;
+                        }
+                        // Ensure within range
+                        const roundedValue = Math.min(
+                          100,
+                          Math.max(0, parseInt(value))
+                        );
+                        setAvailability({
+                          ...availability,
+                          deposit: roundedValue.toString(),
+                        });
+                      }}
+                      placeholder="Enter deposit percentage"
+                      className="pl-2 pr-8 w-full"
+                      required
+                    />
+                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 pointer-events-none">
+                      %
+                    </span>
+                  </div>
+                  <p className="mt-1 text-sm text-gray-500">
+                    Enter a whole number between 0 and 100
+                  </p>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Cancellation Policy*
+                  </label>
+                  <Select
+                    value={availability.cancellationPolicy}
+                    onValueChange={(value) =>
+                      setAvailability({
+                        ...availability,
+                        cancellationPolicy: value,
+                      })
+                    }
+                  >
+                    <SelectTrigger className="w-full">
+                      <SelectValue placeholder="Select cancellation policy" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Flexible">
+                        Flexible (24-72 hours)
+                      </SelectItem>
+                      <SelectItem value="Moderate">
+                        Moderate (1 week)
+                      </SelectItem>
+                      <SelectItem value="Strict">Strict (2 weeks)</SelectItem>
+                      <SelectItem value="No Cancellations">
+                        No Cancellations
+                      </SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
               </div>
             )}
@@ -1292,20 +1405,20 @@ export default function CreateVenueListing() {
                 {isSubmitting
                   ? "Creating..."
                   : currentStep === totalSteps
-                  ? "Submit"
+                  ? "Create Listing"
                   : "Next"}
               </button>
             </div>
           </div>
 
-          {/* Cancel Confirmation Dialog */}
+          {/* Cancel Dialog */}
           <AlertDialog
             open={showCancelDialog}
             onOpenChange={setShowCancelDialog}
           >
             <AlertDialogContent>
               <AlertDialogHeader>
-                <AlertDialogTitle>Cancel Venue Listing</AlertDialogTitle>
+                <AlertDialogTitle>Cancel Listing Creation</AlertDialogTitle>
                 <AlertDialogDescription>
                   Are you sure you want to cancel? All your progress will be
                   lost and you'll need to start over.
@@ -1327,4 +1440,6 @@ export default function CreateVenueListing() {
       <Footer />
     </div>
   );
-}
+};
+
+export default CreateDJListing;

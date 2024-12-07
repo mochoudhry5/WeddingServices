@@ -13,7 +13,7 @@ import Footer from "@/components/ui/Footer";
 import { toast } from "sonner";
 import { useAuth } from "@/context/AuthContext";
 
-type ServiceId = "venue" | "makeup" | "photography" | "weddingplanner" | "dj";
+type ServiceId = "venue" | "hairMakeup" | "photoVideo" | "weddingplanner" | "dj";
 
 interface Service {
   id: ServiceId;
@@ -36,23 +36,23 @@ const services: Service[] = [
     path: "/services/venue/create",
   },
   {
-    id: "makeup",
+    id: "hairMakeup",
     name: "Hair & Makeup",
     icon: Paintbrush,
     description:
       "Offer your professional hair/makeup services to brides and wedding parties.",
     available: true,
-    path: "/services/makeup/create",
+    path: "/services/hairMakeup/create",
     comingSoon: false,
   },
   {
-    id: "photography",
-    name: "Photography",
+    id: "photoVideo",
+    name: "Photography & Videography",
     icon: Camera,
     description:
       "Showcase your photography portfolio and connect with couples seeking their wedding photographer.",
     available: true,
-    path: "/services/photography/create",
+    path: "/services/photoVideo/create",
     comingSoon: false,
   },
   {

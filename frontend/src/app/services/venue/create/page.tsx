@@ -3,7 +3,6 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import {
-  PlayCircle,
   Upload,
   Plus,
   X,
@@ -34,7 +33,6 @@ import {
 } from "@/components/ui/alert-dialog";
 import NavBar from "@/components/ui/NavBar";
 import Footer from "@/components/ui/Footer";
-import { machine } from "os";
 import LocationInput from "@/components/ui/LocationInput";
 
 // Types
@@ -95,43 +93,6 @@ interface VenueFormData {
   catering: CateringOption;
 }
 
-const cateringDescriptions = {
-  "in-house": "In-house catering services provided exclusively",
-  outside: "External catering services allowed",
-  both: "Both in-house and external catering services available",
-} as const;
-
-// Constants
-const services: Service[] = [
-  {
-    id: "venue",
-    name: "Venue",
-    icon: Building2,
-    description:
-      "List your wedding venue and showcase your space to couples looking for their perfect venue.",
-    available: true,
-    path: "/venues/create",
-  },
-  {
-    id: "makeup",
-    name: "Makeup Artist",
-    icon: Paintbrush,
-    description:
-      "Offer your professional makeup services to brides and wedding parties.",
-    available: false,
-    comingSoon: true,
-  },
-  {
-    id: "photography",
-    name: "Photography",
-    icon: Camera,
-    description:
-      "Showcase your photography portfolio and connect with couples seeking their wedding photographer.",
-    available: false,
-    comingSoon: true,
-  },
-];
-
 const commonInclusions = [
   "Bridal Suite",
   "Chairs & Tables",
@@ -156,31 +117,31 @@ const commonAddOns = [
   },
   {
     name: "Bar Service",
-    description: "Professional bartenders with premium beverages",
+    description: "Professional bartenders with premium beverages.",
     suggestedPrice: 0,
     suggestedPricingType: "per-guest" as const,
   },
   {
     name: "DJ Package",
-    description: "Professional DJ with sound system and lighting",
+    description: "Professional DJ with sound system and lighting.",
     suggestedPrice: 0,
     suggestedPricingType: "flat" as const,
   },
   {
     name: "Decor Package",
-    description: "Custom floral arrangements and venue decoration",
+    description: "Custom floral arrangements and venue decoration.",
     suggestedPrice: 0,
     suggestedPricingType: "flat" as const,
   },
   {
     name: "Photography",
-    description: "Professional photography coverage",
+    description: "Professional photography coverage.",
     suggestedPrice: 0,
     suggestedPricingType: "flat" as const,
   },
   {
     name: "Videography",
-    description: "Professional video coverage",
+    description: "Professional video coverage.",
     suggestedPrice: 0,
     suggestedPricingType: "flat" as const,
   },
@@ -283,7 +244,7 @@ export default function CreateVenueListing() {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Basic Information State
-  const [venueName, setVenueName] = useState("");
+  const [businessName, setBusinessName] = useState("");
   const [basePrice, setBasePrice] = useState("");
   const [minGuests, setMinGuests] = useState("");
   const [maxGuests, setMaxGuests] = useState("");
@@ -377,7 +338,7 @@ export default function CreateVenueListing() {
             return false;
           }
         };
-        if (!venueName) {
+        if (!businessName) {
           toast.error(`Venue Name Must be Entered`);
           return false;
         }
@@ -436,7 +397,7 @@ export default function CreateVenueListing() {
           }
         }
         return (
-          venueName &&
+          businessName &&
           location.enteredLocation &&
           location.city &&
           location.state &&
@@ -531,38 +492,39 @@ export default function CreateVenueListing() {
         error: authError,
       } = await supabase.auth.getUser();
       if (authError || !user) {
-        toast.error("Please sign in to create a venue listing");
+        toast.error("Please sign in to create a Venue listing");
         return;
       }
 
       setIsSubmitting(true);
 
       const { data: venue, error: venueError } = await supabase
-        .from("venues")
+        .from("venue_listing")
         .insert({
           user_id: user.id,
-          name: venueName,
+          business_name: businessName,
           address: location.address,
           city: location.city,
           state: location.state,
+          country: location.country,
           base_price: parseInt(basePrice),
           min_guests: minGuests ? parseInt(minGuests) : null,
           max_guests: parseInt(maxGuests),
-          description,
           catering_option: catering,
+          venue_type: venueType,
           website_url: websiteUrl || null,
           instagram_url: instagramUrl || null,
-          venue_type: venueType,
+          description,
         })
         .select()
         .single();
 
       if (venueError) {
-        throw new Error(`Failed to create venue: ${venueError.message}`);
+        throw new Error(`Failed to create Venue listing: ${venueError.message}`);
       }
 
       if (!venue) {
-        throw new Error("Venue created but no data returned");
+        throw new Error("Venue listing created but no data returned");
       }
 
       // Upload media files
@@ -582,7 +544,7 @@ export default function CreateVenueListing() {
         }
 
         return {
-          venue_id: venue.id,
+          business_id: venue.id,
           file_path: filePath,
           media_type: file.type,
           display_order: index,
@@ -604,14 +566,14 @@ export default function CreateVenueListing() {
       // Insert inclusions
       const allInclusions = [
         ...includedItems.map((item) => ({
-          venue_id: venue.id,
+          business_id: venue.id,
           name: item,
           is_custom: false,
         })),
         ...customInclusions
           .filter((item) => item.trim())
           .map((item) => ({
-            venue_id: venue.id,
+            business_id: venue.id,
             name: item,
             is_custom: true,
           })),
@@ -633,7 +595,7 @@ export default function CreateVenueListing() {
       // Insert add-ons
       const allAddons = [
         ...Object.entries(selectedAddOns).map(([name, details]) => ({
-          venue_id: venue.id,
+          business_id: venue.id,
           name,
           description: details.description,
           pricing_type: details.pricingType,
@@ -642,7 +604,7 @@ export default function CreateVenueListing() {
           is_custom: false,
         })),
         ...nonEmptyCustomAddons.map((addon) => ({
-          venue_id: venue.id,
+          business_id: venue.id,
           name: addon.name,
           description: addon.description,
           pricing_type: addon.pricingType,
@@ -670,7 +632,7 @@ export default function CreateVenueListing() {
       toast.error(
         error instanceof Error
           ? error.message
-          : "Failed to create venue listing. Please try again."
+          : "Failed to create Venue listing. Please try again."
       );
     } finally {
       setIsSubmitting(false);
@@ -717,8 +679,8 @@ export default function CreateVenueListing() {
                   </label>
                   <Input
                     type="text"
-                    value={venueName}
-                    onChange={(e) => setVenueName(e.target.value)}
+                    value={businessName}
+                    onChange={(e) => setBusinessName(e.target.value)}
                     placeholder="Enter your venue name"
                     className="w-full"
                   />

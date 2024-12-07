@@ -16,22 +16,22 @@ interface ServiceConfig {
 // Service configurations
 const SERVICE_CONFIGS: Record<string, ServiceConfig> = {
   venue: {
-    tableName: "liked_venues",
+    tableName: "venue_liked",
     idField: "venue_id",
     entityName: "venue",
-    pluralName: "venues",
+    pluralName: "Venues",
   },
-  makeup: {
-    tableName: "liked_makeup",
-    idField: "makeup_id",
-    entityName: "makeup artist",
-    pluralName: "makeup artists",
+  hairMakeup: {
+    tableName: "hair_makeup_liked",
+    idField: "hair_makeup_id",
+    entityName: "hairMakeup",
+    pluralName: "Hair & Makeup",
   },
-  photography: {
-    tableName: "liked_photography",
-    idField: "photography_id",
-    entityName: "photography",
-    pluralName: "photography"
+  photoVideo: {
+    tableName: "photo_video_liked",
+    idField: "photo_video_id",
+    entityName: "photoVideo",
+    pluralName: "Photgraphy & Videography"
   },
 } as const;
 
@@ -113,7 +113,7 @@ export default function LikeButton({
         });
 
         if (error) throw error;
-        toast.success(`Added to saved ${serviceConfig.pluralName}`);
+        toast.success(`Saved ${serviceConfig.pluralName} listing`);
       }
 
       setIsLiked(!isLiked);

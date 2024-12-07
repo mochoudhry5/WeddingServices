@@ -11,42 +11,42 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/context/AuthContext";
 import LikeButton from "@/components/ui/LikeButton";
-import { ChevronDown } from "lucide-react";
 
-interface MakeupDetails {
+interface HairMakeupDetails {
+  user_id: string;
   id: string;
-  artist_name: string;
+  business_name: string;
   service_type: "makeup" | "hair" | "both";
   years_experience: string;
   travel_range: number;
-  description: string;
-  website_url: string | null;
-  instagram_url: string | null;
-  max_bookings_per_day: number;
-  deposit: number;
-  cancellation_policy: string;
-  user_id: string;
-  makeup_media: MakeupMedia[];
-  makeup_specialties: MakeupSpecialty[];
-  makeup_services: MakeupService[];
   is_remote_business: boolean;
   address: string | null;
   city: string;
   state: string;
   country: string;
+  hair_makeup_specialties: HairMakeupSpecialty[];
+  website_url: string | null;
+  instagram_url: string | null;
+  description: string;
+  hair_makeup_media: HairMakeupMedia[];
+  deposit: number;
+  cancellation_policy: string;
+  hair_makeup_services: HairMakeupService[];
+  min_service_price: number;
+  max_service_price: number;
 }
 
-interface MakeupMedia {
+interface HairMakeupMedia {
   file_path: string;
   display_order: number;
 }
 
-interface MakeupSpecialty {
+interface HairMakeupSpecialty {
   specialty: string;
   is_custom: boolean;
 }
 
-interface MakeupService {
+interface HairMakeupService {
   name: string;
   description: string;
   price: number;
@@ -64,7 +64,7 @@ interface InquiryForm {
 }
 
 // Service Card Component
-const ServiceCard = ({ service }: { service: MakeupService }) => {
+const ServiceCard = ({ service }: { service: HairMakeupService }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [hasOverflow, setHasOverflow] = useState(false);
   const descriptionRef = useRef<HTMLDivElement>(null);
@@ -120,7 +120,7 @@ const ServiceCard = ({ service }: { service: MakeupService }) => {
 
 export default function MakeupDetailsPage() {
   const { user } = useAuth();
-  const [makeup, setMakeup] = useState<MakeupDetails | null>(null);
+  const [hairMakeup, setHairMakeup] = useState<HairMakeupDetails | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [inquiryForm, setInquiryForm] = useState<InquiryForm>({
     firstName: "",
@@ -141,21 +141,21 @@ export default function MakeupDetailsPage() {
   const loadMakeupDetails = async () => {
     try {
       const { data: makeupData, error } = await supabase
-        .from("makeup_artists")
+        .from("hair_makeup_listing")
         .select(
           `
             *,
             user_id,
             is_remote_business,
-            makeup_media (
+            hair_makeup_media (
               file_path,
               display_order
             ),
-            makeup_specialties (
+            hair_makeup_specialties (
               specialty,
               is_custom
             ),
-            makeup_services (
+            hair_makeup_services (
               name,
               description,
               price,
@@ -175,7 +175,7 @@ export default function MakeupDetailsPage() {
       }
 
       console.log("Makeup data:", makeupData);
-      setMakeup(makeupData);
+      setHairMakeup(makeupData);
     } catch (error) {
       console.error("Error loading makeup artist:", error);
       toast.error("Failed to load makeup artist details");
@@ -218,7 +218,7 @@ export default function MakeupDetailsPage() {
     );
   }
 
-  if (!makeup) {
+  if (!hairMakeup) {
     return (
       <div className="min-h-screen bg-slate-50">
         <NavBar />
@@ -240,9 +240,9 @@ export default function MakeupDetailsPage() {
       <div className="relative bg-black">
         <div className="relative h-[60vh] md:h-[80vh]">
           <MediaCarousel
-            media={makeup.makeup_media}
-            name={makeup.artist_name}
-            service="makeup"
+            media={hairMakeup.hair_makeup_media}
+            name={hairMakeup.business_name}
+            service="hair-makeup"
             className="w-full h-full"
           />
         </div>
@@ -250,7 +250,7 @@ export default function MakeupDetailsPage() {
 
       {/* Content */}
       <div className="max-w-7xl mx-auto px-4 py-6">
-        {user?.id !== makeup.user_id && (
+        {user?.id !== hairMakeup.user_id && (
           <div className="max-w-7xl mx-auto px-4 py-4">
             <div className="bg-rose-50 border-b border-rose-200 py-2">
               <div className="max-w-3xl mx-auto px-4 flex flex-col items-center justify-center">
@@ -259,7 +259,7 @@ export default function MakeupDetailsPage() {
                     Don't forget this listing!
                   </span>
                   <LikeButton
-                    itemId={makeup.id}
+                    itemId={hairMakeup.id}
                     service="makeup"
                     initialLiked={false}
                     className="text-rose-600 hover:text-rose-700"
@@ -275,63 +275,36 @@ export default function MakeupDetailsPage() {
           <div>
             <div className="flex items-center gap-3 mb-2">
               <h1 className="text-2xl md:text-3xl font-bold text-gray-900">
-                {makeup.artist_name}
+                {hairMakeup.business_name}
               </h1>
               <div className="inline-flex items-center px-3 py-1 rounded-full bg-white border border-gray-200 text-sm font-medium">
-                {makeup.service_type === "both"
-                  ? "Makeup & Hair"
-                  : makeup.service_type === "makeup"
+                {hairMakeup.service_type === "both"
+                  ? "Hair & Makeup"
+                  : hairMakeup.service_type === "makeup"
                   ? "Makeup"
                   : "Hair"}
               </div>
             </div>
-            {makeup.is_remote_business ? (
+            {hairMakeup.is_remote_business ? (
               <p className="text-gray-600">
-                {makeup.city}, {makeup.state} (Remote)
+                {hairMakeup.city}, {hairMakeup.state} (Remote)
               </p>
             ) : (
               <p className="text-gray-600">
-                {makeup.address}, {makeup.city}, {makeup.state}
+                {hairMakeup.address}, {hairMakeup.city}, {hairMakeup.state}
               </p>
             )}
           </div>
 
           {/* Price Range */}
-          {makeup.makeup_services?.length > 0 && (
+          {hairMakeup.min_service_price && (
             <div className="text-right">
-              {makeup.makeup_services.every(
-                (service) =>
-                  service.price !== null && service.price !== undefined
-              ) && (
-                <>
-                  <div className="text-3xl font-semibold text-rose-600">
-                    {(() => {
-                      const prices = makeup.makeup_services.map(
-                        (service) => service.price
-                      );
-                      const minPrice = Math.min(...prices);
-                      const maxPrice = Math.max(...prices);
-
-                      return minPrice === maxPrice
-                        ? `$${maxPrice.toLocaleString()}`
-                        : `$${minPrice.toLocaleString()} - $${maxPrice.toLocaleString()}`;
-                    })()}
-                  </div>
-                  <p className="text-sm text-gray-500">
-                    {(() => {
-                      const prices = makeup.makeup_services.map(
-                        (service) => service.price
-                      );
-                      const minPrice = Math.min(...prices);
-                      const maxPrice = Math.max(...prices);
-
-                      return minPrice === maxPrice
-                        ? "(See Services & Pricing)"
-                        : "(See Services & Pricing)";
-                    })()}
-                  </p>
-                </>
-              )}
+              <div className="text-3xl font-semibold text-rose-600">
+                {hairMakeup.min_service_price === hairMakeup.max_service_price
+                  ? `$${hairMakeup.max_service_price.toLocaleString()}`
+                  : `$${hairMakeup.min_service_price.toLocaleString()} - $${hairMakeup.max_service_price.toLocaleString()}`}
+              </div>
+              <p className="text-sm text-gray-500">(See Services & Pricing)</p>
             </div>
           )}
         </div>
@@ -345,7 +318,7 @@ export default function MakeupDetailsPage() {
               <ul className="space-y-2 text-gray-600">
                 <li className="flex items-center gap-2">
                   <span className="text-rose-500">•</span>
-                  {makeup.years_experience} years
+                  {hairMakeup.years_experience} years
                 </li>
               </ul>
             </div>
@@ -356,9 +329,9 @@ export default function MakeupDetailsPage() {
               <ul className="space-y-2 text-gray-600">
                 <li className="flex items-center gap-2">
                   <span className="text-rose-500">•</span>
-                  {makeup.deposit === 0
+                  {hairMakeup.deposit === 0
                     ? "No Deposit Required"
-                    : `${makeup.deposit}% of total service cost`}
+                    : `${hairMakeup.deposit}% of total service cost`}
                 </li>
               </ul>
             </div>
@@ -369,9 +342,9 @@ export default function MakeupDetailsPage() {
               <ul className="space-y-2 text-gray-600">
                 <li className="flex items-center gap-2">
                   <span className="text-rose-500">•</span>
-                  {makeup.travel_range === 0
+                  {hairMakeup.travel_range === 0
                     ? "No Travel"
-                    : `${makeup.travel_range} miles from ${makeup.city}`}
+                    : `${hairMakeup.travel_range} miles from ${hairMakeup.city}`}
                 </li>
               </ul>
             </div>
@@ -379,13 +352,13 @@ export default function MakeupDetailsPage() {
             {/* Socials */}
             <div className="flex flex-col items-center text-center last:border-r-0">
               <h3 className="text-lg font-semibold mb-3">Socials</h3>
-              {makeup.website_url || makeup.instagram_url ? (
+              {hairMakeup.website_url || hairMakeup.instagram_url ? (
                 <ul className="space-y-2 text-gray-600">
-                  {makeup.website_url && (
+                  {hairMakeup.website_url && (
                     <li className="flex items-center gap-2">
                       <span className="text-rose-500">•</span>
                       <a
-                        href={makeup.website_url}
+                        href={hairMakeup.website_url}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="text-rose-600 hover:text-rose-700 hover:underline"
@@ -411,21 +384,21 @@ export default function MakeupDetailsPage() {
           About the Business
         </h2>
         <p className="text-gray-600 mb-6 leading-relaxed">
-          {makeup.description}
+          {hairMakeup.description}
         </p>
 
         {/* Specialties */}
-        {makeup.makeup_specialties?.length > 0 && (
+        {hairMakeup.hair_makeup_specialties?.length > 0 && (
           <div className="mb-12">
             <h2 className="text-xl md:text-2xl font-bold mb-6">
-              {makeup.service_type === "makeup"
+              {hairMakeup.service_type === "makeup"
                 ? "Makeup Styles"
-                : makeup.service_type === "hair"
+                : hairMakeup.service_type === "hair"
                 ? "Hair Styles"
                 : "Makeup & Hair Styles"}
             </h2>
             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
-              {makeup.makeup_specialties.map((specialty, index) => (
+              {hairMakeup.hair_makeup_specialties.map((specialty, index) => (
                 <div
                   key={index}
                   className="p-4 rounded-lg border border-rose-200 bg-rose-50"
@@ -441,7 +414,7 @@ export default function MakeupDetailsPage() {
         )}
 
         {/* Services */}
-        {makeup.makeup_services?.length > 0 && (
+        {hairMakeup.hair_makeup_services?.length > 0 && (
           <div className="mb-12">
             <h2 className="text-xl md:text-2xl font-bold mb-6">
               Services & Pricing
@@ -449,7 +422,7 @@ export default function MakeupDetailsPage() {
             <div className="flex flex-row gap-4">
               {/* First Column */}
               <div className="flex-1 flex flex-col gap-4">
-                {makeup.makeup_services
+                {hairMakeup.hair_makeup_services
                   .filter((_, index) => index % 2 === 0)
                   .map((service, index) => (
                     <ServiceCard key={index * 2} service={service} />
@@ -458,7 +431,7 @@ export default function MakeupDetailsPage() {
 
               {/* Second Column */}
               <div className="flex-1 flex flex-col gap-4">
-                {makeup.makeup_services
+                {hairMakeup.hair_makeup_services
                   .filter((_, index) => index % 2 === 1)
                   .map((service, index) => (
                     <ServiceCard key={index * 2 + 1} service={service} />

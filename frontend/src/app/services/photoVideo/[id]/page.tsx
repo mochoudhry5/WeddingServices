@@ -14,36 +14,36 @@ import { useAuth } from "@/context/AuthContext";
 import LikeButton from "@/components/ui/LikeButton";
 import { ChevronDown } from "lucide-react";
 
-interface PhotographyDetails {
+interface PhotoVideoDetails {
+  user_id: string;
   id: string;
-  artist_name: string;
+  business_name: string;
   years_experience: string;
   travel_range: number;
+  is_remote_business: boolean;
   address: string;
   city: string;
   state: string;
   country: string;
-  description: string;
+  service_type: "photography" | "videography" | "both";
+  photo_video_specialties: PhotoVideoSpecialty[];
   website_url: string | null;
   instagram_url: string | null;
+  description: string;
+  photo_video_media: PhotoVideoMedia[];
   deposit: number;
   cancellation_policy: string;
-  is_remote_business: boolean;
-  service_type: "photography" | "videography" | "both";
-  user_id: string;
-  photography_media: PhotographyMedia[];
-  photography_services: PhotographyService[];
-  photography_specialties: PhotographySpecialty[];
+  photo_video_services: PhotoVideoService[];
   min_service_price: number;
   max_service_price: number;
 }
 
-interface PhotographyMedia {
+interface PhotoVideoMedia {
   file_path: string;
   display_order: number;
 }
 
-interface PhotographyService {
+interface PhotoVideoService {
   name: string;
   description: string;
   price: number;
@@ -51,7 +51,7 @@ interface PhotographyService {
   is_custom: boolean;
 }
 
-interface PhotographySpecialty {
+interface PhotoVideoSpecialty {
   specialty: string;
   is_custom: boolean;
   style_type: "photography" | "videography";
@@ -65,7 +65,7 @@ interface InquiryForm {
   eventDate: string;
   message: string;
 }
-const ServiceCard = ({ service }: { service: PhotographyService }) => {
+const ServiceCard = ({ service }: { service: PhotoVideoService }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [hasOverflow, setHasOverflow] = useState(false);
   const descriptionRef = useRef<HTMLDivElement>(null);
@@ -121,7 +121,7 @@ const ServiceCard = ({ service }: { service: PhotographyService }) => {
 
 export default function PhotographyDetailsPage() {
   const { user } = useAuth();
-  const [photography, setPhotography] = useState<PhotographyDetails | null>(
+  const [photoVideo, setPhotoVideo] = useState<PhotoVideoDetails | null>(
     null
   );
   const [isLoading, setIsLoading] = useState(true);
@@ -143,24 +143,24 @@ export default function PhotographyDetailsPage() {
 
   const loadPhotographerDetails = async () => {
     try {
-      const { data: photographerData, error } = await supabase
-        .from("photography_artists")
+      const { data: photoVideoData, error } = await supabase
+        .from("photo_video_listing")
         .select(
           `
           *,
           user_id,
-          photography_media (
+          photo_video_media (
             file_path,
             display_order
           ),
-          photography_services (
+          photo_video_services (
             name,
             description,
             price,
             duration,
             is_custom
           ),
-          photography_specialties (
+          photo_video_specialties (
             specialty,
             is_custom,
             style_type
@@ -172,15 +172,15 @@ export default function PhotographyDetailsPage() {
 
       if (error) throw error;
 
-      if (!photographerData) {
-        toast.error("Photographer/Videographer not found");
+      if (!photoVideoData) {
+        toast.error("Photographer & Videographer not found");
         return;
       }
 
-      console.log("Photographer data:", photographerData);
-      setPhotography(photographerData);
+      console.log("Photography & Videography data:", photoVideoData);
+      setPhotoVideo(photoVideoData);
     } catch (error) {
-      console.error("Error loading photographer:", error);
+      console.error("Error loading Photgraphy & Videography listing:", error);
       toast.error("Failed to load artist details");
     } finally {
       setIsLoading(false);
@@ -221,7 +221,7 @@ export default function PhotographyDetailsPage() {
     );
   }
 
-  if (!photography) {
+  if (!photoVideo) {
     return (
       <div className="min-h-screen bg-slate-50">
         <NavBar />
@@ -235,10 +235,10 @@ export default function PhotographyDetailsPage() {
     );
   }
 
-  const photoStyles = photography.photography_specialties
+  const photoStyles = photoVideo.photo_video_specialties
     .filter((s) => s.style_type === "photography")
     .map((s) => s.specialty);
-  const videoStyles = photography.photography_specialties
+  const videoStyles = photoVideo.photo_video_specialties
     .filter((s) => s.style_type === "videography")
     .map((s) => s.specialty);
 
@@ -250,9 +250,9 @@ export default function PhotographyDetailsPage() {
       <div className="relative bg-black">
         <div className="relative h-[60vh] md:h-[80vh]">
           <MediaCarousel
-            media={photography.photography_media}
-            name={photography.artist_name}
-            service="photography"
+            media={photoVideo.photo_video_media}
+            name={photoVideo.business_name}
+            service="photo-video"
             className="w-full h-full"
           />
         </div>
@@ -260,7 +260,7 @@ export default function PhotographyDetailsPage() {
 
       {/* Content */}
       <div className="max-w-7xl mx-auto px-4 py-8">
-        {user?.id !== photography.user_id && (
+        {user?.id !== photoVideo.user_id && (
           <div className="max-w-7xl mx-auto px-4 py-4">
             <div className="bg-rose-50 border-b border-rose-200 py-2">
               <div className="max-w-3xl mx-auto px-4 flex flex-col items-center justify-center">
@@ -269,7 +269,7 @@ export default function PhotographyDetailsPage() {
                     Don't forget this listing!
                   </span>
                   <LikeButton
-                    itemId={photography.id}
+                    itemId={photoVideo.id}
                     service="photography"
                     initialLiked={false}
                     className="text-rose-600 hover:text-rose-700"
@@ -285,38 +285,38 @@ export default function PhotographyDetailsPage() {
           <div>
             <div className="flex items-center gap-3 mb-2">
               <h1 className="text-2xl md:text-3xl font-bold text-gray-900">
-                {photography.artist_name}
+                {photoVideo.business_name}
               </h1>
               <div className="inline-flex items-center px-3 py-1 rounded-full bg-white border border-gray-200 text-sm font-medium">
-                {photography.service_type === "both"
+                {photoVideo.service_type === "both"
                   ? "Photography & Videography"
-                  : photography.service_type === "photography"
+                  : photoVideo.service_type === "photography"
                   ? "Photography"
                   : "Videography"}
               </div>
             </div>
-            {photography.is_remote_business ? (
+            {photoVideo.is_remote_business ? (
               <p className="text-gray-600">
-                {photography.city}, {photography.state} (Remote)
+                {photoVideo.city}, {photoVideo.state} (Remote)
               </p>
             ) : (
               <p className="text-gray-600">
-                {photography.address}, {photography.city}, {photography.state}
+                {photoVideo.address}, {photoVideo.city}, {photoVideo.state}
               </p>
             )}
           </div>
           <div className="text-right">
-            {photography.min_service_price && photography.max_service_price && (
+            {photoVideo.min_service_price && photoVideo.max_service_price && (
               <>
                 <p className="text-3xl font-semibold text-rose-600">
-                  {photography.min_service_price ===
-                  photography.max_service_price
-                    ? `$${photography.min_service_price.toLocaleString()}`
-                    : `$${photography.min_service_price.toLocaleString()} - $${photography.max_service_price.toLocaleString()}`}
+                  {photoVideo.min_service_price ===
+                  photoVideo.max_service_price
+                    ? `$${photoVideo.min_service_price.toLocaleString()}`
+                    : `$${photoVideo.min_service_price.toLocaleString()} - $${photoVideo.max_service_price.toLocaleString()}`}
                 </p>
                 <p className="text-sm text-gray-500">
-                  {photography.min_service_price ===
-                  photography.max_service_price
+                  {photoVideo.min_service_price ===
+                  photoVideo.max_service_price
                     ? "(See Service & Pricing)"
                     : "(See Service & Pricing)"}
                 </p>
@@ -335,7 +335,7 @@ export default function PhotographyDetailsPage() {
               <ul className="space-y-2 text-gray-600">
                 <li className="flex items-center gap-2">
                   <span className="text-rose-500">•</span>
-                  {photography.years_experience} years
+                  {photoVideo.years_experience} years
                 </li>
               </ul>
             </div>
@@ -346,7 +346,7 @@ export default function PhotographyDetailsPage() {
               <ul className="space-y-2 text-gray-600">
                 <li className="flex items-center gap-2">
                   <span className="text-rose-500">•</span>
-                  {photography.deposit}% of total service cost
+                  {photoVideo.deposit}% of total service cost
                 </li>
               </ul>
             </div>
@@ -357,9 +357,9 @@ export default function PhotographyDetailsPage() {
               <ul className="space-y-2 text-gray-600">
                 <li className="flex items-center gap-2">
                   <span className="text-rose-500">•</span>
-                  {photography.travel_range === 0
+                  {photoVideo.travel_range === 0
                     ? "No Travel"
-                    : `${photography.travel_range} miles from ${photography.city}`}
+                    : `${photoVideo.travel_range} miles from ${photoVideo.city}`}
                 </li>
               </ul>
             </div>
@@ -367,13 +367,13 @@ export default function PhotographyDetailsPage() {
             {/* Socials */}
             <div className="flex flex-col items-center text-center last:border-r-0">
               <h3 className="text-lg font-semibold mb-3">Socials</h3>
-              {photography.website_url || photography.instagram_url ? (
+              {photoVideo.website_url || photoVideo.instagram_url ? (
                 <ul className="space-y-2 text-gray-600">
-                  {photography.website_url && (
+                  {photoVideo.website_url && (
                     <li className="flex items-center gap-2">
                       <span className="text-rose-500">•</span>
                       <a
-                        href={photography.website_url}
+                        href={photoVideo.website_url}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="text-rose-600 hover:text-rose-700 hover:underline break-all"
@@ -382,11 +382,11 @@ export default function PhotographyDetailsPage() {
                       </a>
                     </li>
                   )}
-                  {photography.instagram_url && (
+                  {photoVideo.instagram_url && (
                     <li className="flex items-center gap-2">
                       <span className="text-rose-500">•</span>
                       <a
-                        href={photography.instagram_url}
+                        href={photoVideo.instagram_url}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="text-rose-600 hover:text-rose-700 hover:underline break-all"
@@ -411,7 +411,7 @@ export default function PhotographyDetailsPage() {
             About the Business
           </h2>
           <p className="text-gray-600 mb-6 leading-relaxed break-words whitespace-normal">
-            {photography.description}
+            {photoVideo.description}
           </p>
         </div>
 
@@ -419,9 +419,9 @@ export default function PhotographyDetailsPage() {
         {(photoStyles.length > 0 || videoStyles.length > 0) && (
           <div className="mb-12">
             <h2 className="text-xl md:text-2xl font-bold mb-6">
-              {photography.service_type === "photography"
+              {photoVideo.service_type === "photography"
                 ? "Photography Styles"
-                : photography.service_type === "videography"
+                : photoVideo.service_type === "videography"
                 ? "Videography Styles"
                 : "Photography & Videography Styles"}
             </h2>
@@ -455,7 +455,7 @@ export default function PhotographyDetailsPage() {
         )}
 
         {/* Services */}
-        {photography.photography_services?.length > 0 && (
+        {photoVideo.photo_video_services?.length > 0 && (
           <div className="mb-12">
             <h2 className="text-xl md:text-2xl font-bold mb-6">
               Services & Pricing
@@ -463,7 +463,7 @@ export default function PhotographyDetailsPage() {
             <div className="flex flex-row gap-4">
               {/* First Column */}
               <div className="flex-1 flex flex-col gap-4">
-                {photography.photography_services
+                {photoVideo.photo_video_services
                   .filter((_, index) => index % 2 === 0)
                   .map((service, index) => (
                     <ServiceCard key={index * 2} service={service} />
@@ -472,7 +472,7 @@ export default function PhotographyDetailsPage() {
 
               {/* Second Column */}
               <div className="flex-1 flex flex-col gap-4">
-                {photography.photography_services
+                {photoVideo.photo_video_services
                   .filter((_, index) => index % 2 === 1)
                   .map((service, index) => (
                     <ServiceCard key={index * 2 + 1} service={service} />

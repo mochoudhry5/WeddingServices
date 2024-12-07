@@ -133,8 +133,8 @@ export default function HomePage() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="venue">Venue</SelectItem>
-                  <SelectItem value="makeup">Hair & Makeup</SelectItem>
-                  <SelectItem value="photography">Photography/Videography</SelectItem>
+                  <SelectItem value="hairMakeup">Hair & Makeup</SelectItem>
+                  <SelectItem value="photoVideo">Photography/Videography</SelectItem>
                   <SelectItem value="weddingplanner">
                     Wedding Planner
                   </SelectItem>
