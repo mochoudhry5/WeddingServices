@@ -35,6 +35,7 @@ import {
 import NavBar from "@/components/ui/NavBar";
 import Footer from "@/components/ui/Footer";
 import { machine } from "os";
+import LocationInput from "@/components/ui/LocationInput";
 
 // Types
 type ServiceId = "venue" | "makeup" | "photography";
@@ -283,9 +284,6 @@ export default function CreateVenueListing() {
 
   // Basic Information State
   const [venueName, setVenueName] = useState("");
-  const [address, setAddress] = useState("");
-  const [city, setCity] = useState("");
-  const [state, setState] = useState("");
   const [basePrice, setBasePrice] = useState("");
   const [minGuests, setMinGuests] = useState("");
   const [maxGuests, setMaxGuests] = useState("");
@@ -294,7 +292,14 @@ export default function CreateVenueListing() {
   const [websiteUrl, setWebsiteUrl] = useState("");
   const [instagramUrl, setInstagramUrl] = useState("");
   const [venueType, setVenueType] = useState("");
-
+  const [location, setLocation] = useState({
+    enteredLocation: "",
+    address: "",
+    city: "",
+    state: "",
+    country: "",
+    placeId: "",
+  });
   // Media State
   const [mediaFiles, setMediaFiles] = useState<MediaFile[]>([]);
   const [draggedItem, setDraggedItem] = useState<number | null>(null);
@@ -376,16 +381,8 @@ export default function CreateVenueListing() {
           toast.error(`Venue Name Must be Entered`);
           return false;
         }
-        if (!address) {
-          toast.error(`Address Must be Entered`);
-          return false;
-        }
-        if (!city) {
-          toast.error(`City Must be Entered`);
-          return false;
-        }
-        if (!state) {
-          toast.error(`State Must be Entered`);
+        if (!location.city || !location.state) {
+          toast.error(`Business Address Must Be Entered`);
           return false;
         }
         if (!basePrice) {
@@ -440,9 +437,10 @@ export default function CreateVenueListing() {
         }
         return (
           venueName &&
-          address &&
-          city &&
-          state &&
+          location.enteredLocation &&
+          location.city &&
+          location.state &&
+          location.country &&
           basePrice &&
           maxGuests &&
           catering
@@ -544,9 +542,9 @@ export default function CreateVenueListing() {
         .insert({
           user_id: user.id,
           name: venueName,
-          address,
-          city,
-          state,
+          address: location.address,
+          city: location.city,
+          state: location.state,
           base_price: parseInt(basePrice),
           min_guests: minGuests ? parseInt(minGuests) : null,
           max_guests: parseInt(maxGuests),
@@ -725,34 +723,61 @@ export default function CreateVenueListing() {
                     className="w-full"
                   />
                 </div>
-
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Address*
+                    Venue Address*
                   </label>
-                  <Input
-                    type="text"
-                    value={address}
-                    onChange={(e) => setAddress(e.target.value)}
-                    placeholder="Enter venue address"
-                    className="w-full mb-2"
+                  <LocationInput
+                    value={location.enteredLocation}
+                    onChange={(value) =>
+                      setLocation((prev) => ({
+                        ...prev,
+                        enteredLocation: value,
+                      }))
+                    }
+                    onPlaceSelect={(place) => {
+                      let address = "";
+                      let city = "";
+                      let state = "";
+                      let country = "";
+
+                      place.address_components?.forEach((component) => {
+                        if (
+                          component.types.includes("street_number") ||
+                          component.types.includes("route")
+                        ) {
+                          address += address
+                            ? ` ${component.long_name}`
+                            : component.long_name;
+                        }
+                        if (component.types.includes("locality")) {
+                          city = component.long_name;
+                        }
+                        if (
+                          component.types.includes(
+                            "administrative_area_level_1"
+                          )
+                        ) {
+                          state = component.long_name;
+                        }
+                        if (component.types.includes("country")) {
+                          country = component.long_name;
+                        }
+                      });
+
+                      setLocation({
+                        enteredLocation: place.formatted_address || "",
+                        address,
+                        city,
+                        state,
+                        country,
+                        placeId: place.place_id || "",
+                      });
+                    }}
+                    placeholder={"Enter your business address"}
+                    className="w-full"
+                    isRemoteLocation={false}
                   />
-                  <div className="grid grid-cols-2 gap-4">
-                    <Input
-                      type="text"
-                      value={city}
-                      onChange={(e) => setCity(e.target.value)}
-                      placeholder="City"
-                      className="w-full"
-                    />
-                    <Input
-                      type="text"
-                      value={state}
-                      onChange={(e) => setState(e.target.value)}
-                      placeholder="State"
-                      className="w-full"
-                    />
-                  </div>
                 </div>
                 {/* Price Range */}
                 <div>
