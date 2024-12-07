@@ -269,7 +269,7 @@ export default function PhotographyDetailsPage() {
                   </span>
                   <LikeButton
                     itemId={photoVideo.id}
-                    service="photography"
+                    service="photo-video"
                     initialLiked={false}
                     className="text-rose-600 hover:text-rose-700"
                   />

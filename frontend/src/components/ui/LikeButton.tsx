@@ -21,31 +21,30 @@ const SERVICE_CONFIGS: Record<string, ServiceConfig> = {
     entityName: "venue",
     pluralName: "Venues",
   },
-  hairMakeup: {
+  "hair-makeup": {
     tableName: "hair_makeup_liked",
     idField: "hair_makeup_id",
     entityName: "hairMakeup",
     pluralName: "Hair & Makeup",
   },
-  photoVideo: {
+  "photo-video": {
     tableName: "photo_video_liked",
     idField: "photo_video_id",
-    entityName: "photoVideo",
-    pluralName: "Photgraphy & Videography"
+    entityName: "photo-video",
+    pluralName: "Photgraphy & Videography",
   },
   dj: {
     tableName: "dj_liked",
     idField: "dj_id",
     entityName: "dj",
-    pluralName: "DJ"
+    pluralName: "DJ",
   },
-  weddingPlanner: {
+  "wedding-planner": {
     tableName: "wedding_planner_liked",
     idField: "wedding_planner_id",
-    entityName: "photoVideo",
-    pluralName: "Wedding Planner & Coordinator"
+    entityName: "wedding-planner",
+    pluralName: "Wedding Planner & Coordinator",
   },
-  
 } as const;
 
 type ServiceType = keyof typeof SERVICE_CONFIGS;

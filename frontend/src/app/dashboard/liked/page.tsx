@@ -29,15 +29,19 @@ interface LikedItemResponse {
 }
 
 interface ServiceResponse extends LikedItemResponse {
-  venues?: VenueDetails;
+  venue?: VenueDetails;
   hair_makeup?: HairMakeupDetails;
   photo_video?: PhotoVideoDetails;
+  wedding_planner?: WeddingPlannerDetails;
+  dj?: DJDetails;
 }
 
 interface PhotoVideoDetails extends BaseService {
   business_name: string;
   years_experience: string;
   travel_range: number;
+  min_service_price: number;
+  max_service_price: number;
   service_type: "photography" | "videography" | "both";
   photo_video_media: MediaItem[];
 }
@@ -59,6 +63,26 @@ interface HairMakeupDetails extends BaseService {
   min_service_price: number;
   max_service_price: number;
   hair_makeup_media: MediaItem[];
+  service_type: "hair" | "makeup" | "both";
+}
+
+interface DJDetails extends BaseService {
+  business_name: string;
+  years_experience: number;
+  travel_range: number;
+  min_service_price: number;
+  max_service_price: number;
+  dj_media: MediaItem[];
+}
+
+interface WeddingPlannerDetails extends BaseService {
+  business_name: string;
+  years_experience: number;
+  travel_range: number;
+  min_service_price: number;
+  max_service_price: number;
+  wedding_planner_media: MediaItem[];
+  service_type: "weddingPlanner" | "weddingCoordinator" | "both";
 }
 
 interface ServiceConfig<T extends BaseService> {
@@ -95,7 +119,7 @@ const SERVICE_CONFIGS: Record<string, ServiceConfig<any>> = {
         base_price,
         description,
         max_guests,
-        venue_media (
+        venue_media:venue_media (
           file_path,
           display_order
         )
@@ -141,8 +165,8 @@ const SERVICE_CONFIGS: Record<string, ServiceConfig<any>> = {
       </div>
     ),
   },
- haireMakeup: {
-    type: "hairMakeup",
+  "hair-makeup": {
+    type: "hair-makeup",
     likedTable: "hair_makeup_liked",
     entityTable: "hair_makeup_listing" as keyof ServiceResponse,
     foreignKey: "hair_makeup_id",
@@ -160,7 +184,8 @@ const SERVICE_CONFIGS: Record<string, ServiceConfig<any>> = {
         description,
         min_service_price,
         max_service_price,
-        hair_makeup_media (
+        service_type,
+        hair_makeup_media:hair_makeup_media (
           file_path,
           display_order
         )
@@ -177,12 +202,12 @@ const SERVICE_CONFIGS: Record<string, ServiceConfig<any>> = {
             serviceName={hairMakeup.business_name || "Artist"}
             itemId={hairMakeup.id}
             creatorId={hairMakeup.user_id}
-            service="hairMakeup"
+            service="hair-makeup"
             initialLiked={true}
             onUnlike={onUnlike}
           />
         </div>
-        <Link href={`/services/makeup/${hairMakeup.id}`}>
+        <Link href={`/services/hairMakeup/${hairMakeup.id}`}>
           <div className="p-4">
             <h3 className="text-lg font-semibold mb-1 group-hover:text-rose-600 transition-colors">
               {hairMakeup.business_name || "Unnamed Artist"}
@@ -191,6 +216,13 @@ const SERVICE_CONFIGS: Record<string, ServiceConfig<any>> = {
               {hairMakeup.years_experience || 0} years experience • Up to{" "}
               {hairMakeup.travel_range || 0} miles
             </p>
+            <div className="text-slate-600 text-sm mb-2">
+              {hairMakeup.service_type === "both"
+                ? "Hair & Makeup"
+                : hairMakeup.service_type === "hair"
+                ? "Hair"
+                : "Makeup"}
+            </div>
             <p className="text-slate-600 text-sm mb-3 line-clamp-2">
               {hairMakeup.description || "No description available"}
             </p>
@@ -210,9 +242,8 @@ const SERVICE_CONFIGS: Record<string, ServiceConfig<any>> = {
       </div>
     ),
   },
-
-  photoVideo: {
-    type: "photoVideo",
+  "photo-video": {
+    type: "photo-video",
     likedTable: "photo_video_liked",
     entityTable: "photo_video_listing" as keyof ServiceResponse,
     foreignKey: "photo_video_id",
@@ -229,7 +260,9 @@ const SERVICE_CONFIGS: Record<string, ServiceConfig<any>> = {
         travel_range,
         service_type,
         description,
-        photo_video_media (
+        min_service_price,
+        max_service_price,
+        photo_video_media:photo_video_media (
           file_path,
           display_order
         )
@@ -246,12 +279,12 @@ const SERVICE_CONFIGS: Record<string, ServiceConfig<any>> = {
             serviceName={photoVideo.business_name || "Artist"}
             itemId={photoVideo.id}
             creatorId={photoVideo.user_id}
-            service="photoVideo"
+            service="photo-video"
             initialLiked={true}
             onUnlike={onUnlike}
           />
         </div>
-        <Link href={`/services/photography/${photoVideo.id}`}>
+        <Link href={`/services/photoVideo/${photoVideo.id}`}>
           <div className="p-4">
             <h3 className="text-lg font-semibold mb-1 group-hover:text-rose-600 transition-colors">
               {photoVideo.business_name || "Unnamed Artist"}
@@ -270,6 +303,164 @@ const SERVICE_CONFIGS: Record<string, ServiceConfig<any>> = {
             <p className="text-slate-600 text-sm mb-3 line-clamp-2">
               {photoVideo.description || "No description available"}
             </p>
+            <div className="flex justify-between items-center pt-2 border-t">
+              <div className="text-lg font-semibold text-rose-600">
+                {photoVideo.min_service_price === photoVideo.max_service_price
+                  ? `$${(photoVideo.min_service_price || 0).toLocaleString()}`
+                  : `$${(
+                      photoVideo.min_service_price || 0
+                    ).toLocaleString()} - $${(
+                      photoVideo.max_service_price || 0
+                    ).toLocaleString()}`}
+              </div>
+            </div>
+          </div>
+        </Link>
+      </div>
+    ),
+  },
+  dj: {
+    type: "dj",
+    likedTable: "dj_liked",
+    entityTable: "dj_listing" as keyof ServiceResponse,
+    foreignKey: "dj_id",
+    displayName: "DJ",
+    pluralName: "DJs",
+    selectQuery: `
+      dj_id,
+      liked_at,
+      dj_listing:dj_listing (
+        id,
+        user_id,
+        business_name,
+        years_experience,
+        travel_range,
+        description,
+        min_service_price,
+        max_service_price,
+        dj_media:dj_media (
+          file_path,
+          display_order
+        )
+      )
+    `,
+    renderCard: (
+      dj: DJDetails & { liked_at: string },
+      onUnlike: () => void
+    ) => (
+      <div className="bg-white rounded-xl shadow-md overflow-hidden group">
+        <div className="relative">
+          <MediaCarousel
+            media={dj.dj_media || []}
+            serviceName={dj.business_name || "Artist"}
+            itemId={dj.id}
+            creatorId={dj.user_id}
+            service="dj"
+            initialLiked={true}
+            onUnlike={onUnlike}
+          />
+        </div>
+        <Link href={`/services/dj/${dj.id}`}>
+          <div className="p-4">
+            <h3 className="text-lg font-semibold mb-1 group-hover:text-rose-600 transition-colors">
+              {dj.business_name || "Unnamed DJ"}
+            </h3>
+            <p className="text-slate-600 text-sm mb-2">
+              {dj.years_experience || 0} years experience • Up to{" "}
+              {dj.travel_range || 0} miles
+            </p>
+            <p className="text-slate-600 text-sm mb-3 line-clamp-2">
+              {dj.description || "No description available"}
+            </p>
+            <div className="flex justify-between items-center pt-2 border-t">
+              <div className="text-lg font-semibold text-rose-600">
+                {dj.min_service_price === dj.max_service_price
+                  ? `$${(dj.min_service_price || 0).toLocaleString()}`
+                  : `$${(dj.min_service_price || 0).toLocaleString()} - $${(
+                      dj.max_service_price || 0
+                    ).toLocaleString()}`}
+              </div>
+            </div>
+          </div>
+        </Link>
+      </div>
+    ),
+  },
+  "wedding-planner": {
+    type: "wedding-planner",
+    likedTable: "wedding_planner_liked",
+    entityTable: "wedding_planner_listing" as keyof ServiceResponse,
+    foreignKey: "wedding_planner_id",
+    displayName: "Wedding Planner & Coordinator",
+    pluralName: "Wedding Planners & Coordinators",
+    selectQuery: `
+      wedding_planner_id,
+      liked_at,
+      wedding_planner_listing:wedding_planner_listing (
+        id,
+        user_id,
+        business_name,
+        years_experience,
+        travel_range,
+        service_type,
+        description,
+        min_service_price,
+        max_service_price,
+        wedding_planner_media:wedding_planner_media (
+          file_path,
+          display_order
+        )
+      )
+    `,
+    renderCard: (
+      weddingPlanner: WeddingPlannerDetails & { liked_at: string },
+      onUnlike: () => void
+    ) => (
+      <div className="bg-white rounded-xl shadow-md overflow-hidden group">
+        <div className="relative">
+          <MediaCarousel
+            media={weddingPlanner.wedding_planner_media || []}
+            serviceName={weddingPlanner.business_name || "Artist"}
+            itemId={weddingPlanner.id}
+            creatorId={weddingPlanner.user_id}
+            service="wedding-planner"
+            initialLiked={true}
+            onUnlike={onUnlike}
+          />
+        </div>
+        <Link href={`/services/weddingPlanner/${weddingPlanner.id}`}>
+          <div className="p-4">
+            <h3 className="text-lg font-semibold mb-1 group-hover:text-rose-600 transition-colors">
+              {weddingPlanner.business_name || "Unnamed Business"}
+            </h3>
+            <p className="text-slate-600 text-sm mb-2">
+              {weddingPlanner.years_experience || 0} years experience • Up to{" "}
+              {weddingPlanner.travel_range || 0} miles
+            </p>
+            <div className="text-slate-600 text-sm mb-2">
+              {weddingPlanner.service_type === "both"
+                ? "Wedding Planning & Coordinating"
+                : weddingPlanner.service_type === "weddingPlanner"
+                ? "Wedding Planning"
+                : "Wedding Coordinating"}
+            </div>
+            <p className="text-slate-600 text-sm mb-3 line-clamp-2">
+              {weddingPlanner.description || "No description available"}
+            </p>
+            <div className="flex justify-between items-center pt-2 border-t">
+              <div className="text-lg font-semibold text-rose-600">
+                {weddingPlanner.min_service_price ===
+                weddingPlanner.max_service_price
+                  ? `$${(
+                      weddingPlanner.min_service_price || 0
+                    ).toLocaleString()}`
+                  : `$${(
+                      weddingPlanner.min_service_price || 0
+                    ).toLocaleString()} - $${(
+                      weddingPlanner.max_service_price || 0
+                    ).toLocaleString()}`}
+              </div>
+            </div>
           </div>
         </Link>
       </div>

@@ -259,7 +259,7 @@ export default function MakeupDetailsPage() {
                   </span>
                   <LikeButton
                     itemId={hairMakeup.id}
-                    service="makeup"
+                    service="hair-makeup"
                     initialLiked={false}
                     className="text-rose-600 hover:text-rose-700"
                   />

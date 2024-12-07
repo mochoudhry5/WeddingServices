@@ -256,7 +256,7 @@ export default function WeddingDetailsPage() {
                   </span>
                   <LikeButton
                     itemId={weddingPlanner.id}
-                    service="photography"
+                    service="wedding-planner"
                     initialLiked={false}
                     className="text-rose-600 hover:text-rose-700"
                   />
