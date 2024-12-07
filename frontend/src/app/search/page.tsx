@@ -755,6 +755,11 @@ export default function ServicesSearchPage() {
           ): listing is PhotoVideoDetails => {
             return "photo_video_media" in listing;
           };
+          const isWeddingPlanner = (
+            listing: ServiceListingItem
+          ): listing is PhotoVideoDetails => {
+            return "wedding_planner_media" in listing;
+          };
 
           const currentListing = isHairMakeup(listing)
             ? listing
@@ -807,6 +812,16 @@ export default function ServicesSearchPage() {
                             : listing.service_type === "photography"
                             ? "Photography"
                             : "Videography"}
+                        </p>
+                      )}
+                      {isWeddingPlanner(listing) && (
+                        <p className="text-slate-600 text-sm mb-2">
+                          {listing.years_experience} years experience •{" "}
+                          {listing.service_type === "both"
+                            ? "Wedding Planner & Coordinator"
+                            : listing.service_type === "weddingPlanner"
+                            ? "Wedding Planner"
+                            : "Wedding Coordinator"}
                         </p>
                       )}
                       <p className="text-slate-600 text-sm mb-3 line-clamp-2">
