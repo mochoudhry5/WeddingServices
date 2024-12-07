@@ -19,6 +19,18 @@ import {
   AlertDialogAction,
 } from "@/components/ui/alert-dialog";
 import { ProtectedRoute } from "@/components/ui/ProtectedRoute";
+import { toast } from "sonner";
+
+// Form interfaces for type safety
+interface EmailFormData {
+  email: string;
+}
+
+interface PasswordFormData {
+  currentPassword: string;
+  newPassword: string;
+  confirmPassword: string;
+}
 
 const SectionLayout = ({
   title,
@@ -42,68 +54,46 @@ const AccountSettings = () => {
   const { user } = useAuth();
   const [email, setEmail] = useState(user?.email || "");
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
-  const [success, setSuccess] = useState("");
 
   const handleUpdateEmail = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError("");
-    setSuccess("");
-
-    if (!email) {
-      setError("Email is required");
-      return;
-    }
-
-    if (email === user?.email) {
-      setError("New email must be different from current email");
-      return;
-    }
-
-    // Basic email validation
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email)) {
-      setError("Please enter a valid email address");
-      return;
-    }
+    setLoading(true);
 
     try {
-      setLoading(true);
+      // Check if email is empty
+      if (!email) {
+        throw new Error("Email is required");
+      }
 
-      const { error: updateError } = await supabase.auth.updateUser({
-        email: email,
-      });
+      // Check if new email is same as current email
+      if (email === user?.email) {
+        throw new Error("New email must be different from your current email");
+      }
 
-      if (updateError) {
+      // Validate email format
+      if (!email.match(/^[^\s@]+@[^\s@]+\.[^\s@]+$/)) {
+        throw new Error("Please enter a valid email address");
+      }
+
+      const { error } = await supabase.auth.updateUser({ email });
+
+      if (error) {
         // Handle specific error cases
-        if (
-          updateError.message.includes("type") ||
-          updateError.message.includes("User already registered")
-        ) {
+        if (error.message.includes("User already registered")) {
           throw new Error(
             "This email address is already in use. Please use a different email."
           );
         }
-        throw updateError;
+        throw error;
       }
 
-      setSuccess(
-        "Email update verification has been sent to your new email address. Please check your inbox."
+      toast.success("Verification email sent! Please check your inbox.");
+    } catch (error) {
+      toast.error(
+        error instanceof Error ? error.message : "Failed to update email"
       );
-    } catch (err) {
-      // Handle both Error objects and unknown error types
-      const errorMessage =
-        err instanceof Error
-          ? err.message
-          : "An unexpected error occurred. Please try again later.";
-
-      // Clean up common Supabase error messages
-      setError(
-        errorMessage
-          .replace("AuthApiError: ", "")
-          .replace("TypeError: ", "")
-          .replace("Failed to fetch: ", "")
-      );
+      // Reset email to current email if update failed
+      setEmail(user?.email || "");
     } finally {
       setLoading(false);
     }
@@ -115,42 +105,37 @@ const AccountSettings = () => {
       description="Update your email address. A verification email will be sent to confirm the change."
     >
       <form onSubmit={handleUpdateEmail} className="space-y-4">
-        {error && (
-          <div className="p-3 text-sm text-red-600 bg-red-50 rounded-lg">
-            {error}
-          </div>
-        )}
-        {success && (
-          <div className="p-3 text-sm text-green-600 bg-green-50 rounded-lg">
-            {success}
-          </div>
-        )}
-
         <div className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label
+              htmlFor="current-email"
+              className="block text-sm font-medium text-gray-700 mb-1"
+            >
               Current Email
             </label>
             <p className="text-sm text-gray-500 mb-4">{user?.email}</p>
           </div>
-
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label
+              htmlFor="new-email"
+              className="block text-sm font-medium text-gray-700 mb-1"
+            >
               New Email Address
             </label>
             <Input
+              id="new-email"
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               disabled={loading}
               placeholder="Enter new email address"
+              aria-label="New email address"
             />
           </div>
-
           <div className="pt-4">
             <button
               type="submit"
-              disabled={loading}
+              disabled={loading || email === user?.email}
               className="bg-rose-600 text-white px-4 py-2 rounded-lg hover:bg-rose-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {loading ? "Updating Email..." : "Update Email"}
@@ -163,40 +148,37 @@ const AccountSettings = () => {
 };
 
 const SecuritySettings = () => {
-  const [currentPassword, setCurrentPassword] = useState("");
-  const [newPassword, setNewPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
-  const [error, setError] = useState("");
-  const [success, setSuccess] = useState("");
+  const [formData, setFormData] = useState<PasswordFormData>({
+    currentPassword: "",
+    newPassword: "",
+    confirmPassword: "",
+  });
   const [loading, setLoading] = useState(false);
-
   const { user } = useAuth();
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setFormData((prev) => ({
+      ...prev,
+      [e.target.name]: e.target.value,
+    }));
+  };
 
   const handleChangePassword = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError("");
-    setSuccess("");
-
-    // Validation checks
-    if (!currentPassword || !newPassword || !confirmPassword) {
-      setError("Please fill in all fields");
-      return;
-    }
-
-    if (newPassword !== confirmPassword) {
-      setError("New passwords don't match");
-      return;
-    }
-
-    if (newPassword.length < 6) {
-      setError("New password must be at least 6 characters long");
-      return;
-    }
+    setLoading(true);
 
     try {
-      setLoading(true);
+      const { currentPassword, newPassword, confirmPassword } = formData;
 
-      // First verify the current password by attempting to sign in
+      if (newPassword !== confirmPassword) {
+        throw new Error("New passwords don't match");
+      }
+
+      if (newPassword.length < 6) {
+        throw new Error("New password must be at least 6 characters long");
+      }
+
+      // Verify current password
       const { error: signInError } = await supabase.auth.signInWithPassword({
         email: user?.email || "",
         password: currentPassword,
@@ -206,20 +188,24 @@ const SecuritySettings = () => {
         throw new Error("Current password is incorrect");
       }
 
-      // If current password is correct, update to new password
+      // Update password
       const { error: updateError } = await supabase.auth.updateUser({
         password: newPassword,
       });
 
       if (updateError) throw updateError;
 
-      setSuccess("Password updated successfully");
-      setCurrentPassword("");
-      setNewPassword("");
-      setConfirmPassword("");
-    } catch (err) {
-      setError(
-        err instanceof Error ? err.message : "Failed to update password"
+      toast.success("Password updated successfully");
+
+      // Clear form
+      setFormData({
+        currentPassword: "",
+        newPassword: "",
+        confirmPassword: "",
+      });
+    } catch (error) {
+      toast.error(
+        error instanceof Error ? error.message : "Failed to update password"
       );
     } finally {
       setLoading(false);
@@ -229,53 +215,57 @@ const SecuritySettings = () => {
   return (
     <SectionLayout title="Security" description="Manage your account security.">
       <form onSubmit={handleChangePassword} className="space-y-4">
-        {error && (
-          <div className="p-3 text-sm text-red-600 bg-red-50 rounded-lg">
-            {error}
-          </div>
-        )}
-        {success && (
-          <div className="p-3 text-sm text-green-600 bg-green-50 rounded-lg">
-            {success}
-          </div>
-        )}
-
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
+          <label
+            htmlFor="current-password"
+            className="block text-sm font-medium text-gray-700 mb-1"
+          >
             Current Password
           </label>
           <Input
+            id="current-password"
             type="password"
-            value={currentPassword}
-            onChange={(e) => setCurrentPassword(e.target.value)}
+            name="currentPassword"
+            value={formData.currentPassword}
+            onChange={handleChange}
             disabled={loading}
+            aria-label="Current password"
           />
         </div>
-
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
+          <label
+            htmlFor="new-password"
+            className="block text-sm font-medium text-gray-700 mb-1"
+          >
             New Password
           </label>
           <Input
+            id="new-password"
             type="password"
-            value={newPassword}
-            onChange={(e) => setNewPassword(e.target.value)}
+            name="newPassword"
+            value={formData.newPassword}
+            onChange={handleChange}
             disabled={loading}
+            aria-label="New password"
           />
         </div>
-
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
+          <label
+            htmlFor="confirm-password"
+            className="block text-sm font-medium text-gray-700 mb-1"
+          >
             Confirm New Password
           </label>
           <Input
+            id="confirm-password"
             type="password"
-            value={confirmPassword}
-            onChange={(e) => setConfirmPassword(e.target.value)}
+            name="confirmPassword"
+            value={formData.confirmPassword}
+            onChange={handleChange}
             disabled={loading}
+            aria-label="Confirm new password"
           />
         </div>
-
         <div className="pt-4 mt-2">
           <button
             type="submit"
@@ -366,6 +356,7 @@ function SettingsPage() {
       await signOut();
       window.location.href = "/";
     } catch (error) {
+      toast.error("Failed to logout. Please try again.");
       console.error("Error during logout:", error);
     }
   };
