@@ -1,7 +1,6 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
-import { PlayCircle, ChevronLeft, ChevronRight } from "lucide-react";
+import React, { useEffect, useState, useRef } from "react";
 import NavBar from "@/components/ui/NavBar";
 import Footer from "@/components/ui/Footer";
 import { useParams } from "next/navigation";
@@ -13,56 +12,45 @@ import { Button } from "@/components/ui/button";
 import { useAuth } from "@/context/AuthContext";
 import LikeButton from "@/components/ui/LikeButton";
 
-interface VenueDetails {
+interface WeddingPlannerDetails {
+  user_id: string;
   id: string;
-  name: string;
+  business_name: string;
+  years_experience: string;
+  travel_range: number;
+  is_remote_business: boolean;
   address: string;
   city: string;
   state: string;
-  base_price: number;
-  min_guests: number | null;
-  max_guests: number;
+  country: string;
+  service_type: "weddingPlanner" | "weddingCoordinator" | "both";
+  wedding_planner_specialties: WeddingPlannerSpecialty[];
+  website_url: string | null;
+  instagram_url: string | null;
   description: string;
-  user_id: string;
-  hall_names: string[]; // Add this for hall names
-  number_of_halls: number; // Add this for number of halls
-  venue_media: VenueMedia[];
-  venue_inclusions: VenueInclusion[];
-  venue_addons: VenueAddon[];
+  wedding_planner_media: WeddingPlannerMedia[];
+  deposit: number;
+  cancellation_policy: string;
+  wedding_planner_services: WeddingPlannerService[];
+  min_service_price: number;
+  max_service_price: number;
 }
 
-interface VenueMedia {
+interface WeddingPlannerMedia {
   file_path: string;
   display_order: number;
 }
 
-interface VenueInclusion {
-  name: string;
-  is_custom: boolean;
-}
-
-interface VenueAddon {
+interface WeddingPlannerService {
   name: string;
   description: string;
-  pricing_type: "flat" | "per-guest";
   price: number;
-  guest_increment?: number;
   is_custom: boolean;
 }
 
-interface VenueDetails {
-  id: string;
-  name: string;
-  address: string;
-  city: string;
-  state: string;
-  base_price: number;
-  min_guests: number | null;
-  max_guests: number;
-  description: string;
-  venue_media: VenueMedia[];
-  venue_inclusions: VenueInclusion[];
-  venue_addons: VenueAddon[];
+interface WeddingPlannerSpecialty {
+  specialty: string;
+  is_custom: boolean;
 }
 
 interface InquiryForm {
@@ -71,102 +59,63 @@ interface InquiryForm {
   email: string;
   phone: string;
   eventDate: string;
-  guestCount: string;
   message: string;
 }
+const ServiceCard = ({ service }: { service: WeddingPlannerService }) => {
+  const [isOpen, setIsOpen] = useState(false);
+  const [hasOverflow, setHasOverflow] = useState(false);
+  const descriptionRef = useRef<HTMLDivElement>(null);
 
-// Define interfaces for our data types
-interface MediaItem {
-  type: "video" | "image";
-  url: string;
-  thumbnail?: string;
-}
+  useEffect(() => {
+    const checkOverflow = () => {
+      const element = descriptionRef.current;
+      if (element) {
+        setHasOverflow(element.scrollHeight > element.clientHeight);
+      }
+    };
 
-interface Amenity {
-  name: string;
-  included: boolean;
-}
+    checkOverflow();
+    window.addEventListener("resize", checkOverflow);
+    return () => window.removeEventListener("resize", checkOverflow);
+  }, [service.description]);
 
-interface AddOn {
-  name: string;
-  description: string;
-  pricePerHundred: number;
-}
+  return (
+    <div className="border border-gray-200 rounded-lg overflow-hidden shadow-sm">
+      <div
+        className={`w-full p-4 ${
+          hasOverflow ? "cursor-pointer hover:bg-gray-50" : ""
+        } transition-all duration-200`}
+        onClick={() => hasOverflow && setIsOpen(!isOpen)}
+      >
+        <div className="flex-1">
+          <div className="flex justify-between items-start mb-2">
+            <h3 className="text-lg font-semibold text-left">{service.name}</h3>
+            <div className="text-right">
+              <p className="text-rose-600 font-semibold whitespace-nowrap">
+                <span className="text-sm text-gray-500">Starting at </span>$
+                {service.price.toLocaleString()}
+              </p>
+            </div>
+          </div>
 
-// Sample data
-const mediaItems = [
-  {
-    id: 1,
-    type: "image",
-    url: "/api/placeholder/1920/1080",
-    alt: "Grand Ballroom",
-  },
-  {
-    id: 2,
-    type: "image",
-    url: "/api/placeholder/1920/1080",
-    alt: "Garden View",
-  },
-  {
-    id: 3,
-    type: "image",
-    url: "/api/placeholder/1920/1080",
-    alt: "Reception Area",
-  },
-  {
-    id: 4,
-    type: "video",
-    url: "/api/placeholder/1920/1080",
-    thumbnail: "/api/placeholder/1920/1080",
-    alt: "Venue Tour",
-  },
-];
+          <div
+            ref={descriptionRef}
+            className={`text-gray-600 text-sm text-left transition-all duration-200 ${
+              isOpen ? "" : "line-clamp-1"
+            }`}
+          >
+            {service.description}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
 
-const amenities: Amenity[] = [
-  { name: "Tables & Chairs", included: true },
-  { name: "Basic Lighting", included: true },
-  { name: "Sound System", included: true },
-  { name: "Parking", included: true },
-  { name: "Security", included: true },
-  { name: "Basic Decor", included: false },
-  { name: "Catering", included: false },
-  { name: "Bar Service", included: false },
-  { name: "DJ Services", included: false },
-  { name: "Cleanup Service", included: true },
-];
-
-const addOns: AddOn[] = [
-  {
-    name: "Premium Catering Package",
-    description:
-      "Full-service catering including appetizers, main course, and dessert",
-    pricePerHundred: 5500,
-  },
-  {
-    name: "Bar Service",
-    description: "Professional bartenders, premium liquor, wine, and beer",
-    pricePerHundred: 3500,
-  },
-  {
-    name: "DJ Package",
-    description: "Professional DJ, sound system, and lighting setup",
-    pricePerHundred: 1200,
-  },
-  {
-    name: "Decor Package",
-    description:
-      "Custom floral arrangements, table settings, and venue decoration",
-    pricePerHundred: 2500,
-  },
-];
-
-export default function VenueDetailsPage() {
+export default function WeddingDetailsPage() {
   const { user } = useAuth();
-  // State for the image carousel
-  const [touchStart, setTouchStart] = useState<number | null>(null);
-  const [touchEnd, setTouchEnd] = useState<number | null>(null);
-  const [currentSlide, setCurrentSlide] = useState(0);
-  const [venue, setVenue] = useState<VenueDetails | null>(null);
+  const [weddingPlanner, setWeddingPlanner] =
+    useState<WeddingPlannerDetails | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [inquiryForm, setInquiryForm] = useState<InquiryForm>({
     firstName: "",
@@ -174,40 +123,36 @@ export default function VenueDetailsPage() {
     email: "",
     phone: "",
     eventDate: "",
-    guestCount: "",
     message: "",
   });
-  const minSwipeDistance = 50;
   const params = useParams();
 
   useEffect(() => {
     if (params.id) {
-      loadVenueDetails();
+      loadWeddingPlannerDetails();
     }
   }, [params.id]);
 
-  const loadVenueDetails = async () => {
+  const loadWeddingPlannerDetails = async () => {
     try {
-      const { data: venueData, error } = await supabase
-        .from("venues")
+      const { data: weddingPlannerData, error } = await supabase
+        .from("wedding_planner_listing")
         .select(
           `
           *,
           user_id,
-          venue_media (
+          wedding_planner_media (
             file_path,
             display_order
           ),
-          venue_inclusions (
-            name,
-            is_custom
-          ),
-          venue_addons (
+          wedding_planner_services (
             name,
             description,
-            pricing_type,
             price,
-            guest_increment,
+            is_custom
+          ),
+          wedding_planner_specialties (
+            specialty,
             is_custom
           )
         `
@@ -217,35 +162,22 @@ export default function VenueDetailsPage() {
 
       if (error) throw error;
 
-      if (!venueData) {
-        toast.error("Venue not found");
+      if (!weddingPlannerData) {
+        toast.error("Wedding Planner & Coordinator listing not found");
         return;
       }
 
-      console.log("Venue data:", venueData); // Debug log
-      setVenue(venueData);
+      console.log("Photography & Videography data:", weddingPlannerData);
+      setWeddingPlanner(weddingPlannerData);
     } catch (error) {
-      console.error("Error loading venue:", error);
-      toast.error("Failed to load venue details");
+      console.error("Error loading photography & videography listing:", error);
     } finally {
       setIsLoading(false);
     }
   };
-  // Carousel controls
-  const nextSlide = () => {
-    setCurrentSlide((prev) => (prev + 1) % mediaItems.length);
-  };
-
-  const prevSlide = () => {
-    setCurrentSlide(
-      (prev) => (prev - 1 + mediaItems.length) % mediaItems.length
-    );
-  };
 
   const handleInquirySubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-
-    // Add your inquiry submission logic here
     toast.success("Inquiry sent successfully!");
   };
 
@@ -257,30 +189,6 @@ export default function VenueDetailsPage() {
       ...prev,
       [name]: value,
     }));
-  };
-
-  // Handle touch events
-  const onTouchStart: React.TouchEventHandler<HTMLDivElement> = (e) => {
-    setTouchEnd(null);
-    setTouchStart(e.targetTouches[0].clientX);
-  };
-
-  const onTouchMove: React.TouchEventHandler<HTMLDivElement> = (e) => {
-    setTouchEnd(e.targetTouches[0].clientX);
-  };
-
-  const onTouchEnd = () => {
-    if (!touchStart || !touchEnd) return;
-
-    const distance = touchStart - touchEnd;
-    const isLeftSwipe = distance > minSwipeDistance;
-    const isRightSwipe = distance < -minSwipeDistance;
-
-    if (isLeftSwipe) {
-      nextSlide();
-    } else if (isRightSwipe) {
-      prevSlide();
-    }
   };
 
   if (isLoading) {
@@ -302,17 +210,23 @@ export default function VenueDetailsPage() {
     );
   }
 
-  if (!venue) {
+  if (!weddingPlanner) {
     return (
       <div className="min-h-screen bg-slate-50">
         <NavBar />
         <div className="max-w-7xl mx-auto px-4 py-8 text-center">
-          <h1 className="text-2xl font-bold text-gray-900">Venue not found</h1>
+          <h1 className="text-2xl font-bold text-gray-900">
+            Listing Not Found
+          </h1>
         </div>
         <Footer />
       </div>
     );
   }
+
+  const weddingPlannerStyles = weddingPlanner.wedding_planner_specialties.map(
+    (s) => s.specialty
+  );
 
   return (
     <div className="min-h-screen bg-white">
@@ -322,9 +236,9 @@ export default function VenueDetailsPage() {
       <div className="relative bg-black">
         <div className="relative h-[60vh] md:h-[80vh]">
           <MediaCarousel
-            media={venue.venue_media}
-            name={venue.name}
-            service="venue"
+            media={weddingPlanner.wedding_planner_media}
+            name={weddingPlanner.business_name}
+            service="wedding-planner"
             className="w-full h-full"
           />
         </div>
@@ -332,134 +246,182 @@ export default function VenueDetailsPage() {
 
       {/* Content */}
       <div className="max-w-7xl mx-auto px-4 py-8">
-        {/* Venue Header */}
+        {user?.id !== weddingPlanner.user_id && (
+          <div className="max-w-7xl mx-auto px-4 py-4">
+            <div className="bg-rose-50 border-b border-rose-200 py-2">
+              <div className="max-w-3xl mx-auto px-4 flex flex-col items-center justify-center">
+                <div className="flex items-center gap-2">
+                  <span className="text-rose-600 text-lg font-semibold">
+                    Don't forget this listing!
+                  </span>
+                  <LikeButton
+                    itemId={weddingPlanner.id}
+                    service="photography"
+                    initialLiked={false}
+                    className="text-rose-600 hover:text-rose-700"
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Artist Header */}
         <div className="flex flex-col md:flex-row md:justify-between md:items-start gap-4 mb-8">
           <div>
-            <h1 className="text-2xl md:text-3xl font-bold text-gray-900 mb-2">
-              {venue.name}
-              {user?.id !== venue.user_id ? (
-                <LikeButton
-                  venueId={venue.id}
-                  initialLiked={false}
-                  className="ml-4"
-                />
-              ) : null}
-            </h1>
-            <p className="text-gray-600">
-              {venue.address}, {venue.city}, {venue.state}
-            </p>
+            <div className="flex items-center gap-3 mb-2">
+              <h1 className="text-2xl md:text-3xl font-bold text-gray-900">
+                {weddingPlanner.business_name}
+              </h1>
+              <div className="inline-flex items-center px-3 py-1 rounded-full bg-white border border-gray-200 text-sm font-medium">
+                {weddingPlanner.service_type === "both"
+                  ? "Wedding Planner & Coordinator"
+                  : weddingPlanner.service_type === "weddingPlanner"
+                  ? "Wedding Planner"
+                  : "Wedding Coordinator"}
+              </div>
+            </div>
+            {weddingPlanner.is_remote_business ? (
+              <p className="text-gray-600">
+                {weddingPlanner.city}, {weddingPlanner.state} (Remote)
+              </p>
+            ) : (
+              <p className="text-gray-600">
+                {weddingPlanner.address}, {weddingPlanner.city},{" "}
+                {weddingPlanner.state}
+              </p>
+            )}
           </div>
-          <div className="md:text-right">
-            <p className="text-2xl md:text-3xl font-bold text-rose-600">
-              ${venue.base_price.toLocaleString()}
-            </p>
-            <p className="text-gray-600">
-              Base price for up to {venue.min_guests || 100} guests
-            </p>
+          <div className="text-right">
+            {weddingPlanner.min_service_price &&
+              weddingPlanner.max_service_price && (
+                <>
+                  <p className="text-3xl font-semibold text-rose-600">
+                    {weddingPlanner.min_service_price ===
+                    weddingPlanner.max_service_price
+                      ? `$${weddingPlanner.min_service_price.toLocaleString()}`
+                      : `$${weddingPlanner.min_service_price.toLocaleString()} - $${weddingPlanner.max_service_price.toLocaleString()}`}
+                  </p>
+                  <p className="text-sm text-gray-500">
+                    {weddingPlanner.min_service_price ===
+                    weddingPlanner.max_service_price
+                      ? "(See Service & Pricing)"
+                      : "(See Service & Pricing)"}
+                  </p>
+                </>
+              )}
           </div>
         </div>
 
         {/* Description */}
         <div className="mb-12">
-          <h2 className="text-xl md:text-2xl font-bold mb-4">
-            About the Venue
-          </h2>
-          <p className="text-gray-600 mb-6 leading-relaxed">
-            {venue.description}
-          </p>
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-12">
-            {/* Capacity */}
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-0 mb-12">
+            {/* Experience */}
             <div className="flex flex-col items-center text-center border-r border-gray-200 last:border-r-0">
-              <h3 className="text-lg font-semibold mb-3">Capacity</h3>
+              <h3 className="text-lg font-semibold mb-3">Experience</h3>
               <ul className="space-y-2 text-gray-600">
                 <li className="flex items-center gap-2">
                   <span className="text-rose-500">•</span>
-                  Minimum guests: {venue.min_guests || "No minimum"}
-                </li>
-                <li className="flex items-center gap-2">
-                  <span className="text-rose-500">•</span>
-                  Maximum guests: {venue.max_guests}
+                  {weddingPlanner.years_experience} years
                 </li>
               </ul>
             </div>
 
-            {/* Catering Options */}
+            {/* Deposit */}
             <div className="flex flex-col items-center text-center border-r border-gray-200 last:border-r-0">
-              <h3 className="text-lg font-semibold mb-3">Catering Options</h3>
-              <div className="text-gray-600 flex items-center gap-2">
-                <span className="text-rose-500">•</span>
-                Outside & In-House Available
-              </div>
+              <h3 className="text-lg font-semibold mb-3">Booking Deposit</h3>
+              <ul className="space-y-2 text-gray-600">
+                <li className="flex items-center gap-2">
+                  <span className="text-rose-500">•</span>
+                  {weddingPlanner.deposit}% of total service cost
+                </li>
+              </ul>
             </div>
 
-            {/* Number of Halls */}
+            {/* Travel Range */}
             <div className="flex flex-col items-center text-center border-r border-gray-200 last:border-r-0">
-              <h3 className="text-lg font-semibold mb-3">Number of Halls</h3>
+              <h3 className="text-lg font-semibold mb-3">Travel Range</h3>
               <ul className="space-y-2 text-gray-600">
-                {venue.hall_names && venue.hall_names.length > 0 ? (
-                  venue.hall_names.map((hall, index) => (
-                    <li key={index} className="flex items-center gap-2">
-                      <span className="text-rose-500">•</span>
-                      {hall}
-                    </li>
-                  ))
-                ) : (
-                  <li className="flex items-center gap-2">
-                    <span className="text-rose-500">•</span>
-                    Single Hall Venue
-                  </li>
-                )}
+                <li className="flex items-center gap-2">
+                  <span className="text-rose-500">•</span>
+                  {weddingPlanner.travel_range === 0
+                    ? "No Travel"
+                    : `${weddingPlanner.travel_range} miles from ${weddingPlanner.city}`}
+                </li>
               </ul>
             </div>
 
             {/* Socials */}
             <div className="flex flex-col items-center text-center last:border-r-0">
               <h3 className="text-lg font-semibold mb-3">Socials</h3>
-              <ul className="space-y-2 text-gray-600">
-                <li className="flex items-center gap-2">
-                  <span className="text-rose-500">•</span>
-                  <a
-                    href="https://www.sendlybox.com"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-rose-600 hover:text-rose-700 hover:underline"
-                  >
-                    Website
-                  </a>
-                </li>
-                <li className="flex items-center gap-2">
-                  <span className="text-rose-500">•</span>
-                  <a
-                    href="https://www.instagram.com/Townandcountryeventcenter"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-rose-600 hover:text-rose-700 hover:underline"
-                  >
-                    Instagram
-                  </a>
-                </li>
-              </ul>
+              {weddingPlanner.website_url || weddingPlanner.instagram_url ? (
+                <ul className="space-y-2 text-gray-600">
+                  {weddingPlanner.website_url && (
+                    <li className="flex items-center gap-2">
+                      <span className="text-rose-500">•</span>
+                      <a
+                        href={weddingPlanner.website_url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-rose-600 hover:text-rose-700 hover:underline break-all"
+                      >
+                        Website
+                      </a>
+                    </li>
+                  )}
+                  {weddingPlanner.instagram_url && (
+                    <li className="flex items-center gap-2">
+                      <span className="text-rose-500">•</span>
+                      <a
+                        href={weddingPlanner.instagram_url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-rose-600 hover:text-rose-700 hover:underline break-all"
+                      >
+                        Instagram
+                      </a>
+                    </li>
+                  )}
+                </ul>
+              ) : (
+                <ul className="space-y-2 text-gray-600">
+                  <li className="flex items-center gap-2">
+                    <span className="text-rose-500">•</span>
+                    No Social Links Yet!
+                  </li>
+                </ul>
+              )}
             </div>
           </div>
+
+          <h2 className="text-xl md:text-2xl font-bold mb-4">
+            About the Business
+          </h2>
+          <p className="text-gray-600 mb-6 leading-relaxed break-words whitespace-normal">
+            {weddingPlanner.description}
+          </p>
         </div>
 
-        {/* What's Included */}
-        {venue.venue_inclusions?.length > 0 && (
+        {/* Specialties */}
+        {weddingPlannerStyles.length > 0 && (
           <div className="mb-12">
             <h2 className="text-xl md:text-2xl font-bold mb-6">
-              What's Included
+              {weddingPlanner.service_type === "weddingPlanner"
+                ? "Wedding Planner Expertise"
+                : weddingPlanner.service_type === "weddingCoordinator"
+                ? "Wedding Coordiinator Expertise"
+                : "Wedding Planner & Coordinator Expertise"}
             </h2>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-              {[...venue.venue_inclusions]
-                .sort((a, b) => a.name.localeCompare(b.name))
-                .map((inclusion, index) => (
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+              {weddingPlannerStyles.length > 0 &&
+                weddingPlannerStyles.map((style, index) => (
                   <div
-                    key={index}
+                    key={`wedding-planner-${index}`}
                     className="p-4 rounded-lg border border-rose-200 bg-rose-50"
                   >
                     <div className="flex items-center gap-2">
                       <span className="text-rose-600">✓</span>
-                      <span className="text-gray-900">{inclusion.name}</span>
+                      <span className="text-gray-900">{style}</span>
                     </div>
                   </div>
                 ))}
@@ -467,42 +429,37 @@ export default function VenueDetailsPage() {
           </div>
         )}
 
-        {/* Add-ons */}
-        {venue.venue_addons?.length > 0 && (
+        {/* Services */}
+        {weddingPlanner.wedding_planner_services?.length > 0 && (
           <div className="mb-12">
             <h2 className="text-xl md:text-2xl font-bold mb-6">
-              Available Add-ons
+              Services & Pricing
             </h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {venue.venue_addons.map((addon, index) => (
-                <div
-                  key={index}
-                  className="p-6 rounded-lg border border-gray-200 hover:border-rose-200 transition-colors"
-                >
-                  <div className="flex flex-col md:flex-row md:justify-between md:items-start gap-2 mb-2">
-                    <h3 className="text-lg font-semibold">{addon.name}</h3>
-                    <p className="text-rose-600 font-semibold whitespace-nowrap">
-                      ${addon.price.toLocaleString()}
-                      {addon.pricing_type === "per-guest" && (
-                        <span className="text-sm text-gray-500">
-                          {addon.guest_increment == 1
-                            ? " per guest"
-                            : ` per ${addon.guest_increment} guests`}
-                        </span>
-                      )}
-                    </p>
-                  </div>
-                  <p className="text-gray-600">{addon.description}</p>
-                </div>
-              ))}
+            <div className="flex flex-row gap-4">
+              {/* First Column */}
+              <div className="flex-1 flex flex-col gap-4">
+                {weddingPlanner.wedding_planner_services
+                  .filter((_, index) => index % 2 === 0)
+                  .map((service, index) => (
+                    <ServiceCard key={index * 2} service={service} />
+                  ))}
+              </div>
+
+              {/* Second Column */}
+              <div className="flex-1 flex flex-col gap-4">
+                {weddingPlanner.wedding_planner_services
+                  .filter((_, index) => index % 2 === 1)
+                  .map((service, index) => (
+                    <ServiceCard key={index * 2 + 1} service={service} />
+                  ))}
+              </div>
             </div>
           </div>
         )}
-
         {/* Contact Form */}
         <div className="mb-12">
           <h2 className="text-xl md:text-2xl font-bold mb-6 text-center">
-            Contact Venue
+            Contact Artist
           </h2>
           <div className="max-w-2xl mx-auto bg-gray-50 p-4 md:p-6 rounded-lg">
             <form onSubmit={handleInquirySubmit} className="space-y-4">
@@ -572,21 +529,6 @@ export default function VenueDetailsPage() {
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Estimated Guest Count
-                </label>
-                <Input
-                  type="number"
-                  name="guestCount"
-                  value={inquiryForm.guestCount}
-                  onChange={handleInputChange}
-                  min={venue.min_guests || 1}
-                  max={venue.max_guests}
-                  required
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
                   Message
                 </label>
                 <textarea
@@ -595,11 +537,10 @@ export default function VenueDetailsPage() {
                   onChange={handleInputChange}
                   rows={4}
                   className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-rose-500 focus:border-transparent"
-                  placeholder="Tell us about your event..."
+                  placeholder="Tell us about your event and what services you're interested in..."
                   required
                 />
               </div>
-
               <Button
                 type="submit"
                 className="w-full bg-rose-600 hover:bg-rose-700"

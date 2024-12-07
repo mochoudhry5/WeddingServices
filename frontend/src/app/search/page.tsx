@@ -28,7 +28,7 @@ import { SlidersHorizontal } from "lucide-react";
 
 // Type Guards
 const isValidServiceType = (value: string): value is ServiceType => {
-  return ["venue", "hairMakeup", "photoVideo", "weddingplanner", "dj"].includes(
+  return ["venue", "hairMakeup", "photoVideo", "weddingPlanner", "dj"].includes(
     value
   );
 };
@@ -46,7 +46,7 @@ type ServiceType =
   | "venue"
   | "hairMakeup"
   | "photoVideo"
-  | "weddingplanner"
+  | "weddingPlanner"
   | "dj";
 type SortOption = "price_asc" | "price_desc" | "default";
 type CapacityOption = "all" | "0-100" | "101-200" | "201-300" | "301+";
@@ -126,11 +126,29 @@ interface DJDetails {
   created_at: string;
 }
 
+interface WeddingPlannerDetails {
+  id: string;
+  user_id: string;
+  business_name: string;
+  years_experience: string;
+  travel_range: number;
+  description: string;
+  city: string;
+  state: string;
+  wedding_planner_media: MediaItem[];
+  wedding_planner_services: Array<{ price: number }>;
+  min_service_price: number;
+  max_service_price: number;
+  rating: number;
+  created_at: string;
+}
+
 type ServiceListingItem =
   | VenueDetails
   | HairMakeupDetails
   | PhotoVideoDetails
-  | DJDetails;
+  | DJDetails
+  | WeddingPlannerDetails;
 
 interface LocationDetails {
   enteredLocation: string;
@@ -177,7 +195,7 @@ const SERVICE_CONFIGS: Record<ServiceType, ServiceConfig> = {
     locationBased: false,
     priceType: "service-based",
   },
-  weddingplanner: {
+  weddingPlanner: {
     singularName: "Wedding Planner",
     pluralName: "Wedding Planners",
     hasCapacity: false,
@@ -343,24 +361,24 @@ export default function ServicesSearchPage() {
           }
         }
 
-        const { data: makeupData, error: makeupError } = await query;
+        const { data: hairMakeupData, error: hairMakeupError } = await query;
 
         // Better error handling
-        if (makeupError) {
-          console.error("Supabase Error:", makeupError);
-          throw makeupError;
+        if (hairMakeupError) {
+          console.error("Supabase Error:", hairMakeupError);
+          throw hairMakeupError;
         }
 
-        if (!makeupData) {
+        if (!hairMakeupData) {
           throw new Error("No data returned from query");
         }
 
-        const processedMakeupArtists = makeupData.map((artist) => ({
-          ...artist,
+        const processedHairMakeup = hairMakeupData.map((hairMakeup) => ({
+          ...hairMakeup,
           rating: 4.5 + Math.random() * 0.5,
         }));
 
-        setServiceListings(processedMakeupArtists);
+        setServiceListings(processedHairMakeup);
       } else if (filtersToUse.serviceType === "dj") {
         let query = supabase.from("dj_listing").select(`
           *,
@@ -404,22 +422,86 @@ export default function ServicesSearchPage() {
           }
         }
 
-        const { data: makeupData, error: makeupError } = await query;
+        const { data: djData, error: djError } = await query;
 
         // Better error handling
-        if (makeupError) {
-          console.error("Supabase Error:", makeupError);
-          throw makeupError;
+        if (djError) {
+          console.error("Supabase Error:", djError);
+          throw djError;
         }
 
-        if (!makeupData) {
+        if (!djData) {
           throw new Error("No data returned from query");
         }
 
-        const processedMakeupArtists = makeupData.map((artist) => ({
-          ...artist,
+        const processedDJ = djData.map((dj) => ({
+          ...dj,
           rating: 4.5 + Math.random() * 0.5,
         }));
+
+        setServiceListings(processedDJ);
+      } else if (filtersToUse.serviceType === "weddingPlanner") {
+        let query = supabase.from("wedding_planner_listing").select(`
+          *,
+          wedding_planner_media (
+            file_path,
+            display_order
+          ),
+          wedding_planner_services (
+            price
+          )
+          `);
+
+        if (withFilters) {
+          // Apply price range filter - ensure we're handling nulls and using proper comparisons
+          if (filtersToUse.priceRange[0] > 0) {
+            query = query.gte("min_service_price", filtersToUse.priceRange[0]);
+          }
+          if (filtersToUse.priceRange[1] < 10000) {
+            query = query.lte("max_service_price", filtersToUse.priceRange[1]);
+          }
+
+          // Apply location filter
+          const { city, state } = filtersToUse.searchQuery;
+          if (city || state) {
+            let locationFilters = [];
+            if (city) locationFilters.push(`city.ilike.%${city}%`);
+            if (state) locationFilters.push(`state.ilike.%${state}%`);
+            query = query.or(locationFilters.join(","));
+          }
+
+          // Apply sorting
+          switch (filtersToUse.sortOption) {
+            case "price_asc":
+              query = query.order("min_service_price", { ascending: true });
+              break;
+            case "price_desc":
+              query = query.order("max_service_price", { ascending: false });
+              break;
+            default:
+              query = query.order("created_at", { ascending: false });
+          }
+        }
+
+        const { data: weddingPlannerData, error: weddingPlannerError } =
+          await query;
+
+        // Better error handling
+        if (weddingPlannerError) {
+          console.error("Supabase Error:", weddingPlannerError);
+          throw weddingPlannerError;
+        }
+
+        if (!weddingPlannerData) {
+          throw new Error("No data returned from query");
+        }
+
+        const processedMakeupArtists = weddingPlannerData.map(
+          (weddingPlanner) => ({
+            ...weddingPlanner,
+            rating: 4.5 + Math.random() * 0.5,
+          })
+        );
 
         setServiceListings(processedMakeupArtists);
       } else {
@@ -553,7 +635,12 @@ export default function ServicesSearchPage() {
     fetchServiceListings(false);
   };
   type ServiceDetails = {
-    serviceType: "venue" | "hair-makeup" | "photo-video" | "dj";
+    serviceType:
+      | "venue"
+      | "hair-makeup"
+      | "photo-video"
+      | "dj"
+      | "wedding-planner";
     media: MediaItem[];
   };
   const determineServiceDetails = (
@@ -584,6 +671,13 @@ export default function ServicesSearchPage() {
       return {
         serviceType: "dj",
         media: listing.dj_media,
+      };
+    }
+
+    if ("wedding_planner_media" in listing) {
+      return {
+        serviceType: "wedding-planner",
+        media: listing.wedding_planner_media,
       };
     }
 
@@ -645,7 +739,8 @@ export default function ServicesSearchPage() {
             return (
               "hair_makeup_media" in listing ||
               "photo_video_media" in listing ||
-              "dj_media" in listing
+              "dj_media" in listing ||
+              "wedding_planner_media" in listing
             );
           };
 
@@ -655,7 +750,7 @@ export default function ServicesSearchPage() {
             return "hair_makeup_media" in listing;
           };
 
-          const isPhotoVideo= (
+          const isPhotoVideo = (
             listing: ServiceListingItem
           ): listing is PhotoVideoDetails => {
             return "photo_video_media" in listing;
@@ -792,7 +887,7 @@ export default function ServicesSearchPage() {
                     <SelectItem value="photoVideo">
                       Photography & Videography
                     </SelectItem>
-                    <SelectItem value="weddingplanner">
+                    <SelectItem value="weddingPlanner">
                       Wedding Planner
                     </SelectItem>
                     <SelectItem value="dj">DJ</SelectItem>

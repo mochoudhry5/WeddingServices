@@ -13,7 +13,7 @@ import Footer from "@/components/ui/Footer";
 import { toast } from "sonner";
 import { useAuth } from "@/context/AuthContext";
 
-type ServiceId = "venue" | "hairMakeup" | "photoVideo" | "weddingplanner" | "dj";
+type ServiceId = "venue" | "hairMakeup" | "photoVideo" | "weddingPlanner" | "dj";
 
 interface Service {
   id: ServiceId;
@@ -56,13 +56,14 @@ const services: Service[] = [
     comingSoon: false,
   },
   {
-    id: "weddingplanner",
+    id: "weddingPlanner",
     name: "Wedding Planner",
     icon: NotebookPen,
     description:
       "Offer your skills to help provide couples a worry-less wedding.",
-    available: false,
-    comingSoon: true,
+    available: true,
+    path: "/services/weddingPlanner/create",
+    comingSoon: false,
   },
   {
     id: "dj",

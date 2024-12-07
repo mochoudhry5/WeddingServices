@@ -2,16 +2,7 @@
 
 import React, { useState } from "react";
 import { useRouter } from "next/navigation";
-import {
-  Upload,
-  Plus,
-  X,
-  DollarSign,
-  Paintbrush,
-  Calendar,
-  Clock,
-  MapPin,
-} from "lucide-react";
+import { Upload, Plus, X, DollarSign, Clock } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/lib/supabase";
 import { Input } from "@/components/ui/input";
@@ -411,8 +402,7 @@ const CreatePhotographyListing = () => {
         toast.error("Please sign in to create a listing");
         return;
       }
-
-      // Create photgraphy listing
+      
       const { data: photoVideo, error: photoVideoError } = await supabase
         .from("photo_video_listing")
         .insert({

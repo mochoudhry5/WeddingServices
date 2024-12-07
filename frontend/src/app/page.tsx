@@ -12,7 +12,7 @@ import NavBar from "@/components/ui/NavBar";
 import Footer from "@/components/ui/Footer";
 import LocationInput from "@/components/ui/LocationInput";
 
-type ServiceType = "venue" | "makeup" | "photography" | "weddingplanner" | "dj";
+type ServiceType = "venue" | "makeup" | "photography" | "weddingPlanner" | "dj";
 
 interface GooglePlace {
   formatted_address?: string;
@@ -135,7 +135,7 @@ export default function HomePage() {
                   <SelectItem value="venue">Venue</SelectItem>
                   <SelectItem value="hairMakeup">Hair & Makeup</SelectItem>
                   <SelectItem value="photoVideo">Photography/Videography</SelectItem>
-                  <SelectItem value="weddingplanner">
+                  <SelectItem value="weddingPlanner">
                     Wedding Planner
                   </SelectItem>
                   <SelectItem value="dj">DJ</SelectItem>
