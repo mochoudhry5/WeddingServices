@@ -69,8 +69,9 @@ const services: Service[] = [
     name: "DJ",
     icon: Music,
     description: "Provide your skills to bring the vibe to the special day.",
-    available: false,
-    comingSoon: true,
+    available: true,
+    path: "/services/dj/create",
+    comingSoon: false,
   },
 ];
 
