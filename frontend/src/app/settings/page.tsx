@@ -1,20 +1,24 @@
 "use client";
 
 import React, { useState } from "react";
-import {
-  Settings,
-  User,
-  Lock,
-  Bell,
-  CreditCard,
-  HelpCircle,
-  Shield,
-  LogOut,
-} from "lucide-react";
+import { User, Bell, CreditCard, Shield, LogOut } from "lucide-react";
 import NavBar from "@/components/ui/NavBar";
 import Footer from "@/components/ui/Footer";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
+import { supabase } from "@/lib/supabase";
+import { useAuth } from "@/context/AuthContext";
+import {
+  AlertDialog,
+  AlertDialogContent,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogCancel,
+  AlertDialogAction,
+} from "@/components/ui/alert-dialog";
+import { ProtectedRoute } from "@/components/ui/ProtectedRoute";
 
 const SectionLayout = ({
   title,
@@ -34,83 +38,257 @@ const SectionLayout = ({
   </div>
 );
 
-const AccountSettings = () => (
-  <SectionLayout
-    title="Profile Information"
-    description="Update your account information."
-  >
-    <div className="space-y-4">
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+const AccountSettings = () => {
+  const { user } = useAuth();
+  const [email, setEmail] = useState(user?.email || "");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
+
+  const handleUpdateEmail = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError("");
+    setSuccess("");
+
+    if (!email) {
+      setError("Email is required");
+      return;
+    }
+
+    if (email === user?.email) {
+      setError("New email must be different from current email");
+      return;
+    }
+
+    // Basic email validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      setError("Please enter a valid email address");
+      return;
+    }
+
+    try {
+      setLoading(true);
+
+      const { error: updateError } = await supabase.auth.updateUser({
+        email: email,
+      });
+
+      if (updateError) {
+        // Handle specific error cases
+        if (
+          updateError.message.includes("type") ||
+          updateError.message.includes("User already registered")
+        ) {
+          throw new Error(
+            "This email address is already in use. Please use a different email."
+          );
+        }
+        throw updateError;
+      }
+
+      setSuccess(
+        "Email update verification has been sent to your new email address. Please check your inbox."
+      );
+    } catch (err) {
+      // Handle both Error objects and unknown error types
+      const errorMessage =
+        err instanceof Error
+          ? err.message
+          : "An unexpected error occurred. Please try again later.";
+
+      // Clean up common Supabase error messages
+      setError(
+        errorMessage
+          .replace("AuthApiError: ", "")
+          .replace("TypeError: ", "")
+          .replace("Failed to fetch: ", "")
+      );
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <SectionLayout
+      title="Email Settings"
+      description="Update your email address. A verification email will be sent to confirm the change."
+    >
+      <form onSubmit={handleUpdateEmail} className="space-y-4">
+        {error && (
+          <div className="p-3 text-sm text-red-600 bg-red-50 rounded-lg">
+            {error}
+          </div>
+        )}
+        {success && (
+          <div className="p-3 text-sm text-green-600 bg-green-50 rounded-lg">
+            {success}
+          </div>
+        )}
+
+        <div className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Current Email
+            </label>
+            <p className="text-sm text-gray-500 mb-4">{user?.email}</p>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              New Email Address
+            </label>
+            <Input
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              disabled={loading}
+              placeholder="Enter new email address"
+            />
+          </div>
+
+          <div className="pt-4">
+            <button
+              type="submit"
+              disabled={loading}
+              className="bg-rose-600 text-white px-4 py-2 rounded-lg hover:bg-rose-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {loading ? "Updating Email..." : "Update Email"}
+            </button>
+          </div>
+        </div>
+      </form>
+    </SectionLayout>
+  );
+};
+
+const SecuritySettings = () => {
+  const [currentPassword, setCurrentPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  const { user } = useAuth();
+
+  const handleChangePassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError("");
+    setSuccess("");
+
+    // Validation checks
+    if (!currentPassword || !newPassword || !confirmPassword) {
+      setError("Please fill in all fields");
+      return;
+    }
+
+    if (newPassword !== confirmPassword) {
+      setError("New passwords don't match");
+      return;
+    }
+
+    if (newPassword.length < 6) {
+      setError("New password must be at least 6 characters long");
+      return;
+    }
+
+    try {
+      setLoading(true);
+
+      // First verify the current password by attempting to sign in
+      const { error: signInError } = await supabase.auth.signInWithPassword({
+        email: user?.email || "",
+        password: currentPassword,
+      });
+
+      if (signInError) {
+        throw new Error("Current password is incorrect");
+      }
+
+      // If current password is correct, update to new password
+      const { error: updateError } = await supabase.auth.updateUser({
+        password: newPassword,
+      });
+
+      if (updateError) throw updateError;
+
+      setSuccess("Password updated successfully");
+      setCurrentPassword("");
+      setNewPassword("");
+      setConfirmPassword("");
+    } catch (err) {
+      setError(
+        err instanceof Error ? err.message : "Failed to update password"
+      );
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <SectionLayout title="Security" description="Manage your account security.">
+      <form onSubmit={handleChangePassword} className="space-y-4">
+        {error && (
+          <div className="p-3 text-sm text-red-600 bg-red-50 rounded-lg">
+            {error}
+          </div>
+        )}
+        {success && (
+          <div className="p-3 text-sm text-green-600 bg-green-50 rounded-lg">
+            {success}
+          </div>
+        )}
+
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">
-            First Name
+            Current Password
           </label>
-          <Input defaultValue="John" />
+          <Input
+            type="password"
+            value={currentPassword}
+            onChange={(e) => setCurrentPassword(e.target.value)}
+            disabled={loading}
+          />
         </div>
+
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">
-            Last Name
+            New Password
           </label>
-          <Input defaultValue="Doe" />
+          <Input
+            type="password"
+            value={newPassword}
+            onChange={(e) => setNewPassword(e.target.value)}
+            disabled={loading}
+          />
         </div>
-      </div>
 
-      <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">
-          Email
-        </label>
-        <Input type="email" defaultValue="john.doe@example.com" />
-      </div>
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            Confirm New Password
+          </label>
+          <Input
+            type="password"
+            value={confirmPassword}
+            onChange={(e) => setConfirmPassword(e.target.value)}
+            disabled={loading}
+          />
+        </div>
 
-      <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">
-          Phone
-        </label>
-        <Input type="tel" defaultValue="+1 (555) 123-4567" />
-      </div>
-
-      <div className="pt-4">
-        <button className="bg-rose-600 text-white px-4 py-2 rounded-lg hover:bg-rose-700 transition-colors">
-          Save Changes
-        </button>
-      </div>
-    </div>
-  </SectionLayout>
-);
-
-const SecuritySettings = () => (
-  <SectionLayout
-    title="Security Settings"
-    description="Manage your account security."
-  >
-    <div className="space-y-4">
-      <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">
-          Current Password
-        </label>
-        <Input type="password" />
-      </div>
-      <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">
-          New Password
-        </label>
-        <Input type="password" />
-      </div>
-      <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">
-          Confirm New Password
-        </label>
-        <Input type="password" />
-      </div>
-
-      <div className="pt-4 mt-2">
-        <button className="bg-rose-600 text-white px-4 py-2 rounded-lg hover:bg-rose-700 transition-colors">
-          Update Password
-        </button>
-      </div>
-    </div>
-  </SectionLayout>
-);
+        <div className="pt-4 mt-2">
+          <button
+            type="submit"
+            disabled={loading}
+            className="bg-rose-600 text-white px-4 py-2 rounded-lg hover:bg-rose-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {loading ? "Updating Password..." : "Update Password"}
+          </button>
+        </div>
+      </form>
+    </SectionLayout>
+  );
+};
 
 const NotificationSettings = () => (
   <SectionLayout
@@ -180,6 +358,17 @@ const PaymentSettings = () => (
 
 function SettingsPage() {
   const [activeSection, setActiveSection] = useState("account");
+  const [showLogoutDialog, setShowLogoutDialog] = useState(false);
+  const { signOut } = useAuth();
+
+  const handleLogout = async () => {
+    try {
+      await signOut();
+      window.location.href = "/";
+    } catch (error) {
+      console.error("Error during logout:", error);
+    }
+  };
 
   const menuItems = [
     { id: "account", label: "Account", icon: User },
@@ -204,49 +393,75 @@ function SettingsPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <NavBar />
+    <ProtectedRoute>
+      <div className="min-h-screen bg-gray-50">
+        <NavBar />
 
-      <div className="max-w-5xl mx-auto px-4 py-8">
-        <div className="flex flex-col md:flex-row gap-6">
-          {/* Sidebar Navigation */}
-          <div className="w-full md:w-56 flex-shrink-0">
-            <div className="bg-white rounded-lg shadow-sm">
-              <nav className="space-y-1">
-                {menuItems.map((item) => (
+        <div className="max-w-5xl mx-auto px-4 py-8">
+          <div className="flex flex-col md:flex-row gap-6">
+            {/* Sidebar Navigation */}
+            <div className="w-full md:w-56 flex-shrink-0">
+              <div className="bg-white rounded-lg shadow-sm">
+                <nav className="space-y-1">
+                  {menuItems.map((item) => (
+                    <button
+                      key={item.id}
+                      onClick={() => setActiveSection(item.id)}
+                      className={`w-full flex items-center space-x-3 px-4 py-3 text-sm transition-colors ${
+                        activeSection === item.id
+                          ? "bg-rose-50 text-rose-600 font-medium"
+                          : "text-gray-600 hover:bg-gray-50"
+                      }`}
+                    >
+                      <item.icon size={20} />
+                      <span>{item.label}</span>
+                    </button>
+                  ))}
+
                   <button
-                    key={item.id}
-                    onClick={() => setActiveSection(item.id)}
-                    className={`w-full flex items-center space-x-3 px-4 py-3 text-sm transition-colors ${
-                      activeSection === item.id
-                        ? "bg-rose-50 text-rose-600 font-medium"
-                        : "text-gray-600 hover:bg-gray-50"
-                    }`}
+                    onClick={() => setShowLogoutDialog(true)}
+                    className="w-full flex items-center space-x-3 px-4 py-3 text-sm text-gray-600 hover:bg-gray-50 transition-colors"
                   >
-                    <item.icon size={20} />
-                    <span>{item.label}</span>
+                    <LogOut size={20} />
+                    <span>Logout</span>
                   </button>
-                ))}
-
-                <button className="w-full flex items-center space-x-3 px-4 py-3 text-sm text-gray-600 hover:bg-gray-50 transition-colors">
-                  <LogOut size={20} />
-                  <span>Logout</span>
-                </button>
-              </nav>
+                </nav>
+              </div>
             </div>
-          </div>
 
-          {/* Main Content */}
-          <div className="flex-1">
-            <div className="bg-white rounded-lg shadow-sm p-6">
-              {renderContent()}
+            {/* Main Content */}
+            <div className="flex-1">
+              <div className="bg-white rounded-lg shadow-sm p-6">
+                {renderContent()}
+              </div>
             </div>
           </div>
         </div>
-      </div>
 
-      <Footer />
-    </div>
+        <Footer />
+
+        {/* Logout Confirmation Dialog */}
+        <AlertDialog open={showLogoutDialog} onOpenChange={setShowLogoutDialog}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Confirm Logout</AlertDialogTitle>
+              <AlertDialogDescription>
+                Are you sure you want to logout?
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogAction
+                onClick={handleLogout}
+                className="bg-rose-600 text-white hover:bg-rose-700"
+              >
+                Logout
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+      </div>
+    </ProtectedRoute>
   );
 }
 

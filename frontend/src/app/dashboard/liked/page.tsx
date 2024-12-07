@@ -9,6 +9,7 @@ import { supabase } from "@/lib/supabase";
 import { toast } from "sonner";
 import Link from "next/link";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { ProtectedRoute } from "@/components/ui/ProtectedRoute";
 
 // Base interfaces
 interface MediaItem {
@@ -414,28 +415,30 @@ export default function LikedServicesPage() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50">
-      <NavBar />
-      <div className="mb-[6%] max-w-7xl mx-auto px-4 py-8">
-        <h1 className="text-2xl font-bold mb-8">Liked Services</h1>
+    <ProtectedRoute>
+      <div className="min-h-screen bg-slate-50">
+        <NavBar />
+        <div className="mb-[6%] max-w-7xl mx-auto px-4 py-8">
+          <h1 className="text-2xl font-bold mb-8">Liked Services</h1>
 
-        <Tabs
-          value={selectedService}
-          onValueChange={setSelectedService}
-          className="mb-8"
-        >
-          <TabsList>
-            {Object.values(SERVICE_CONFIGS).map((config) => (
-              <TabsTrigger key={config.type} value={config.type}>
-                {config.pluralName}
-              </TabsTrigger>
-            ))}
-          </TabsList>
-        </Tabs>
+          <Tabs
+            value={selectedService}
+            onValueChange={setSelectedService}
+            className="mb-8"
+          >
+            <TabsList>
+              {Object.values(SERVICE_CONFIGS).map((config) => (
+                <TabsTrigger key={config.type} value={config.type}>
+                  {config.pluralName}
+                </TabsTrigger>
+              ))}
+            </TabsList>
+          </Tabs>
 
-        {renderContent()}
+          {renderContent()}
+        </div>
+        <Footer />
       </div>
-      <Footer />
-    </div>
+    </ProtectedRoute>
   );
 }
