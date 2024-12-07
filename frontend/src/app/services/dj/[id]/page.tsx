@@ -177,8 +177,7 @@ export default function MakeupDetailsPage() {
       console.log("Makeup data:", djData);
       setDJ(djData);
     } catch (error) {
-      console.error("Error loading makeup artist:", error);
-      toast.error("Failed to load makeup artist details");
+      console.error("Error loading dj:", error);
     } finally {
       setIsLoading(false);
     }
@@ -304,7 +303,7 @@ export default function MakeupDetailsPage() {
 
         {/* Description */}
         <div className="mb-12">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-12">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-0 mb-12">
             {/* Booking Info */}
             <div className="flex flex-col items-center text-center border-r border-gray-200 last:border-r-0">
               <h3 className="text-lg font-semibold mb-3">Experience</h3>

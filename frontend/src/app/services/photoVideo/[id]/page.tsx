@@ -180,8 +180,7 @@ export default function PhotographyDetailsPage() {
       console.log("Photography & Videography data:", photoVideoData);
       setPhotoVideo(photoVideoData);
     } catch (error) {
-      console.error("Error loading Photgraphy & Videography listing:", error);
-      toast.error("Failed to load artist details");
+      console.error("Error loading photography & videography listing:", error);
     } finally {
       setIsLoading(false);
     }
@@ -326,9 +325,8 @@ export default function PhotographyDetailsPage() {
         </div>
 
         {/* Description */}
-        {/* Description */}
         <div className="mb-12">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-12">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-0 mb-12">
             {/* Experience */}
             <div className="flex flex-col items-center text-center border-r border-gray-200 last:border-r-0">
               <h3 className="text-lg font-semibold mb-3">Experience</h3>

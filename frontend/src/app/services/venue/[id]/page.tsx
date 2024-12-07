@@ -279,7 +279,6 @@ export default function VenueDetailsPage() {
       setVenue(venueData);
     } catch (error) {
       console.error("Error loading venue:", error);
-      toast.error("Failed to load venue details");
     } finally {
       setIsLoading(false);
     }
@@ -430,25 +429,25 @@ export default function VenueDetailsPage() {
           </div>
         </div>
 
-        {/* Description Section with updated styling */}
-        {/* Description Section with updated styling */}
-        <div className="mb-12 px-4">
-          <div className="grid grid-cols-1 md:grid-cols-4 max-w-7xl mx-auto">
+        <div className="mb-12">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-0 mb-12">
             {/* Capacity */}
-            <div className="flex flex-col items-center text-center p-8 md:border-r border-gray-200">
-              <h3 className="text-lg font-semibold mb-4">Capacity</h3>
-              <ul className="space-y-2 text-gray-600 w-full">
+            <div className="flex flex-col justify-center items-center border-r border-gray-200 last:border-r-0">
+              <h3 className="text-lg font-semibold mb-3 text-center">
+                Capacity
+              </h3>
+              <ul className="space-y-2 text-gray-600 text-center">
                 <li>
-                  <div className="flex items-center justify-center gap-2">
-                    <span className="text-rose-500 flex-shrink-0">•</span>
+                  <div className="flex items-center gap-2">
+                    <span className="text-rose-500">•</span>
                     <span>
                       Minimum guests: {venue.min_guests || "No minimum"}
                     </span>
                   </div>
                 </li>
                 <li>
-                  <div className="flex items-center justify-center gap-2">
-                    <span className="text-rose-500 flex-shrink-0">•</span>
+                  <div className="flex items-center gap-2">
+                    <span className="text-rose-500">•</span>
                     <span>Maximum guests: {venue.max_guests}</span>
                   </div>
                 </li>
@@ -456,12 +455,14 @@ export default function VenueDetailsPage() {
             </div>
 
             {/* Catering Options */}
-            <div className="flex flex-col items-center text-center p-8 md:border-r border-gray-200">
-              <h3 className="text-lg font-semibold mb-4">Catering Options</h3>
-              <ul className="space-y-2 text-gray-600 w-full">
+            <div className="flex flex-col justify-center items-center border-r border-gray-200 last:border-r-0">
+              <h3 className="text-lg font-semibold mb-3 text-center">
+                Catering Options
+              </h3>
+              <ul className="space-y-2 text-gray-600 text-center">
                 <li>
-                  <div className="flex items-center justify-center gap-2">
-                    <span className="text-rose-500 flex-shrink-0">•</span>
+                  <div className="flex items-center gap-2">
+                    <span className="text-rose-500">•</span>
                     <span>
                       {
                         {
@@ -477,12 +478,14 @@ export default function VenueDetailsPage() {
             </div>
 
             {/* Venue Type */}
-            <div className="flex flex-col items-center text-center p-8 md:border-r border-gray-200">
-              <h3 className="text-lg font-semibold mb-4">Venue Type</h3>
-              <ul className="space-y-2 text-gray-600 w-full">
+            <div className="flex flex-col justify-center items-center border-r border-gray-200 last:border-r-0">
+              <h3 className="text-lg font-semibold mb-3 text-center">
+                Venue Type
+              </h3>
+              <ul className="space-y-2 text-gray-600 text-center">
                 <li>
-                  <div className="flex items-center justify-center gap-2">
-                    <span className="text-rose-500 flex-shrink-0">•</span>
+                  <div className="flex items-center gap-2">
+                    <span className="text-rose-500">•</span>
                     <span>
                       {
                         {
@@ -498,14 +501,16 @@ export default function VenueDetailsPage() {
             </div>
 
             {/* Socials */}
-            <div className="flex flex-col items-center text-center p-8">
-              <h3 className="text-lg font-semibold mb-4">Socials</h3>
+            <div className="flex flex-col justify-center items-center last:border-r-0">
+              <h3 className="text-lg font-semibold mb-3 text-center">
+                Socials
+              </h3>
               {venue.website_url || venue.instagram_url ? (
-                <ul className="space-y-2 text-gray-600 w-full">
+                <ul className="space-y-2 text-gray-600 text-center">
                   {venue.website_url && (
                     <li>
-                      <div className="flex items-center justify-center gap-2">
-                        <span className="text-rose-500 flex-shrink-0">•</span>
+                      <div className="flex items-center gap-2">
+                        <span className="text-rose-500">•</span>
                         <a
                           href={venue.website_url}
                           target="_blank"
@@ -519,8 +524,8 @@ export default function VenueDetailsPage() {
                   )}
                   {venue.instagram_url && (
                     <li>
-                      <div className="flex items-center justify-center gap-2">
-                        <span className="text-rose-500 flex-shrink-0">•</span>
+                      <div className="flex items-center gap-2">
+                        <span className="text-rose-500">•</span>
                         <a
                           href={venue.instagram_url}
                           target="_blank"
@@ -534,10 +539,10 @@ export default function VenueDetailsPage() {
                   )}
                 </ul>
               ) : (
-                <ul className="space-y-2 text-gray-600 w-full">
+                <ul className="space-y-2 text-gray-600 text-center">
                   <li>
-                    <div className="flex items-center justify-center gap-2">
-                      <span className="text-rose-500 flex-shrink-0">•</span>
+                    <div className="flex items-center gap-2">
+                      <span className="text-rose-500">•</span>
                       <span>No Social Links Yet!</span>
                     </div>
                   </li>
