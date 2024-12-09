@@ -19,7 +19,7 @@ const SERVICE_CONFIGS: Record<string, ServiceConfig> = {
     tableName: "venue_liked",
     idField: "venue_id",
     entityName: "venue",
-    pluralName: "Venues",
+    pluralName: "Venue",
   },
   "hair-makeup": {
     tableName: "hair_makeup_liked",

@@ -136,7 +136,7 @@ export default function HomePage() {
                   <SelectItem value="hairMakeup">Hair & Makeup</SelectItem>
                   <SelectItem value="photoVideo">Photography/Videography</SelectItem>
                   <SelectItem value="weddingPlanner">
-                    Wedding Planner
+                    Wedding Planner & Coordinator
                   </SelectItem>
                   <SelectItem value="dj">DJ</SelectItem>
                 </SelectContent>

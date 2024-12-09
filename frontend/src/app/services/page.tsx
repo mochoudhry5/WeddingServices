@@ -57,7 +57,7 @@ const services: Service[] = [
   },
   {
     id: "weddingPlanner",
-    name: "Wedding Planner",
+    name: "Wedding Planner & Coordinator",
     icon: NotebookPen,
     description:
       "Offer your skills to help provide couples a worry-less wedding.",
