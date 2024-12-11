@@ -25,7 +25,7 @@ import { ProtectedRoute } from "@/components/ui/ProtectedRoute";
 interface Venue {
   id: string;
   user_id: string;
-  name: string;
+  business_name: string;
   address: string;
   city: string;
   state: string;
@@ -59,12 +59,12 @@ export default function MyListingsPage() {
       console.log("Fetching venues for user:", user.id);
 
       const { data, error } = await supabase
-        .from("venues")
+        .from("venue_listing")
         .select(
           `
         id,
         user_id,
-        name,
+        business_name,
         address,
         city,
         state,
@@ -197,7 +197,7 @@ export default function MyListingsPage() {
                   <div className="relative">
                     <MediaCarousel
                       media={venue.venue_media}
-                      serviceName={venue.name}
+                      serviceName={venue.business_name}
                       itemId={venue.id}
                       creatorId={venue.user_id}
                       userLoggedIn={user?.id}
@@ -220,7 +220,9 @@ export default function MyListingsPage() {
                     </div>
                   </div>
                   <div className="p-4">
-                    <h3 className="text-lg font-semibold mb-1">{venue.name}</h3>
+                    <h3 className="text-lg font-semibold mb-1">
+                      {venue.business_name}
+                    </h3>
                     <p className="text-slate-600 text-sm mb-2">
                       {venue.city}, {venue.state}
                     </p>
