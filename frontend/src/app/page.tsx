@@ -271,7 +271,7 @@ export default function HomePage() {
       </div>
 
       {/* Why Choose Us Section */}
-      <section className="bg-black relative z-10 py-10 bg-white">
+      <section className= "relative z-10 py-10 bg-white">
         <div className="max-w-7xl mx-auto px-4">
           <div className="text-center mb-10">
             <h2 className="text-4xl font-bold text-black mb-4">
