@@ -156,13 +156,13 @@ export default function NavBar() {
     ) : null;
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b bg-white">
+    <header className="sticky top-0 z-50 w-full bg-white">
       <div className="max-w-8xl mx-auto flex h-16 items-center justify-between px-4">
         {/* Left Section */}
         <div className="flex items-center gap-8">
           {/* Logo */}
           <Link href="/" className="flex items-center gap-2">
-            <span className="text-3xl font-bold">AnyWeds</span>
+            <span className="text-3xl font-bold text-black">AnyWeds</span>
           </Link>
         </div>
 
