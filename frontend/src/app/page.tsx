@@ -11,7 +11,15 @@ import {
 import NavBar from "@/components/ui/NavBar";
 import Footer from "@/components/ui/Footer";
 import LocationInput from "@/components/ui/LocationInput";
-import { Heart, Camera, MapPin, Calendar, LucideIcon, Ban, DollarSign } from "lucide-react";
+import {
+  Heart,
+  Camera,
+  MapPin,
+  Calendar,
+  LucideIcon,
+  Ban,
+  DollarSign,
+} from "lucide-react";
 
 interface FeatureCardProps {
   icon: LucideIcon;
