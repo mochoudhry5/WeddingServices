@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import {
   Building2,
   Camera,
@@ -13,7 +13,12 @@ import Footer from "@/components/ui/Footer";
 import { toast } from "sonner";
 import { useAuth } from "@/context/AuthContext";
 
-type ServiceId = "venue" | "hairMakeup" | "photoVideo" | "weddingPlanner" | "dj";
+type ServiceId =
+  | "venue"
+  | "hairMakeup"
+  | "photoVideo"
+  | "weddingPlanner"
+  | "dj";
 
 interface Service {
   id: ServiceId;
@@ -23,6 +28,19 @@ interface Service {
   available: boolean;
   path?: string;
   comingSoon?: boolean;
+}
+
+interface ListingStepProps {
+  number: string;
+  title: string;
+  description: string;
+  delay?: number;
+}
+
+interface FaqItemProps {
+  question: string;
+  answer: string;
+  delay?: number;
 }
 
 const services: Service[] = [
@@ -75,6 +93,117 @@ const services: Service[] = [
     comingSoon: false,
   },
 ];
+
+const ListingStep = ({
+  number,
+  title,
+  description,
+  delay = 0,
+}: ListingStepProps) => {
+  const [isVisible, setIsVisible] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setIsVisible(true);
+        }
+      },
+      { threshold: 0.1 }
+    );
+
+    if (ref.current) {
+      observer.observe(ref.current);
+    }
+
+    return () => {
+      if (ref.current) {
+        observer.unobserve(ref.current);
+      }
+    };
+  }, []);
+
+  return (
+    <div
+      ref={ref}
+      className={`transform transition-all duration-1000 ease-out ${
+        isVisible ? "translate-y-0 opacity-100" : "translate-y-10 opacity-0"
+      }`}
+      style={{ transitionDelay: `${delay}ms` }}
+    >
+      <div className="relative flex gap-6 items-start">
+        <div className="w-12 h-12 rounded-full bg-rose-100 flex items-center justify-center flex-shrink-0">
+          <span className="text-xl font-semibold text-rose-600">{number}</span>
+        </div>
+        <div>
+          <h3 className="text-lg font-semibold text-gray-900 mb-2">{title}</h3>
+          <p className="text-gray-600">{description}</p>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+const FaqItem = ({ question, answer, delay = 0 }: FaqItemProps) => {
+  const [isOpen, setIsOpen] = useState(false);
+  const [isVisible, setIsVisible] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setIsVisible(true);
+        }
+      },
+      { threshold: 0.1 }
+    );
+
+    if (ref.current) {
+      observer.observe(ref.current);
+    }
+
+    return () => {
+      if (ref.current) {
+        observer.unobserve(ref.current);
+      }
+    };
+  }, []);
+
+  return (
+    <div
+      ref={ref}
+      className={`transform transition-all duration-1000 ease-out ${
+        isVisible ? "translate-y-0 opacity-100" : "translate-y-10 opacity-0"
+      }`}
+      style={{ transitionDelay: `${delay}ms` }}
+    >
+      <button
+        onClick={() => setIsOpen(!isOpen)}
+        className="w-full text-left py-4 focus:outline-none"
+      >
+        <div className="flex justify-between items-center">
+          <h3 className="text-lg font-medium text-gray-900">{question}</h3>
+          <span
+            className={`ml-6 flex-shrink-0 transition-transform duration-200 ${
+              isOpen ? "rotate-180" : "rotate-0"
+            }`}
+          >
+            ▼
+          </span>
+        </div>
+        <div
+          className={`mt-2 transition-all duration-200 overflow-hidden ${
+            isOpen ? "max-h-48 opacity-100" : "max-h-0 opacity-0"
+          }`}
+        >
+          <p className="text-gray-600">{answer}</p>
+        </div>
+      </button>
+    </div>
+  );
+};
 
 export default function CreateServicePage() {
   const [selected, setSelected] = useState<ServiceId | null>(null);
@@ -183,6 +312,62 @@ export default function CreateServicePage() {
             </button>
           </div>
         </div>
+        <section className="mt-24 mb-24">
+          <div className="max-w-7xl mx-auto px-4">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-24">
+              {/* How Listing Works */}
+              <div>
+                <h2 className="text-2xl font-bold text-center mb-12">
+                  How Listing Works
+                </h2>
+                <div className="space-y-12">
+                  <ListingStep
+                    number="1"
+                    title="Create Your Listing"
+                    description="Fill out your service details, upload photos, and set your pricing and availability."
+                    delay={100}
+                  />
+                  <ListingStep
+                    number="2"
+                    title="Get Discovered"
+                    description="Your service will be visible to couples actively planning their wedding in your area."
+                    delay={200}
+                  />
+                  <ListingStep
+                    number="3"
+                    title="Bookings"
+                    description="Receive inquiries, communicate with couples, and manage your bookings the way you always have been doing."
+                    delay={300}
+                  />
+                </div>
+              </div>
+
+              {/* FAQ Section */}
+              <div>
+                <h2 className="text-2xl font-bold text-center mb-12">
+                  Frequently Asked Questions
+                </h2>
+                <div className="space-y-4">
+                  <FaqItem
+                    question="How much does it cost to list my service?"
+                    answer="Listing your service on AnyWeds involves a simple flat fee of $5 to $30, determined by location and service type. We eliminate lead generation fees and service charges, ensuring full transparency and no hidden costs."
+                    delay={100}
+                  />
+                  <FaqItem
+                    question="Can I list multiple services?"
+                    answer="Yes, you can create multiple listings for different services you offer. Each service can have its own unique profile and pricing."
+                    delay={200}
+                  />
+                  <FaqItem
+                    question="Can I edit my listing after publishing?"
+                    answer="Yes, you can update your listing details, photos, and pricing at any time through your dashboard."
+                    delay={400}
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
       </div>
       <Footer />
     </div>
