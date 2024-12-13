@@ -3,8 +3,7 @@
 import { useState } from "react";
 import NavBar from "@/components/ui/NavBar";
 import Footer from "@/components/ui/Footer";
-import { Search } from "lucide-react";
-import { Input } from "@/components/ui/input";
+import { HelpCircle, Settings, Compass, ArrowRight } from "lucide-react";
 
 const faqCategories = {
   "Getting Started": [
@@ -12,35 +11,27 @@ const faqCategories = {
       question: "How do I create an account?",
       answer:
         "Click the 'Sign up' button in the top right corner and follow the registration process. You'll need to provide your email address and create a password.",
+      icon: Compass,
     },
     {
       question: "How do I list my service?",
       answer:
         "Click on 'List Your Service' in the navigation bar, select your service type, and follow the step-by-step process to create your listing.",
-    },
-  ],
-  "Bookings & Payments": [
-    {
-      question: "How do payments work?",
-      answer:
-        "We use secure payment processing. When a booking is confirmed, the payment is held securely until the service is delivered.",
-    },
-    {
-      question: "What is your cancellation policy?",
-      answer:
-        "Cancellation policies vary by vendor. Each listing includes specific cancellation terms set by the service provider.",
+      icon: HelpCircle,
     },
   ],
   "Account Management": [
     {
       question: "How do I update my profile?",
       answer:
-        "Log in to your account, click on your profile picture, and select 'Edit Profile' to update your information.",
+        "Log in to your account, click on your profile picture, and select 'Settings' and then 'Account' to update your information.",
+      icon: Settings,
     },
     {
       question: "How do I reset my password?",
       answer:
         "Click 'Login', then 'Forgot Password', and follow the instructions sent to your email to reset your password.",
+      icon: Settings,
     },
   ],
 };
@@ -52,69 +43,77 @@ export default function HelpCenterPage() {
     <div className="min-h-screen flex flex-col">
       <NavBar />
 
-      <main className="flex-grow bg-gray-50">
-        <div className="bg-white border-b">
-          <div className="max-w-7xl mx-auto px-4 py-12 sm:py-16 lg:py-20">
+      <main className="flex-grow">
+        {/* Hero Section */}
+        <div className="relative bg-gradient-to-b from-rose-50 to-white">
+          <div className="absolute inset-0 bg-grid-gray-100/50 [mask-image:linear-gradient(0deg,white,rgba(255,255,255,0.6))]" />
+          <div className="relative max-w-7xl mx-auto px-4 py-16 sm:py-24">
             <div className="text-center max-w-3xl mx-auto">
-              <h1 className="text-3xl font-bold text-gray-900 sm:text-4xl">
+              <h1 className="text-4xl md:text-5xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-rose-600 to-purple-600 mb-6">
                 How can we help you?
               </h1>
-              <p className="mt-4 text-lg text-gray-600">
+              <p className="text-xl text-gray-600 mb-8">
                 Search our help center or browse frequently asked questions
                 below
               </p>
-
-              <div className="mt-8 max-w-xl mx-auto">
-                <div className="relative">
-                  <Search
-                    className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"
-                    size={20}
-                  />
-                  <Input
-                    type="text"
-                    placeholder="Search help articles..."
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    className="pl-10"
-                  />
-                </div>
-              </div>
             </div>
           </div>
         </div>
 
-        <div className="max-w-7xl mx-auto px-4 py-12">
-          <div className="grid gap-12 md:gap-16">
+        {/* FAQ Section */}
+        <div className="max-w-7xl mx-auto px-4">
+          <div className="grid gap-16">
             {Object.entries(faqCategories).map(([category, questions]) => (
               <div key={category}>
-                <h2 className="text-2xl font-bold text-gray-900 mb-6">
+                <h2 className="text-2xl font-bold text-gray-900 mb-8 flex items-center">
+                  <span className="bg-gradient-to-r from-rose-500 to-rose-600 w-8 h-1 rounded-full mr-4" />
                   {category}
                 </h2>
                 <div className="grid gap-6">
-                  {questions.map((faq, index) => (
-                    <div
-                      key={index}
-                      className="bg-white rounded-lg shadow-sm p-6 hover:shadow-md transition-shadow"
-                    >
-                      <h3 className="text-lg font-medium text-gray-900 mb-2">
-                        {faq.question}
-                      </h3>
-                      <p className="text-gray-600">{faq.answer}</p>
-                    </div>
-                  ))}
+                  {questions.map((faq, index) => {
+                    const Icon = faq.icon;
+                    return (
+                      <div
+                        key={index}
+                        className="bg-white rounded-xl p-6 hover:shadow-lg transition-all duration-300 border border-gray-100 hover:-translate-y-1 group"
+                      >
+                        <div className="flex items-start gap-4">
+                          <div className="bg-rose-50 rounded-lg p-3 group-hover:bg-rose-100 transition-colors">
+                            <Icon className="w-6 h-6 text-rose-500" />
+                          </div>
+                          <div>
+                            <h3 className="text-lg font-medium text-gray-900 mb-2 flex items-center">
+                              {faq.question}
+                            </h3>
+                            <p className="text-gray-600 leading-relaxed">
+                              {faq.answer}
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
             ))}
           </div>
 
-          <div className="mt-16 text-center">
-            <h2 className="text-xl font-semibold mb-4">Still need help?</h2>
-            <a
-              href="/footer/contact"
-              className="inline-flex bg-rose-600 text-white px-6 py-3 rounded-lg hover:bg-rose-700 transition-colors"
-            >
-              Contact Support
-            </a>
+          {/* Contact Support Section */}
+          <div className="mt-20 text-center">
+            <div className="bg-gradient-to-br from-rose-50 to-purple-50 rounded-2xl p-8 md:p-12 max-w-3xl mx-auto">
+              <h2 className="text-2xl font-bold mb-4">Still need help?</h2>
+              <p className="text-gray-600 mb-8">
+                Our support team is here to assist you with any questions or
+                concerns
+              </p>
+              <a
+                href="/footer/contact"
+                className="inline-flex items-center bg-gradient-to-r from-rose-600 to-rose-500 text-white px-8 py-3 rounded-lg hover:from-rose-700 hover:to-rose-600 transition-all duration-300 group"
+              >
+                Contact Support
+                <ArrowRight className="ml-2 w-4 h-4 group-hover:translate-x-1 transition-transform" />
+              </a>
+            </div>
           </div>
         </div>
       </main>
