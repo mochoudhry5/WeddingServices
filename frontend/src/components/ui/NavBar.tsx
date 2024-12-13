@@ -252,6 +252,14 @@ export default function NavBar() {
           ) : (
             // Login and Sign up buttons - Desktop only
             <>
+              {/* List Your Service Button - Desktop only */}
+              <Link
+                href="/services"
+                className="rounded-lg px-4 py-2 text-sm font-medium text-black-600 transition-colors hover:bg-rose-200"
+              >
+                List Your Service
+              </Link>
+
               <button
                 onClick={() => setIsLoginOpen(true)}
                 className="text-sm font-medium text-gray-700 hover:text-rose-600 transition-colors"
