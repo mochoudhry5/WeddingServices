@@ -218,8 +218,8 @@ export default function HomePage() {
         </div>
 
         {/* Overlay content */}
-        <div className="relative z-10 flex flex-col items-start justify-center min-h-[calc(100vh-64px)] px-12">
-          <div className="max-w-xl">
+        <div className="relative z-10 flex flex-col items-center justify-center min-h-[calc(100vh-64px)] px-4">
+          <div className="w-full max-w-xl text-center">
             <h2 className="text-5xl font-bold text-white mb-6">
               Find your perfect wedding venue & services
             </h2>
@@ -271,7 +271,7 @@ export default function HomePage() {
       </div>
 
       {/* Why Choose Us Section */}
-      <section className= "relative z-10 py-10 bg-white">
+      <section className="relative z-10 py-10 bg-white">
         <div className="max-w-7xl mx-auto px-4">
           <div className="text-center mb-10">
             <h2 className="text-4xl font-bold text-black mb-4">
