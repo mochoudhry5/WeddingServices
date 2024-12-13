@@ -350,7 +350,7 @@ export default function CreateServicePage() {
                 <div className="space-y-4">
                   <FaqItem
                     question="How much does it cost to list my service?"
-                    answer="Listing your service on AnyWeds involves a simple flat fee of $5 to $30, determined by location and service type. We eliminate lead generation fees and service charges, ensuring full transparency and no hidden costs."
+                    answer="Listing your service on AnyWeds involves a simple flat fee of $5 to $30 a month, determined by location and service type. We eliminate lead generation fees and service charges, ensuring full transparency and no hidden costs."
                     delay={100}
                   />
                   <FaqItem
