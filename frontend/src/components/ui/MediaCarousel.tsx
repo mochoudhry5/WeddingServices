@@ -8,10 +8,10 @@ import LikeButton from "./LikeButton";
 // Service configuration type - should match LikeButton's SERVICE_CONFIGS
 type ServiceType =
   | "venue"
-  | "hair-makeup"
-  | "photo-video"
+  | "hair_makeup"
+  | "photo_video"
   | "dj"
-  | "wedding-planner";
+  | "wedding_planner";
 
 interface MediaItem {
   file_path: string;
@@ -55,7 +55,8 @@ export default function MediaCarousel({
   // Media URL handling
   const getMediaUrl = (filePath: string) => {
     try {
-      const bucketName = `${service}-media`;
+      const bucketName = `${service.replaceAll("_", "-")}-media`;
+      console.log(bucketName);
       const { data } = supabase.storage.from(bucketName).getPublicUrl(filePath);
       return data?.publicUrl;
     } catch (error) {
