@@ -1,7 +1,6 @@
 "use client";
 
 import React, { useEffect, useState, useRef } from "react";
-import { PlayCircle, ChevronLeft, ChevronRight } from "lucide-react";
 import NavBar from "@/components/ui/NavBar";
 import Footer from "@/components/ui/Footer";
 import { useParams } from "next/navigation";
@@ -12,7 +11,6 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/context/AuthContext";
 import LikeButton from "@/components/ui/LikeButton";
-import { ChevronDown } from "lucide-react";
 
 interface PhotoVideoDetails {
   user_id: string;
