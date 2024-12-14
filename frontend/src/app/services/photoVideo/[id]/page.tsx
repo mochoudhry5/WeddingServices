@@ -119,9 +119,7 @@ const ServiceCard = ({ service }: { service: PhotoVideoService }) => {
 
 export default function PhotographyDetailsPage() {
   const { user } = useAuth();
-  const [photoVideo, setPhotoVideo] = useState<PhotoVideoDetails | null>(
-    null
-  );
+  const [photoVideo, setPhotoVideo] = useState<PhotoVideoDetails | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [inquiryForm, setInquiryForm] = useState<InquiryForm>({
     firstName: "",
@@ -245,24 +243,25 @@ export default function PhotographyDetailsPage() {
 
       {/* Hero/Media Section */}
       <div className="relative bg-black">
-        <div className="relative h-[60vh] md:h-[80vh]">
+        <div className="relative h-[40vh] sm:h-[50vh] md:h-[60vh] lg:h-[80vh]">
           <MediaCarousel
             media={photoVideo.photo_video_media}
             name={photoVideo.business_name}
             service="photo-video"
-            className="w-full h-full"
+            className="w-full h-full object-cover"
           />
         </div>
       </div>
 
       {/* Content */}
-      <div className="max-w-7xl mx-auto px-4 py-8">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        {/* Like Button Banner */}
         {user?.id !== photoVideo.user_id && (
-          <div className="max-w-7xl mx-auto px-4 py-4">
+          <div className="py-2 sm:py-4">
             <div className="bg-rose-50 border-b border-rose-200 py-2">
-              <div className="max-w-3xl mx-auto px-4 flex flex-col items-center justify-center">
+              <div className="max-w-3xl mx-auto px-2 sm:px-4 flex flex-col items-center justify-center">
                 <div className="flex items-center gap-2">
-                  <span className="text-rose-600 text-lg font-semibold">
+                  <span className="text-rose-600 text-base sm:text-lg font-semibold">
                     Don't forget this listing!
                   </span>
                   <LikeButton
@@ -278,57 +277,55 @@ export default function PhotographyDetailsPage() {
         )}
 
         {/* Artist Header */}
-        <div className="flex flex-col md:flex-row md:justify-between md:items-start gap-4 mb-8">
-          <div>
-            <div className="flex items-center gap-3 mb-2">
-              <h1 className="text-2xl md:text-3xl font-bold text-gray-900">
-                {photoVideo.business_name}
-              </h1>
-              <div className="inline-flex items-center px-3 py-1 rounded-full bg-white border border-gray-200 text-sm font-medium">
-                {photoVideo.service_type === "both"
-                  ? "Photography & Videography"
-                  : photoVideo.service_type === "photography"
-                  ? "Photography"
-                  : "Videography"}
+        <div className="max-w-7xl mx-auto px-4 py-6">
+          {/* Business Header */}
+          <div className="flex flex-col md:flex-row md:justify-between md:items-start gap-4 mb-8">
+            <div>
+              <div className="flex flex-row flex-wrap items-center gap-2 mb-2">
+                <h1 className="text-2xl md:text-3xl font-bold text-gray-900">
+                  {photoVideo.business_name}
+                </h1>
+                <div className="inline-flex items-center px-2 py-0.5 rounded-full bg-white border border-gray-200 text-xs md:text-sm font-medium whitespace-nowrap">
+                  {photoVideo.service_type === "both"
+                    ? "Photography & Videography"
+                    : photoVideo.service_type === "photography"
+                    ? "Photography"
+                    : "Videography"}
+                </div>
               </div>
+              <p className="text-gray-600">
+                {photoVideo.is_remote_business
+                  ? `${photoVideo.city}, ${photoVideo.state} (Remote)`
+                  : `${photoVideo.address}, ${photoVideo.city}, ${photoVideo.state}`}
+              </p>
             </div>
-            {photoVideo.is_remote_business ? (
-              <p className="text-gray-600">
-                {photoVideo.city}, {photoVideo.state} (Remote)
-              </p>
-            ) : (
-              <p className="text-gray-600">
-                {photoVideo.address}, {photoVideo.city}, {photoVideo.state}
-              </p>
-            )}
-          </div>
-          <div className="text-right">
-            {photoVideo.min_service_price && photoVideo.max_service_price && (
-              <>
-                <p className="text-3xl font-semibold text-rose-600">
-                  {photoVideo.min_service_price ===
-                  photoVideo.max_service_price
-                    ? `$${photoVideo.min_service_price.toLocaleString()}`
-                    : `$${photoVideo.min_service_price.toLocaleString()} - $${photoVideo.max_service_price.toLocaleString()}`}
-                </p>
-                <p className="text-sm text-gray-500">
-                  {photoVideo.min_service_price ===
-                  photoVideo.max_service_price
-                    ? "(See Service & Pricing)"
-                    : "(See Service & Pricing)"}
-                </p>
-              </>
-            )}
+            <div className="md:text-right">
+              {photoVideo.min_service_price && photoVideo.max_service_price && (
+                <>
+                  <div className="text-3xl font-semibold text-rose-600">
+                    {photoVideo.min_service_price ===
+                    photoVideo.max_service_price
+                      ? `$${photoVideo.min_service_price.toLocaleString()}`
+                      : `$${photoVideo.min_service_price.toLocaleString()} - $${photoVideo.max_service_price.toLocaleString()}`}
+                  </div>
+                  <p className="text-sm text-gray-500">
+                    (See Service & Pricing)
+                  </p>
+                </>
+              )}
+            </div>
           </div>
         </div>
 
-        {/* Description */}
-        <div className="mb-12">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-0 mb-12">
+        {/* Info Grid */}
+        <div className="mb-8 sm:mb-12">
+          <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-6 sm:gap-0">
             {/* Experience */}
-            <div className="flex flex-col items-center text-center border-r border-gray-200 last:border-r-0">
-              <h3 className="text-lg font-semibold mb-3">Experience</h3>
-              <ul className="space-y-2 text-gray-600">
+            <div className="flex flex-col items-center text-center p-4 sm:border-r border-gray-200 last:border-r-0">
+              <h3 className="text-base sm:text-lg font-semibold mb-3">
+                Experience
+              </h3>
+              <ul className="space-y-2 text-sm sm:text-base text-gray-600">
                 <li className="flex items-center gap-2">
                   <span className="text-rose-500">•</span>
                   {photoVideo.years_experience} years
@@ -337,9 +334,11 @@ export default function PhotographyDetailsPage() {
             </div>
 
             {/* Deposit */}
-            <div className="flex flex-col items-center text-center border-r border-gray-200 last:border-r-0">
-              <h3 className="text-lg font-semibold mb-3">Booking Deposit</h3>
-              <ul className="space-y-2 text-gray-600">
+            <div className="flex flex-col items-center text-center p-4 sm:border-r border-gray-200 last:border-r-0">
+              <h3 className="text-base sm:text-lg font-semibold mb-3">
+                Booking Deposit
+              </h3>
+              <ul className="space-y-2 text-sm sm:text-base text-gray-600">
                 <li className="flex items-center gap-2">
                   <span className="text-rose-500">•</span>
                   {photoVideo.deposit}% of total service cost
@@ -348,9 +347,11 @@ export default function PhotographyDetailsPage() {
             </div>
 
             {/* Travel Range */}
-            <div className="flex flex-col items-center text-center border-r border-gray-200 last:border-r-0">
-              <h3 className="text-lg font-semibold mb-3">Travel Range</h3>
-              <ul className="space-y-2 text-gray-600">
+            <div className="flex flex-col items-center text-center p-4 sm:border-r border-gray-200 last:border-r-0">
+              <h3 className="text-base sm:text-lg font-semibold mb-3">
+                Travel Range
+              </h3>
+              <ul className="space-y-2 text-sm sm:text-base text-gray-600">
                 <li className="flex items-center gap-2">
                   <span className="text-rose-500">•</span>
                   {photoVideo.travel_range === 0
@@ -361,10 +362,12 @@ export default function PhotographyDetailsPage() {
             </div>
 
             {/* Socials */}
-            <div className="flex flex-col items-center text-center last:border-r-0">
-              <h3 className="text-lg font-semibold mb-3">Socials</h3>
+            <div className="flex flex-col items-center text-center p-4">
+              <h3 className="text-base sm:text-lg font-semibold mb-3">
+                Socials
+              </h3>
               {photoVideo.website_url || photoVideo.instagram_url ? (
-                <ul className="space-y-2 text-gray-600">
+                <ul className="space-y-2 text-sm sm:text-base text-gray-600">
                   {photoVideo.website_url && (
                     <li className="flex items-center gap-2">
                       <span className="text-rose-500">•</span>
@@ -393,7 +396,7 @@ export default function PhotographyDetailsPage() {
                   )}
                 </ul>
               ) : (
-                <ul className="space-y-2 text-gray-600">
+                <ul className="space-y-2 text-sm sm:text-base text-gray-600">
                   <li className="flex items-center gap-2">
                     <span className="text-rose-500">•</span>
                     No Social Links Yet!
@@ -402,63 +405,68 @@ export default function PhotographyDetailsPage() {
               )}
             </div>
           </div>
+        </div>
 
-          <h2 className="text-xl md:text-2xl font-bold mb-4">
+        {/* About Section */}
+        <div className="px-2 sm:px-0 mb-8 sm:mb-12">
+          <h2 className="text-lg sm:text-xl md:text-2xl font-bold mb-3 sm:mb-4">
             About the Business
           </h2>
-          <p className="text-gray-600 mb-6 leading-relaxed break-words whitespace-normal">
+          <p className="text-sm sm:text-base text-gray-600 leading-relaxed break-words whitespace-normal">
             {photoVideo.description}
           </p>
         </div>
 
         {/* Specialties */}
         {(photoStyles.length > 0 || videoStyles.length > 0) && (
-          <div className="mb-12">
-            <h2 className="text-xl md:text-2xl font-bold mb-6">
+          <div className="mb-8 sm:mb-12">
+            <h2 className="text-lg sm:text-xl md:text-2xl font-bold mb-4 sm:mb-6">
               {photoVideo.service_type === "photography"
                 ? "Photography Styles"
                 : photoVideo.service_type === "videography"
                 ? "Videography Styles"
                 : "Photography & Videography Styles"}
             </h2>
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
-              {photoStyles.length > 0 &&
-                photoStyles.map((style, index) => (
-                  <div
-                    key={`photo-${index}`}
-                    className="p-4 rounded-lg border border-rose-200 bg-rose-50"
-                  >
-                    <div className="flex items-center gap-2">
-                      <span className="text-rose-600">✓</span>
-                      <span className="text-gray-900">{style}</span>
-                    </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+              {photoStyles.map((style, index) => (
+                <div
+                  key={`photo-${index}`}
+                  className="p-3 sm:p-4 rounded-lg border border-rose-200 bg-rose-50"
+                >
+                  <div className="flex items-center gap-2">
+                    <span className="text-rose-600">✓</span>
+                    <span className="text-sm sm:text-base text-gray-900">
+                      {style}
+                    </span>
                   </div>
-                ))}
-              {videoStyles.length > 0 &&
-                videoStyles.map((style, index) => (
-                  <div
-                    key={`video-${index}`}
-                    className="p-4 rounded-lg border border-rose-200 bg-rose-50"
-                  >
-                    <div className="flex items-center gap-2">
-                      <span className="text-rose-600">✓</span>
-                      <span className="text-gray-900">{style}</span>
-                    </div>
+                </div>
+              ))}
+              {videoStyles.map((style, index) => (
+                <div
+                  key={`video-${index}`}
+                  className="p-3 sm:p-4 rounded-lg border border-rose-200 bg-rose-50"
+                >
+                  <div className="flex items-center gap-2">
+                    <span className="text-rose-600">✓</span>
+                    <span className="text-sm sm:text-base text-gray-900">
+                      {style}
+                    </span>
                   </div>
-                ))}
+                </div>
+              ))}
             </div>
           </div>
         )}
 
         {/* Services */}
         {photoVideo.photo_video_services?.length > 0 && (
-          <div className="mb-12">
-            <h2 className="text-xl md:text-2xl font-bold mb-6">
+          <div className="mb-8 sm:mb-12">
+            <h2 className="text-lg sm:text-xl md:text-2xl font-bold mb-4 sm:mb-6">
               Services & Pricing
             </h2>
-            <div className="flex flex-row gap-4">
+            <div className="flex flex-col lg:flex-row gap-3 sm:gap-4">
               {/* First Column */}
-              <div className="flex-1 flex flex-col gap-4">
+              <div className="flex-1 flex flex-col gap-3 sm:gap-4">
                 {photoVideo.photo_video_services
                   .filter((_, index) => index % 2 === 0)
                   .map((service, index) => (
@@ -467,7 +475,7 @@ export default function PhotographyDetailsPage() {
               </div>
 
               {/* Second Column */}
-              <div className="flex-1 flex flex-col gap-4">
+              <div className="flex-1 flex flex-col gap-3 sm:gap-4">
                 {photoVideo.photo_video_services
                   .filter((_, index) => index % 2 === 1)
                   .map((service, index) => (
@@ -477,14 +485,15 @@ export default function PhotographyDetailsPage() {
             </div>
           </div>
         )}
+
         {/* Contact Form */}
-        <div className="mb-12">
-          <h2 className="text-xl md:text-2xl font-bold mb-6 text-center">
+        <div className="mb-8 sm:mb-12">
+          <h2 className="text-lg sm:text-xl md:text-2xl font-bold mb-4 sm:mb-6 text-center">
             Contact Artist
           </h2>
-          <div className="max-w-2xl mx-auto bg-gray-50 p-4 md:p-6 rounded-lg">
+          <div className="max-w-2xl mx-auto bg-gray-50 p-4 sm:p-6 rounded-lg">
             <form onSubmit={handleInquirySubmit} className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
                     First Name
@@ -494,6 +503,7 @@ export default function PhotographyDetailsPage() {
                     value={inquiryForm.firstName}
                     onChange={handleInputChange}
                     required
+                    className="text-sm sm:text-base"
                   />
                 </div>
                 <div>
@@ -505,6 +515,7 @@ export default function PhotographyDetailsPage() {
                     value={inquiryForm.lastName}
                     onChange={handleInputChange}
                     required
+                    className="text-sm sm:text-base"
                   />
                 </div>
               </div>
@@ -519,6 +530,7 @@ export default function PhotographyDetailsPage() {
                   value={inquiryForm.email}
                   onChange={handleInputChange}
                   required
+                  className="text-sm sm:text-base"
                 />
               </div>
 
@@ -532,6 +544,7 @@ export default function PhotographyDetailsPage() {
                   value={inquiryForm.phone}
                   onChange={handleInputChange}
                   required
+                  className="text-sm sm:text-base"
                 />
               </div>
 
@@ -545,6 +558,7 @@ export default function PhotographyDetailsPage() {
                   value={inquiryForm.eventDate}
                   onChange={handleInputChange}
                   required
+                  className="text-sm sm:text-base"
                 />
               </div>
 
@@ -557,14 +571,15 @@ export default function PhotographyDetailsPage() {
                   value={inquiryForm.message}
                   onChange={handleInputChange}
                   rows={4}
-                  className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-rose-500 focus:border-transparent"
+                  className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-rose-500 focus:border-transparent text-sm sm:text-base"
                   placeholder="Tell us about your event and what services you're interested in..."
                   required
                 />
               </div>
+
               <Button
                 type="submit"
-                className="w-full bg-rose-600 hover:bg-rose-700"
+                className="w-full bg-rose-600 hover:bg-rose-700 text-sm sm:text-base py-2 sm:py-3"
               >
                 Send Inquiry
               </Button>
