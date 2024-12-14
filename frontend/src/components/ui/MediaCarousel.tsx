@@ -8,10 +8,10 @@ import LikeButton from "./LikeButton";
 // Service configuration type - should match LikeButton's SERVICE_CONFIGS
 type ServiceType =
   | "venue"
-  | "hair_makeup"
-  | "photo_video"
+  | "hair-makeup"
+  | "photo-video"
   | "dj"
-  | "wedding_planner";
+  | "wedding-planner";
 
 interface MediaItem {
   file_path: string;
