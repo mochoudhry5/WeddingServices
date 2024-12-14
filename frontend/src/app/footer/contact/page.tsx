@@ -1,14 +1,87 @@
 "use client";
 
+import { useState } from "react";
 import NavBar from "@/components/ui/NavBar";
 import Footer from "@/components/ui/Footer";
 import { Input } from "@/components/ui/input";
 import { Mail, Clock, ArrowRight } from "lucide-react";
+import { toast } from "sonner";
+
+interface FormData {
+  firstName: string;
+  lastName: string;
+  email: string;
+  subject: string;
+  message: string;
+}
 
 export default function ContactPage() {
-  const handleSubmit = (e: React.FormEvent) => {
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [formData, setFormData] = useState<FormData>({
+    firstName: "",
+    lastName: "",
+    email: "",
+    subject: "",
+    message: "",
+  });
+
+  const handleChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+  ) => {
+    const { name, value } = e.target;
+    setFormData((prev) => ({
+      ...prev,
+      [name]: value,
+    }));
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Handle form submission
+    setIsSubmitting(true);
+
+    try {
+      const response = await fetch("/api/contact", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          to: "support@anyweds.com",
+          subject: `Contact Form: ${formData.subject}`,
+          html: `
+            <h2>New Contact Form Submission</h2>
+            <p><strong>From:</strong> ${formData.firstName} ${
+            formData.lastName
+          }</p>
+            <p><strong>Email:</strong> ${formData.email}</p>
+            <p><strong>Subject:</strong> ${formData.subject}</p>
+            <p><strong>Message:</strong></p>
+            <p>${formData.message.replace(/\n/g, "<br>")}</p>
+          `,
+        }),
+      });
+
+      if (response.ok) {
+        toast.success(
+          "Message sent successfully. We'll get back to you within 24 hours."
+        );
+        setFormData({
+          firstName: "",
+          lastName: "",
+          email: "",
+          subject: "",
+          message: "",
+        });
+      } else {
+        throw new Error("Failed to send message");
+      }
+    } catch (error) {
+      toast.success(
+        "Error sending message. Please try again or contact us directly at support@anyweds.com"
+      );
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -43,8 +116,11 @@ export default function ContactPage() {
                         First Name
                       </label>
                       <Input
+                        name="firstName"
                         type="text"
                         required
+                        value={formData.firstName}
+                        onChange={handleChange}
                         className="rounded-lg focus:ring-rose-500"
                         placeholder="Enter your first name"
                       />
@@ -54,8 +130,11 @@ export default function ContactPage() {
                         Last Name
                       </label>
                       <Input
+                        name="lastName"
                         type="text"
                         required
+                        value={formData.lastName}
+                        onChange={handleChange}
                         className="rounded-lg focus:ring-rose-500"
                         placeholder="Enter your last name"
                       />
@@ -67,8 +146,11 @@ export default function ContactPage() {
                       Email
                     </label>
                     <Input
+                      name="email"
                       type="email"
                       required
+                      value={formData.email}
+                      onChange={handleChange}
                       className="rounded-lg focus:ring-rose-500"
                       placeholder="you@example.com"
                     />
@@ -79,8 +161,11 @@ export default function ContactPage() {
                       Subject
                     </label>
                     <Input
+                      name="subject"
                       type="text"
                       required
+                      value={formData.subject}
+                      onChange={handleChange}
                       className="rounded-lg focus:ring-rose-500"
                       placeholder="How can we help?"
                     />
@@ -91,18 +176,22 @@ export default function ContactPage() {
                       Message
                     </label>
                     <textarea
+                      name="message"
                       rows={6}
-                      className="w-full rounded-lg border border-gray-300 focus:ring-2 focus:ring-rose-500 focus:border-transparent resize-none p-3 transition-shadow duration-200"
                       required
+                      value={formData.message}
+                      onChange={handleChange}
+                      className="w-full rounded-lg border border-gray-300 focus:ring-2 focus:ring-rose-500 focus:border-transparent resize-none p-3 transition-shadow duration-200"
                       placeholder="Tell us more about your inquiry..."
                     />
                   </div>
 
                   <button
                     type="submit"
-                    className="w-full bg-gradient-to-r from-rose-600 to-rose-500 text-white py-3 px-4 rounded-lg hover:from-rose-700 hover:to-rose-600 transition-all duration-300 font-medium flex items-center justify-center group"
+                    disabled={isSubmitting}
+                    className="w-full bg-gradient-to-r from-rose-600 to-rose-500 text-white py-3 px-4 rounded-lg hover:from-rose-700 hover:to-rose-600 transition-all duration-300 font-medium flex items-center justify-center group disabled:opacity-70"
                   >
-                    Send Message
+                    {isSubmitting ? "Sending..." : "Send Message"}
                     <ArrowRight className="ml-2 h-4 w-4 transform group-hover:translate-x-1 transition-transform" />
                   </button>
                 </form>
