@@ -248,7 +248,7 @@ export default function MakeupDetailsPage() {
       </div>
 
       {/* Content */}
-      <div className="max-w-7xl mx-auto px-4 py-6">
+      <div className="max-w-7xl mx-auto px-4">
         {user?.id !== dj.user_id && (
           <div className="max-w-7xl mx-auto px-4 py-4">
             <div className="bg-rose-50 border-b border-rose-200 py-2">
