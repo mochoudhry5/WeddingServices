@@ -61,7 +61,7 @@ export default function HelpCenterPage() {
         </div>
 
         {/* FAQ Section */}
-        <div className="max-w-7xl mx-auto px-4">
+        <div className="max-w-7xl mx-auto px-4 pb-20">
           <div className="grid gap-16">
             {Object.entries(faqCategories).map(([category, questions]) => (
               <div key={category}>

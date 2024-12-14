@@ -27,7 +27,7 @@ export default function Footer() {
         <div className="flex flex-col">
           {/* Main Footer Content */}
           <div className="px-4">
-            <div className="grid grid-cols-1 md:grid-cols-12 gap-8 md:gap-12 py-12">
+            <div className="grid grid-cols-1 md:grid-cols-12 gap-8 md:gap-12 py-8">
               {/* Logo and Social Section - Aligned with Navbar */}
               <div className="md:col-span-3">
                 <a href="/" className="inline-block">
@@ -85,13 +85,11 @@ export default function Footer() {
             </div>
           </div>
 
-          {/* Copyright */}
-          <div className="border-t border-gray-100">
-            <div className="px-4 py-8">
-              <p className="text-sm text-gray-400 text-center">
-                © {new Date().getFullYear()} AnyWeds. All rights reserved.
-              </p>
-            </div>
+          {/* Copyright - Reduced top padding */}
+          <div className="px-4 py-2">
+            <p className="text-sm text-gray-400 text-center">
+              © {new Date().getFullYear()} AnyWeds. All rights reserved.
+            </p>
           </div>
         </div>
       </div>

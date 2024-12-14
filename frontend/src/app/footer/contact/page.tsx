@@ -31,7 +31,7 @@ export default function ContactPage() {
         </div>
 
         {/* Form Section */}
-        <div className="max-w-7xl mx-auto px-4">
+        <div className="max-w-7xl mx-auto px-4 pb-20">
           <div className="grid lg:grid-cols-3 gap-12">
             {/* Contact Form */}
             <div className="lg:col-span-2">
