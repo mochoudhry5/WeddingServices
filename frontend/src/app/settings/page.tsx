@@ -296,13 +296,13 @@ const NotificationSettings = () => (
         <Switch />
       </div>
 
-      <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+      {/* <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
         <div>
           <p className="text-sm font-medium text-gray-700">SMS Notifications</p>
           <p className="text-sm text-gray-500">Receive updates via text</p>
         </div>
         <Switch />
-      </div>
+      </div> */}
 
       <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
         <div>
@@ -365,7 +365,7 @@ function SettingsPage() {
     { id: "account", label: "Account", icon: User },
     { id: "security", label: "Security", icon: Shield },
     { id: "notifications", label: "Notifications", icon: Bell },
-    { id: "payments", label: "Payments", icon: CreditCard },
+    // { id: "payments", label: "Payments", icon: CreditCard },
   ];
 
   const renderContent = () => {
@@ -376,8 +376,8 @@ function SettingsPage() {
         return <SecuritySettings />;
       case "notifications":
         return <NotificationSettings />;
-      case "payments":
-        return <PaymentSettings />;
+      // case "payments":
+      //   return <PaymentSettings />;
       default:
         return null;
     }
