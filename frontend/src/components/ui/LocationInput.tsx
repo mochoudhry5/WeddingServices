@@ -176,8 +176,6 @@ const LocationInput = ({
     if (autocompleteRef.current) {
       google.maps.event.clearInstanceListeners(autocompleteRef.current);
     }
-
-    const isAddressSearch = /^\d/.test(value);
     // Configure autocomplete based on isRemoteLocation
     const autocompleteOptions: google.maps.places.AutocompleteOptions = {
       componentRestrictions: { country: "us" },
@@ -190,7 +188,7 @@ const LocationInput = ({
       ],
       types: isRemoteLocation
         ? ["(cities)"]
-        : isAddressSearch
+        : /^\d/.test(value)
         ? ["address"]
         : ["(cities)"],
     };
@@ -284,7 +282,7 @@ const LocationInput = ({
         google.maps.event.clearInstanceListeners(autocompleteRef.current);
       }
     };
-  }, [isLoaded, isRemoteLocation, value]);
+  }, [isLoaded, isRemoteLocation, /^\d/.test(value)]);
 
   // Prevent form submission on Enter
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
