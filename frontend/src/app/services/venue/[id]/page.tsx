@@ -167,21 +167,25 @@ const ServiceCard = ({ service }: { service: VenueAddon }) => {
   return (
     <div className="border border-gray-200 rounded-lg overflow-hidden shadow-sm">
       <div
-        className={`w-full p-4 ${
+        className={`w-full p-3 sm:p-4 ${
           hasOverflow ? "cursor-pointer hover:bg-gray-50" : ""
         } transition-all duration-200`}
         onClick={() => hasOverflow && setIsOpen(!isOpen)}
       >
         <div className="flex-1">
-          <div className="flex justify-between items-start mb-2">
-            <h3 className="text-lg font-semibold text-left">{service.name}</h3>
-            <div className="text-right">
-              <p className="text-rose-600 font-semibold whitespace-nowrap">
-                <span className="text-sm text-gray-500">Starting at </span>$
-                {service.price.toLocaleString()}
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 mb-2">
+            <h3 className="text-base sm:text-lg font-semibold">
+              {service.name}
+            </h3>
+            <div className="text-left sm:text-right">
+              <p className="text-rose-600 font-semibold whitespace-nowrap text-sm sm:text-base">
+                <span className="text-xs sm:text-sm text-gray-500">
+                  Starting at{" "}
+                </span>
+                ${service.price.toLocaleString()}
                 {"guest_increment" in service &&
                   service.pricing_type === "per-guest" && (
-                    <span className="text-sm text-rose-600">
+                    <span className="text-xs sm:text-sm text-rose-600">
                       {service.guest_increment === 1
                         ? " per guest"
                         : ` per ${service.guest_increment} guests`}
@@ -190,11 +194,10 @@ const ServiceCard = ({ service }: { service: VenueAddon }) => {
               </p>
             </div>
           </div>
-
           <div
             ref={descriptionRef}
-            className={`text-gray-600 text-sm text-left transition-all duration-200 ${
-              isOpen ? "" : "line-clamp-1"
+            className={`text-gray-600 text-xs sm:text-sm transition-all duration-200 ${
+              isOpen ? "" : "line-clamp-2 sm:line-clamp-1"
             }`}
           >
             {service.description}
@@ -372,25 +375,25 @@ export default function VenueDetailsPage() {
 
       {/* Hero/Media Section */}
       <div className="relative bg-black">
-        <div className="relative h-[60vh] md:h-[80vh]">
+        <div className="relative h-[40vh] sm:h-[50vh] md:h-[60vh] lg:h-[80vh]">
           <MediaCarousel
             media={venue.venue_media}
             name={venue.business_name}
             service="venue"
-            className="w-full h-full"
+            className="w-full h-full object-cover"
           />
         </div>
       </div>
 
       {/* Content */}
-      <div className="max-w-7xl mx-auto">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Venue Header */}
         {user?.id !== venue.user_id && (
-          <div className="max-w-7xl mx-auto px-4 py-4">
+          <div className="py-2 sm:py-4">
             <div className="bg-rose-50 border-b border-rose-200 py-2">
-              <div className="max-w-3xl mx-auto px-4 flex flex-col items-center justify-center">
+              <div className="max-w-3xl mx-auto px-2 sm:px-4 flex flex-col items-center justify-center">
                 <div className="flex items-center gap-2">
-                  <span className="text-rose-600 text-lg font-semibold">
+                  <span className="text-rose-600 text-base sm:text-lg font-semibold">
                     Don't forget this listing!
                   </span>
                   <LikeButton
@@ -405,319 +408,336 @@ export default function VenueDetailsPage() {
           </div>
         )}
 
-        <div className="max-w-7xl mx-auto px-4 py-6">
-          {/* Venue Header */}
-          <div className="flex flex-col md:flex-row md:justify-between md:items-start gap-4 mb-8">
+        <div className="py-4 sm:py-6">
+          {/* Venue Title and Price */}
+          <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-3 sm:gap-4 mb-6 sm:mb-8">
             <div>
               <div className="flex items-center gap-3 mb-2">
-                <h1 className="text-2xl md:text-3xl font-bold text-gray-900">
+                <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-gray-900">
                   {venue.business_name}
                 </h1>
               </div>
-              <p className="text-gray-600">
+              <p className="text-sm sm:text-base text-gray-600">
                 {venue.address}, {venue.city}, {venue.state}
               </p>
             </div>
-            <div className="md:text-right">
-              <div className="text-3xl font-semibold text-rose-600">
+            <div className="sm:text-right">
+              <div className="text-2xl sm:text-3xl font-semibold text-rose-600">
                 ${venue.base_price.toLocaleString()}
               </div>
-              <p className="text-sm text-gray-500">Venue Only (See Included)</p>
+              <p className="text-xs sm:text-sm text-gray-500">
+                Venue Only (See Included)
+              </p>
             </div>
           </div>
-        </div>
 
-        <div className="mb-12">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-0 mb-12">
-            {/* Capacity */}
-            <div className="flex flex-col justify-center items-center border-r border-gray-200 last:border-r-0">
-              <h3 className="text-lg font-semibold mb-3 text-center">
-                Capacity
-              </h3>
-              <ul className="space-y-2 text-gray-600 text-center">
-                <li>
-                  <div className="flex items-center gap-2">
-                    <span className="text-rose-500">•</span>
-                    <span>
-                      Minimum guests: {venue.min_guests || "No minimum"}
-                    </span>
-                  </div>
-                </li>
-                <li>
-                  <div className="flex items-center gap-2">
-                    <span className="text-rose-500">•</span>
-                    <span>Maximum guests: {venue.max_guests}</span>
-                  </div>
-                </li>
-              </ul>
-            </div>
-
-            {/* Catering Options */}
-            <div className="flex flex-col justify-center items-center border-r border-gray-200 last:border-r-0">
-              <h3 className="text-lg font-semibold mb-3 text-center">
-                Catering Options
-              </h3>
-              <ul className="space-y-2 text-gray-600 text-center">
-                <li>
-                  <div className="flex items-center gap-2">
-                    <span className="text-rose-500">•</span>
-                    <span>
-                      {
-                        {
-                          "in-house": "In-House Catering Only",
-                          outside: "Outside Catering Only",
-                          both: "In-House & Outside Catering Available",
-                        }[venue.catering_option]
-                      }
-                    </span>
-                  </div>
-                </li>
-              </ul>
-            </div>
-
-            {/* Venue Type */}
-            <div className="flex flex-col justify-center items-center border-r border-gray-200 last:border-r-0">
-              <h3 className="text-lg font-semibold mb-3 text-center">
-                Venue Type
-              </h3>
-              <ul className="space-y-2 text-gray-600 text-center">
-                <li>
-                  <div className="flex items-center gap-2">
-                    <span className="text-rose-500">•</span>
-                    <span>
-                      {
-                        {
-                          indoor: "Indoor Only",
-                          outdoor: "Outdoor Only",
-                          both: "Indoor & Outdoor",
-                        }[venue.venue_type]
-                      }
-                    </span>
-                  </div>
-                </li>
-              </ul>
-            </div>
-
-            {/* Socials */}
-            <div className="flex flex-col justify-center items-center last:border-r-0">
-              <h3 className="text-lg font-semibold mb-3 text-center">
-                Socials
-              </h3>
-              {venue.website_url || venue.instagram_url ? (
-                <ul className="space-y-2 text-gray-600 text-center">
-                  {venue.website_url && (
-                    <li>
-                      <div className="flex items-center gap-2">
-                        <span className="text-rose-500">•</span>
-                        <a
-                          href={venue.website_url}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-rose-600 hover:text-rose-700 hover:underline"
-                        >
-                          Website
-                        </a>
-                      </div>
-                    </li>
-                  )}
-                  {venue.instagram_url && (
-                    <li>
-                      <div className="flex items-center gap-2">
-                        <span className="text-rose-500">•</span>
-                        <a
-                          href={venue.instagram_url}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-rose-600 hover:text-rose-700 hover:underline"
-                        >
-                          Instagram
-                        </a>
-                      </div>
-                    </li>
-                  )}
-                </ul>
-              ) : (
-                <ul className="space-y-2 text-gray-600 text-center">
+          {/* Info Grid */}
+          <div className="mb-8 sm:mb-12">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 sm:gap-0">
+              {/* Capacity */}
+              <div className="flex flex-col justify-center items-center p-4 sm:border-r border-gray-200 last:border-r-0">
+                <h3 className="text-base sm:text-lg font-semibold mb-3 text-center">
+                  Capacity
+                </h3>
+                <ul className="space-y-2 text-sm sm:text-base text-gray-600 text-center">
                   <li>
                     <div className="flex items-center gap-2">
                       <span className="text-rose-500">•</span>
-                      <span>No Social Links Yet!</span>
+                      <span>
+                        Minimum guests: {venue.min_guests || "No minimum"}
+                      </span>
+                    </div>
+                  </li>
+                  <li>
+                    <div className="flex items-center gap-2">
+                      <span className="text-rose-500">•</span>
+                      <span>Maximum guests: {venue.max_guests}</span>
                     </div>
                   </li>
                 </ul>
-              )}
-            </div>
-          </div>
-        </div>
+              </div>
 
-        <h2 className="text-xl md:text-2xl font-bold mb-4">About the Venue</h2>
-        <p className="text-gray-600 mb-6 leading-relaxed">
-          {venue.description}
-        </p>
-
-        {/* What's Included */}
-        {venue.venue_inclusions?.length > 0 && (
-          <div className="mb-12">
-            <h2 className="text-xl md:text-2xl font-bold mb-6">
-              What's Included in the Base Price
-            </h2>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-              {[...venue.venue_inclusions]
-                .sort((a, b) => a.name.localeCompare(b.name))
-                .map((inclusion, index) => (
-                  <div
-                    key={index}
-                    className="p-4 rounded-lg border border-rose-200 bg-rose-50"
-                  >
+              {/* Catering Options */}
+              <div className="flex flex-col justify-center items-center p-4 sm:border-r border-gray-200 last:border-r-0">
+                <h3 className="text-base sm:text-lg font-semibold mb-3 text-center">
+                  Catering Options
+                </h3>
+                <ul className="space-y-2 text-sm sm:text-base text-gray-600 text-center">
+                  <li>
                     <div className="flex items-center gap-2">
-                      <span className="text-rose-600">✓</span>
-                      <span className="text-gray-900">{inclusion.name}</span>
+                      <span className="text-rose-500">•</span>
+                      <span>
+                        {
+                          {
+                            "in-house": "In-House Catering Only",
+                            outside: "Outside Catering Only",
+                            both: "In-House & Outside Catering Available",
+                          }[venue.catering_option]
+                        }
+                      </span>
                     </div>
-                  </div>
-                ))}
+                  </li>
+                </ul>
+              </div>
+
+              {/* Venue Type */}
+              <div className="flex flex-col justify-center items-center p-4 sm:border-r border-gray-200 last:border-r-0">
+                <h3 className="text-base sm:text-lg font-semibold mb-3 text-center">
+                  Venue Type
+                </h3>
+                <ul className="space-y-2 text-sm sm:text-base text-gray-600 text-center">
+                  <li>
+                    <div className="flex items-center gap-2">
+                      <span className="text-rose-500">•</span>
+                      <span>
+                        {
+                          {
+                            indoor: "Indoor Only",
+                            outdoor: "Outdoor Only",
+                            both: "Indoor & Outdoor",
+                          }[venue.venue_type]
+                        }
+                      </span>
+                    </div>
+                  </li>
+                </ul>
+              </div>
+
+              {/* Socials */}
+              <div className="flex flex-col justify-center items-center p-4">
+                <h3 className="text-base sm:text-lg font-semibold mb-3 text-center">
+                  Socials
+                </h3>
+                {venue.website_url || venue.instagram_url ? (
+                  <ul className="space-y-2 text-sm sm:text-base text-gray-600 text-center">
+                    {venue.website_url && (
+                      <li>
+                        <div className="flex items-center gap-2">
+                          <span className="text-rose-500">•</span>
+                          <a
+                            href={venue.website_url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-rose-600 hover:text-rose-700 hover:underline"
+                          >
+                            Website
+                          </a>
+                        </div>
+                      </li>
+                    )}
+                    {venue.instagram_url && (
+                      <li>
+                        <div className="flex items-center gap-2">
+                          <span className="text-rose-500">•</span>
+                          <a
+                            href={venue.instagram_url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-rose-600 hover:text-rose-700 hover:underline"
+                          >
+                            Instagram
+                          </a>
+                        </div>
+                      </li>
+                    )}
+                  </ul>
+                ) : (
+                  <ul className="space-y-2 text-sm sm:text-base text-gray-600 text-center">
+                    <li>
+                      <div className="flex items-center gap-2">
+                        <span className="text-rose-500">•</span>
+                        <span>No Social Links Yet!</span>
+                      </div>
+                    </li>
+                  </ul>
+                )}
+              </div>
             </div>
           </div>
-        )}
 
-        {/* Add-ons */}
-        {venue.venue_addons?.length > 0 && (
-          <div className="mb-12">
-            <h2 className="text-xl md:text-2xl font-bold mb-6">
-              Available Add-ons
+          {/* About Section */}
+          <div className="px-2 sm:px-0">
+            <h2 className="text-lg sm:text-xl md:text-2xl font-bold mb-3 sm:mb-4">
+              About the Venue
             </h2>
-            <div className="flex flex-row gap-4">
-              {/* First Column */}
-              <div className="flex-1 flex flex-col gap-4">
-                {venue.venue_addons
-                  .filter((_, index) => index % 2 === 0)
-                  .map((addon, index) => (
-                    <ServiceCard key={index * 2} service={addon} />
-                  ))}
-              </div>
+            <p className="text-sm sm:text-base text-gray-600 mb-8 sm:mb-12 leading-relaxed">
+              {venue.description}
+            </p>
+          </div>
 
-              {/* Second Column */}
-              <div className="flex-1 flex flex-col gap-4">
-                {venue.venue_addons
-                  .filter((_, index) => index % 2 === 1)
-                  .map((addon, index) => (
-                    <ServiceCard key={index * 2 + 1} service={addon} />
+          {/* What's Included */}
+          {venue.venue_inclusions?.length > 0 && (
+            <div className="mb-8 sm:mb-12">
+              <h2 className="text-lg sm:text-xl md:text-2xl font-bold mb-4 sm:mb-6">
+                What's Included in the Base Price
+              </h2>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+                {[...venue.venue_inclusions]
+                  .sort((a, b) => a.name.localeCompare(b.name))
+                  .map((inclusion, index) => (
+                    <div
+                      key={index}
+                      className="p-3 sm:p-4 rounded-lg border border-rose-200 bg-rose-50"
+                    >
+                      <div className="flex items-center gap-2">
+                        <span className="text-rose-600">✓</span>
+                        <span className="text-sm sm:text-base text-gray-900">
+                          {inclusion.name}
+                        </span>
+                      </div>
+                    </div>
                   ))}
               </div>
             </div>
-          </div>
-        )}
-        {/* Contact Form */}
-        <div className="mb-12">
-          <h2 className="text-xl md:text-2xl font-bold mb-6 text-center">
-            Contact Venue
-          </h2>
-          <div className="max-w-2xl mx-auto bg-gray-50 p-4 md:p-6 rounded-lg">
-            <form onSubmit={handleInquirySubmit} className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          )}
+
+          {/* Add-ons */}
+          {venue.venue_addons?.length > 0 && (
+            <div className="mb-8 sm:mb-12">
+              <h2 className="text-lg sm:text-xl md:text-2xl font-bold mb-4 sm:mb-6">
+                Available Add-ons
+              </h2>
+              <div className="flex flex-col lg:flex-row gap-3 sm:gap-4">
+                {/* First Column */}
+                <div className="flex-1 flex flex-col gap-3 sm:gap-4">
+                  {venue.venue_addons
+                    .filter((_, index) => index % 2 === 0)
+                    .map((addon, index) => (
+                      <ServiceCard key={index * 2} service={addon} />
+                    ))}
+                </div>
+
+                {/* Second Column */}
+                <div className="flex-1 flex flex-col gap-3 sm:gap-4">
+                  {venue.venue_addons
+                    .filter((_, index) => index % 2 === 1)
+                    .map((addon, index) => (
+                      <ServiceCard key={index * 2 + 1} service={addon} />
+                    ))}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Contact Form */}
+          <div className="mb-8 sm:mb-12">
+            <h2 className="text-lg sm:text-xl md:text-2xl font-bold mb-4 sm:mb-6 text-center">
+              Contact Venue
+            </h2>
+            <div className="max-w-2xl mx-auto bg-gray-50 p-4 sm:p-6 rounded-lg">
+              <form onSubmit={handleInquirySubmit} className="space-y-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      First Name
+                    </label>
+                    <Input
+                      name="firstName"
+                      value={inquiryForm.firstName}
+                      onChange={handleInputChange}
+                      required
+                      className="text-sm sm:text-base"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Last Name
+                    </label>
+                    <Input
+                      name="lastName"
+                      value={inquiryForm.lastName}
+                      onChange={handleInputChange}
+                      required
+                      className="text-sm sm:text-base"
+                    />
+                  </div>
+                </div>
+
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    First Name
+                    Email
                   </label>
                   <Input
-                    name="firstName"
-                    value={inquiryForm.firstName}
+                    type="email"
+                    name="email"
+                    value={inquiryForm.email}
                     onChange={handleInputChange}
+                    required
+                    className="text-sm sm:text-base"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Phone
+                  </label>
+                  <Input
+                    type="tel"
+                    name="phone"
+                    value={inquiryForm.phone}
+                    onChange={handleInputChange}
+                    required
+                    className="text-sm sm:text-base"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Event Date
+                  </label>
+                  <Input
+                    type="date"
+                    name="eventDate"
+                    value={inquiryForm.eventDate}
+                    onChange={handleInputChange}
+                    required
+                    className="text-sm sm:text-base"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Estimated Guest Count
+                  </label>
+                  <Input
+                    type="number"
+                    name="guestCount"
+                    value={inquiryForm.guestCount}
+                    onChange={handleInputChange}
+                    min={venue.min_guests || 1}
+                    max={venue.max_guests}
+                    required
+                    className="text-sm sm:text-base"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Message
+                  </label>
+                  <textarea
+                    name="message"
+                    value={inquiryForm.message}
+                    onChange={handleInputChange}
+                    rows={4}
+                    className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-rose-500 focus:border-transparent text-sm sm:text-base"
+                    placeholder="Tell us about your event..."
                     required
                   />
                 </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Last Name
-                  </label>
-                  <Input
-                    name="lastName"
-                    value={inquiryForm.lastName}
-                    onChange={handleInputChange}
-                    required
-                  />
-                </div>
-              </div>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Email
-                </label>
-                <Input
-                  type="email"
-                  name="email"
-                  value={inquiryForm.email}
-                  onChange={handleInputChange}
-                  required
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Phone
-                </label>
-                <Input
-                  type="tel"
-                  name="phone"
-                  value={inquiryForm.phone}
-                  onChange={handleInputChange}
-                  required
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Event Date
-                </label>
-                <Input
-                  type="date"
-                  name="eventDate"
-                  value={inquiryForm.eventDate}
-                  onChange={handleInputChange}
-                  required
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Estimated Guest Count
-                </label>
-                <Input
-                  type="number"
-                  name="guestCount"
-                  value={inquiryForm.guestCount}
-                  onChange={handleInputChange}
-                  min={venue.min_guests || 1}
-                  max={venue.max_guests}
-                  required
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Message
-                </label>
-                <textarea
-                  name="message"
-                  value={inquiryForm.message}
-                  onChange={handleInputChange}
-                  rows={4}
-                  className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-rose-500 focus:border-transparent"
-                  placeholder="Tell us about your event..."
-                  required
-                />
-              </div>
-
-              <Button
-                type="submit"
-                className="w-full bg-rose-600 hover:bg-rose-700"
-              >
-                Send Inquiry
-              </Button>
-            </form>
+                <Button
+                  type="submit"
+                  className="w-full bg-rose-600 hover:bg-rose-700 text-sm sm:text-base py-2 sm:py-3"
+                >
+                  Send Inquiry
+                </Button>
+              </form>
+            </div>
           </div>
         </div>
+        <Footer />
       </div>
-      <Footer />
     </div>
   );
 }
