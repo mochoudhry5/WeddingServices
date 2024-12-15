@@ -83,17 +83,17 @@ export default function MediaCarousel({
   };
 
   // Fullscreen handling
-  const toggleFullscreen = async () => {
-    try {
-      if (!document.fullscreenElement && containerRef.current) {
-        await containerRef.current.requestFullscreen();
-      } else if (document.fullscreenElement) {
-        await document.exitFullscreen();
-      }
-    } catch (error) {
-      console.error("Fullscreen error:", error);
-    }
-  };
+  // const toggleFullscreen = async () => {
+  //   try {
+  //     if (!document.fullscreenElement && containerRef.current) {
+  //       await containerRef.current.requestFullscreen();
+  //     } else if (document.fullscreenElement) {
+  //       await document.exitFullscreen();
+  //     }
+  //   } catch (error) {
+  //     console.error("Fullscreen error:", error);
+  //   }
+  // };
 
   // Drag handling
   const handleDragStart = (e: React.MouseEvent) => {
@@ -188,14 +188,14 @@ export default function MediaCarousel({
           src={mediaUrl}
           alt={`${serviceName} - Image ${currentIndex + 1}`}
           className="w-full h-full object-cover"
-          onClick={toggleFullscreen}
+          // onClick={toggleFullscreen}
           onError={(e) => {
             (e.target as HTMLImageElement).src = "/placeholder-image.jpg";
           }}
         />
 
         {/* Fullscreen button */}
-        {showControls && (
+        {/* {showControls && (
           <button
             onClick={toggleFullscreen}
             className="absolute top-4 left-4 bg-black/50 text-white p-2 rounded-full hover:bg-black/70 transition-colors"
@@ -207,7 +207,7 @@ export default function MediaCarousel({
               <Maximize2 className="w-6 h-6" />
             )}
           </button>
-        )}
+        )} */}
       </div>
 
       {/* Navigation arrows */}
