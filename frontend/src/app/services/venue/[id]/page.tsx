@@ -397,7 +397,7 @@ export default function VenueDetailsPage() {
                   </span>
                   <LikeButton
                     itemId={venue.id}
-                    service="dj"
+                    service="venue"
                     initialLiked={false}
                     className="text-rose-600 hover:text-rose-700"
                   />
