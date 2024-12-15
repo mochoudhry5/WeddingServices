@@ -74,7 +74,7 @@ const CreateDJListing = () => {
   const [travelRange, setTravelRange] = useState("");
   const [description, setDescription] = useState("");
   const [specialties, setSpecialties] = useState<string[]>([]);
-  const [customSpecialty, setCustomSpecialty] = useState("");
+  const [customDJStyles, setCustomDJStyles] = useState<string[]>([]);
   const [websiteUrl, setWebsiteUrl] = useState("");
   const [instagramUrl, setInstagramUrl] = useState("");
   const [isRemoteBusiness, setIsRemoteBusiness] = useState(false);
@@ -164,8 +164,21 @@ const CreateDJListing = () => {
           toast.error(`Business Address Must Be Entered`);
           return false;
         }
-        if (specialties.length === 0) {
-          toast.error(`At least one DJ style must be selected`);
+        const hasEmptyCustomStyles = customDJStyles.some(
+          (style) => style.trim() === ""
+        );
+        if (hasEmptyCustomStyles) {
+          toast.error("Please fill in all custom styles or remove empty ones");
+          return false;
+        }
+
+        // Check for at least one style (either common or custom)
+        const validStyles = [
+          ...specialties,
+          ...customDJStyles.filter((style) => style.trim() !== ""),
+        ];
+        if (validStyles.length === 0) {
+          toast.error(`At least one DJ style must be selected or added`);
           return false;
         }
         if (countCharacters(description) < 100) {
@@ -375,11 +388,21 @@ const CreateDJListing = () => {
         throw new Error("DJ listing created but no data returned");
       }
 
-      const specialtiesData = specialties.map((specialty) => ({
-        business_id: dj.id,
-        specialty,
-        is_custom: false,
-      }));
+      const specialtiesData = [
+        ...specialties.map((specialty) => ({
+          business_id: dj.id,
+          specialty,
+          is_custom: false,
+        })),
+        ...customDJStyles
+          .filter((style) => style.trim() !== "")
+          .map((style) => ({
+            business_id: dj.id,
+            specialty: style,
+            is_custom: true,
+          })),
+      ];
+
       const { error: specialtiesError } = await supabase
         .from("dj_specialties")
         .insert(specialtiesData);
@@ -637,51 +660,42 @@ const CreateDJListing = () => {
                     className="w-full"
                     isRemoteLocation={isRemoteBusiness}
                   />
-
-                  {/* Display selected location details */}
-                  {location.enteredLocation && (
-                    <div className="p-4 bg-gray-50 rounded-lg space-y-2">
-                      <h3 className="font-medium text-gray-900">
-                        {isRemoteBusiness ? "Service Area" : "Business Address"}
-                      </h3>
-                      {!isRemoteBusiness && location.address && (
-                        <p className="text-sm text-gray-600">
-                          <span className="font-medium">Address:</span>{" "}
-                          {location.address}
-                        </p>
-                      )}
-                      {location.city && (
-                        <p className="text-sm text-gray-600">
-                          <span className="font-medium">City:</span>{" "}
-                          {location.city}
-                        </p>
-                      )}
-                      {location.state && (
-                        <p className="text-sm text-gray-600">
-                          <span className="font-medium">State:</span>{" "}
-                          {location.state}
-                        </p>
-                      )}
-                      {location.country && (
-                        <p className="text-sm text-gray-600">
-                          <span className="font-medium">Country:</span>{" "}
-                          {location.country}
-                        </p>
-                      )}
-                    </div>
-                  )}
                 </div>
                 {/* Styles Selection */}
                 <div className="space-y-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      DJ Styles*
-                    </label>
+                    <div className="flex items-center mb-1">
+                      <label className="block text-sm font-medium text-gray-700">
+                        DJ Styles*
+                      </label>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (customDJStyles.length === 0) {
+                            setCustomDJStyles([""]);
+                          } else {
+                            const lastStyle =
+                              customDJStyles[customDJStyles.length - 1];
+                            if (lastStyle && lastStyle.trim() !== "") {
+                              setCustomDJStyles([...customDJStyles, ""]);
+                            }
+                          }
+                        }}
+                        disabled={
+                          customDJStyles.length > 0 &&
+                          customDJStyles[customDJStyles.length - 1].trim() ===
+                            ""
+                        }
+                        className="ml-2 p-1 text-gray-400 hover:text-gray-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        <Plus size={16} />
+                      </button>
+                    </div>
                     <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                       {commonDJStyles.map((style) => (
                         <label
                           key={style}
-                          className="relative flex items-start p-4 rounded-lg border cursor-pointer hover:bg-gray-50"
+                          className="relative flex items-center h-12 px-4 rounded-lg border cursor-pointer hover:bg-gray-50"
                         >
                           <div className="flex items-center h-5">
                             <input
@@ -705,6 +719,34 @@ const CreateDJListing = () => {
                             </span>
                           </div>
                         </label>
+                      ))}
+                      {customDJStyles.map((style, index) => (
+                        <div
+                          key={`custom-dj-${index}`}
+                          className="flex items-center h-12 px-4 rounded-lg border"
+                        >
+                          <Input
+                            value={style}
+                            onChange={(e) => {
+                              const newStyles = [...customDJStyles];
+                              newStyles[index] = e.target.value;
+                              setCustomDJStyles(newStyles);
+                            }}
+                            placeholder="Enter custom style"
+                            className="flex-1 h-full border-none focus:ring-0"
+                          />
+                          <button
+                            type="button"
+                            onClick={() =>
+                              setCustomDJStyles(
+                                customDJStyles.filter((_, i) => i !== index)
+                              )
+                            }
+                            className="ml-2 p-2 text-gray-400 hover:text-gray-600 transition-colors"
+                          >
+                            <X size={16} />
+                          </button>
+                        </div>
                       ))}
                     </div>
                   </div>

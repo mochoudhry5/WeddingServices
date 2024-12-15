@@ -386,19 +386,18 @@ export default function VenueDetailsPage() {
       </div>
 
       {/* Content */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        {/* Venue Header */}
+      <div className="max-w-7xl mx-auto px-4 py-6">
         {user?.id !== venue.user_id && (
-          <div className="py-2 sm:py-4">
+          <div className="max-w-7xl mx-auto px-4 pb-5">
             <div className="bg-rose-50 border-b border-rose-200 py-2">
-              <div className="max-w-3xl mx-auto px-2 sm:px-4 flex flex-col items-center justify-center">
+              <div className="max-w-3xl mx-auto px-4 flex flex-col items-center justify-center">
                 <div className="flex items-center gap-2">
-                  <span className="text-rose-600 text-base sm:text-lg font-semibold">
+                  <span className="text-rose-600 text-lg font-semibold">
                     Don't forget this listing!
                   </span>
                   <LikeButton
                     itemId={venue.id}
-                    service="venue"
+                    service="dj"
                     initialLiked={false}
                     className="text-rose-600 hover:text-rose-700"
                   />
@@ -408,8 +407,7 @@ export default function VenueDetailsPage() {
           </div>
         )}
 
-        <div className="py-4 sm:py-6">
-          {/* Venue Title and Price */}
+        <div>
           <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-3 sm:gap-4 mb-6 sm:mb-8">
             <div>
               <div className="flex items-center gap-3 mb-2">
@@ -556,11 +554,11 @@ export default function VenueDetailsPage() {
           </div>
 
           {/* About Section */}
-          <div className="px-2 sm:px-0">
+          <div className="px-2 sm:px-0 mb-8 sm:mb-12">
             <h2 className="text-lg sm:text-xl md:text-2xl font-bold mb-3 sm:mb-4">
-              About the Venue
+              About the Business
             </h2>
-            <p className="text-sm sm:text-base text-gray-600 mb-8 sm:mb-12 leading-relaxed">
+            <p className="text-sm sm:text-base text-gray-600 leading-relaxed break-words whitespace-normal">
               {venue.description}
             </p>
           </div>

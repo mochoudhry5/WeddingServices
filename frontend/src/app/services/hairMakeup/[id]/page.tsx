@@ -248,9 +248,9 @@ export default function MakeupDetailsPage() {
       </div>
 
       {/* Content */}
-      <div className="max-w-7xl mx-auto px-4">
+      <div className="max-w-7xl mx-auto px-4 py-6">
         {user?.id !== hairMakeup.user_id && (
-          <div className="max-w-7xl mx-auto px-4 py-4">
+          <div className="max-w-7xl mx-auto px-4 pb-5">
             <div className="bg-rose-50 border-b border-rose-200 py-2">
               <div className="max-w-3xl mx-auto px-4 flex flex-col items-center justify-center">
                 <div className="flex items-center gap-2">
@@ -379,12 +379,14 @@ export default function MakeupDetailsPage() {
           </div>
         </div>
 
-        <h2 className="text-xl md:text-2xl font-bold mb-4">
-          About the Business
-        </h2>
-        <p className="text-gray-600 mb-6 leading-relaxed">
-          {hairMakeup.description}
-        </p>
+        <div className="px-2 sm:px-0 mb-8 sm:mb-12">
+          <h2 className="text-lg sm:text-xl md:text-2xl font-bold mb-3 sm:mb-4">
+            About the Business
+          </h2>
+          <p className="text-sm sm:text-base text-gray-600 leading-relaxed break-words whitespace-normal">
+            {hairMakeup.description}
+          </p>
+        </div>
 
         {/* Specialties */}
         {hairMakeup.hair_makeup_specialties?.length > 0 && (

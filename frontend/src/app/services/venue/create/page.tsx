@@ -520,7 +520,9 @@ export default function CreateVenueListing() {
         .single();
 
       if (venueError) {
-        throw new Error(`Failed to create Venue listing: ${venueError.message}`);
+        throw new Error(
+          `Failed to create Venue listing: ${venueError.message}`
+        );
       }
 
       if (!venue) {
@@ -1066,52 +1068,77 @@ export default function CreateVenueListing() {
             )}
 
             {/* Step 3: Inclusions */}
+            {/* Step 3: Inclusions */}
             {currentStep === 3 && (
               <div className="space-y-6">
-                <h2 className="text-2xl font-semibold mb-6">
-                  What's Included in the Base Price
-                </h2>
-
-                {/* Common Inclusions */}
-                <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                  {commonInclusions.map((inclusion) => (
-                    <label
-                      key={inclusion}
-                      className="relative flex items-start p-4 rounded-lg border cursor-pointer hover:bg-gray-50"
+                <div>
+                  <div className="flex items-center mb-1">
+                    <h2 className="text-2xl font-semibold">
+                      What's Included in the Base Price
+                    </h2>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (customInclusions.length === 0) {
+                          setCustomInclusions([""]);
+                        } else {
+                          const lastInclusion =
+                            customInclusions[customInclusions.length - 1];
+                          if (lastInclusion && lastInclusion.trim() !== "") {
+                            setCustomInclusions([...customInclusions, ""]);
+                          }
+                        }
+                      }}
+                      disabled={
+                        customInclusions.length > 0 &&
+                        customInclusions[customInclusions.length - 1].trim() ===
+                          ""
+                      }
+                      className="ml-2 p-1 text-gray-400 hover:text-gray-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                     >
-                      <div className="flex items-center h-5">
-                        <input
-                          type="checkbox"
-                          className="h-4 w-4 text-rose-600 border-gray-300 rounded focus:ring-rose-500"
-                          checked={includedItems.includes(inclusion)}
-                          onChange={(e) => {
-                            if (e.target.checked) {
-                              setIncludedItems([...includedItems, inclusion]);
-                            } else {
-                              setIncludedItems(
-                                includedItems.filter(
-                                  (item) => item !== inclusion
-                                )
-                              );
-                            }
-                          }}
-                        />
-                      </div>
-                      <div className="ml-3 text-sm">
-                        <span className="font-medium text-gray-900">
-                          {inclusion}
-                        </span>
-                      </div>
-                    </label>
-                  ))}
-                </div>
+                      <Plus size={16} />
+                    </button>
+                  </div>
 
-                {/* Custom Inclusions */}
-                <div className="mt-8">
-                  <h3 className="text-lg font-medium mb-4">Add Custom Items</h3>
-                  <div className="space-y-4">
+                  {/* Common Inclusions */}
+                  <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mt-6">
+                    {commonInclusions.map((inclusion) => (
+                      <label
+                        key={inclusion}
+                        className="relative flex items-center h-12 px-4 rounded-lg border cursor-pointer hover:bg-gray-50"
+                      >
+                        <div className="flex items-center h-5">
+                          <input
+                            type="checkbox"
+                            className="h-4 w-4 text-rose-600 border-gray-300 rounded focus:ring-rose-500"
+                            checked={includedItems.includes(inclusion)}
+                            onChange={(e) => {
+                              if (e.target.checked) {
+                                setIncludedItems([...includedItems, inclusion]);
+                              } else {
+                                setIncludedItems(
+                                  includedItems.filter(
+                                    (item) => item !== inclusion
+                                  )
+                                );
+                              }
+                            }}
+                          />
+                        </div>
+                        <div className="ml-3 text-sm">
+                          <span className="font-medium text-gray-900">
+                            {inclusion}
+                          </span>
+                        </div>
+                      </label>
+                    ))}
+
+                    {/* Custom Inclusions */}
                     {customInclusions.map((inclusion, index) => (
-                      <div key={index} className="flex gap-2">
+                      <div
+                        key={`custom-inclusion-${index}`}
+                        className="flex items-center h-12 px-4 rounded-lg border"
+                      >
                         <Input
                           value={inclusion}
                           onChange={(e) => {
@@ -1119,33 +1146,29 @@ export default function CreateVenueListing() {
                             newInclusions[index] = e.target.value;
                             setCustomInclusions(newInclusions);
                           }}
-                          placeholder="Enter item name"
-                          className="flex-1"
+                          placeholder="Enter custom inclusion"
+                          className="flex-1 h-full border-none focus:ring-0"
                         />
                         <button
-                          onClick={() => {
+                          type="button"
+                          onClick={() =>
                             setCustomInclusions(
                               customInclusions.filter((_, i) => i !== index)
-                            );
-                          }}
-                          className="p-2 text-gray-500 hover:text-rose-500"
-                          type="button"
+                            )
+                          }
+                          className="ml-2 p-2 text-gray-400 hover:text-gray-600 transition-colors"
                         >
-                          <X size={20} />
+                          <X size={16} />
                         </button>
                       </div>
                     ))}
-                    <button
-                      type="button"
-                      onClick={() =>
-                        setCustomInclusions([...customInclusions, ""])
-                      }
-                      className="flex items-center gap-2 text-rose-600 hover:text-rose-700"
-                    >
-                      <Plus size={20} />
-                      <span>Add Custom Item</span>
-                    </button>
                   </div>
+
+                  {/* Helper text for minimum requirement */}
+                  <p className="mt-4 text-sm text-gray-500">
+                    Select or add at least 3 items that are included in the base
+                    price
+                  </p>
                 </div>
               </div>
             )}

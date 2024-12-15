@@ -245,9 +245,9 @@ export default function WeddingDetailsPage() {
       </div>
 
       {/* Content */}
-      <div className="max-w-7xl mx-auto px-4">
+      <div className="max-w-7xl mx-auto px-4 py-6">
         {user?.id !== weddingPlanner.user_id && (
-          <div className="max-w-7xl mx-auto px-4 py-4">
+          <div className="max-w-7xl mx-auto px-4 pb-5">
             <div className="bg-rose-50 border-b border-rose-200 py-2">
               <div className="max-w-3xl mx-auto px-4 flex flex-col items-center justify-center">
                 <div className="flex items-center gap-2">
@@ -256,7 +256,7 @@ export default function WeddingDetailsPage() {
                   </span>
                   <LikeButton
                     itemId={weddingPlanner.id}
-                    service="wedding-planner"
+                    service="dj"
                     initialLiked={false}
                     className="text-rose-600 hover:text-rose-700"
                   />
@@ -393,15 +393,15 @@ export default function WeddingDetailsPage() {
               )}
             </div>
           </div>
-
-          <h2 className="text-xl md:text-2xl font-bold mb-4">
+        </div>
+        <div className="px-2 sm:px-0 mb-8 sm:mb-12">
+          <h2 className="text-lg sm:text-xl md:text-2xl font-bold mb-3 sm:mb-4">
             About the Business
           </h2>
-          <p className="text-gray-600 mb-6 leading-relaxed break-words whitespace-normal">
+          <p className="text-sm sm:text-base text-gray-600 leading-relaxed break-words whitespace-normal">
             {weddingPlanner.description}
           </p>
         </div>
-
         {/* Specialties */}
         {weddingPlannerStyles.length > 0 && (
           <div className="mb-12">

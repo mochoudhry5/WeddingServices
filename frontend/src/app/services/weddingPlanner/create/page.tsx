@@ -81,7 +81,7 @@ const CreateWeddingPlannerListing = () => {
   const [travelRange, setTravelRange] = useState("");
   const [description, setDescription] = useState("");
   const [specialties, setSpecialties] = useState<string[]>([]);
-  const [customSpecialty, setCustomSpecialty] = useState("");
+  const [customWeddingStyles, setCustomWeddingStyles] = useState<string[]>([]);
   const [websiteUrl, setWebsiteUrl] = useState("");
   const [instagramUrl, setInstagramUrl] = useState("");
   const [isRemoteBusiness, setIsRemoteBusiness] = useState(false);
@@ -176,6 +176,23 @@ const CreateWeddingPlannerListing = () => {
           toast.error(`Please Select Service Offered`);
           return false;
         }
+        const hasEmptyCustomStyles = customWeddingStyles.some(
+          (style) => style.trim() === ""
+        );
+        if (hasEmptyCustomStyles) {
+          toast.error("Please fill in all custom styles or remove empty ones");
+          return false;
+        }
+
+        // Check for at least one style (either common or custom)
+        const validStyles = [
+          ...specialties,
+          ...customWeddingStyles.filter((style) => style.trim() !== ""),
+        ];
+        if (validStyles.length === 0) {
+          toast.error(`At least one expertise must be selected or added`);
+          return false;
+        }
 
         if (countCharacters(description) < 100) {
           toast.error(
@@ -194,7 +211,8 @@ const CreateWeddingPlannerListing = () => {
           location.state &&
           location.country &&
           description.trim().length >= 100 &&
-          specialties.length > 0
+          validStyles.length > 0 &&
+          !hasEmptyCustomStyles
         );
       case 2:
         if (mediaFiles.length < 5) {
@@ -367,11 +385,20 @@ const CreateWeddingPlannerListing = () => {
         );
       }
 
-      const specialtiesData = specialties.map((specialty) => ({
-        business_id: weddingPlanner.id,
-        specialty,
-        is_custom: false,
-      }));
+      const specialtiesData = [
+        ...specialties.map((specialty) => ({
+          business_id: weddingPlanner.id,
+          specialty,
+          is_custom: false,
+        })),
+        ...customWeddingStyles
+          .filter((style) => style.trim() !== "")
+          .map((style) => ({
+            business_id: weddingPlanner.id,
+            specialty: style,
+            is_custom: true,
+          })),
+      ];
       const { error: specialtiesError } = await supabase
         .from("wedding_planner_specialties")
         .insert(specialtiesData);
@@ -632,39 +659,6 @@ const CreateWeddingPlannerListing = () => {
                     className="w-full"
                     isRemoteLocation={isRemoteBusiness}
                   />
-
-                  {/* Display selected location details */}
-                  {location.enteredLocation && (
-                    <div className="p-4 bg-gray-50 rounded-lg space-y-2">
-                      <h3 className="font-medium text-gray-900">
-                        {isRemoteBusiness ? "Service Area" : "Business Address"}
-                      </h3>
-                      {!isRemoteBusiness && location.address && (
-                        <p className="text-sm text-gray-600">
-                          <span className="font-medium">Address:</span>{" "}
-                          {location.address}
-                        </p>
-                      )}
-                      {location.city && (
-                        <p className="text-sm text-gray-600">
-                          <span className="font-medium">City:</span>{" "}
-                          {location.city}
-                        </p>
-                      )}
-                      {location.state && (
-                        <p className="text-sm text-gray-600">
-                          <span className="font-medium">State:</span>{" "}
-                          {location.state}
-                        </p>
-                      )}
-                      {location.country && (
-                        <p className="text-sm text-gray-600">
-                          <span className="font-medium">Country:</span>{" "}
-                          {location.country}
-                        </p>
-                      )}
-                    </div>
-                  )}
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -695,26 +689,56 @@ const CreateWeddingPlannerListing = () => {
                 {/* Styles Selection */}
                 <div className="space-y-4">
                   <div>
-                    {serviceType === "weddingPlanner" && (
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Wedding Planner Expertise*
-                      </label>
-                    )}
-                    {serviceType === "weddingCoordinator" && (
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Wedding Coordinator Expertise*
-                      </label>
-                    )}
-                    {serviceType === "both" && (
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Wedding Planner & Coordinator Expertise*
-                      </label>
-                    )}
+                    <div className="flex items-center mb-1">
+                      {serviceType === "weddingPlanner" && (
+                        <label className="block text-sm font-medium text-gray-700">
+                          Wedding Planner Expertise*
+                        </label>
+                      )}
+                      {serviceType === "weddingCoordinator" && (
+                        <label className="block text-sm font-medium text-gray-700">
+                          Wedding Coordinator Expertise*
+                        </label>
+                      )}
+                      {serviceType === "both" && (
+                        <label className="block text-sm font-medium text-gray-700">
+                          Wedding Planner & Coordinator Expertise*
+                        </label>
+                      )}
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (customWeddingStyles.length === 0) {
+                            setCustomWeddingStyles([""]);
+                          } else {
+                            const lastStyle =
+                              customWeddingStyles[
+                                customWeddingStyles.length - 1
+                              ];
+                            if (lastStyle && lastStyle.trim() !== "") {
+                              setCustomWeddingStyles([
+                                ...customWeddingStyles,
+                                "",
+                              ]);
+                            }
+                          }
+                        }}
+                        disabled={
+                          customWeddingStyles.length > 0 &&
+                          customWeddingStyles[
+                            customWeddingStyles.length - 1
+                          ].trim() === ""
+                        }
+                        className="ml-2 p-1 text-gray-400 hover:text-gray-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        <Plus size={16} />
+                      </button>
+                    </div>
                     <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                       {commonWeddingStyles.map((style) => (
                         <label
                           key={style}
-                          className="relative flex items-start p-4 rounded-lg border cursor-pointer hover:bg-gray-50"
+                          className="relative flex items-center h-12 px-4 rounded-lg border cursor-pointer hover:bg-gray-50"
                         >
                           <div className="flex items-center h-5">
                             <input
@@ -738,6 +762,36 @@ const CreateWeddingPlannerListing = () => {
                             </span>
                           </div>
                         </label>
+                      ))}
+                      {customWeddingStyles.map((style, index) => (
+                        <div
+                          key={`custom-wedding-${index}`}
+                          className="flex items-center h-12 px-4 rounded-lg border"
+                        >
+                          <Input
+                            value={style}
+                            onChange={(e) => {
+                              const newStyles = [...customWeddingStyles];
+                              newStyles[index] = e.target.value;
+                              setCustomWeddingStyles(newStyles);
+                            }}
+                            placeholder="Enter custom expertise"
+                            className="flex-1 h-full border-none focus:ring-0"
+                          />
+                          <button
+                            type="button"
+                            onClick={() =>
+                              setCustomWeddingStyles(
+                                customWeddingStyles.filter(
+                                  (_, i) => i !== index
+                                )
+                              )
+                            }
+                            className="ml-2 p-2 text-gray-400 hover:text-gray-600 transition-colors"
+                          >
+                            <X size={16} />
+                          </button>
+                        </div>
                       ))}
                     </div>
                   </div>

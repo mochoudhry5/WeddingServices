@@ -2,16 +2,7 @@
 
 import React, { useState } from "react";
 import { useRouter } from "next/navigation";
-import {
-  Upload,
-  Plus,
-  X,
-  DollarSign,
-  Paintbrush,
-  Calendar,
-  Clock,
-  MapPin,
-} from "lucide-react";
+import { Upload, Plus, X, DollarSign, Clock } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/lib/supabase";
 import { Input } from "@/components/ui/input";
@@ -119,7 +110,8 @@ const CreateMakeupListing = () => {
   const [travelRange, setTravelRange] = useState("");
   const [description, setDescription] = useState("");
   const [specialties, setSpecialties] = useState<string[]>([]);
-  const [customSpecialty, setCustomSpecialty] = useState("");
+  const [customMakeupStyles, setCustomMakeupStyles] = useState<string[]>([]);
+  const [customHairStyles, setCustomHairStyles] = useState<string[]>([]);
   const [websiteUrl, setWebsiteUrl] = useState("");
   const [instagramUrl, setInstagramUrl] = useState("");
   const [isRemoteBusiness, setIsRemoteBusiness] = useState(false);
@@ -222,13 +214,30 @@ const CreateMakeupListing = () => {
           toast.error(`Please Select Service Offered`);
           return false;
         }
+        const hasEmptyCustomMakeupStyles = customMakeupStyles.some(
+          (style) => style.trim() === ""
+        );
+
+        // Check if there are any empty custom hair styles
+        const hasEmptyCustomHairStyles = customHairStyles.some(
+          (style) => style.trim() === ""
+        );
+
+        if (hasEmptyCustomMakeupStyles || hasEmptyCustomHairStyles) {
+          toast.error("Please fill in all custom styles or remove empty ones");
+          return false;
+        }
         const hasRequiredStyles = (type: ServiceType): boolean => {
-          const makeupStyles = specialties.filter((style) =>
-            commonMakeupStyles.includes(style)
-          );
-          const hairStyles = specialties.filter((style) =>
-            commonHairStyles.includes(style)
-          );
+          const makeupStyles = [
+            ...specialties.filter((style) =>
+              commonMakeupStyles.includes(style)
+            ),
+            ...customMakeupStyles.filter((style) => style.trim() !== ""),
+          ];
+          const hairStyles = [
+            ...specialties.filter((style) => commonHairStyles.includes(style)),
+            ...customHairStyles.filter((style) => style.trim() !== ""),
+          ];
 
           switch (type) {
             case "makeup":
@@ -243,12 +252,11 @@ const CreateMakeupListing = () => {
         if (!hasRequiredStyles(serviceType)) {
           toast.error(
             serviceType === "both"
-              ? "Please select at least one makeup style and one hair style"
-              : `Please select at least one ${serviceType} style`
+              ? "Please select at least one makeup style and one hair style, or add a custom style"
+              : `Please select at least one ${serviceType} style, or add a custom style`
           );
           return false;
         }
-
         if (countCharacters(description) < 100) {
           toast.error(
             `Description must be at least 100 characters. Current count: ${countCharacters(
@@ -257,6 +265,7 @@ const CreateMakeupListing = () => {
           );
           return false;
         }
+
         return (
           businessName &&
           experience &&
@@ -266,7 +275,11 @@ const CreateMakeupListing = () => {
           location.state &&
           location.country &&
           description.trim().length >= 100 &&
-          specialties.length > 0
+          (specialties.length > 0 ||
+            customMakeupStyles.length > 0 ||
+            customHairStyles.length > 0) &&
+          !hasEmptyCustomMakeupStyles &&
+          !hasEmptyCustomHairStyles
         );
       case 2:
         if (mediaFiles.length < 5) {
@@ -481,12 +494,29 @@ const CreateMakeupListing = () => {
         throw new Error("Hair & Makeup listing created but no data returned");
       }
 
-      const specialtiesData = specialties.map((specialty) => ({
-        business_id: hairMakeup.id,
-        specialty,
-        is_custom: false,
-        style_type: commonMakeupStyles.includes(specialty) ? "makeup" : "hair", // Add style type
-      }));
+      const specialtiesData = [
+        ...specialties.map((specialty) => ({
+          business_id: hairMakeup.id,
+          specialty,
+          is_custom: false,
+          style_type: commonMakeupStyles.includes(specialty)
+            ? "makeup"
+            : "hair",
+        })),
+        ...customMakeupStyles.map((style) => ({
+          business_id: hairMakeup.id,
+          specialty: style,
+          is_custom: true,
+          style_type: "makeup",
+        })),
+        ...customHairStyles.map((style) => ({
+          business_id: hairMakeup.id,
+          specialty: style,
+          is_custom: true,
+          style_type: "hair",
+        })),
+      ];
+
       const { error: specialtiesError } = await supabase
         .from("hair_makeup_specialties")
         .insert(specialtiesData);
@@ -741,37 +771,6 @@ const CreateMakeupListing = () => {
                   />
 
                   {/* Display selected location details */}
-                  {location.enteredLocation && (
-                    <div className="p-4 bg-gray-50 rounded-lg space-y-2">
-                      <h3 className="font-medium text-gray-900">
-                        {isRemoteBusiness ? "Service Area" : "Business Address"}
-                      </h3>
-                      {!isRemoteBusiness && location.address && (
-                        <p className="text-sm text-gray-600">
-                          <span className="font-medium">Address:</span>{" "}
-                          {location.address}
-                        </p>
-                      )}
-                      {location.city && (
-                        <p className="text-sm text-gray-600">
-                          <span className="font-medium">City:</span>{" "}
-                          {location.city}
-                        </p>
-                      )}
-                      {location.state && (
-                        <p className="text-sm text-gray-600">
-                          <span className="font-medium">State:</span>{" "}
-                          {location.state}
-                        </p>
-                      )}
-                      {location.country && (
-                        <p className="text-sm text-gray-600">
-                          <span className="font-medium">Country:</span>{" "}
-                          {location.country}
-                        </p>
-                      )}
-                    </div>
-                  )}
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -798,14 +797,44 @@ const CreateMakeupListing = () => {
                 <div className="space-y-4">
                   {(serviceType === "makeup" || serviceType === "both") && (
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Makeup Styles*
-                      </label>
+                      <div className="flex items-center mb-1">
+                        <label className="block text-sm font-medium text-gray-700">
+                          Makeup Styles*
+                        </label>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            if (customMakeupStyles.length === 0) {
+                              setCustomMakeupStyles([""]); // Allow adding the first custom style
+                            } else {
+                              const lastStyle =
+                                customMakeupStyles[
+                                  customMakeupStyles.length - 1
+                                ];
+                              if (lastStyle && lastStyle.trim() !== "") {
+                                setCustomMakeupStyles([
+                                  ...customMakeupStyles,
+                                  "",
+                                ]);
+                              }
+                            }
+                          }}
+                          disabled={
+                            customMakeupStyles.length > 0 &&
+                            customMakeupStyles[
+                              customMakeupStyles.length - 1
+                            ].trim() === ""
+                          }
+                          className="ml-2 p-1 text-gray-400 hover:text-gray-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                          <Plus size={16} />
+                        </button>
+                      </div>
                       <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                         {commonMakeupStyles.map((style) => (
                           <label
                             key={style}
-                            className="relative flex items-start p-4 rounded-lg border cursor-pointer hover:bg-gray-50"
+                            className="relative flex items-center h-12 px-4 rounded-lg border cursor-pointer hover:bg-gray-50"
                           >
                             <div className="flex items-center h-5">
                               <input
@@ -832,19 +861,74 @@ const CreateMakeupListing = () => {
                             </div>
                           </label>
                         ))}
+                        {customMakeupStyles.map((style, index) => (
+                          <div
+                            key={index}
+                            className="flex items-center h-12 px-4 rounded-lg border"
+                          >
+                            <Input
+                              value={style}
+                              onChange={(e) => {
+                                const newStyles = [...customMakeupStyles];
+                                newStyles[index] = e.target.value;
+                                setCustomMakeupStyles(newStyles);
+                              }}
+                              placeholder="Enter a custom makeup style"
+                              className="flex-1 h-full border-none focus:ring-0"
+                            />
+                            <button
+                              type="button"
+                              onClick={() =>
+                                setCustomMakeupStyles(
+                                  customMakeupStyles.filter(
+                                    (_, i) => i !== index
+                                  )
+                                )
+                              }
+                              className="ml-2 p-2 text-gray-400 hover:text-gray-600 transition-colors"
+                            >
+                              <X size={16} />
+                            </button>
+                          </div>
+                        ))}
                       </div>
                     </div>
                   )}
                   {(serviceType === "hair" || serviceType === "both") && (
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Hair Styles*
-                      </label>
+                      <div className="flex items-center mb-1">
+                        <label className="block text-sm font-medium text-gray-700">
+                          Hair Styles*
+                        </label>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            if (customHairStyles.length === 0) {
+                              setCustomHairStyles([""]); // Allow adding the first custom style
+                            } else {
+                              const lastStyle =
+                                customHairStyles[customHairStyles.length - 1];
+                              if (lastStyle && lastStyle.trim() !== "") {
+                                setCustomHairStyles([...customHairStyles, ""]);
+                              }
+                            }
+                          }}
+                          disabled={
+                            customHairStyles.length > 0 &&
+                            customHairStyles[
+                              customHairStyles.length - 1
+                            ].trim() === ""
+                          }
+                          className="ml-2 p-1 text-gray-400 hover:text-gray-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                          <Plus size={16} />
+                        </button>
+                      </div>
                       <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                         {commonHairStyles.map((style) => (
                           <label
                             key={style}
-                            className="relative flex items-start p-4 rounded-lg border cursor-pointer hover:bg-gray-50"
+                            className="relative flex items-center h-12 px-4 rounded-lg border cursor-pointer hover:bg-gray-50"
                           >
                             <div className="flex items-center h-5">
                               <input
@@ -870,6 +954,34 @@ const CreateMakeupListing = () => {
                               </span>
                             </div>
                           </label>
+                        ))}
+                        {customHairStyles.map((style, index) => (
+                          <div
+                            key={index}
+                            className="flex items-center h-12 px-4 rounded-lg border"
+                          >
+                            <Input
+                              value={style}
+                              onChange={(e) => {
+                                const newStyles = [...customHairStyles];
+                                newStyles[index] = e.target.value;
+                                setCustomHairStyles(newStyles);
+                              }}
+                              placeholder="Enter a custom hair style"
+                              className="flex-1 h-full border-none focus:ring-0"
+                            />
+                            <button
+                              type="button"
+                              onClick={() =>
+                                setCustomHairStyles(
+                                  customHairStyles.filter((_, i) => i !== index)
+                                )
+                              }
+                              className="ml-2 p-2 text-gray-400 hover:text-gray-600 transition-colors"
+                            >
+                              <X size={16} />
+                            </button>
+                          </div>
                         ))}
                       </div>
                     </div>

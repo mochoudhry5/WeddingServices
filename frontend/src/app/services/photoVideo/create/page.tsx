@@ -104,7 +104,8 @@ const CreatePhotographyListing = () => {
   const [travelRange, setTravelRange] = useState("");
   const [description, setDescription] = useState("");
   const [specialties, setSpecialties] = useState<string[]>([]);
-  const [customSpecialty, setCustomSpecialty] = useState("");
+  const [customPhotoStyles, setCustomPhotoStyles] = useState<string[]>([]);
+  const [customVideoStyles, setCustomVideoStyles] = useState<string[]>([]);
   const [websiteUrl, setWebsiteUrl] = useState("");
   const [instagramUrl, setInstagramUrl] = useState("");
   const [isRemoteBusiness, setIsRemoteBusiness] = useState(false);
@@ -199,13 +200,28 @@ const CreatePhotographyListing = () => {
           toast.error(`Please Select Service Offered`);
           return false;
         }
+        const hasEmptyCustomPhotoStyles = customPhotoStyles.some(
+          (style) => style.trim() === ""
+        );
+
+        // Check if there are any empty custom hair styles
+        const hasEmptyCustomVideoStyles = customVideoStyles.some(
+          (style) => style.trim() === ""
+        );
+
+        if (hasEmptyCustomPhotoStyles || hasEmptyCustomVideoStyles) {
+          toast.error("Please fill in all custom styles or remove empty ones");
+          return false;
+        }
         const hasRequiredStyles = (type: ServiceType): boolean => {
-          const photoStyles = specialties.filter((style) =>
-            commonPhotoStyles.includes(style)
-          );
-          const videoStyles = specialties.filter((style) =>
-            commonVideoStyles.includes(style)
-          );
+          const photoStyles = [
+            ...specialties.filter((style) => commonPhotoStyles.includes(style)),
+            ...customPhotoStyles.filter((style) => style.trim() !== ""),
+          ];
+          const videoStyles = [
+            ...specialties.filter((style) => commonVideoStyles.includes(style)),
+            ...customVideoStyles.filter((style) => style.trim() !== ""),
+          ];
 
           switch (type) {
             case "photography":
@@ -220,8 +236,8 @@ const CreatePhotographyListing = () => {
         if (!hasRequiredStyles(serviceType)) {
           toast.error(
             serviceType === "both"
-              ? "Please select at least one Photo style and one Video style"
-              : `Please select at least one ${serviceType} style`
+              ? "Please select at least one photography style and one videography style, or add a custom style"
+              : `Please select at least one ${serviceType} style, or add a custom style`
           );
           return false;
         }
@@ -243,7 +259,11 @@ const CreatePhotographyListing = () => {
           location.state &&
           location.country &&
           description.trim().length >= 100 &&
-          specialties.length > 0
+          (specialties.length > 0 ||
+            customPhotoStyles.length > 0 ||
+            customVideoStyles.length > 0) &&
+          !hasEmptyCustomPhotoStyles &&
+          !hasEmptyCustomVideoStyles
         );
       case 2:
         if (mediaFiles.length < 5) {
@@ -402,7 +422,7 @@ const CreatePhotographyListing = () => {
         toast.error("Please sign in to create a listing");
         return;
       }
-      
+
       const { data: photoVideo, error: photoVideoError } = await supabase
         .from("photo_video_listing")
         .insert({
@@ -437,14 +457,32 @@ const CreatePhotographyListing = () => {
         );
       }
 
-      const specialtiesData = specialties.map((specialty) => ({
-        business_id: photoVideo.id,
-        specialty,
-        is_custom: false,
-        style_type: commonPhotoStyles.includes(specialty)
-          ? "photography"
-          : "videography", // Add style type
-      }));
+      const specialtiesData = [
+        ...specialties.map((specialty) => ({
+          business_id: photoVideo.id,
+          specialty,
+          is_custom: false,
+          style_type: commonPhotoStyles.includes(specialty)
+            ? "photography"
+            : "videography",
+        })),
+        ...customPhotoStyles
+          .filter((style) => style.trim() !== "")
+          .map((style) => ({
+            business_id: photoVideo.id,
+            specialty: style,
+            is_custom: true,
+            style_type: "photography",
+          })),
+        ...customVideoStyles
+          .filter((style) => style.trim() !== "")
+          .map((style) => ({
+            business_id: photoVideo.id,
+            specialty: style,
+            is_custom: true,
+            style_type: "videography",
+          })),
+      ];
       const { error: specialtiesError } = await supabase
         .from("photo_video_specialties")
         .insert(specialtiesData);
@@ -702,39 +740,6 @@ const CreatePhotographyListing = () => {
                     className="w-full"
                     isRemoteLocation={isRemoteBusiness}
                   />
-
-                  {/* Display selected location details */}
-                  {location.enteredLocation && (
-                    <div className="p-4 bg-gray-50 rounded-lg space-y-2">
-                      <h3 className="font-medium text-gray-900">
-                        {isRemoteBusiness ? "Service Area" : "Business Address"}
-                      </h3>
-                      {!isRemoteBusiness && location.address && (
-                        <p className="text-sm text-gray-600">
-                          <span className="font-medium">Address:</span>{" "}
-                          {location.address}
-                        </p>
-                      )}
-                      {location.city && (
-                        <p className="text-sm text-gray-600">
-                          <span className="font-medium">City:</span>{" "}
-                          {location.city}
-                        </p>
-                      )}
-                      {location.state && (
-                        <p className="text-sm text-gray-600">
-                          <span className="font-medium">State:</span>{" "}
-                          {location.state}
-                        </p>
-                      )}
-                      {location.country && (
-                        <p className="text-sm text-gray-600">
-                          <span className="font-medium">Country:</span>{" "}
-                          {location.country}
-                        </p>
-                      )}
-                    </div>
-                  )}
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -764,14 +769,42 @@ const CreatePhotographyListing = () => {
                   {(serviceType === "photography" ||
                     serviceType === "both") && (
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Photography Styles*
-                      </label>
+                      <div className="flex items-center mb-1">
+                        <label className="block text-sm font-medium text-gray-700">
+                          Photography Styles*
+                        </label>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            if (customPhotoStyles.length === 0) {
+                              setCustomPhotoStyles([""]);
+                            } else {
+                              const lastStyle =
+                                customPhotoStyles[customPhotoStyles.length - 1];
+                              if (lastStyle && lastStyle.trim() !== "") {
+                                setCustomPhotoStyles([
+                                  ...customPhotoStyles,
+                                  "",
+                                ]);
+                              }
+                            }
+                          }}
+                          disabled={
+                            customPhotoStyles.length > 0 &&
+                            customPhotoStyles[
+                              customPhotoStyles.length - 1
+                            ].trim() === ""
+                          }
+                          className="ml-2 p-1 text-gray-400 hover:text-gray-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                          <Plus size={16} />
+                        </button>
+                      </div>
                       <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                         {commonPhotoStyles.map((style) => (
                           <label
                             key={style}
-                            className="relative flex items-start p-4 rounded-lg border cursor-pointer hover:bg-gray-50"
+                            className="relative flex items-center h-12 px-4 rounded-lg border cursor-pointer hover:bg-gray-50"
                           >
                             <div className="flex items-center h-5">
                               <input
@@ -798,20 +831,78 @@ const CreatePhotographyListing = () => {
                             </div>
                           </label>
                         ))}
+                        {customPhotoStyles.map((style, index) => (
+                          <div
+                            key={`custom-photo-${index}`}
+                            className="flex items-center h-12 px-4 rounded-lg border"
+                          >
+                            <Input
+                              value={style}
+                              onChange={(e) => {
+                                const newStyles = [...customPhotoStyles];
+                                newStyles[index] = e.target.value;
+                                setCustomPhotoStyles(newStyles);
+                              }}
+                              placeholder="Enter custom style"
+                              className="flex-1 h-full border-none focus:ring-0"
+                            />
+                            <button
+                              type="button"
+                              onClick={() =>
+                                setCustomPhotoStyles(
+                                  customPhotoStyles.filter(
+                                    (_, i) => i !== index
+                                  )
+                                )
+                              }
+                              className="ml-2 p-2 text-gray-400 hover:text-gray-600 transition-colors"
+                            >
+                              <X size={16} />
+                            </button>
+                          </div>
+                        ))}
                       </div>
                     </div>
                   )}
                   {(serviceType === "videography" ||
                     serviceType === "both") && (
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Videography Styles*
-                      </label>
+                      <div className="flex items-center mb-1">
+                        <label className="block text-sm font-medium text-gray-700">
+                          Videography Styles*
+                        </label>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            if (customVideoStyles.length === 0) {
+                              setCustomVideoStyles([""]);
+                            } else {
+                              const lastStyle =
+                                customVideoStyles[customVideoStyles.length - 1];
+                              if (lastStyle && lastStyle.trim() !== "") {
+                                setCustomVideoStyles([
+                                  ...customVideoStyles,
+                                  "",
+                                ]);
+                              }
+                            }
+                          }}
+                          disabled={
+                            customVideoStyles.length > 0 &&
+                            customVideoStyles[
+                              customVideoStyles.length - 1
+                            ].trim() === ""
+                          }
+                          className="ml-2 p-1 text-gray-400 hover:text-gray-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                          <Plus size={16} />
+                        </button>
+                      </div>
                       <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                         {commonVideoStyles.map((style) => (
                           <label
                             key={style}
-                            className="relative flex items-start p-4 rounded-lg border cursor-pointer hover:bg-gray-50"
+                            className="relative flex items-center h-12 px-4 rounded-lg border cursor-pointer hover:bg-gray-50"
                           >
                             <div className="flex items-center h-5">
                               <input
@@ -837,6 +928,36 @@ const CreatePhotographyListing = () => {
                               </span>
                             </div>
                           </label>
+                        ))}
+                        {customVideoStyles.map((style, index) => (
+                          <div
+                            key={`custom-video-${index}`}
+                            className="flex items-center h-12 px-4 rounded-lg border"
+                          >
+                            <Input
+                              value={style}
+                              onChange={(e) => {
+                                const newStyles = [...customVideoStyles];
+                                newStyles[index] = e.target.value;
+                                setCustomVideoStyles(newStyles);
+                              }}
+                              placeholder="Enter custom style"
+                              className="flex-1 h-full border-none focus:ring-0"
+                            />
+                            <button
+                              type="button"
+                              onClick={() =>
+                                setCustomVideoStyles(
+                                  customVideoStyles.filter(
+                                    (_, i) => i !== index
+                                  )
+                                )
+                              }
+                              className="ml-2 p-2 text-gray-400 hover:text-gray-600 transition-colors"
+                            >
+                              <X size={16} />
+                            </button>
+                          </div>
                         ))}
                       </div>
                     </div>

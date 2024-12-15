@@ -254,10 +254,10 @@ export default function PhotographyDetailsPage() {
       </div>
 
       {/* Content */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="max-w-7xl mx-auto px-4 py-6">
         {/* Like Button Banner */}
         {user?.id !== photoVideo.user_id && (
-          <div className="py-2 sm:py-4">
+          <div className="max-w-7xl mx-auto px-4 pb-5">
             <div className="bg-rose-50 border-b border-rose-200 py-2">
               <div className="max-w-3xl mx-auto px-2 sm:px-4 flex flex-col items-center justify-center">
                 <div className="flex items-center gap-2">
@@ -277,51 +277,44 @@ export default function PhotographyDetailsPage() {
         )}
 
         {/* Artist Header */}
-        <div className="max-w-7xl mx-auto px-4 py-6">
-          {/* Business Header */}
-          <div className="flex flex-col md:flex-row md:justify-between md:items-start gap-4 mb-8">
-            <div>
-              <div className="flex flex-row flex-wrap items-center gap-2 mb-2">
-                <h1 className="text-2xl md:text-3xl font-bold text-gray-900">
-                  {photoVideo.business_name}
-                </h1>
-                <div className="inline-flex items-center px-2 py-0.5 rounded-full bg-white border border-gray-200 text-xs md:text-sm font-medium whitespace-nowrap">
-                  {photoVideo.service_type === "both"
-                    ? "Photography & Videography"
-                    : photoVideo.service_type === "photography"
-                    ? "Photography"
-                    : "Videography"}
-                </div>
+        <div className="flex flex-col md:flex-row md:justify-between md:items-start gap-4 mb-8">
+          <div>
+            <div className="flex flex-row flex-wrap items-center gap-2 mb-2">
+              <h1 className="text-2xl md:text-3xl font-bold text-gray-900">
+                {photoVideo.business_name}
+              </h1>
+              <div className="inline-flex items-center px-2 py-0.5 rounded-full bg-white border border-gray-200 text-xs md:text-sm font-medium whitespace-nowrap">
+                {photoVideo.service_type === "both"
+                  ? "Photography & Videography"
+                  : photoVideo.service_type === "photography"
+                  ? "Photography"
+                  : "Videography"}
               </div>
-              <p className="text-gray-600">
-                {photoVideo.is_remote_business
-                  ? `${photoVideo.city}, ${photoVideo.state} (Remote)`
-                  : `${photoVideo.address}, ${photoVideo.city}, ${photoVideo.state}`}
-              </p>
             </div>
-            <div className="md:text-right">
-              {photoVideo.min_service_price && photoVideo.max_service_price && (
-                <>
-                  <div className="text-3xl font-semibold text-rose-600">
-                    {photoVideo.min_service_price ===
-                    photoVideo.max_service_price
-                      ? `$${photoVideo.min_service_price.toLocaleString()}`
-                      : `$${photoVideo.min_service_price.toLocaleString()} - $${photoVideo.max_service_price.toLocaleString()}`}
-                  </div>
-                  <p className="text-sm text-gray-500">
-                    (See Service & Pricing)
-                  </p>
-                </>
-              )}
-            </div>
+            <p className="text-gray-600">
+              {photoVideo.is_remote_business
+                ? `${photoVideo.city}, ${photoVideo.state} (Remote)`
+                : `${photoVideo.address}, ${photoVideo.city}, ${photoVideo.state}`}
+            </p>
+          </div>
+          <div className="md:text-right">
+            {photoVideo.min_service_price && photoVideo.max_service_price && (
+              <>
+                <div className="text-3xl font-semibold text-rose-600">
+                  {photoVideo.min_service_price === photoVideo.max_service_price
+                    ? `$${photoVideo.min_service_price.toLocaleString()}`
+                    : `$${photoVideo.min_service_price.toLocaleString()} - $${photoVideo.max_service_price.toLocaleString()}`}
+                </div>
+                <p className="text-sm text-gray-500">(See Service & Pricing)</p>
+              </>
+            )}
           </div>
         </div>
 
         {/* Info Grid */}
-        <div className="mb-8 sm:mb-12">
-          <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-6 sm:gap-0">
-            {/* Experience */}
-            <div className="flex flex-col items-center text-center p-4 sm:border-r border-gray-200 last:border-r-0">
+        <div className="mb-12">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-0 mb-12">
+          <div className="flex flex-col items-center text-center border-r border-gray-200 last:border-r-0">
               <h3 className="text-base sm:text-lg font-semibold mb-3">
                 Experience
               </h3>
@@ -334,7 +327,7 @@ export default function PhotographyDetailsPage() {
             </div>
 
             {/* Deposit */}
-            <div className="flex flex-col items-center text-center p-4 sm:border-r border-gray-200 last:border-r-0">
+            <div className="flex flex-col items-center text-center border-r border-gray-200 last:border-r-0">
               <h3 className="text-base sm:text-lg font-semibold mb-3">
                 Booking Deposit
               </h3>
@@ -347,7 +340,7 @@ export default function PhotographyDetailsPage() {
             </div>
 
             {/* Travel Range */}
-            <div className="flex flex-col items-center text-center p-4 sm:border-r border-gray-200 last:border-r-0">
+            <div className="flex flex-col items-center text-center border-r border-gray-200 last:border-r-0">
               <h3 className="text-base sm:text-lg font-semibold mb-3">
                 Travel Range
               </h3>
@@ -362,7 +355,7 @@ export default function PhotographyDetailsPage() {
             </div>
 
             {/* Socials */}
-            <div className="flex flex-col items-center text-center p-4">
+            <div className="flex flex-col items-center text-center border-r border-gray-200 last:border-r-0">
               <h3 className="text-base sm:text-lg font-semibold mb-3">
                 Socials
               </h3>

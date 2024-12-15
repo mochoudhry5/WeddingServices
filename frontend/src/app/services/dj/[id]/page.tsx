@@ -248,9 +248,9 @@ export default function MakeupDetailsPage() {
       </div>
 
       {/* Content */}
-      <div className="max-w-7xl mx-auto px-4">
+      <div className="max-w-7xl mx-auto px-4 py-6">
         {user?.id !== dj.user_id && (
-          <div className="max-w-7xl mx-auto px-4 py-4">
+          <div className="max-w-7xl mx-auto px-4 pb-5">
             <div className="bg-rose-50 border-b border-rose-200 py-2">
               <div className="max-w-3xl mx-auto px-4 flex flex-col items-center justify-center">
                 <div className="flex items-center gap-2">
@@ -300,11 +300,9 @@ export default function MakeupDetailsPage() {
             </div>
           )}
         </div>
-
-        {/* Description */}
+        {/* Experience */}
         <div className="mb-12">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-0 mb-12">
-            {/* Booking Info */}
             <div className="flex flex-col items-center text-center border-r border-gray-200 last:border-r-0">
               <h3 className="text-lg font-semibold mb-3">Experience</h3>
               <ul className="space-y-2 text-gray-600">
@@ -315,7 +313,7 @@ export default function MakeupDetailsPage() {
               </ul>
             </div>
 
-            {/* Booking Notice */}
+            {/* Booking Deposit */}
             <div className="flex flex-col items-center text-center border-r border-gray-200 last:border-r-0">
               <h3 className="text-lg font-semibold mb-3">Booking Deposit</h3>
               <ul className="space-y-2 text-gray-600">
@@ -342,7 +340,7 @@ export default function MakeupDetailsPage() {
             </div>
 
             {/* Socials */}
-            <div className="flex flex-col items-center text-center last:border-r-0">
+            <div className="flex flex-col items-center text-center border-r border-gray-200 last:border-r-0">
               <h3 className="text-lg font-semibold mb-3">Socials</h3>
               {dj.website_url || dj.instagram_url ? (
                 <ul className="space-y-2 text-gray-600">
@@ -372,10 +370,15 @@ export default function MakeupDetailsPage() {
           </div>
         </div>
 
-        <h2 className="text-xl md:text-2xl font-bold mb-4">
-          About the Business
-        </h2>
-        <p className="text-gray-600 mb-6 leading-relaxed">{dj.description}</p>
+        {/* About Section */}
+        <div className="px-2 sm:px-0 mb-8 sm:mb-12">
+          <h2 className="text-lg sm:text-xl md:text-2xl font-bold mb-3 sm:mb-4">
+            About the Business
+          </h2>
+          <p className="text-sm sm:text-base text-gray-600 leading-relaxed break-words whitespace-normal">
+            {dj.description}
+          </p>
+        </div>
 
         {/* Specialties */}
         {dj.dj_specialties?.length > 0 && (
