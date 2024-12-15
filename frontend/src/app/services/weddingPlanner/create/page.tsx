@@ -771,11 +771,15 @@ const CreateWeddingPlannerListing = () => {
                           <Input
                             value={style}
                             onChange={(e) => {
-                              const newStyles = [...customWeddingStyles];
-                              newStyles[index] = e.target.value;
-                              setCustomWeddingStyles(newStyles);
+                              // Limit input to 25 characters
+                              if (e.target.value.length <= 25) {
+                                const newStyles = [...customWeddingStyles];
+                                newStyles[index] = e.target.value;
+                                setCustomWeddingStyles(newStyles);
+                              }
                             }}
-                            placeholder="Enter custom expertise"
+                            maxLength={25}
+                            placeholder="Enter Custom Expertise"
                             className="flex-1 h-full border-none focus:ring-0"
                           />
                           <button

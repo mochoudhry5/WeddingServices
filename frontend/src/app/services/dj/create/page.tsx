@@ -723,16 +723,20 @@ const CreateDJListing = () => {
                       {customDJStyles.map((style, index) => (
                         <div
                           key={`custom-dj-${index}`}
-                          className="flex items-center h-12 px-4 rounded-lg border"
+                          className="flex items-left h-12 px-4 rounded-lg border"
                         >
                           <Input
                             value={style}
                             onChange={(e) => {
-                              const newStyles = [...customDJStyles];
-                              newStyles[index] = e.target.value;
-                              setCustomDJStyles(newStyles);
+                              // Limit input to 25 characters
+                              if (e.target.value.length <= 25) {
+                                const newStyles = [...customDJStyles];
+                                newStyles[index] = e.target.value;
+                                setCustomDJStyles(newStyles);
+                              }
                             }}
-                            placeholder="Enter custom style"
+                            maxLength={25} 
+                            placeholder="Enter Custom Style"
                             className="flex-1 h-full border-none focus:ring-0"
                           />
                           <button
@@ -742,7 +746,7 @@ const CreateDJListing = () => {
                                 customDJStyles.filter((_, i) => i !== index)
                               )
                             }
-                            className="ml-2 p-2 text-gray-400 hover:text-gray-600 transition-colors"
+                            className="ml-2 text-gray-400 hover:text-gray-600 transition-colors"
                           >
                             <X size={16} />
                           </button>

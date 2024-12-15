@@ -1142,11 +1142,15 @@ export default function CreateVenueListing() {
                         <Input
                           value={inclusion}
                           onChange={(e) => {
-                            const newInclusions = [...customInclusions];
-                            newInclusions[index] = e.target.value;
-                            setCustomInclusions(newInclusions);
+                            // Limit input to 25 characters
+                            if (e.target.value.length <= 25) {
+                              const newStyles = [...customInclusions];
+                              newStyles[index] = e.target.value;
+                              setCustomInclusions(newStyles);
+                            }
                           }}
-                          placeholder="Enter custom inclusion"
+                          maxLength={25}
+                          placeholder="Enter Custom Inclusion"
                           className="flex-1 h-full border-none focus:ring-0"
                         />
                         <button

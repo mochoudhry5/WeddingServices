@@ -839,11 +839,15 @@ const CreatePhotographyListing = () => {
                             <Input
                               value={style}
                               onChange={(e) => {
-                                const newStyles = [...customPhotoStyles];
-                                newStyles[index] = e.target.value;
-                                setCustomPhotoStyles(newStyles);
+                                // Limit input to 25 characters
+                                if (e.target.value.length <= 25) {
+                                  const newStyles = [...customPhotoStyles];
+                                  newStyles[index] = e.target.value;
+                                  setCustomPhotoStyles(newStyles);
+                                }
                               }}
-                              placeholder="Enter custom style"
+                              maxLength={25}
+                              placeholder="Enter Custom Style"
                               className="flex-1 h-full border-none focus:ring-0"
                             />
                             <button
@@ -937,11 +941,15 @@ const CreatePhotographyListing = () => {
                             <Input
                               value={style}
                               onChange={(e) => {
-                                const newStyles = [...customVideoStyles];
-                                newStyles[index] = e.target.value;
-                                setCustomVideoStyles(newStyles);
+                                // Limit input to 25 characters
+                                if (e.target.value.length <= 25) {
+                                  const newStyles = [...customVideoStyles];
+                                  newStyles[index] = e.target.value;
+                                  setCustomVideoStyles(newStyles);
+                                }
                               }}
-                              placeholder="Enter custom style"
+                              maxLength={25}
+                              placeholder="Enter Custom Style"
                               className="flex-1 h-full border-none focus:ring-0"
                             />
                             <button
