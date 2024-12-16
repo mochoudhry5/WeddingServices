@@ -12,6 +12,8 @@ import NavBar from "@/components/ui/NavBar";
 import Footer from "@/components/ui/Footer";
 import { toast } from "sonner";
 import { useAuth } from "@/context/AuthContext";
+import OnboardingModal from "@/components/ui/OnboardingModal";
+import { Button } from "@/components/ui/button";
 
 type ServiceId =
   | "venue"
@@ -207,6 +209,7 @@ const FaqItem = ({ question, answer, delay = 0 }: FaqItemProps) => {
 
 export default function CreateServicePage() {
   const [selected, setSelected] = useState<ServiceId | null>(null);
+  const [showModal, setShowModal] = useState(false);
   const { user } = useAuth();
 
   const handleContinue = () => {
@@ -224,15 +227,28 @@ export default function CreateServicePage() {
   return (
     <div className="min-h-screen flex flex-col">
       <NavBar />
+      <OnboardingModal
+        externalOpen={showModal}
+        onExternalOpenChange={setShowModal}
+      />
       <div className="min-h-screen bg-gray-50 py-8 sm:py-12">
         <div className="max-w-4xl mx-auto px-4">
           <div className="mb-8 sm:mb-10 text-center">
             <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">
               List Your Service
             </h1>
-            <p className="mt-2 text-base sm:text-lg text-gray-600">
-              Choose the type of service you want to offer
-            </p>
+            <div className="mt-2 flex items-center justify-center gap-2">
+              <p className="text-base sm:text-lg text-gray-600">
+                Choose the type of service you want to offer
+              </p>
+            </div>
+            <Button
+              variant="ghost"
+              className="text-rose-600 hover:text-rose-700 hover:bg-rose-50"
+              onClick={() => setShowModal(true)}
+            >
+              Learn More
+            </Button>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 mb-8">
@@ -312,62 +328,6 @@ export default function CreateServicePage() {
             </button>
           </div>
         </div>
-        <section className="mt-24 mb-24">
-          <div className="max-w-7xl mx-auto px-4">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-24">
-              {/* How Listing Works */}
-              <div>
-                <h2 className="text-2xl font-bold text-center mb-12">
-                  How Listing Works
-                </h2>
-                <div className="space-y-12">
-                  <ListingStep
-                    number="1"
-                    title="Create Your Listing"
-                    description="Fill out your service details, upload photos, and set your pricing and availability."
-                    delay={100}
-                  />
-                  <ListingStep
-                    number="2"
-                    title="Get Discovered"
-                    description="Your service will be visible to couples actively planning their wedding in your area."
-                    delay={200}
-                  />
-                  <ListingStep
-                    number="3"
-                    title="Bookings"
-                    description="Receive inquiries, communicate with couples, and manage your bookings the way you always have been doing."
-                    delay={300}
-                  />
-                </div>
-              </div>
-
-              {/* FAQ Section */}
-              <div>
-                <h2 className="text-2xl font-bold text-center mb-12">
-                  Frequently Asked Questions
-                </h2>
-                <div className="space-y-4">
-                  <FaqItem
-                    question="How much does it cost to list my service?"
-                    answer="Listing your service on AnyWeds involves a simple flat fee of $5 to $30 a month, determined by location and service type. We eliminate lead generation fees and service charges, ensuring full transparency and no hidden costs."
-                    delay={100}
-                  />
-                  <FaqItem
-                    question="Can I list multiple services?"
-                    answer="Yes, you can create multiple listings for different services you offer. Each service can have its own unique profile and pricing."
-                    delay={200}
-                  />
-                  <FaqItem
-                    question="Can I edit my listing after publishing?"
-                    answer="Yes, you can update your listing details, photos, and pricing at any time through your dashboard."
-                    delay={400}
-                  />
-                </div>
-              </div>
-            </div>
-          </div>
-        </section>
       </div>
       <Footer />
     </div>
