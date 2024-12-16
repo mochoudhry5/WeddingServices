@@ -59,7 +59,7 @@ const commonServices = [
   },
 ];
 
-const commonDJStyles = ["Pakistani", "Punjabi", "Afghanistani", "Latin"];
+const commonDJStyles = ["Spanish", "Bollywood", "American"];
 
 const CreateDJListing = () => {
   const router = useRouter();

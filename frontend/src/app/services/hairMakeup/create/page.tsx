@@ -91,10 +91,8 @@ const commonMakeupStyles = ["Natural", "Bridal", "Soft Glam"];
 
 const commonHairStyles = [
   "Updo",
-  "Half-up",
-  "Blowout",
-  "Waves/Curls",
-  "Braiding",
+  "Half-Up",
+  "Hollywood Waves"
 ];
 
 const CreateMakeupListing = () => {

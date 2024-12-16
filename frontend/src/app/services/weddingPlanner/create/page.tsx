@@ -62,7 +62,6 @@ const commonWeddingCoordinatorServices = [
 const commonWeddingStyles = [
   "Destination Weddings",
   "Luxury Weddings",
-  "Cultural Themed",
   "Outdoor Weddings",
 ];
 

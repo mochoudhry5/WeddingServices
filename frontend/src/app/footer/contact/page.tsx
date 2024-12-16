@@ -234,15 +234,6 @@ export default function ContactPage() {
                     </div>
                   </div>
                 </div>
-
-                <div className="bg-gradient-to-br from-purple-50 to-rose-50 rounded-2xl p-6">
-                  <h3 className="font-semibold text-gray-900 mb-3">Hours</h3>
-                  <div className="space-y-2 text-gray-600">
-                    <p>Monday - Friday: 9:00 AM - 6:00 PM</p>
-                    <p>Saturday: 10:00 AM - 4:00 PM</p>
-                    <p>Sunday: 10:00am - 1:00 PM </p>
-                  </div>
-                </div>
               </div>
             </div>
           </div>

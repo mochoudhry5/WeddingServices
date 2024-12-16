@@ -81,7 +81,6 @@ const commonPhotoStyles = [
   "Editorial",
   "Fine Arts",
   "Traditional",
-  "Dark & Moody",
 ];
 
 const commonVideoStyles = [
