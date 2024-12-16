@@ -314,7 +314,7 @@ export default function PhotographyDetailsPage() {
         {/* Info Grid */}
         <div className="mb-12">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-0 mb-12">
-          <div className="flex flex-col items-center text-center border-r border-gray-200 last:border-r-0">
+            <div className="flex flex-col items-center text-center border-r border-gray-200 last:border-r-0">
               <h3 className="text-base sm:text-lg font-semibold mb-3">
                 Experience
               </h3>
@@ -334,7 +334,9 @@ export default function PhotographyDetailsPage() {
               <ul className="space-y-2 text-sm sm:text-base text-gray-600">
                 <li className="flex items-center gap-2">
                   <span className="text-rose-500">•</span>
-                  {photoVideo.deposit}% of total service cost
+                  {photoVideo.deposit === 0
+                    ? "No Deposit Required"
+                    : `${photoVideo.deposit}% of total service cost`}
                 </li>
               </ul>
             </div>
@@ -349,6 +351,8 @@ export default function PhotographyDetailsPage() {
                   <span className="text-rose-500">•</span>
                   {photoVideo.travel_range === 0
                     ? "No Travel"
+                    : photoVideo.travel_range === -1
+                    ? "Travel Anywhere"
                     : `${photoVideo.travel_range} miles from ${photoVideo.city}`}
                 </li>
               </ul>

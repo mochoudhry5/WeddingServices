@@ -6,6 +6,7 @@ import { Upload, Plus, X, DollarSign, Clock } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/lib/supabase";
 import { Input } from "@/components/ui/input";
+import TravelSection from "@/components/ui/TravelSection";
 import {
   Select,
   SelectContent,
@@ -89,11 +90,7 @@ type ServiceType = "makeup" | "hair" | "both";
 
 const commonMakeupStyles = ["Natural", "Bridal", "Soft Glam"];
 
-const commonHairStyles = [
-  "Updo",
-  "Half-Up",
-  "Hollywood Waves"
-];
+const commonHairStyles = ["Updo", "Half-Up", "Hollywood Waves"];
 
 const CreateMakeupListing = () => {
   const router = useRouter();
@@ -114,6 +111,7 @@ const CreateMakeupListing = () => {
   const [instagramUrl, setInstagramUrl] = useState("");
   const [isRemoteBusiness, setIsRemoteBusiness] = useState(false);
   const [serviceType, setServiceType] = useState<ServiceType>("makeup");
+  const [isWillingToTravel, setIsWillingToTravel] = useState(false);
   // Replace the individual location states with
   const [location, setLocation] = useState({
     enteredLocation: "",
@@ -136,7 +134,6 @@ const CreateMakeupListing = () => {
 
   const [availability, setAvailability] = useState({
     deposit: "", // Will store percentage as string
-    cancellationPolicy: "",
   });
 
   // File Upload Handlers
@@ -194,14 +191,6 @@ const CreateMakeupListing = () => {
       case 1:
         if (!businessName) {
           toast.error(`Business Name Must Be Entered`);
-          return false;
-        }
-        if (!experience) {
-          toast.error(`Years of Experience Must Be Entered`);
-          return false;
-        }
-        if (!travelRange) {
-          toast.error(`Travel Range Must Be Entered`);
           return false;
         }
         if (!location.city || !location.state) {
@@ -266,8 +255,6 @@ const CreateMakeupListing = () => {
 
         return (
           businessName &&
-          experience &&
-          travelRange &&
           location.enteredLocation &&
           location.city &&
           location.state &&
@@ -409,41 +396,16 @@ const CreateMakeupListing = () => {
 
   const handleSubmit = async () => {
     try {
-      if (
-        // Basic Information
-        !businessName ||
-        !experience ||
-        !travelRange ||
-        !description ||
-        specialties.length === 0 ||
-        // Location
-        !location.enteredLocation ||
-        !location.city ||
-        !location.state ||
-        !location.country ||
-        // Media
-        mediaFiles.length < 5 ||
-        // Services
-        Object.keys(selectedServices).length === 0 ||
-        // Availability
-        !availability.deposit ||
-        !availability.cancellationPolicy
-      ) {
-        // Show more specific error messages based on what's missing
-        if (Object.keys(selectedServices).length === 0) {
-          toast.error("Please add at least one service");
-          return;
-        }
-
-        if (!availability.deposit) {
-          toast.error("Required Deposit Must Be Entered");
-          return;
-        }
-
-        if (!availability.cancellationPolicy) {
-          toast.error("Cancellation Policy Must Be Selected");
-          return;
-        }
+      if (!travelRange && !isWillingToTravel) {
+        toast.error(`Travel Range Must Be Entered`);
+        return false;
+      }
+      if (!experience) {
+        toast.error(`Years of Experience Must Be Entered`);
+        return false;
+      }
+      if (!availability.deposit) {
+        toast.error("Required Deposit Must Be Entered");
         return;
       }
 
@@ -466,7 +428,8 @@ const CreateMakeupListing = () => {
           user_id: user.id,
           business_name: businessName,
           years_experience: experience,
-          travel_range: parseInt(travelRange),
+          travel_range: isWillingToTravel ? -1 : parseInt(travelRange), // Use -1 to indicate willing to travel anywhere
+          travel_anywhere: isWillingToTravel,
           is_remote_business: isRemoteBusiness,
           address: isRemoteBusiness ? "" : location.address,
           city: location.city,
@@ -478,7 +441,6 @@ const CreateMakeupListing = () => {
           instagram_url: instagramUrl || null,
           description,
           deposit: parseInt(availability.deposit),
-          cancellation_policy: availability.cancellationPolicy,
         })
         .select()
         .single();
@@ -627,7 +589,7 @@ const CreateMakeupListing = () => {
               <div className="text-center w-1/4">Basic Info</div>
               <div className="text-center w-1/4">Portfolio</div>
               <div className="text-center w-1/4">Services</div>
-              <div className="text-center w-1/4">Availability</div>
+              <div className="text-center w-1/4">Extra Information</div>
             </div>
           </div>
 
@@ -648,49 +610,6 @@ const CreateMakeupListing = () => {
                     value={businessName}
                     onChange={(e) => setBusinessName(e.target.value)}
                     placeholder="Enter your name or business name"
-                    className="w-full"
-                    required
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Years of Experience*
-                  </label>
-                  <Select value={experience} onValueChange={setExperience}>
-                    <SelectTrigger className="w-full">
-                      <SelectValue placeholder="Select years of experience" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {["1-2", "3-5", "6-9", "10+"].map((year) => (
-                        <SelectItem key={year} value={year.toString()}>
-                          {year} {year === "10+" ? "years or more" : "years"}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Travel Range (miles)*
-                  </label>
-                  <Input
-                    type="number"
-                    min="0"
-                    step="1" // Force whole numbers
-                    value={travelRange}
-                    onChange={(e) => {
-                      const sanitizedValue = handleNumericInput(e.target.value);
-                      setTravelRange(sanitizedValue);
-                    }}
-                    onKeyDown={(e) => {
-                      // Prevent decimal point and negative sign
-                      if (e.key === "-" || e.key === ".") {
-                        e.preventDefault();
-                      }
-                    }}
-                    placeholder="Enter maximum travel distance"
                     className="w-full"
                     required
                   />
@@ -1667,7 +1586,32 @@ const CreateMakeupListing = () => {
             {/* Step 4: Availability */}
             {currentStep === 4 && (
               <div className="space-y-6">
-                <h2 className="text-2xl font-semibold mb-6">Availability</h2>
+                <h2 className="text-2xl font-semibold mb-6">
+                  Extra Information
+                </h2>
+                <TravelSection
+                  travelRange={travelRange}
+                  setTravelRange={setTravelRange}
+                  isWillingToTravel={isWillingToTravel}
+                  setIsWillingToTravel={setIsWillingToTravel}
+                />
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Years of Experience*
+                  </label>
+                  <Select value={experience} onValueChange={setExperience}>
+                    <SelectTrigger className="w-full">
+                      <SelectValue placeholder="Select years of experience" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {["1-2", "3-5", "6-9", "10+"].map((year) => (
+                        <SelectItem key={year} value={year.toString()}>
+                          {year} {year === "10+" ? "years or more" : "years"}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
                     Required Deposit (% of total service cost)*
@@ -1729,39 +1673,6 @@ const CreateMakeupListing = () => {
                       %
                     </span>
                   </div>
-                  <p className="mt-1 text-sm text-gray-500">
-                    Enter a whole number between 0 and 100
-                  </p>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Cancellation Policy*
-                  </label>
-                  <Select
-                    value={availability.cancellationPolicy}
-                    onValueChange={(value) =>
-                      setAvailability({
-                        ...availability,
-                        cancellationPolicy: value,
-                      })
-                    }
-                  >
-                    <SelectTrigger className="w-full">
-                      <SelectValue placeholder="Select cancellation policy" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="Flexible">
-                        Flexible (24-72 hours)
-                      </SelectItem>
-                      <SelectItem value="Moderate">
-                        Moderate (1 week)
-                      </SelectItem>
-                      <SelectItem value="Strict">Strict (2 weeks)</SelectItem>
-                      <SelectItem value="No Cancellations">
-                        No Cancellations
-                      </SelectItem>
-                    </SelectContent>
-                  </Select>
                 </div>
               </div>
             )}

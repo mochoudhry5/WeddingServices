@@ -333,7 +333,9 @@ export default function WeddingDetailsPage() {
               <ul className="space-y-2 text-gray-600">
                 <li className="flex items-center gap-2">
                   <span className="text-rose-500">•</span>
-                  {weddingPlanner.deposit}% of total service cost
+                  {weddingPlanner.deposit === 0
+                    ? "No Deposit Required"
+                    : `${weddingPlanner.deposit}% of total service cost`}
                 </li>
               </ul>
             </div>
@@ -346,6 +348,8 @@ export default function WeddingDetailsPage() {
                   <span className="text-rose-500">•</span>
                   {weddingPlanner.travel_range === 0
                     ? "No Travel"
+                    : weddingPlanner.travel_range === -1
+                    ? "Travel Anywhere"
                     : `${weddingPlanner.travel_range} miles from ${weddingPlanner.city}`}
                 </li>
               </ul>

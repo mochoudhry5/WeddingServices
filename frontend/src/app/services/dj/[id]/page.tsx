@@ -334,6 +334,8 @@ export default function MakeupDetailsPage() {
                   <span className="text-rose-500">•</span>
                   {dj.travel_range === 0
                     ? "No Travel"
+                    : dj.travel_range === -1
+                    ? "Travel Anywhere"
                     : `${dj.travel_range} miles from ${dj.city}`}
                 </li>
               </ul>
