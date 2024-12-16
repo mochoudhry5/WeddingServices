@@ -22,7 +22,7 @@ const footerLinks = {
 
 export default function Footer() {
   return (
-    <footer className="border-t border-gray-100 bg-white">
+    <footer className="border-t border-gray-100 bg-gray-100">
       <div className="max-w-8xl mx-auto">
         <div className="flex flex-col">
           {/* Main Footer Content */}
@@ -38,21 +38,21 @@ export default function Footer() {
                 <div className="mt-6 flex space-x-4">
                   <a
                     href="#"
-                    className="text-gray-400 hover:text-rose-600 transition-colors p-2 rounded-full hover:bg-rose-50"
+                    className="text-black hover:text-rose-600 transition-colors p-2 rounded-full hover:bg-rose-50"
                     aria-label="Facebook"
                   >
                     <Facebook size={20} />
                   </a>
                   <a
                     href="#"
-                    className="text-gray-400 hover:text-rose-600 transition-colors p-2 rounded-full hover:bg-rose-50"
+                    className="text-black hover:text-rose-600 transition-colors p-2 rounded-full hover:bg-rose-50"
                     aria-label="Instagram"
                   >
                     <Instagram size={20} />
                   </a>
                   <a
                     href="#"
-                    className="text-gray-400 hover:text-rose-600 transition-colors p-2 rounded-full hover:bg-rose-50"
+                    className="text-black hover:text-rose-600 transition-colors p-2 rounded-full hover:bg-rose-50"
                     aria-label="Twitter"
                   >
                     <Twitter size={20} />
@@ -72,7 +72,7 @@ export default function Footer() {
                         <li key={link.name}>
                           <a
                             href={link.href}
-                            className="text-gray-500 hover:text-rose-600 transition-colors text-sm"
+                            className="text-black hover:text-rose-600 transition-colors text-sm"
                           >
                             {link.name}
                           </a>
@@ -87,7 +87,7 @@ export default function Footer() {
 
           {/* Copyright - Reduced top padding */}
           <div className="px-4 py-2">
-            <p className="text-sm text-gray-400 text-center">
+            <p className="text-sm text-black text-center">
               © {new Date().getFullYear()} AnyWeds. All rights reserved.
             </p>
           </div>

@@ -164,10 +164,9 @@ const OnboardingModal = ({
                 How much does it cost to list my service?
               </h3>
               <p className="text-sm text-gray-600">
-                Listing your service on AnyWeds involves a simple flat fee of $5
-                to $30 a month, determined by location and service type. We
+                Listing your service on AnyWeds involves a simple flat fee of $15 a month. We
                 eliminate lead generation fees and service charges, ensuring
-                full transparency.
+                full transparency. Cancel Anytime.
               </p>
             </div>
 

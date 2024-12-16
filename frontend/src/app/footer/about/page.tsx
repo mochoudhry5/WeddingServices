@@ -139,7 +139,7 @@ export default function AboutPage() {
                   </li>
                   <li className="flex items-center gap-3">
                     <CheckCircle2 className="w-5 h-5 text-rose-500 flex-shrink-0" />
-                    <span>Only $5-$30 a month </span>
+                    <span>Only $15 a month </span>
                   </li>
                   <li className="flex items-center gap-3">
                     <CheckCircle2 className="w-5 h-5 text-rose-500 flex-shrink-0" />
