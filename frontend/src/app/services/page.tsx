@@ -244,7 +244,7 @@ export default function CreateServicePage() {
             </div>
             <Button
               variant="ghost"
-              className="text-stone-500 hover:text-ston-600"
+              className="text-stone-500 hover:text-stone-500"
               onClick={() => setShowModal(true)}
             >
               Learn More
