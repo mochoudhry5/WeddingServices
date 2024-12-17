@@ -31,28 +31,28 @@ export default function Footer() {
               {/* Logo and Social Section - Aligned with Navbar */}
               <div className="md:col-span-3">
                 <a href="/" className="inline-block">
-                  <h2 className="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-rose-600 to-purple-600">
+                  <h2 className="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-stone-400 to-black">
                     AnyWeds
                   </h2>
                 </a>
                 <div className="mt-6 flex space-x-4">
                   <a
                     href="#"
-                    className="text-black hover:text-rose-600 transition-colors p-2 rounded-full hover:bg-rose-50"
+                    className="text-black transition-colors p-2 rounded-full"
                     aria-label="Facebook"
                   >
                     <Facebook size={20} />
                   </a>
                   <a
                     href="#"
-                    className="text-black hover:text-rose-600 transition-colors p-2 rounded-full hover:bg-rose-50"
+                    className="text-black transition-colors p-2 rounded-full"
                     aria-label="Instagram"
                   >
                     <Instagram size={20} />
                   </a>
                   <a
                     href="#"
-                    className="text-black hover:text-rose-600 transition-colors p-2 rounded-full hover:bg-rose-50"
+                    className="text-black transition-colors p-2 rounded-full"
                     aria-label="Twitter"
                   >
                     <Twitter size={20} />
@@ -72,7 +72,7 @@ export default function Footer() {
                         <li key={link.name}>
                           <a
                             href={link.href}
-                            className="text-black hover:text-rose-600 transition-colors text-sm"
+                            className="text-black hover:text-stone-400 transition-colors text-sm"
                           >
                             {link.name}
                           </a>

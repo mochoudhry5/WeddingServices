@@ -104,7 +104,7 @@ export default function NavBar() {
                   <div className="border-t pt-4">
                     <Link
                       href="/services"
-                      className="flex items-center gap-2 rounded-lg bg-rose-100 px-4 py-2 text-sm font-medium text-rose-600 hover:bg-rose-200"
+                      className="flex items-center gap-2 rounded-lg bg-rose-100 px-4 py-2 text-sm font-medium text-black hover:bg-rose-200"
                       onClick={() => setIsMobileMenuOpen(false)}
                     >
                       <Plus className="h-4 w-4" />
@@ -173,7 +173,7 @@ export default function NavBar() {
               {/* List Your Service Button - Desktop only */}
               <Link
                 href="/services"
-                className="hidden md:flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium text-rose-600 transition-colors hover:bg-rose-200"
+                className="hidden md:flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium text-black transition-colors hover:bg-stone-200"
               >
                 List Your Service
               </Link>
@@ -182,12 +182,12 @@ export default function NavBar() {
               <div className="hidden md:block">
                 <DropdownMenu>
                   <DropdownMenuTrigger className="focus:outline-none">
-                    <Avatar className="h-9 w-9 hover:ring-2 hover:ring-rose-500 hover:ring-offset-2 transition-all">
+                    <Avatar className="h-9 w-9 hover:ring-2 hover:ring-stone-400 hover:ring-offset-2 transition-all">
                       <AvatarImage
                         src={user.user_metadata?.avatar_url}
                         alt={user.email || "User profile"}
                       />
-                      <AvatarFallback className="bg-rose-100 text-rose-600">
+                      <AvatarFallback className="bg-stone-200 text-black">
                         {getInitials()}
                       </AvatarFallback>
                     </Avatar>

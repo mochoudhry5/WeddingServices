@@ -12,10 +12,10 @@ export default function AboutPage() {
 
       <main className="flex-grow">
         {/* Hero Section */}
-        <div className="relative overflow-hidden bg-gradient-to-b from-rose-50 to-white py-24">
+        <div className="relative overflow-hidden bg-gradient-to-b from-stone-200 to-white py-24">
           <div className="absolute inset-0 bg-grid-gray-100/50 [mask-image:linear-gradient(0deg,white,rgba(255,255,255,0.6))]" />
           <div className="max-w-7xl mx-auto px-4 text-center relative animate-fadeIn">
-            <h1 className="text-6xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-rose-600 to-purple-600 mb-6">
+            <h1 className="text-6xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-stone-400 to-black">
               About AnyWeds
             </h1>
             <p className="text-2xl text-gray-600 max-w-2xl mx-auto">
@@ -26,7 +26,7 @@ export default function AboutPage() {
         </div>
 
         {/* Mission Section */}
-        <section className="py-20 bg-white">
+        <section className="py-10 bg-white">
           <div className="max-w-3xl mx-auto px-4">
             <h2 className="text-3xl font-bold text-gray-900 mb-8 text-center">
               Our Mission
@@ -41,11 +41,11 @@ export default function AboutPage() {
         </section>
 
         {/* Features Grid */}
-        <section className="py-20 bg-gray-50">
+        <section className="py-10 bg-gray-50">
           <div className="max-w-7xl mx-auto px-4">
             <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
               <div className="bg-white rounded-2xl p-8 shadow-sm hover:shadow-md transition-all duration-300 hover:-translate-y-1">
-                <Heart className="w-12 h-12 text-rose-500 mb-6" />
+                <Heart className="w-12 h-12 text-stone-400 mb-6" />
                 <h3 className="text-xl font-semibold mb-4">
                   Curated Excellence
                 </h3>
@@ -56,7 +56,7 @@ export default function AboutPage() {
               </div>
 
               <div className="bg-white rounded-2xl p-8 shadow-sm hover:shadow-md transition-all duration-300 hover:-translate-y-1">
-                <CheckCircle2 className="w-12 h-12 text-rose-500 mb-6" />
+                <CheckCircle2 className="w-12 h-12 text-stone-400 mb-6" />
                 <h3 className="text-xl font-semibold mb-4">
                   Transparency First
                 </h3>
@@ -67,7 +67,7 @@ export default function AboutPage() {
               </div>
 
               <div className="bg-white rounded-2xl p-8 shadow-sm hover:shadow-md transition-all duration-300 hover:-translate-y-1">
-                <Users className="w-12 h-12 text-rose-500 mb-6" />
+                <Users className="w-12 h-12 text-stone-400 mb-6" />
                 <h3 className="text-xl font-semibold mb-4">Community Driven</h3>
                 <p className="text-gray-600">
                   Built on real experiences and feedback from couples and
@@ -76,7 +76,7 @@ export default function AboutPage() {
               </div>
 
               <div className="bg-white rounded-2xl p-8 shadow-sm hover:shadow-md transition-all duration-300 hover:-translate-y-1">
-                <Lightbulb className="w-12 h-12 text-rose-500 mb-6" />
+                <Lightbulb className="w-12 h-12 text-stone-400 mb-6" />
                 <h3 className="text-xl font-semibold mb-4">Innovation Focus</h3>
                 <p className="text-gray-600">
                   Continuously evolving our platform with cutting-edge features
@@ -88,7 +88,7 @@ export default function AboutPage() {
         </section>
 
         {/* What We Offer Section */}
-        <section className="py-20 bg-white">
+        <section className=" py-10 bg-white">
           <div className="max-w-7xl mx-auto px-4">
             <div className="text-center mb-12">
               <h2 className="text-3xl font-bold text-gray-900 mb-4">
@@ -100,49 +100,49 @@ export default function AboutPage() {
             </div>
 
             <div className="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto">
-              <div className="bg-gradient-to-br from-rose-50 to-purple-50 p-8 rounded-2xl transform transition-all duration-300 hover:shadow-lg">
+              <div className="bg-gradient-to-br from-stone-100 to-stone-50 p-8 rounded-2xl transform transition-all duration-300 hover:shadow-lg">
                 <h3 className="text-xl font-semibold mb-4 text-gray-900">
                   For Couples
                 </h3>
                 <ul className="space-y-4 text-gray-600">
                   <li className="flex items-center gap-3">
-                    <CheckCircle2 className="w-5 h-5 text-rose-500 flex-shrink-0" />
+                    <CheckCircle2 className="w-5 h-5 text-green-500 flex-shrink-0" />
                     <span>Extensive venue and vendor directory</span>
                   </li>
                   <li className="flex items-center gap-3">
-                    <CheckCircle2 className="w-5 h-5 text-rose-500 flex-shrink-0" />
+                    <CheckCircle2 className="w-5 h-5 text-green-500  flex-shrink-0" />
                     <span>Completely Free</span>
                   </li>
                   <li className="flex items-center gap-3">
-                    <CheckCircle2 className="w-5 h-5 text-rose-500 flex-shrink-0" />
+                    <CheckCircle2 className="w-5 h-5 text-green-500  flex-shrink-0" />
                     <span>View pricing immediately for service</span>
                   </li>
                   <li className="flex items-center gap-3">
-                    <CheckCircle2 className="w-5 h-5 text-rose-500 flex-shrink-0" />
+                    <CheckCircle2 className="w-5 h-5 text-green-500 flex-shrink-0" />
                     <span>Get in touch with vendor with one click</span>
                   </li>
                 </ul>
               </div>
 
-              <div className="bg-gradient-to-br from-rose-50 to-purple-50 p-8 rounded-2xl transform transition-all duration-300 hover:shadow-lg">
+              <div className="bg-gradient-to-br from-stone-100 to-stone-50 p-8 rounded-2xl transform transition-all duration-300 hover:shadow-lg">
                 <h3 className="text-xl font-semibold mb-4 text-gray-900">
                   For Vendors
                 </h3>
                 <ul className="space-y-4 text-gray-600">
                   <li className="flex items-center gap-3">
-                    <CheckCircle2 className="w-5 h-5 text-rose-500 flex-shrink-0" />
+                    <CheckCircle2 className="w-5 h-5 text-green-500  flex-shrink-0" />
                     <span>Reach more potential customers</span>
                   </li>
                   <li className="flex items-center gap-3">
-                    <CheckCircle2 className="w-5 h-5 text-rose-500 flex-shrink-0" />
+                    <CheckCircle2 className="w-5 h-5 text-green-500 flex-shrink-0" />
                     <span>Keep using your exisiting systems</span>
                   </li>
                   <li className="flex items-center gap-3">
-                    <CheckCircle2 className="w-5 h-5 text-rose-500 flex-shrink-0" />
+                    <CheckCircle2 className="w-5 h-5 text-green-500 flex-shrink-0" />
                     <span>Only $15 a month </span>
                   </li>
                   <li className="flex items-center gap-3">
-                    <CheckCircle2 className="w-5 h-5 text-rose-500 flex-shrink-0" />
+                    <CheckCircle2 className="w-5 h-5 text-green-500  flex-shrink-0" />
                     <span>Fully Customizable Listing Page</span>
                   </li>
                 </ul>

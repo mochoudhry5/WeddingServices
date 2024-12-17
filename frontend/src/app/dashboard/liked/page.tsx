@@ -40,6 +40,8 @@ interface PhotoVideoDetails extends BaseService {
   business_name: string;
   years_experience: string;
   travel_range: number;
+  city: string;
+  state: string;
   min_service_price: number;
   max_service_price: number;
   service_type: "photography" | "videography" | "both";
@@ -60,6 +62,8 @@ interface HairMakeupDetails extends BaseService {
   business_name: string;
   years_experience: number;
   travel_range: number;
+  city: string;
+  state: string;
   min_service_price: number;
   max_service_price: number;
   hair_makeup_media: MediaItem[];
@@ -70,6 +74,8 @@ interface DJDetails extends BaseService {
   business_name: string;
   years_experience: number;
   travel_range: number;
+  city: string;
+  state: string;
   min_service_price: number;
   max_service_price: number;
   dj_media: MediaItem[];
@@ -79,6 +85,8 @@ interface WeddingPlannerDetails extends BaseService {
   business_name: string;
   years_experience: number;
   travel_range: number;
+  city: string;
+  state: string;
   min_service_price: number;
   max_service_price: number;
   wedding_planner_media: MediaItem[];
@@ -143,20 +151,20 @@ const SERVICE_CONFIGS: Record<string, ServiceConfig<any>> = {
         </div>
         <Link href={`/services/venue/${venue.id}`}>
           <div className="p-4">
-            <h3 className="text-lg font-semibold mb-1 group-hover:text-rose-600 transition-colors">
+            <h3 className="text-lg font-semibold mb-1 group-hover:text-stone-500 transition-colors">
               {venue.business_name || "Unnamed Venue"}
             </h3>
             <p className="text-slate-600 text-sm mb-2">
-              {venue.city || "Unknown City"}, {venue.state || "Unknown State"}
+              Up to {venue.max_guests || 0} guests • Venue
             </p>
             <p className="text-slate-600 text-sm mb-3 line-clamp-2">
               {venue.description || "No description available"}
             </p>
             <div className="flex justify-between items-center pt-2 border-t">
               <div className="text-sm text-slate-600">
-                Up to {venue.max_guests || 0} guests
+                {venue.city || "Unknown City"}, {venue.state || "Unknown State"}
               </div>
-              <div className="text-lg font-semibold text-rose-600">
+              <div className="text-lg font-semibold text-green-800">
                 ${(venue.base_price || 0).toLocaleString()}
               </div>
             </div>
@@ -180,6 +188,8 @@ const SERVICE_CONFIGS: Record<string, ServiceConfig<any>> = {
         user_id,
         business_name,
         years_experience,
+        city,
+        state,
         travel_range,
         description,
         min_service_price,
@@ -209,25 +219,25 @@ const SERVICE_CONFIGS: Record<string, ServiceConfig<any>> = {
         </div>
         <Link href={`/services/hairMakeup/${hairMakeup.id}`}>
           <div className="p-4">
-            <h3 className="text-lg font-semibold mb-1 group-hover:text-rose-600 transition-colors">
+            <h3 className="text-lg font-semibold mb-1 group-hover:text-stone-500 transition-colors">
               {hairMakeup.business_name || "Unnamed Artist"}
             </h3>
             <p className="text-slate-600 text-sm mb-2">
-              {hairMakeup.years_experience || 0} years experience • Up to{" "}
-              {hairMakeup.travel_range || 0} miles
-            </p>
-            <div className="text-slate-600 text-sm mb-2">
+              {hairMakeup.years_experience || 0} years experience •{" "}
               {hairMakeup.service_type === "both"
                 ? "Hair & Makeup"
                 : hairMakeup.service_type === "hair"
                 ? "Hair"
                 : "Makeup"}
-            </div>
+            </p>
             <p className="text-slate-600 text-sm mb-3 line-clamp-2">
               {hairMakeup.description || "No description available"}
             </p>
             <div className="flex justify-between items-center pt-2 border-t">
-              <div className="text-lg font-semibold text-rose-600">
+              <div className="text-sm text-slate-600">
+                {hairMakeup.city}, {hairMakeup.state}
+              </div>
+              <div className="text-lg font-semibold text-green-800">
                 {hairMakeup.min_service_price === hairMakeup.max_service_price
                   ? `$${(hairMakeup.min_service_price || 0).toLocaleString()}`
                   : `$${(
@@ -257,6 +267,8 @@ const SERVICE_CONFIGS: Record<string, ServiceConfig<any>> = {
         user_id,
         business_name,
         years_experience,
+        city,
+        state,
         travel_range,
         service_type,
         description,
@@ -286,25 +298,25 @@ const SERVICE_CONFIGS: Record<string, ServiceConfig<any>> = {
         </div>
         <Link href={`/services/photoVideo/${photoVideo.id}`}>
           <div className="p-4">
-            <h3 className="text-lg font-semibold mb-1 group-hover:text-rose-600 transition-colors">
+            <h3 className="text-lg font-semibold mb-1 group-hover:text-stone-500 transition-colors">
               {photoVideo.business_name || "Unnamed Artist"}
             </h3>
             <p className="text-slate-600 text-sm mb-2">
-              {photoVideo.years_experience || 0} years experience • Up to{" "}
-              {photoVideo.travel_range || 0} miles
-            </p>
-            <div className="text-slate-600 text-sm mb-2">
+              {photoVideo.years_experience || 0} years experience •{" "}
               {photoVideo.service_type === "both"
                 ? "Photography & Videography"
                 : photoVideo.service_type === "photography"
                 ? "Photography"
                 : "Videography"}
-            </div>
+            </p>
             <p className="text-slate-600 text-sm mb-3 line-clamp-2">
               {photoVideo.description || "No description available"}
             </p>
             <div className="flex justify-between items-center pt-2 border-t">
-              <div className="text-lg font-semibold text-rose-600">
+              <div className="text-sm text-slate-600">
+                {photoVideo.city}, {photoVideo.state}
+              </div>
+              <div className="text-lg font-semibold text-green-800">
                 {photoVideo.min_service_price === photoVideo.max_service_price
                   ? `$${(photoVideo.min_service_price || 0).toLocaleString()}`
                   : `$${(
@@ -334,6 +346,8 @@ const SERVICE_CONFIGS: Record<string, ServiceConfig<any>> = {
         user_id,
         business_name,
         years_experience,
+        city,
+        state,
         travel_range,
         description,
         min_service_price,
@@ -362,18 +376,20 @@ const SERVICE_CONFIGS: Record<string, ServiceConfig<any>> = {
         </div>
         <Link href={`/services/dj/${dj.id}`}>
           <div className="p-4">
-            <h3 className="text-lg font-semibold mb-1 group-hover:text-rose-600 transition-colors">
+            <h3 className="text-lg font-semibold mb-1 group-hover:text-stone-500 transition-colors">
               {dj.business_name || "Unnamed DJ"}
             </h3>
             <p className="text-slate-600 text-sm mb-2">
-              {dj.years_experience || 0} years experience • Up to{" "}
-              {dj.travel_range || 0} miles
+              {dj.years_experience || 0} years experience • DJ
             </p>
             <p className="text-slate-600 text-sm mb-3 line-clamp-2">
               {dj.description || "No description available"}
             </p>
             <div className="flex justify-between items-center pt-2 border-t">
-              <div className="text-lg font-semibold text-rose-600">
+              <div className="text-sm text-slate-600">
+                {dj.city}, {dj.state}
+              </div>
+              <div className="text-lg font-semibold text-green-800">
                 {dj.min_service_price === dj.max_service_price
                   ? `$${(dj.min_service_price || 0).toLocaleString()}`
                   : `$${(dj.min_service_price || 0).toLocaleString()} - $${(
@@ -401,6 +417,8 @@ const SERVICE_CONFIGS: Record<string, ServiceConfig<any>> = {
         user_id,
         business_name,
         years_experience,
+        city,
+        state,
         travel_range,
         service_type,
         description,
@@ -430,25 +448,25 @@ const SERVICE_CONFIGS: Record<string, ServiceConfig<any>> = {
         </div>
         <Link href={`/services/weddingPlanner/${weddingPlanner.id}`}>
           <div className="p-4">
-            <h3 className="text-lg font-semibold mb-1 group-hover:text-rose-600 transition-colors">
+            <h3 className="text-lg font-semibold mb-1 group-hover:text-stone-500 transition-colors">
               {weddingPlanner.business_name || "Unnamed Business"}
             </h3>
             <p className="text-slate-600 text-sm mb-2">
-              {weddingPlanner.years_experience || 0} years experience • Up to{" "}
-              {weddingPlanner.travel_range || 0} miles
-            </p>
-            <div className="text-slate-600 text-sm mb-2">
+              {weddingPlanner.years_experience || 0} years experience •{" "}
               {weddingPlanner.service_type === "both"
-                ? "Wedding Planning & Coordinating"
+                ? "Wedding Planner& Coordinator"
                 : weddingPlanner.service_type === "weddingPlanner"
-                ? "Wedding Planning"
-                : "Wedding Coordinating"}
-            </div>
+                ? "Wedding Planner"
+                : "Wedding Coordinator"}
+            </p>
             <p className="text-slate-600 text-sm mb-3 line-clamp-2">
               {weddingPlanner.description || "No description available"}
             </p>
             <div className="flex justify-between items-center pt-2 border-t">
-              <div className="text-lg font-semibold text-rose-600">
+              <div className="text-sm text-slate-600">
+                {weddingPlanner.city}, {weddingPlanner.state}
+              </div>
+              <div className="text-lg font-semibold text-green-800">
                 {weddingPlanner.min_service_price ===
                 weddingPlanner.max_service_price
                   ? `$${(
@@ -584,7 +602,7 @@ export default function LikedServicesPage() {
           </p>
           <Link
             href={`/`}
-            className="inline-flex items-center px-4 py-2 bg-rose-600 hover:bg-rose-700 text-white rounded-lg transition-colors"
+            className="inline-flex items-center px-4 py-2 bg-black hover:bg-stone-500 text-white rounded-lg transition-colors"
           >
             Explore {config.pluralName}
           </Link>

@@ -178,14 +178,14 @@ const ServiceCard = ({ service }: { service: VenueAddon }) => {
               {service.name}
             </h3>
             <div className="text-left sm:text-right">
-              <p className="text-rose-600 font-semibold whitespace-nowrap text-sm sm:text-base">
+              <p className="text-green-800 font-semibold whitespace-nowrap text-sm sm:text-base">
                 <span className="text-xs sm:text-sm text-gray-500">
                   Starting at{" "}
                 </span>
                 ${service.price.toLocaleString()}
                 {"guest_increment" in service &&
                   service.pricing_type === "per-guest" && (
-                    <span className="text-xs sm:text-sm text-rose-600">
+                    <span className="text-xs sm:text-sm text-green-800">
                       {service.guest_increment === 1
                         ? " per guest"
                         : ` per ${service.guest_increment} guests`}
@@ -389,10 +389,10 @@ export default function VenueDetailsPage() {
       <div className="max-w-7xl mx-auto px-4 py-6">
         {user?.id !== venue.user_id && (
           <div className="max-w-7xl mx-auto px-4 pb-5">
-            <div className="bg-rose-50 border-b border-rose-200 py-2">
+            <div className="bg-stone-100 border-black py-2">
               <div className="max-w-3xl mx-auto px-4 flex flex-col items-center justify-center">
                 <div className="flex items-center gap-2">
-                  <span className="text-rose-600 text-lg font-semibold">
+                  <span className="text-black text-lg font-semibold">
                     Don't forget this listing!
                   </span>
                   <LikeButton
@@ -420,7 +420,7 @@ export default function VenueDetailsPage() {
               </p>
             </div>
             <div className="sm:text-right">
-              <div className="text-2xl sm:text-3xl font-semibold text-rose-600">
+              <div className="text-2xl sm:text-3xl font-semibold text-green-800">
                 ${venue.base_price.toLocaleString()}
               </div>
               <p className="text-xs sm:text-sm text-gray-500">
@@ -440,7 +440,7 @@ export default function VenueDetailsPage() {
                 <ul className="space-y-2 text-sm sm:text-base text-gray-600 text-center">
                   <li>
                     <div className="flex items-center gap-2">
-                      <span className="text-rose-500">•</span>
+                      <span className="text-slate-600">•</span>
                       <span>
                         Minimum guests: {venue.min_guests || "No minimum"}
                       </span>
@@ -448,7 +448,7 @@ export default function VenueDetailsPage() {
                   </li>
                   <li>
                     <div className="flex items-center gap-2">
-                      <span className="text-rose-500">•</span>
+                      <span className="text-slate-600">•</span>
                       <span>Maximum guests: {venue.max_guests}</span>
                     </div>
                   </li>
@@ -463,7 +463,7 @@ export default function VenueDetailsPage() {
                 <ul className="space-y-2 text-sm sm:text-base text-gray-600 text-center">
                   <li>
                     <div className="flex items-center gap-2">
-                      <span className="text-rose-500">•</span>
+                      <span className="text-slate-600">•</span>
                       <span>
                         {
                           {
@@ -486,7 +486,7 @@ export default function VenueDetailsPage() {
                 <ul className="space-y-2 text-sm sm:text-base text-gray-600 text-center">
                   <li>
                     <div className="flex items-center gap-2">
-                      <span className="text-rose-500">•</span>
+                      <span className="text-slate-600">•</span>
                       <span>
                         {
                           {
@@ -511,12 +511,12 @@ export default function VenueDetailsPage() {
                     {venue.website_url && (
                       <li>
                         <div className="flex items-center gap-2">
-                          <span className="text-rose-500">•</span>
+                          <span className="text-slate-600">•</span>
                           <a
                             href={venue.website_url}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="text-rose-600 hover:text-rose-700 hover:underline"
+                            className="text-black hover:text-stone-500 hover:underline"
                           >
                             Website
                           </a>
@@ -526,12 +526,12 @@ export default function VenueDetailsPage() {
                     {venue.instagram_url && (
                       <li>
                         <div className="flex items-center gap-2">
-                          <span className="text-rose-500">•</span>
+                          <span className="text-slate-600">•</span>
                           <a
                             href={venue.instagram_url}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="text-rose-600 hover:text-rose-700 hover:underline"
+                            className="text-black hover:text-stone-500 hover:underline"
                           >
                             Instagram
                           </a>
@@ -543,7 +543,7 @@ export default function VenueDetailsPage() {
                   <ul className="space-y-2 text-sm sm:text-base text-gray-600 text-center">
                     <li>
                       <div className="flex items-center gap-2">
-                        <span className="text-rose-500">•</span>
+                        <span className="text-slate-600">•</span>
                         <span>No Social Links Yet!</span>
                       </div>
                     </li>
@@ -575,10 +575,10 @@ export default function VenueDetailsPage() {
                   .map((inclusion, index) => (
                     <div
                       key={index}
-                      className="p-3 sm:p-4 rounded-lg border border-rose-200 bg-rose-50"
+                      className="p-3 sm:p-4 rounded-lg border border-black bg-stone-100"
                     >
                       <div className="flex items-center gap-2">
-                        <span className="text-rose-600">✓</span>
+                        <span className="text-green-800">✓</span>
                         <span className="text-sm sm:text-base text-gray-900">
                           {inclusion.name}
                         </span>
@@ -718,7 +718,7 @@ export default function VenueDetailsPage() {
                     value={inquiryForm.message}
                     onChange={handleInputChange}
                     rows={4}
-                    className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-rose-500 focus:border-transparent text-sm sm:text-base"
+                    className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-transparent text-sm sm:text-base"
                     placeholder="Tell us about your event..."
                     required
                   />
@@ -726,7 +726,7 @@ export default function VenueDetailsPage() {
 
                 <Button
                   type="submit"
-                  className="w-full bg-rose-600 hover:bg-rose-700 text-sm sm:text-base py-2 sm:py-3"
+                  className="w-full bg-black hover:bg-stone-500 text-sm sm:text-base py-2 sm:py-3"
                 >
                   Send Inquiry
                 </Button>

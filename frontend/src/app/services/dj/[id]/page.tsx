@@ -93,7 +93,7 @@ const ServiceCard = ({ service }: { service: DJService }) => {
           <div className="flex justify-between items-start mb-2">
             <h3 className="text-lg font-semibold text-left">{service.name}</h3>
             <div className="text-right">
-              <p className="text-rose-600 font-semibold whitespace-nowrap">
+              <p className="text-green-800 font-semibold whitespace-nowrap">
                 <span className="text-sm text-gray-500">Starting at </span>$
                 {service.price.toLocaleString()}
               </p>
@@ -251,10 +251,10 @@ export default function MakeupDetailsPage() {
       <div className="max-w-7xl mx-auto px-4 py-6">
         {user?.id !== dj.user_id && (
           <div className="max-w-7xl mx-auto px-4 pb-5">
-            <div className="bg-rose-50 border-b border-rose-200 py-2">
+            <div className="bg-stone-100 border-black py-2">
               <div className="max-w-3xl mx-auto px-4 flex flex-col items-center justify-center">
                 <div className="flex items-center gap-2">
-                  <span className="text-rose-600 text-lg font-semibold">
+                  <span className="text-black text-lg font-semibold">
                     Don't forget this listing!
                   </span>
                   <LikeButton
@@ -291,7 +291,7 @@ export default function MakeupDetailsPage() {
           {/* Price Range */}
           {dj.min_service_price && (
             <div className="text-right">
-              <div className="text-3xl font-semibold text-rose-600">
+              <div className="text-3xl font-semibold text-green-800">
                 {dj.min_service_price === dj.max_service_price
                   ? `$${dj.max_service_price.toLocaleString()}`
                   : `$${dj.min_service_price.toLocaleString()} - $${dj.max_service_price.toLocaleString()}`}
@@ -307,7 +307,7 @@ export default function MakeupDetailsPage() {
               <h3 className="text-lg font-semibold mb-3">Experience</h3>
               <ul className="space-y-2 text-gray-600">
                 <li className="flex items-center gap-2">
-                  <span className="text-rose-500">•</span>
+                  <span className="text-slate-600">•</span>
                   {dj.years_experience} years
                 </li>
               </ul>
@@ -318,7 +318,7 @@ export default function MakeupDetailsPage() {
               <h3 className="text-lg font-semibold mb-3">Booking Deposit</h3>
               <ul className="space-y-2 text-gray-600">
                 <li className="flex items-center gap-2">
-                  <span className="text-rose-500">•</span>
+                  <span className="text-slate-600">•</span>
                   {dj.deposit === 0
                     ? "No Deposit Required"
                     : `${dj.deposit}% of total service cost`}
@@ -331,7 +331,7 @@ export default function MakeupDetailsPage() {
               <h3 className="text-lg font-semibold mb-3">Travel Radius</h3>
               <ul className="space-y-2 text-gray-600">
                 <li className="flex items-center gap-2">
-                  <span className="text-rose-500">•</span>
+                  <span className="text-slate-600">•</span>
                   {dj.travel_range === 0
                     ? "No Travel"
                     : dj.travel_range === -1
@@ -345,29 +345,48 @@ export default function MakeupDetailsPage() {
             <div className="flex flex-col items-center text-center border-r border-gray-200 last:border-r-0">
               <h3 className="text-lg font-semibold mb-3">Socials</h3>
               {dj.website_url || dj.instagram_url ? (
-                <ul className="space-y-2 text-gray-600">
-                  {dj.website_url && (
-                    <li className="flex items-center gap-2">
-                      <span className="text-rose-500">•</span>
-                      <a
-                        href={dj.website_url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-rose-600 hover:text-rose-700 hover:underline"
-                      >
-                        Instagram
-                      </a>
+                  <ul className="space-y-2 text-sm sm:text-base text-gray-600 text-center">
+                    {dj.website_url && (
+                      <li>
+                        <div className="flex items-center gap-2">
+                          <span className="text-slate-600">•</span>
+                          <a
+                            href={dj.website_url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-black hover:text-stone-500 hover:underline"
+                          >
+                            Website
+                          </a>
+                        </div>
+                      </li>
+                    )}
+                    {dj.instagram_url && (
+                      <li>
+                        <div className="flex items-center gap-2">
+                          <span className="text-slate-600">•</span>
+                          <a
+                            href={dj.instagram_url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-black hover:text-stone-500 hover:underline"
+                          >
+                            Instagram
+                          </a>
+                        </div>
+                      </li>
+                    )}
+                  </ul>
+                ) : (
+                  <ul className="space-y-2 text-sm sm:text-base text-gray-600 text-center">
+                    <li>
+                      <div className="flex items-center gap-2">
+                        <span className="text-slate-600">•</span>
+                        <span>No Social Links Yet!</span>
+                      </div>
                     </li>
-                  )}
-                </ul>
-              ) : (
-                <ul className="space-y-2 text-gray-600">
-                  <li className="flex items-center gap-2">
-                    <span className="text-rose-500">•</span>
-                    No Social Links Yet!
-                  </li>
-                </ul>
-              )}
+                  </ul>
+                )}
             </div>
           </div>
         </div>
@@ -390,10 +409,10 @@ export default function MakeupDetailsPage() {
               {dj.dj_specialties.map((specialty, index) => (
                 <div
                   key={index}
-                  className="p-4 rounded-lg border border-rose-200 bg-rose-50"
-                >
+                  className="p-3 sm:p-4 rounded-lg border border-black bg-stone-100"
+                  >
                   <div className="flex items-center gap-2">
-                    <span className="text-rose-600">✓</span>
+                    <span className="text-green-800">✓</span>
                     <span className="text-gray-900">{specialty.specialty}</span>
                   </div>
                 </div>
@@ -510,7 +529,7 @@ export default function MakeupDetailsPage() {
                   value={inquiryForm.message}
                   onChange={handleInputChange}
                   rows={4}
-                  className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-rose-500 focus:border-transparent"
+                  className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-transparent text-sm sm:text-base"
                   placeholder="Tell us about your event and requirements..."
                   required
                 />
@@ -518,8 +537,8 @@ export default function MakeupDetailsPage() {
 
               <Button
                 type="submit"
-                className="w-full bg-rose-600 hover:bg-rose-700"
-              >
+                className="w-full bg-black hover:bg-stone-500 text-sm sm:text-base py-2 sm:py-3"
+                >
                 Send Inquiry
               </Button>
             </form>

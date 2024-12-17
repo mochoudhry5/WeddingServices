@@ -90,10 +90,10 @@ export default function ContactPage() {
 
       <main className="flex-grow">
         {/* Hero Section */}
-        <div className="relative bg-gradient-to-b from-rose-50 to-white py-16 lg:py-24">
+        <div className="relative bg-gradient-to-b from-stone-200 to-white py-16 lg:py-24">
           <div className="absolute inset-0 bg-grid-gray-100/50 [mask-image:linear-gradient(0deg,white,rgba(255,255,255,0.6))]" />
           <div className="relative max-w-3xl mx-auto text-center px-4">
-            <h1 className="text-4xl md:text-5xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-rose-600 to-purple-600 mb-4">
+            <h1 className="text-4xl md:text-5xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-stone-400 to-black mb-4">
               Get in Touch
             </h1>
             <p className="text-xl text-gray-600">
@@ -189,7 +189,7 @@ export default function ContactPage() {
                   <button
                     type="submit"
                     disabled={isSubmitting}
-                    className="w-full bg-gradient-to-r from-rose-600 to-rose-500 text-white py-3 px-4 rounded-lg hover:from-rose-700 hover:to-rose-600 transition-all duration-300 font-medium flex items-center justify-center group disabled:opacity-70"
+                    className="w-full bg-gradient-to-r from-stone-700 to-stone-600 text-white py-3 px-4 rounded-lg hover:from-stone-200 hover:to-stone-500 transition-all duration-300 font-medium flex items-center justify-center group disabled:opacity-70"
                   >
                     {isSubmitting ? "Sending..." : "Send Message"}
                     <ArrowRight className="ml-2 h-4 w-4 transform group-hover:translate-x-1 transition-transform" />
@@ -201,10 +201,10 @@ export default function ContactPage() {
             {/* Contact Info */}
             <div className="lg:col-span-1">
               <div className="space-y-6">
-                <div className="bg-gradient-to-br from-rose-50 to-purple-50 rounded-2xl p-6 transition-all duration-300 hover:shadow-md">
+                <div className="bg-gradient-to-br from-stone-100 to-stone-50  rounded-2xl p-6 transition-all duration-300 hover:shadow-md">
                   <div className="flex items-start space-x-4">
                     <div className="bg-white rounded-lg p-3">
-                      <Mail className="h-6 w-6 text-rose-500" />
+                      <Mail className="h-6 w-6 text-black" />
                     </div>
                     <div>
                       <h3 className="font-semibold text-gray-900 mb-2">
@@ -218,10 +218,10 @@ export default function ContactPage() {
                   </div>
                 </div>
 
-                <div className="bg-gradient-to-br from-rose-50 to-purple-50 rounded-2xl p-6 transition-all duration-300 hover:shadow-md">
+                <div className="bg-gradient-to-br from-stone-100 to-stone-50  rounded-2xl p-6 transition-all duration-300 hover:shadow-md">
                   <div className="flex items-start space-x-4">
                     <div className="bg-white rounded-lg p-3">
-                      <Clock className="h-6 w-6 text-rose-500" />
+                      <Clock className="h-6 w-6 text-black" />
                     </div>
                     <div>
                       <h3 className="font-semibold text-gray-900 mb-2">

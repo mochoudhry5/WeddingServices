@@ -653,7 +653,7 @@ export default function CreateVenueListing() {
                 <div
                   key={index}
                   className={`flex-1 h-2 mx-1 rounded-full ${
-                    index + 1 <= currentStep ? "bg-rose-500" : "bg-gray-200"
+                    index + 1 <= currentStep ? "bg-black" : "bg-gray-200"
                   }`}
                 />
               ))}
@@ -923,7 +923,7 @@ export default function CreateVenueListing() {
                     onChange={(e) => setDescription(e.target.value)}
                     rows={4}
                     placeholder="Describe your venue in detail (minimum 100 characters)..."
-                    className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-rose-500 focus:border-transparent"
+                    className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-transparent"
                   />
                   <div className="mt-1 text-sm text-gray-500">
                     Character count: {countCharacters(description)} / 100
@@ -955,7 +955,7 @@ export default function CreateVenueListing() {
 
                   {/* Upload Area */}
                   <div
-                    className="border-2 border-dashed border-gray-300 rounded-lg p-6 md:p-8 text-center hover:border-rose-500 transition-colors cursor-pointer"
+                    className="border-2 border-dashed border-gray-300 rounded-lg p-6 md:p-8 text-center hover:border-black transition-colors cursor-pointer"
                     onClick={() =>
                       document.getElementById("media-upload")?.click()
                     }
@@ -995,7 +995,7 @@ export default function CreateVenueListing() {
                         <button
                           type="button"
                           onClick={() => setMediaFiles([])}
-                          className="text-sm text-rose-600 hover:text-rose-700"
+                          className="text-sm text-red hover:text-red-500"
                         >
                           Remove all
                         </button>
@@ -1011,7 +1011,7 @@ export default function CreateVenueListing() {
                             onDragEnd={handleDragEnd}
                             className={`relative aspect-square rounded-lg overflow-hidden bg-gray-100 cursor-move ${
                               draggedItem === index ? "opacity-50" : ""
-                            } group hover:ring-2 hover:ring-rose-500 transition-all`}
+                            } group hover:ring-2 hover:ring-black transition-all`}
                           >
                             {/* Number Badge */}
                             <div className="absolute top-2 left-2 bg-black/50 text-white px-2 py-1 rounded text-xs z-10">
@@ -1032,7 +1032,7 @@ export default function CreateVenueListing() {
                                   Click and drag to reorder
                                 </span>
                                 {index === 0 && (
-                                  <span className="bg-rose-500 text-white text-xs px-2 py-1 rounded">
+                                  <span className="bg-black text-white text-xs px-2 py-1 rounded">
                                     Main Image
                                   </span>
                                 )}
@@ -1110,7 +1110,7 @@ export default function CreateVenueListing() {
                         <div className="flex items-center h-5">
                           <input
                             type="checkbox"
-                            className="h-4 w-4 text-rose-600 border-gray-300 rounded focus:ring-rose-500"
+                            className="h-4 w-4 border-gray-300 rounded"
                             checked={includedItems.includes(inclusion)}
                             onChange={(e) => {
                               if (e.target.checked) {
@@ -1193,7 +1193,7 @@ export default function CreateVenueListing() {
                         <div className="flex items-center h-5 pt-1">
                           <input
                             type="checkbox"
-                            className="h-4 w-4 text-rose-600 border-gray-300 rounded focus:ring-rose-500"
+                            className="h-4 w-4 border-gray-300 rounded"
                             checked={addon.name in selectedAddOns}
                             onChange={(e) => {
                               if (e.target.checked) {
@@ -1297,7 +1297,7 @@ export default function CreateVenueListing() {
                           },
                         ])
                       }
-                      className="flex items-center gap-2 text-rose-600 hover:text-rose-700"
+                      className="flex items-center gap-2 text-black hover:text-stone-500"
                     >
                       <Plus size={20} />
                       <span>Add Service</span>
@@ -1337,7 +1337,7 @@ export default function CreateVenueListing() {
                                   customAddOns.filter((_, i) => i !== index)
                                 );
                               }}
-                              className="self-start p-2 text-gray-400 hover:text-rose-500 transition-colors"
+                              className="self-start p-2 text-gray-400 transition-colors"
                             >
                               <X size={20} />
                             </button>
@@ -1411,7 +1411,7 @@ export default function CreateVenueListing() {
                 type="button"
                 onClick={currentStep === totalSteps ? handleSubmit : nextStep}
                 disabled={isSubmitting}
-                className="px-6 py-2 bg-rose-600 text-white rounded-lg hover:bg-rose-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                className="px-6 py-2 bg-black text-white rounded-lg hover:bg-stone-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {isSubmitting
                   ? "Creating..."
@@ -1439,7 +1439,7 @@ export default function CreateVenueListing() {
                 <AlertDialogCancel>Continue Editing</AlertDialogCancel>
                 <AlertDialogAction
                   onClick={handleCancel}
-                  className="bg-rose-600 hover:bg-rose-700"
+                  className="bg-black hover:bg-stone-500"
                 >
                   Yes, Cancel
                 </AlertDialogAction>

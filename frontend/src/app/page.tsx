@@ -14,8 +14,6 @@ import LocationInput from "@/components/ui/LocationInput";
 import {
   Heart,
   Camera,
-  MapPin,
-  Calendar,
   LucideIcon,
   Ban,
   DollarSign,
@@ -68,12 +66,12 @@ const FeatureCard = ({
       }`}
       style={{ transitionDelay: `${delay}ms` }}
     >
-      <div className="p-6 bg-white/5 backdrop-blur-sm rounded-2xl border border-black/10 transition-colors">
-        <div className="w-12 h-12 bg-rose-500/10 rounded-xl flex items-center justify-center mb-4">
-          <Icon className="w-6 h-6 text-rose-500" />
+      <div className="p-6 bg-white/5 backdrop-blur-sm rounded-2xl border border-neutral-200 transition-colors hover:border-neutral-300">
+        <div className="w-12 h-12 bg-stone-200 rounded-xl flex items-center justify-center mb-4">
+          <Icon className="w-6 h-6 text-neutral-600" />
         </div>
-        <h3 className="text-xl font-semibold text-black mb-2">{title}</h3>
-        <p className="text-gray-700">{description}</p>
+        <h3 className="text-xl font-semibold text-neutral-900 mb-2">{title}</h3>
+        <p className="text-neutral-600">{description}</p>
       </div>
     </div>
   );
@@ -112,7 +110,7 @@ const ImageCarousel = () => {
             <button
               key={index}
               className={`w-2 h-2 rounded-full ${
-                currentImage === index ? "bg-white" : "bg-white/50"
+                currentImage === index ? "bg-white" : "bg-neutral-300/50"
               }`}
               onClick={() => setCurrentImage(index)}
             />
@@ -212,12 +210,10 @@ export default function HomePage() {
       <NavBar />
 
       <div className="relative min-h-[calc(100vh-64px)]">
-        {/* Full-width carousel */}
         <div className="absolute inset-0">
           <ImageCarousel />
         </div>
 
-        {/* Overlay content */}
         <div className="relative z-10 flex flex-col items-center justify-center min-h-[calc(100vh-64px)] px-4">
           <div className="w-full max-w-xl text-center">
             <h2 className="text-5xl font-bold text-white mb-6">
@@ -230,7 +226,7 @@ export default function HomePage() {
 
             <form
               onSubmit={handleSearch}
-              className="w-full bg-black/50 backdrop-blur-sm p-6 rounded-2xl"
+              className="w-full bg-neutral-900/70 backdrop-blur-sm p-6 rounded-2xl"
             >
               <div className="flex flex-col gap-4">
                 <Select value={serviceType} onValueChange={setServiceType}>
@@ -255,12 +251,12 @@ export default function HomePage() {
                   onChange={setFullQuery}
                   onPlaceSelect={handlePlaceSelect}
                   placeholder="Search by location"
-                  className="bg-white/20 border-0 text-white placeholder:text-gray-400"
+                  className="bg-white/20 border-0 text-white placeholder:text-neutral-400"
                 />
 
                 <button
                   type="submit"
-                  className="bg-rose-600 hover:bg-rose-700 text-white px-8 py-3 rounded-lg transition-colors duration-300 w-full"
+                  className="bg-stone-400 hover:bg-stone-300 text-black text- px-8 py-3 rounded-lg transition-colors duration-300 w-full font-medium"
                 >
                   Search
                 </button>
@@ -270,43 +266,56 @@ export default function HomePage() {
         </div>
       </div>
 
-      {/* Why Choose Us Section */}
-      <section className="relative z-10 py-10 bg-white">
+      <section className="relative z-10 py-10 bg-neutral-50">
         <div className="max-w-7xl mx-auto px-4">
           <div className="text-center mb-10">
-            <h2 className="text-4xl font-bold text-black mb-4">
+            <h2 className="text-4xl font-bold text-neutral-900 mb-4">
               Why Choose AnyWeds?
             </h2>
-            <p className="text-gray-700 text-lg max-w-2xl mx-auto">
+            <p className="text-neutral-600 text-lg max-w-2xl mx-auto">
               We're revolutionizing how couples plan their perfect wedding day
             </p>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            <FeatureCard
-              icon={Heart}
-              title="Curated Selection"
-              description="Search by price, location, and other preferences."
-              delay={100}
-            />
-            <FeatureCard
-              icon={Camera}
-              title="Visual First"
-              description="High-quality photos to help you make informed decisions"
-              delay={200}
-            />
-            <FeatureCard
-              icon={DollarSign}
-              title="Quick Estimate"
-              description="Obtain an estimate without needing to contact anyone."
-              delay={300}
-            />
-            <FeatureCard
-              icon={Ban}
-              title="No Fees"
-              description="We recognize the importance of staying within your budget."
-              delay={400}
-            />
+            {[
+              {
+                icon: Heart,
+                title: "Curated Selection",
+                description:
+                  "Search by price, location, and other preferences.",
+                delay: 100,
+              },
+              {
+                icon: Camera,
+                title: "Visual First",
+                description:
+                  "High-quality photos to help you make informed decisions",
+                delay: 200,
+              },
+              {
+                icon: DollarSign,
+                title: "Quick Estimate",
+                description:
+                  "Obtain an estimate without needing to contact anyone.",
+                delay: 300,
+              },
+              {
+                icon: Ban,
+                title: "No Fees",
+                description:
+                  "We recognize the importance of staying within your budget.",
+                delay: 400,
+              },
+            ].map((feature) => (
+              <FeatureCard
+                key={feature.title}
+                icon={feature.icon}
+                title={feature.title}
+                description={feature.description}
+                delay={feature.delay}
+              />
+            ))}
           </div>
         </div>
       </section>

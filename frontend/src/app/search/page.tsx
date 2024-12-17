@@ -721,7 +721,7 @@ export default function ServicesSearchPage() {
           </p>
           <button
             onClick={handleFilterReset}
-            className="mt-4 text-rose-600 hover:text-rose-700"
+            className="mt-4 text-black hover:text-stone-500"
           >
             Clear all filters
           </button>
@@ -760,6 +760,9 @@ export default function ServicesSearchPage() {
           ): listing is PhotoVideoDetails => {
             return "wedding_planner_media" in listing;
           };
+          const isDJ = (listing: ServiceListingItem): listing is DJDetails => {
+            return "dj_media" in listing;
+          };
 
           const currentListing = isHairMakeup(listing)
             ? listing
@@ -788,7 +791,7 @@ export default function ServicesSearchPage() {
                 className="block hover:cursor-pointer"
               >
                 <div className="p-4">
-                  <h3 className="text-lg font-semibold mb-1 group-hover:text-rose-600 transition-colors">
+                  <h3 className="text-lg font-semibold mb-1 group-hover:text-stone-500 transition-colors">
                     {listing.business_name}
                   </h3>
 
@@ -824,6 +827,11 @@ export default function ServicesSearchPage() {
                             : "Wedding Coordinator"}
                         </p>
                       )}
+                      {isDJ(listing) && (
+                        <p className="text-slate-600 text-sm mb-2">
+                          {listing.years_experience} years experience • DJ
+                        </p>
+                      )}
                       <p className="text-slate-600 text-sm mb-3 line-clamp-2">
                         {listing.description}
                       </p>
@@ -833,7 +841,7 @@ export default function ServicesSearchPage() {
                         </div>
                         {listing.min_service_price !== null &&
                           listing.max_service_price !== null && (
-                            <div className="text-lg font-semibold text-rose-600">
+                            <div className="text-lg font-semibold text-green-800">
                               {listing.min_service_price ===
                               listing.max_service_price
                                 ? `$${listing.min_service_price.toLocaleString()}`
@@ -845,17 +853,16 @@ export default function ServicesSearchPage() {
                   ) : (
                     <>
                       <p className="text-slate-600 text-sm mb-2">
-                        {(listing as VenueDetails).city},{" "}
-                        {(listing as VenueDetails).state}
+                        Up to {(listing as VenueDetails).max_guests} guests • Venue
                       </p>
                       <p className="text-slate-600 text-sm mb-3 line-clamp-2">
                         {listing.description}
                       </p>
                       <div className="flex justify-between items-center pt-2 border-t">
                         <div className="text-sm text-slate-600">
-                          Up to {(listing as VenueDetails).max_guests} guests
+                          {listing.city}, {listing.state}
                         </div>
-                        <div className="text-lg font-semibold text-rose-600">
+                        <div className="text-lg font-semibold text-green-800">
                           $
                           {(
                             listing as VenueDetails
@@ -965,7 +972,7 @@ export default function ServicesSearchPage() {
               <div className="flex gap-2 sm:w-[168px]">
                 <button
                   type="submit"
-                  className="w-20 bg-rose-500 hover:bg-rose-600 text-white rounded-lg transition-colors duration-300"
+                  className="w-20 bg-black hover:bg-stone-500 text-white rounded-lg transition-colors duration-300"
                 >
                   Search
                 </button>
@@ -979,7 +986,7 @@ export default function ServicesSearchPage() {
                       type="button"
                       className={`w-20 flex items-center justify-center gap-1 border rounded-lg hover:bg-slate-50 ${
                         isFiltered
-                          ? "border-rose-500 text-rose-500"
+                          ? "border-black text-black"
                           : "border-slate-200 text-slate-700"
                       }`}
                     >
@@ -1102,14 +1109,14 @@ export default function ServicesSearchPage() {
                         <button
                           type="button"
                           onClick={handleFilterApply}
-                          className="flex-1 py-3 text-sm text-white bg-rose-500 hover:bg-rose-600 rounded-lg transition-colors duration-300"
+                          className="flex-1 py-3 text-sm text-white bg-black hover:bg-stone-500 rounded-lg transition-colors duration-300"
                         >
                           Apply Filters
                         </button>
                         <button
                           type="button"
                           onClick={handleFilterReset}
-                          className="flex-1 py-3 text-sm border border-rose-200 text-rose-600 hover:bg-rose-50 rounded-lg transition-colors duration-300"
+                          className="flex-1 py-3 text-sm border border-black text-black hover:bg-gray-300 rounded-lg transition-colors duration-300"
                         >
                           Clear
                         </button>

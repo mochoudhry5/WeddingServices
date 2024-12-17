@@ -93,7 +93,7 @@ const ServiceCard = ({ service }: { service: PhotoVideoService }) => {
           <div className="flex justify-between items-start mb-2">
             <h3 className="text-lg font-semibold text-left">{service.name}</h3>
             <div className="text-right">
-              <p className="text-rose-600 font-semibold whitespace-nowrap">
+              <p className="text-green-800 font-semibold whitespace-nowrap">
                 <span className="text-sm text-gray-500">Starting at </span>$
                 {service.price.toLocaleString()}
               </p>
@@ -258,10 +258,10 @@ export default function PhotographyDetailsPage() {
         {/* Like Button Banner */}
         {user?.id !== photoVideo.user_id && (
           <div className="max-w-7xl mx-auto px-4 pb-5">
-            <div className="bg-rose-50 border-b border-rose-200 py-2">
+            <div className="bg-stone-100 border-black py-2">
               <div className="max-w-3xl mx-auto px-2 sm:px-4 flex flex-col items-center justify-center">
                 <div className="flex items-center gap-2">
-                  <span className="text-rose-600 text-base sm:text-lg font-semibold">
+                  <span className="text-black text-base sm:text-lg font-semibold">
                     Don't forget this listing!
                   </span>
                   <LikeButton
@@ -300,7 +300,7 @@ export default function PhotographyDetailsPage() {
           <div className="md:text-right">
             {photoVideo.min_service_price && photoVideo.max_service_price && (
               <>
-                <div className="text-3xl font-semibold text-rose-600">
+                <div className="text-3xl font-semibold text-green-800">
                   {photoVideo.min_service_price === photoVideo.max_service_price
                     ? `$${photoVideo.min_service_price.toLocaleString()}`
                     : `$${photoVideo.min_service_price.toLocaleString()} - $${photoVideo.max_service_price.toLocaleString()}`}
@@ -320,7 +320,7 @@ export default function PhotographyDetailsPage() {
               </h3>
               <ul className="space-y-2 text-sm sm:text-base text-gray-600">
                 <li className="flex items-center gap-2">
-                  <span className="text-rose-500">•</span>
+                  <span className="text-slate-600">•</span>
                   {photoVideo.years_experience} years
                 </li>
               </ul>
@@ -333,7 +333,7 @@ export default function PhotographyDetailsPage() {
               </h3>
               <ul className="space-y-2 text-sm sm:text-base text-gray-600">
                 <li className="flex items-center gap-2">
-                  <span className="text-rose-500">•</span>
+                  <span className="text-slate-600">•</span>
                   {photoVideo.deposit === 0
                     ? "No Deposit Required"
                     : `${photoVideo.deposit}% of total service cost`}
@@ -348,7 +348,7 @@ export default function PhotographyDetailsPage() {
               </h3>
               <ul className="space-y-2 text-sm sm:text-base text-gray-600">
                 <li className="flex items-center gap-2">
-                  <span className="text-rose-500">•</span>
+                  <span className="text-slate-600">•</span>
                   {photoVideo.travel_range === 0
                     ? "No Travel"
                     : photoVideo.travel_range === -1
@@ -367,26 +367,26 @@ export default function PhotographyDetailsPage() {
                 <ul className="space-y-2 text-sm sm:text-base text-gray-600">
                   {photoVideo.website_url && (
                     <li className="flex items-center gap-2">
-                      <span className="text-rose-500">•</span>
+                      <span className="text-slate-600">•</span>
                       <a
                         href={photoVideo.website_url}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="text-rose-600 hover:text-rose-700 hover:underline break-all"
-                      >
+                        className="text-black hover:text-stone-500 hover:underline"
+                        >
                         Website
                       </a>
                     </li>
                   )}
                   {photoVideo.instagram_url && (
                     <li className="flex items-center gap-2">
-                      <span className="text-rose-500">•</span>
+                      <span className="text-slate-600">•</span>
                       <a
                         href={photoVideo.instagram_url}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="text-rose-600 hover:text-rose-700 hover:underline break-all"
-                      >
+                        className="text-black hover:text-stone-500 hover:underline"
+                        >
                         Instagram
                       </a>
                     </li>
@@ -395,7 +395,7 @@ export default function PhotographyDetailsPage() {
               ) : (
                 <ul className="space-y-2 text-sm sm:text-base text-gray-600">
                   <li className="flex items-center gap-2">
-                    <span className="text-rose-500">•</span>
+                    <span className="text-slate-600">•</span>
                     No Social Links Yet!
                   </li>
                 </ul>
@@ -428,10 +428,10 @@ export default function PhotographyDetailsPage() {
               {photoStyles.map((style, index) => (
                 <div
                   key={`photo-${index}`}
-                  className="p-3 sm:p-4 rounded-lg border border-rose-200 bg-rose-50"
+                  className="p-3 sm:p-4 rounded-lg border border-black bg-stone-100"
                 >
                   <div className="flex items-center gap-2">
-                    <span className="text-rose-600">✓</span>
+                    <span className="text-green-800">✓</span>
                     <span className="text-sm sm:text-base text-gray-900">
                       {style}
                     </span>
@@ -441,10 +441,10 @@ export default function PhotographyDetailsPage() {
               {videoStyles.map((style, index) => (
                 <div
                   key={`video-${index}`}
-                  className="p-3 sm:p-4 rounded-lg border border-rose-200 bg-rose-50"
+                  className="p-3 sm:p-4 rounded-lg border border-black bg-stone-100"
                 >
                   <div className="flex items-center gap-2">
-                    <span className="text-rose-600">✓</span>
+                    <span className="text-slate-600">✓</span>
                     <span className="text-sm sm:text-base text-gray-900">
                       {style}
                     </span>
@@ -568,7 +568,7 @@ export default function PhotographyDetailsPage() {
                   value={inquiryForm.message}
                   onChange={handleInputChange}
                   rows={4}
-                  className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-rose-500 focus:border-transparent text-sm sm:text-base"
+                  className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-transparent text-sm sm:text-base"
                   placeholder="Tell us about your event and what services you're interested in..."
                   required
                 />
@@ -576,7 +576,7 @@ export default function PhotographyDetailsPage() {
 
               <Button
                 type="submit"
-                className="w-full bg-rose-600 hover:bg-rose-700 text-sm sm:text-base py-2 sm:py-3"
+                className="w-full bg-black hover:bg-stone-500 text-sm sm:text-base py-2 sm:py-3"
               >
                 Send Inquiry
               </Button>

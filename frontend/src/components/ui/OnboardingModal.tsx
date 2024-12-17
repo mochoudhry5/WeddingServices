@@ -84,16 +84,16 @@ const OnboardingModal = ({
             {/* Step 1 */}
             <div
               className="relative flex gap-4 items-start p-4 rounded-lg bg-white shadow-sm border border-gray-100 
-                         transition-all duration-200 hover:shadow-md hover:border-rose-100 group h-[120px]"
+                         transition-all duration-200 hover:shadow-md hover:border-stone-500 group h-[120px]"
             >
               <div
-                className="w-10 h-10 rounded-full bg-rose-50 flex items-center justify-center flex-shrink-0
-                            transition-colors duration-200 group-hover:bg-rose-100"
+                className="w-10 h-10 rounded-full bg-black flex items-center justify-center flex-shrink-0
+                            transition-colors duration-200 group-hover:bg-black"
               >
-                <span className="text-lg font-semibold text-rose-600">1</span>
+                <span className="text-lg font-semibold text-white">1</span>
               </div>
               <div>
-                <h3 className="text-base font-semibold text-gray-900 mb-1 group-hover:text-rose-600 transition-colors">
+                <h3 className="text-base font-semibold text-gray-900 mb-1 group-hover:text-stone-500 transition-colors">
                   Create Your Listing
                 </h3>
                 <p className="text-sm text-gray-600">
@@ -105,18 +105,18 @@ const OnboardingModal = ({
 
             {/* Step 2 */}
             <div
-              className="relative flex gap-4 items-start p-4 rounded-lg bg-white shadow-sm border border-gray-100
-                         transition-all duration-200 hover:shadow-md hover:border-rose-100 group h-[120px]"
+              className="relative flex gap-4 items-start p-4 rounded-lg bg-white shadow-sm border border-gray-100 
+                         transition-all duration-200 hover:shadow-md hover:border-stone-500 group h-[120px]"
             >
               <div
-                className="w-10 h-10 rounded-full bg-rose-50 flex items-center justify-center flex-shrink-0
-                            transition-colors duration-200 group-hover:bg-rose-100"
+                className="w-10 h-10 rounded-full bg-black flex items-center justify-center flex-shrink-0
+                            transition-colors duration-200 group-hover:bg-black"
               >
-                <span className="text-lg font-semibold text-rose-600">2</span>
+                <span className="text-lg font-semibold text-white">2</span>
               </div>
               <div>
-                <h3 className="text-base font-semibold text-gray-900 mb-1 group-hover:text-rose-600 transition-colors">
-                  Get Discovered
+              <h3 className="text-base font-semibold text-gray-900 mb-1 group-hover:text-stone-500 transition-colors">
+              Get Discovered
                 </h3>
                 <p className="text-sm text-gray-600">
                   Your service will be visible to couples actively planning
@@ -127,18 +127,18 @@ const OnboardingModal = ({
 
             {/* Step 3 */}
             <div
-              className="relative flex gap-4 items-start p-4 rounded-lg bg-white shadow-sm border border-gray-100
-                         transition-all duration-200 hover:shadow-md hover:border-rose-100 group h-[120px]"
+              className="relative flex gap-4 items-start p-4 rounded-lg bg-white shadow-sm border border-gray-100 
+                         transition-all duration-200 hover:shadow-md hover:border-stone-500 group h-[120px]"
             >
               <div
-                className="w-10 h-10 rounded-full bg-rose-50 flex items-center justify-center flex-shrink-0
-                            transition-colors duration-200 group-hover:bg-rose-100"
+                className="w-10 h-10 rounded-full bg-black flex items-center justify-center flex-shrink-0
+                            transition-colors duration-200 group-hover:bg-black"
               >
-                <span className="text-lg font-semibold text-rose-600">3</span>
+                <span className="text-lg font-semibold text-white">3</span>
               </div>
               <div>
-                <h3 className="text-base font-semibold text-gray-900 mb-1 group-hover:text-rose-600 transition-colors">
-                  Bookings
+              <h3 className="text-base font-semibold text-gray-900 mb-1 group-hover:text-stone-500 transition-colors">
+              Bookings
                 </h3>
                 <p className="text-sm text-gray-600">
                   Receive inquiries, communicate with couples, and manage your
@@ -158,21 +158,21 @@ const OnboardingModal = ({
             {/* FAQ Items */}
             <div
               className="p-4 rounded-lg bg-white shadow-sm border border-gray-100 
-                          transition-all duration-200 hover:shadow-md hover:border-rose-100 h-[120px]"
+                          transition-all duration-200 hover:shadow-md hover:border-black h-[120px]"
             >
               <h3 className="text-base font-semibold text-gray-900 mb-1">
                 How much does it cost to list my service?
               </h3>
               <p className="text-sm text-gray-600">
-                Listing your service on AnyWeds involves a simple flat fee of $15 a month. We
-                eliminate lead generation fees and service charges, ensuring
-                full transparency. Cancel Anytime.
+                Listing your service on AnyWeds involves a simple flat fee of
+                $15 a month. We eliminate lead generation fees and service
+                charges, ensuring full transparency. Cancel Anytime.
               </p>
             </div>
 
             <div
               className="p-4 rounded-lg bg-white shadow-sm border border-gray-100 
-                          transition-all duration-200 hover:shadow-md hover:border-rose-100 h-[120px]"
+                          transition-all duration-200 hover:shadow-md hover:border-black h-[120px]"
             >
               <h3 className="text-base font-semibold text-gray-900 mb-1">
                 Can I list multiple services?
@@ -185,7 +185,7 @@ const OnboardingModal = ({
 
             <div
               className="p-4 rounded-lg bg-white shadow-sm border border-gray-100 
-                          transition-all duration-200 hover:shadow-md hover:border-rose-100 h-[120px]"
+                          transition-all duration-200 hover:shadow-md hover:border-black h-[120px]"
             >
               <h3 className="text-base font-semibold text-gray-900 mb-1">
                 Can I edit my listing after publishing?
@@ -245,7 +245,7 @@ const OnboardingModal = ({
                   onClick={() => setCurrentSlide(index)}
                   className={`h-1.5 w-6 rounded-full transition-all duration-300 ${
                     currentSlide === index
-                      ? "bg-rose-500"
+                      ? "bg-black"
                       : "bg-gray-300 hover:bg-gray-400"
                   }`}
                 />
@@ -277,7 +277,7 @@ const OnboardingModal = ({
               ) : (
                 <Button
                   onClick={handleClose}
-                  className="bg-rose-600 hover:bg-rose-700"
+                  className="bg-black hover:bg-stone-500"
                   size="sm"
                 >
                   Get Started

@@ -244,7 +244,7 @@ export default function CreateServicePage() {
             </div>
             <Button
               variant="ghost"
-              className="text-rose-600 hover:text-rose-700 hover:bg-rose-50"
+              className="text-stone-500 hover:text-ston-600"
               onClick={() => setShowModal(true)}
             >
               Learn More
@@ -261,7 +261,7 @@ export default function CreateServicePage() {
                   transition-all duration-200 cursor-pointer
                   ${
                     selected === service.id
-                      ? "bg-rose-50 border-2 border-rose-500"
+                      ? "bg-stone-50 border-2 border-black"
                       : "bg-white border-2 border-gray-200 hover:border-gray-300 hover:shadow-md"
                   }
                   ${!service.available ? "opacity-75 cursor-not-allowed" : ""}
@@ -272,7 +272,7 @@ export default function CreateServicePage() {
                   <div
                     className={`
                       w-14 h-14 rounded-full flex items-center justify-center
-                      ${selected === service.id ? "bg-rose-100" : "bg-gray-100"}
+                      ${selected === service.id ? "bg-gray-100" : "bg-gray-100"}
                       transition-colors duration-200
                     `}
                   >
@@ -280,7 +280,7 @@ export default function CreateServicePage() {
                       size={28}
                       className={
                         selected === service.id
-                          ? "text-rose-500"
+                          ? "text-black-500"
                           : "text-gray-600"
                       }
                     />
@@ -306,7 +306,7 @@ export default function CreateServicePage() {
 
                 {/* Selected Indicator */}
                 {selected === service.id && (
-                  <div className="absolute top-3 right-3 w-3 h-3 rounded-full bg-rose-500" />
+                  <div className="absolute top-3 right-3 w-3 h-3 rounded-full bg-black" />
                 )}
               </div>
             ))}
@@ -319,9 +319,9 @@ export default function CreateServicePage() {
               disabled={
                 !selected || !services.find((s) => s.id === selected)?.available
               }
-              className="px-8 py-3 bg-rose-600 text-white rounded-lg font-medium 
+              className="px-8 py-3 bg-black text-white rounded-lg font-medium 
                       disabled:opacity-50 disabled:cursor-not-allowed
-                      hover:bg-rose-700 transition-colors
+                      hover:bg-stone-500 transition-colors
                       text-base"
             >
               Continue

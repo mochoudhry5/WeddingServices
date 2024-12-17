@@ -136,7 +136,7 @@ const AccountSettings = () => {
             <button
               type="submit"
               disabled={loading || email === user?.email}
-              className="bg-rose-600 text-white px-4 py-2 rounded-lg hover:bg-rose-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              className="bg-black text-white px-4 py-2 rounded-lg hover:bg-stone-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {loading ? "Updating Email..." : "Update Email"}
             </button>
@@ -270,7 +270,7 @@ const SecuritySettings = () => {
           <button
             type="submit"
             disabled={loading}
-            className="bg-rose-600 text-white px-4 py-2 rounded-lg hover:bg-rose-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            className="bg-black text-white px-4 py-2 rounded-lg hover:bg-stone-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {loading ? "Updating Password..." : "Update Password"}
           </button>
@@ -332,13 +332,13 @@ const PaymentSettings = () => (
               <p className="text-xs text-gray-500">Expires 12/24</p>
             </div>
           </div>
-          <button className="text-sm text-rose-600 hover:text-rose-700">
+          <button className="text-sm text-black hover:text-stone-500">
             Remove
           </button>
         </div>
       </div>
 
-      <button className="w-full p-3 border-2 border-dashed border-gray-200 rounded-lg text-sm text-rose-600 hover:text-rose-700 hover:border-rose-200 transition-colors flex items-center justify-center space-x-2">
+      <button className="w-full p-3 border-2 border-dashed border-gray-200 rounded-lg text-sm text-black hover:text-stone-500 hover:border-black transition-colors flex items-center justify-center space-x-2">
         <CreditCard size={16} />
         <span>Add Payment Method</span>
       </button>
@@ -400,7 +400,7 @@ function SettingsPage() {
                       onClick={() => setActiveSection(item.id)}
                       className={`w-full flex items-center space-x-3 px-4 py-3 text-sm transition-colors ${
                         activeSection === item.id
-                          ? "bg-rose-50 text-rose-600 font-medium"
+                          ? "bg-stone-300 text-black font-medium"
                           : "text-gray-600 hover:bg-gray-50"
                       }`}
                     >
@@ -444,7 +444,7 @@ function SettingsPage() {
               <AlertDialogCancel>Cancel</AlertDialogCancel>
               <AlertDialogAction
                 onClick={handleLogout}
-                className="bg-rose-600 text-white hover:bg-rose-700"
+                className="bg-black text-white hover:bg-stone-500"
               >
                 Logout
               </AlertDialogAction>

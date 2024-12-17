@@ -580,7 +580,7 @@ const CreateMakeupListing = () => {
                 <div
                   key={index}
                   className={`flex-1 h-2 mx-1 rounded-full ${
-                    index + 1 <= currentStep ? "bg-rose-500" : "bg-gray-200"
+                    index + 1 <= currentStep ? "bg-black" : "bg-gray-200"
                   }`}
                 />
               ))}
@@ -619,7 +619,7 @@ const CreateMakeupListing = () => {
                     type="checkbox"
                     checked={isRemoteBusiness}
                     onChange={(e) => setIsRemoteBusiness(e.target.checked)}
-                    className="h-4 w-4 text-rose-600 border-gray-300 rounded focus:ring-rose-500"
+                    className="h-4 w-4 border-gray-300 rounded"
                   />
                   <label className="text-sm font-medium text-gray-700">
                     This is a remote business (no physical location)
@@ -756,7 +756,7 @@ const CreateMakeupListing = () => {
                             <div className="flex items-center h-5">
                               <input
                                 type="checkbox"
-                                className="h-4 w-4 text-rose-600 border-gray-300 rounded focus:ring-rose-500"
+                                className="h-4 w-4 border-gray-300 rounded"
                                 checked={specialties.includes(style)}
                                 onChange={(e) => {
                                   if (e.target.checked) {
@@ -854,7 +854,7 @@ const CreateMakeupListing = () => {
                             <div className="flex items-center h-5">
                               <input
                                 type="checkbox"
-                                className="h-4 w-4 text-rose-600 border-gray-300 rounded focus:ring-rose-500"
+                                className="h-4 w-4 border-gray-300 rounded"
                                 checked={specialties.includes(style)}
                                 onChange={(e) => {
                                   if (e.target.checked) {
@@ -947,7 +947,7 @@ const CreateMakeupListing = () => {
                     onChange={(e) => setDescription(e.target.value)}
                     rows={4}
                     placeholder="Tell us about your experience, style, and approach..."
-                    className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-rose-500 focus:border-transparent"
+                    className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-transparent"
                     required
                   />
                   <p className="mt-1 text-sm text-gray-500">
@@ -976,7 +976,7 @@ const CreateMakeupListing = () => {
 
                   {/* Upload Area */}
                   <div
-                    className="border-2 border-dashed border-gray-300 rounded-lg p-6 md:p-8 text-center hover:border-rose-500 transition-colors cursor-pointer"
+                    className="border-2 border-dashed border-gray-300 rounded-lg p-6 md:p-8 text-center hover:border-black transition-colors cursor-pointer"
                     onClick={() =>
                       document.getElementById("media-upload")?.click()
                     }
@@ -1016,7 +1016,7 @@ const CreateMakeupListing = () => {
                         <button
                           type="button"
                           onClick={() => setMediaFiles([])}
-                          className="text-sm text-rose-600 hover:text-rose-700"
+                          className="text-sm text-red hover:text-red-500"
                         >
                           Remove all
                         </button>
@@ -1032,7 +1032,7 @@ const CreateMakeupListing = () => {
                             onDragEnd={handleDragEnd}
                             className={`relative aspect-square rounded-lg overflow-hidden bg-gray-100 cursor-move ${
                               draggedItem === index ? "opacity-50" : ""
-                            } group hover:ring-2 hover:ring-rose-500 transition-all`}
+                            } group hover:ring-2 hover:ring-black transition-all`}
                           >
                             {/* Number Badge */}
                             <div className="absolute top-2 left-2 bg-black/50 text-white px-2 py-1 rounded text-xs z-10">
@@ -1053,7 +1053,7 @@ const CreateMakeupListing = () => {
                                   Click and drag to reorder
                                 </span>
                                 {index === 0 && (
-                                  <span className="bg-rose-500 text-white text-xs px-2 py-1 rounded">
+                                  <span className="bg-black text-white text-xs px-2 py-1 rounded">
                                     Main Image
                                   </span>
                                 )}
@@ -1150,7 +1150,7 @@ const CreateMakeupListing = () => {
                                     }}
                                     placeholder="Describe the service..."
                                     rows={2}
-                                    className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-rose-500 focus:border-transparent resize-vertical text-sm"
+                                    className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-transparent resize-vertical text-sm"
                                   />
                                 </div>
                               ) : (
@@ -1307,7 +1307,7 @@ const CreateMakeupListing = () => {
                                     }}
                                     placeholder="Describe the service..."
                                     rows={2}
-                                    className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-rose-500 focus:border-transparent resize-vertical text-sm"
+                                    className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-transparent resize-vertical text-sm"
                                   />
                                 </div>
                               ) : (
@@ -1429,7 +1429,7 @@ const CreateMakeupListing = () => {
                           },
                         ])
                       }
-                      className="flex items-center gap-2 text-rose-600 hover:text-rose-700"
+                      className="flex items-center gap-2 text-black hover:text-stone-500"
                     >
                       <Plus size={20} />
                       <span>Add Custom Service</span>
@@ -1477,7 +1477,7 @@ const CreateMakeupListing = () => {
                                   setCustomServices(newServices);
                                 }}
                                 rows={2}
-                                className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-rose-500 focus:border-transparent resize-vertical text-sm"
+                                className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-transparent resize-vertical text-sm"
                                 placeholder="Describe the service..."
                                 required
                               />
@@ -1571,7 +1571,7 @@ const CreateMakeupListing = () => {
                                 customServices.filter((_, i) => i !== index)
                               );
                             }}
-                            className="ml-4 p-2 text-gray-400 hover:text-rose-500 transition-colors"
+                            className="ml-4 p-2 text-gray-400 hover:text-black transition-colors"
                           >
                             <X size={20} />
                           </button>
@@ -1704,7 +1704,7 @@ const CreateMakeupListing = () => {
                 type="button"
                 onClick={currentStep === totalSteps ? handleSubmit : nextStep}
                 disabled={isSubmitting}
-                className="px-6 py-2 bg-rose-600 text-white rounded-lg hover:bg-rose-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                className="px-6 py-2 bg-black text-white rounded-lg hover:bg-stone-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {isSubmitting
                   ? "Creating..."
@@ -1732,7 +1732,7 @@ const CreateMakeupListing = () => {
                 <AlertDialogCancel>Continue Editing</AlertDialogCancel>
                 <AlertDialogAction
                   onClick={handleCancel}
-                  className="bg-rose-600 hover:bg-rose-700"
+                  className="bg-black hover:bg-stone-500"
                 >
                   Yes, Cancel
                 </AlertDialogAction>

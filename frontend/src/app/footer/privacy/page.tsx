@@ -168,10 +168,10 @@ export default function PrivacyPolicyPage() {
 
       <main className="flex-grow">
         {/* Hero Section */}
-        <div className="relative bg-gradient-to-b from-rose-50 to-white">
+        <div className="relative bg-gradient-to-b from-stone-200 to-white">
           <div className="absolute inset-0 bg-grid-gray-100/50 [mask-image:linear-gradient(0deg,white,rgba(255,255,255,0.6))]" />
           <div className="relative max-w-7xl mx-auto px-4 py-16 sm:py-24 text-center">
-            <h1 className="text-4xl md:text-5xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-rose-600 to-purple-600 mb-6">
+            <h1 className="text-4xl md:text-5xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-stone-400 to-black  mb-6">
               Privacy Policy
             </h1>
             <p className="text-xl text-gray-600 max-w-2xl mx-auto">
@@ -202,8 +202,8 @@ export default function PrivacyPolicyPage() {
                 >
                   <div className="flex items-start gap-6">
                     {section.icon && (
-                      <div className="bg-rose-50 rounded-xl p-3">
-                        <section.icon className="w-6 h-6 text-rose-500" />
+                      <div className="bg-stone-200 rounded-xl p-3">
+                        <section.icon className="w-6 h-6  text-black" />
                       </div>
                     )}
                     <div className="flex-1">
@@ -223,7 +223,7 @@ export default function PrivacyPolicyPage() {
                                 key={pointIndex}
                                 className="flex items-start gap-3 text-gray-600"
                               >
-                                <span className="text-rose-500 mt-1">•</span>
+                                <span className="text-slate-600 mt-1">•</span>
                                 <span>{point}</span>
                               </li>
                             ))}
@@ -237,7 +237,7 @@ export default function PrivacyPolicyPage() {
             </div>
 
             {/* Contact Section */}
-            <div className="mt-12 bg-gradient-to-br from-rose-50 to-purple-50 rounded-2xl p-8">
+            <div className="mt-12 bg-gradient-to-br from-stone-100 to-stone-50rounded-2xl p-8">
               <h2 className="text-2xl font-semibold text-gray-900 mb-4">
                 Contact Us
               </h2>
@@ -247,7 +247,7 @@ export default function PrivacyPolicyPage() {
               </p>
               <a
                 href="mailto:support@anyweds.com"
-                className="flex items-center gap-3 text-gray-600 hover:text-rose-600 transition-colors"
+                className="flex items-center gap-3 text-gray-600 hover:text-stone-400 transition-colors"
               >
                 <Mail className="w-5 h-5" />
                 support@anyweds.com

@@ -40,10 +40,10 @@ interface ServiceConfig {
 // Define possible service types first
 type ServiceType =
   | "venue"
-  | "photo_video"
-  | "hair_makeup"
+  | "photo-video"
+  | "hair-makeup"
   | "dj"
-  | "wedding_planner";
+  | "wedding-planner";
 
 type ServiceConfigs = {
   [K in ServiceType]: ServiceConfig;
@@ -59,7 +59,7 @@ const SERVICE_CONFIGS: ServiceConfigs = {
     routePrefix: "venues",
     additionalFields: ["max_guests", "base_price"],
   },
-  photo_video: {
+  "photo-video": {
     tableName: "photo_video_listing",
     mediaTableName: "photo_video_media",
     storageBucket: "photo-video-media",
@@ -67,7 +67,7 @@ const SERVICE_CONFIGS: ServiceConfigs = {
     routePrefix: "services/photo-video",
     additionalFields: ["service_type"],
   },
-  hair_makeup: {
+  "hair-makeup": {
     tableName: "hair_makeup_listing",
     mediaTableName: "hair_makeup_media",
     storageBucket: "hair-makeup-media",
@@ -83,11 +83,11 @@ const SERVICE_CONFIGS: ServiceConfigs = {
     routePrefix: "services/dj",
     additionalFields: [],
   },
-  wedding_planner: {
+  "wedding-planner": {
     tableName: "wedding_planner_listing",
     mediaTableName: "wedding_planner_media",
     storageBucket: "wedding-planner-media",
-    displayName: "Wedding Planner",
+    displayName: "Wedding Planner & Coordinator",
     routePrefix: "services/weddingPlanner",
     additionalFields: ["service_type"],
   },
@@ -106,6 +106,18 @@ interface BaseListing {
   service_type?: string;
   max_guests?: number;
   base_price?: number;
+  years_experience: number;
+  min_service_price?: number; // Add this
+  max_service_price?: number; // Add this
+}
+interface ServiceBasedListing extends BaseListing {
+  min_service_price: number;
+  max_service_price: number;
+  service_type: string;
+}
+interface VenueListing extends BaseListing {
+  max_guests: number;
+  base_price: number;
 }
 
 type Listings = {
@@ -116,10 +128,10 @@ export default function MyListingsPage() {
   const { user } = useAuth();
   const [listings, setListings] = useState<Listings>({
     venue: [],
-    photo_video: [],
-    hair_makeup: [],
+    "photo-video": [],
+    "hair-makeup": [],
     dj: [],
-    wedding_planner: [],
+    "wedding-planner": [],
   });
   const [isLoading, setIsLoading] = useState(true);
   const [listingToDelete, setListingToDelete] = useState<{
@@ -127,6 +139,14 @@ export default function MyListingsPage() {
     type: ServiceType;
   } | null>(null);
   const [activeTab, setActiveTab] = useState<ServiceType>("venue");
+  const isServiceBasedListing = (
+    listing: BaseListing
+  ): listing is ServiceBasedListing => {
+    return "min_service_price" in listing && "max_service_price" in listing;
+  };
+  const isVenueListing = (listing: BaseListing): listing is VenueListing => {
+    return "max_guests" in listing && "base_price" in listing;
+  };
 
   useEffect(() => {
     if (user) {
@@ -141,10 +161,10 @@ export default function MyListingsPage() {
       setIsLoading(true);
       const allListings: Listings = {
         venue: [],
-        photo_video: [],
-        hair_makeup: [],
+        "photo-video": [],
+        "hair-makeup": [],
         dj: [],
-        wedding_planner: [],
+        "wedding-planner": [],
       };
 
       await Promise.all(
@@ -152,7 +172,7 @@ export default function MyListingsPage() {
           async (serviceType) => {
             const config = SERVICE_CONFIGS[serviceType];
 
-            // Build the select statement dynamically
+            // Define base fields that all services share
             const baseFields = [
               "id",
               "user_id",
@@ -164,13 +184,34 @@ export default function MyListingsPage() {
               "created_at",
             ];
 
-            // Only add additional fields if they exist
-            const selectFields = [
-              ...baseFields,
-              ...(config.additionalFields.length > 0
-                ? config.additionalFields
-                : []),
-            ].join(",");
+            // Add service-specific fields based on service type
+            let selectFields;
+            switch (serviceType) {
+              case "venue":
+                selectFields = [...baseFields, "base_price", "max_guests"].join(
+                  ","
+                );
+                break;
+              case "dj":
+                selectFields = [
+                  ...baseFields,
+                  "min_service_price",
+                  "max_service_price",
+                  "years_experience",
+                ].join(",");
+                break;
+              case "hair-makeup":
+              case "photo-video":
+              case "wedding-planner":
+                selectFields = [
+                  ...baseFields,
+                  "min_service_price",
+                  "max_service_price",
+                  "years_experience",
+                  "service_type",
+                ].join(",");
+                break;
+            }
 
             const { data, error } = await supabase
               .from(config.tableName)
@@ -266,7 +307,7 @@ export default function MyListingsPage() {
     return (
       <div
         key={listing.id}
-        className="bg-white rounded-xl shadow-md overflow-hidden group"
+        className="bg-white rounded-xl shadow-md overflow-hidden hover:shadow-lg transition-shadow duration-300 group"
       >
         <div className="relative">
           <MediaCarousel
@@ -295,39 +336,85 @@ export default function MyListingsPage() {
             </button>
           </div>
         </div>
-        <div className="p-4">
-          <div className="flex justify-between items-start mb-2">
-            <h3 className="text-lg font-semibold">{listing.business_name}</h3>
-            <span className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded">
-              {config.displayName}
-            </span>
-          </div>
-          <p className="text-slate-600 text-sm mb-2">
-            {listing.city}, {listing.state}
-          </p>
-          <p className="text-slate-600 text-sm mb-3 line-clamp-2">
-            {listing.description}
-          </p>
-          <div className="flex justify-between items-center pt-2 border-t">
-            {serviceType === "venue" &&
-              listing.max_guests &&
-              listing.base_price && (
-                <>
+
+        <a
+          href={`/services/${serviceType}/${listing.id}`}
+          className="block hover:cursor-pointer"
+        >
+          <div className="p-4">
+            <h3 className="text-lg font-semibold mb-1 group-hover:text-stone-500 transition-colors">
+              {listing.business_name}
+            </h3>
+
+            {isVenueListing(listing) ? (
+              <>
+                <p className="text-slate-600 text-sm mb-2">
+                  Up to {listing.max_guests} guests • Venue
+                </p>
+                <p className="text-slate-600 text-sm mb-3 line-clamp-2">
+                  {listing.description}
+                </p>
+                <div className="flex justify-between items-center border-t pt-2">
                   <div className="text-sm text-slate-600">
-                    Up to {listing.max_guests} guests
+                    {listing.city}, {listing.state}
                   </div>
-                  <div className="text-lg font-semibold text-rose-600">
+                  <div className="text-lg font-semibold text-green-800">
                     ${listing.base_price.toLocaleString()}
                   </div>
+                </div>
+              </>
+            ) : (
+              isServiceBasedListing(listing) && (
+                <>
+                  <p className="text-slate-600 text-sm mb-2">
+                    {listing.years_experience} years experience •{" "}
+                    {serviceType === "hair-makeup" && (
+                      <>
+                        {listing.service_type === "both"
+                          ? "Hair & Makeup"
+                          : listing.service_type === "hair"
+                          ? "Hair"
+                          : "Makeup"}
+                      </>
+                    )}
+                    {serviceType === "photo-video" && (
+                      <>
+                        {listing.service_type === "both"
+                          ? "Photography & Videography"
+                          : listing.service_type === "photography"
+                          ? "Photography"
+                          : "Videography"}
+                      </>
+                    )}
+                    {serviceType === "wedding-planner" && (
+                      <>
+                        {listing.service_type === "both"
+                          ? "Wedding Planner & Coordinator"
+                          : listing.service_type === "weddingPlanner"
+                          ? "Wedding Planner"
+                          : "Wedding Coordinator"}
+                      </>
+                    )}
+                    {serviceType === "dj" && "DJ"}
+                  </p>
+                  <p className="text-slate-600 text-sm mb-3 line-clamp-2">
+                    {listing.description}
+                  </p>
+                  <div className="flex justify-between items-center border-t pt-2">
+                    <div className="text-sm text-slate-600">
+                      {listing.city}, {listing.state}
+                    </div>
+                    <div className="text-lg font-semibold text-green-800">
+                      {listing.min_service_price === listing.max_service_price
+                        ? `$${listing.min_service_price.toLocaleString()}`
+                        : `$${listing.min_service_price.toLocaleString()} - $${listing.max_service_price.toLocaleString()}`}
+                    </div>
+                  </div>
                 </>
-              )}
-            {listing.service_type && (
-              <div className="text-sm text-slate-600">
-                {listing.service_type}
-              </div>
+              )
             )}
           </div>
-        </div>
+        </a>
       </div>
     );
   };
@@ -355,7 +442,7 @@ export default function MyListingsPage() {
             <h1 className="text-2xl font-bold">My Listings</h1>
             <Link
               href="/services"
-              className="bg-rose-600 hover:bg-rose-700 text-white px-4 py-2 rounded-lg transition-colors"
+              className="bg-gray-500 hover:bg-stone-500 text-white px-4 py-2 rounded-lg transition-colors"
             >
               Add New Listing
             </Link>
@@ -396,7 +483,7 @@ export default function MyListingsPage() {
                     >
                       {SERVICE_CONFIGS[serviceType].displayName}
                       {serviceCounts[serviceType] > 0 && (
-                        <span className="ml-2 text-xs px-2 py-0.5 bg-rose-100 text-rose-600 rounded-full">
+                        <span className="ml-2 text-xs px-2 py-0.5 bg-gray-200 text-green-700 rounded-full border-black">
                           {serviceCounts[serviceType]}
                         </span>
                       )}
@@ -443,14 +530,12 @@ export default function MyListingsPage() {
               <h3 className="text-lg font-medium text-gray-900 mb-2">
                 No listings yet
               </h3>
-              // ... previous code remains the same until the empty state
-              component ...
               <p className="text-gray-500 mb-6">
                 Start by creating your first listing
               </p>
               <Link
                 href="/services"
-                className="inline-flex items-center px-4 py-2 bg-rose-600 hover:bg-rose-700 text-white rounded-lg transition-colors"
+                className="inline-flex items-center px-4 py-2 bg-black hover:bg-stone-500 text-white rounded-lg transition-colors"
               >
                 Create Listing
               </Link>
