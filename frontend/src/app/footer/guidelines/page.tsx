@@ -63,10 +63,10 @@ export default function GuidelinesPage() {
 
       <main className="flex-grow">
         {/* Hero Section */}
-        <div className="relative bg-gradient-to-b from-rose-50 to-white">
+        <div className="relative bg-gradient-to-b from-stone-200 to-white">
           <div className="absolute inset-0 bg-grid-gray-100/50 [mask-image:linear-gradient(0deg,white,rgba(255,255,255,0.6))]" />
           <div className="relative max-w-7xl mx-auto px-4 py-16 sm:py-24 text-center">
-            <h1 className="text-4xl md:text-5xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-rose-600 to-purple-600 mb-6">
+            <h1 className="text-4xl md:text-5xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-stone-400 to-black mb-6">
               Community Guidelines
             </h1>
             <p className="text-xl text-gray-600 max-w-2xl mx-auto">
@@ -130,7 +130,7 @@ export default function GuidelinesPage() {
 
           {/* Reporting Section */}
           <div className="mt-16">
-            <div className="bg-gradient-to-br from-rose-50 to-purple-50 rounded-2xl p-8 md:p-12">
+            <div className="bg-gradient-to-br from-stone-100 to-stone-50 rounded-2xl p-8 md:p-12">
               <div className="max-w-3xl mx-auto text-center">
                 <h2 className="text-2xl font-bold text-gray-900 mb-4">
                   Reporting Violations
@@ -142,7 +142,7 @@ export default function GuidelinesPage() {
                 </p>
                 <a
                   href="/footer/contact"
-                  className="inline-flex items-center bg-gradient-to-r from-rose-600 to-rose-500 text-white px-8 py-3 rounded-lg hover:from-rose-700 hover:to-rose-600 transition-all duration-300 group"
+                  className="inline-flex items-center bg-black text-white px-8 py-3 rounded-lg hover:from-rose-700 hover:bg-stone-500 transition-all duration-300 group"
                 >
                   Contact Support
                   <ArrowRight className="ml-2 w-4 h-4 group-hover:translate-x-1 transition-transform" />

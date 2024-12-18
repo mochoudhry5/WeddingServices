@@ -256,7 +256,7 @@ export default function HomePage() {
 
                 <button
                   type="submit"
-                  className="bg-stone-400 hover:bg-stone-300 text-black text- px-8 py-3 rounded-lg transition-colors duration-300 w-full font-medium"
+                  className="bg-stone-300 hover:bg-stone-200 text-black text- px-8 py-3 rounded-lg transition-colors duration-300 w-full font-medium"
                 >
                   Search
                 </button>

@@ -28,7 +28,6 @@ const OnboardingModal = ({
   const isOpen = externalOpen || autoOpen;
   const { user } = useAuth();
 
-  // Check if modal should automatically open
   useEffect(() => {
     const checkPreference = async () => {
       if (user) {
@@ -84,7 +83,7 @@ const OnboardingModal = ({
             {/* Step 1 */}
             <div
               className="relative flex gap-4 items-start p-4 rounded-lg bg-white shadow-sm border border-gray-100 
-                         transition-all duration-200 hover:shadow-md hover:border-stone-500 group h-[120px]"
+                         transition-all duration-200 hover:shadow-md hover:border-stone-500 group"
             >
               <div
                 className="w-10 h-10 rounded-full bg-black flex items-center justify-center flex-shrink-0
@@ -92,7 +91,7 @@ const OnboardingModal = ({
               >
                 <span className="text-lg font-semibold text-white">1</span>
               </div>
-              <div>
+              <div className="flex-1 min-w-0">
                 <h3 className="text-base font-semibold text-gray-900 mb-1 group-hover:text-stone-500 transition-colors">
                   Create Your Listing
                 </h3>
@@ -106,7 +105,7 @@ const OnboardingModal = ({
             {/* Step 2 */}
             <div
               className="relative flex gap-4 items-start p-4 rounded-lg bg-white shadow-sm border border-gray-100 
-                         transition-all duration-200 hover:shadow-md hover:border-stone-500 group h-[120px]"
+                         transition-all duration-200 hover:shadow-md hover:border-stone-500 group"
             >
               <div
                 className="w-10 h-10 rounded-full bg-black flex items-center justify-center flex-shrink-0
@@ -114,9 +113,9 @@ const OnboardingModal = ({
               >
                 <span className="text-lg font-semibold text-white">2</span>
               </div>
-              <div>
-              <h3 className="text-base font-semibold text-gray-900 mb-1 group-hover:text-stone-500 transition-colors">
-              Get Discovered
+              <div className="flex-1 min-w-0">
+                <h3 className="text-base font-semibold text-gray-900 mb-1 group-hover:text-stone-500 transition-colors">
+                  Get Discovered
                 </h3>
                 <p className="text-sm text-gray-600">
                   Your service will be visible to couples actively planning
@@ -128,7 +127,7 @@ const OnboardingModal = ({
             {/* Step 3 */}
             <div
               className="relative flex gap-4 items-start p-4 rounded-lg bg-white shadow-sm border border-gray-100 
-                         transition-all duration-200 hover:shadow-md hover:border-stone-500 group h-[120px]"
+                         transition-all duration-200 hover:shadow-md hover:border-stone-500 group"
             >
               <div
                 className="w-10 h-10 rounded-full bg-black flex items-center justify-center flex-shrink-0
@@ -136,9 +135,9 @@ const OnboardingModal = ({
               >
                 <span className="text-lg font-semibold text-white">3</span>
               </div>
-              <div>
-              <h3 className="text-base font-semibold text-gray-900 mb-1 group-hover:text-stone-500 transition-colors">
-              Bookings
+              <div className="flex-1 min-w-0">
+                <h3 className="text-base font-semibold text-gray-900 mb-1 group-hover:text-stone-500 transition-colors">
+                  Bookings
                 </h3>
                 <p className="text-sm text-gray-600">
                   Receive inquiries, communicate with couples, and manage your
@@ -158,21 +157,20 @@ const OnboardingModal = ({
             {/* FAQ Items */}
             <div
               className="p-4 rounded-lg bg-white shadow-sm border border-gray-100 
-                          transition-all duration-200 hover:shadow-md hover:border-black h-[120px]"
+                          transition-all duration-200 hover:shadow-md hover:border-black"
             >
               <h3 className="text-base font-semibold text-gray-900 mb-1">
                 How much does it cost to list my service?
               </h3>
               <p className="text-sm text-gray-600">
                 Listing your service on AnyWeds involves a simple flat fee of
-                $15 a month. We eliminate lead generation fees and service
-                charges, ensuring full transparency. Cancel Anytime.
+                $15 a month. Cancel anytime.
               </p>
             </div>
 
             <div
               className="p-4 rounded-lg bg-white shadow-sm border border-gray-100 
-                          transition-all duration-200 hover:shadow-md hover:border-black h-[120px]"
+                          transition-all duration-200 hover:shadow-md hover:border-black"
             >
               <h3 className="text-base font-semibold text-gray-900 mb-1">
                 Can I list multiple services?
@@ -185,7 +183,7 @@ const OnboardingModal = ({
 
             <div
               className="p-4 rounded-lg bg-white shadow-sm border border-gray-100 
-                          transition-all duration-200 hover:shadow-md hover:border-black h-[120px]"
+                          transition-all duration-200 hover:shadow-md hover:border-black"
             >
               <h3 className="text-base font-semibold text-gray-900 mb-1">
                 Can I edit my listing after publishing?
@@ -277,7 +275,7 @@ const OnboardingModal = ({
               ) : (
                 <Button
                   onClick={handleClose}
-                  className="bg-black hover:bg-stone-500"
+                  className="flex items-center gap-1"
                   size="sm"
                 >
                   Get Started
