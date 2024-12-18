@@ -10,7 +10,7 @@ import {
   Menu,
   ListChecks,
   Heart,
-  LogIn
+  LogIn,
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -81,7 +81,7 @@ export default function NavBar() {
                   src={user.user_metadata?.avatar_url}
                   alt={user.email || "User profile"}
                 />
-                <AvatarFallback className="text-rose-600">
+                <AvatarFallback className="bg-stone-200 text-black">
                   {getInitials()}
                 </AvatarFallback>
               </Avatar>

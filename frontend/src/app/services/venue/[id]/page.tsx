@@ -409,7 +409,7 @@ export default function VenueDetailsPage() {
 
         <div>
           <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-3 sm:gap-4 mb-6 sm:mb-8">
-            <div>
+            <div className="flex-grow">
               <div className="flex items-center gap-3 mb-2">
                 <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-gray-900">
                   {venue.business_name}
@@ -419,8 +419,8 @@ export default function VenueDetailsPage() {
                 {venue.address}, {venue.city}, {venue.state}
               </p>
             </div>
-            <div className="sm:text-right">
-              <div className="text-2xl sm:text-3xl font-semibold text-green-800">
+            <div className="flex flex-col items-end">
+              <div className="text-2xl sm:text-3xl font-semibold text-green-800 text-right">
                 ${venue.base_price.toLocaleString()}
               </div>
               <p className="text-xs sm:text-sm text-gray-500">
@@ -431,124 +431,169 @@ export default function VenueDetailsPage() {
 
           {/* Info Grid */}
           <div className="mb-8 sm:mb-12">
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 sm:gap-0">
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-0">
               {/* Capacity */}
-              <div className="flex flex-col justify-center items-center p-4 sm:border-r border-gray-200 last:border-r-0">
-                <h3 className="text-base sm:text-lg font-semibold mb-3 text-center">
-                  Capacity
-                </h3>
-                <ul className="space-y-2 text-sm sm:text-base text-gray-600 text-center">
-                  <li>
-                    <div className="flex items-center gap-2">
-                      <span className="text-slate-600">•</span>
-                      <span>
-                        Minimum guests: {venue.min_guests || "No minimum"}
-                      </span>
-                    </div>
-                  </li>
-                  <li>
-                    <div className="flex items-center gap-2">
-                      <span className="text-slate-600">•</span>
-                      <span>Maximum guests: {venue.max_guests}</span>
-                    </div>
-                  </li>
-                </ul>
-              </div>
-
-              {/* Catering Options */}
-              <div className="flex flex-col justify-center items-center p-4 sm:border-r border-gray-200 last:border-r-0">
-                <h3 className="text-base sm:text-lg font-semibold mb-3 text-center">
-                  Catering Options
-                </h3>
-                <ul className="space-y-2 text-sm sm:text-base text-gray-600 text-center">
-                  <li>
-                    <div className="flex items-center gap-2">
-                      <span className="text-slate-600">•</span>
-                      <span>
-                        {
-                          {
-                            "in-house": "In-House Catering Only",
-                            outside: "Outside Catering Only",
-                            both: "In-House & Outside Catering Available",
-                          }[venue.catering_option]
-                        }
-                      </span>
-                    </div>
-                  </li>
-                </ul>
-              </div>
-
-              {/* Venue Type */}
-              <div className="flex flex-col justify-center items-center p-4 sm:border-r border-gray-200 last:border-r-0">
-                <h3 className="text-base sm:text-lg font-semibold mb-3 text-center">
-                  Venue Type
-                </h3>
-                <ul className="space-y-2 text-sm sm:text-base text-gray-600 text-center">
-                  <li>
-                    <div className="flex items-center gap-2">
-                      <span className="text-slate-600">•</span>
-                      <span>
-                        {
-                          {
-                            indoor: "Indoor Only",
-                            outdoor: "Outdoor Only",
-                            both: "Indoor & Outdoor",
-                          }[venue.venue_type]
-                        }
-                      </span>
-                    </div>
-                  </li>
-                </ul>
-              </div>
-
-              {/* Socials */}
-              <div className="flex flex-col justify-center items-center p-4">
-                <h3 className="text-base sm:text-lg font-semibold mb-3 text-center">
-                  Socials
-                </h3>
-                {venue.website_url || venue.instagram_url ? (
-                  <ul className="space-y-2 text-sm sm:text-base text-gray-600 text-center">
-                    {venue.website_url && (
-                      <li>
-                        <div className="flex items-center gap-2">
-                          <span className="text-slate-600">•</span>
-                          <a
-                            href={venue.website_url}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="text-black hover:text-stone-500 hover:underline"
-                          >
-                            Website
-                          </a>
-                        </div>
-                      </li>
-                    )}
-                    {venue.instagram_url && (
-                      <li>
-                        <div className="flex items-center gap-2">
-                          <span className="text-slate-600">•</span>
-                          <a
-                            href={venue.instagram_url}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="text-black hover:text-stone-500 hover:underline"
-                          >
-                            Instagram
-                          </a>
-                        </div>
-                      </li>
-                    )}
-                  </ul>
-                ) : (
+              <div className="flex flex-col h-full sm:border-r border-gray-200">
+                <div className="h-14 flex items-center justify-center">
+                  <h3 className="text-base sm:text-lg font-semibold text-center">
+                    Capacity
+                  </h3>
+                </div>
+                <div className="flex-1 flex flex-col justify-start items-center p-4 pt-0">
                   <ul className="space-y-2 text-sm sm:text-base text-gray-600 text-center">
                     <li>
                       <div className="flex items-center gap-2">
                         <span className="text-slate-600">•</span>
-                        <span>No Social Links Yet!</span>
+                        <span>
+                          <span className="sm:hidden">Min</span>
+                          <span className="hidden sm:inline">Minimum</span>{" "}
+                          guests: {venue.min_guests || "No minimum"}
+                        </span>
+                      </div>
+                    </li>
+                    <li>
+                      <div className="flex items-center gap-2">
+                        <span className="text-slate-600">•</span>
+                        <span>
+                          <span className="sm:hidden">Max</span>
+                          <span className="hidden sm:inline">Maximum</span>{" "}
+                          guests: {venue.max_guests}
+                        </span>
                       </div>
                     </li>
                   </ul>
-                )}
+                </div>
+              </div>
+
+              {/* Catering Options */}
+              <div className="flex flex-col h-full sm:border-r border-gray-200">
+                <div className="h-14 flex items-center justify-center">
+                  <h3 className="text-base sm:text-lg font-semibold text-center">
+                    Catering Options
+                  </h3>
+                </div>
+                <div className="flex-1 flex flex-col justify-start items-center p-4 pt-0">
+                  <ul className="space-y-2 text-sm sm:text-base text-gray-600 text-center">
+                    <li>
+                      <div className="flex items-center gap-2">
+                        <span className="text-slate-600">•</span>
+                        <span>
+                          {
+                            {
+                              "in-house": (
+                                <>
+                                  <span className="sm:hidden">In-house</span>
+                                  <span className="hidden sm:inline">
+                                    In-House Catering Only
+                                  </span>
+                                </>
+                              ),
+                              outside: (
+                                <>
+                                  <span className="sm:hidden">Outside</span>
+                                  <span className="hidden sm:inline">
+                                    Outside Catering Only
+                                  </span>
+                                </>
+                              ),
+                              both: (
+                                <>
+                                  <span className="sm:hidden">
+                                    In-house & Outside
+                                  </span>
+                                  <span className="hidden sm:inline">
+                                    In-House & Outside Catering Available
+                                  </span>
+                                </>
+                              ),
+                            }[venue.catering_option]
+                          }
+                        </span>
+                      </div>
+                    </li>
+                  </ul>
+                </div>
+              </div>
+
+              {/* Venue Type */}
+              <div className="flex flex-col h-full sm:border-r border-gray-200">
+                <div className="h-14 flex items-center justify-center">
+                  <h3 className="text-base sm:text-lg font-semibold text-center">
+                    Venue Type
+                  </h3>
+                </div>
+                <div className="flex-1 flex flex-col justify-start items-center p-4 pt-0">
+                  <ul className="space-y-2 text-sm sm:text-base text-gray-600 text-center">
+                    <li>
+                      <div className="flex items-center gap-2">
+                        <span className="text-slate-600">•</span>
+                        <span>
+                          {
+                            {
+                              indoor: "Indoor Only",
+                              outdoor: "Outdoor Only",
+                              both: "Indoor & Outdoor",
+                            }[venue.venue_type]
+                          }
+                        </span>
+                      </div>
+                    </li>
+                  </ul>
+                </div>
+              </div>
+
+              {/* Socials */}
+              <div className="flex flex-col h-full">
+                <div className="h-14 flex items-center justify-center">
+                  <h3 className="text-base sm:text-lg font-semibold text-center">
+                    Socials
+                  </h3>
+                </div>
+                <div className="flex-1 flex flex-col justify-start items-center p-4 pt-0">
+                  {venue.website_url || venue.instagram_url ? (
+                    <ul className="space-y-2 text-sm sm:text-base text-gray-600 text-center">
+                      {venue.website_url && (
+                        <li>
+                          <div className="flex items-center gap-2">
+                            <span className="text-slate-600">•</span>
+                            <a
+                              href={venue.website_url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-black hover:text-stone-500 hover:underline"
+                            >
+                              Website
+                            </a>
+                          </div>
+                        </li>
+                      )}
+                      {venue.instagram_url && (
+                        <li>
+                          <div className="flex items-center gap-2">
+                            <span className="text-slate-600">•</span>
+                            <a
+                              href={venue.instagram_url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-black hover:text-stone-500 hover:underline"
+                            >
+                              Instagram
+                            </a>
+                          </div>
+                        </li>
+                      )}
+                    </ul>
+                  ) : (
+                    <ul className="space-y-2 text-sm sm:text-base text-gray-600 text-center">
+                      <li>
+                        <div className="flex items-center gap-2">
+                          <span className="text-slate-600">•</span>
+                          <span>No Social Links Yet!</span>
+                        </div>
+                      </li>
+                    </ul>
+                  )}
+                </div>
               </div>
             </div>
           </div>
