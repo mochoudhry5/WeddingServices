@@ -577,7 +577,7 @@ const CreatePhotographyListing = () => {
               <div className="text-center w-1/4">Basic Info</div>
               <div className="text-center w-1/4">Portfolio</div>
               <div className="text-center w-1/4">Services</div>
-              <div className="text-center w-1/4">Availability</div>
+              <div className="text-center w-1/4">About Your Business</div>
             </div>
           </div>
 
@@ -1554,7 +1554,7 @@ const CreatePhotographyListing = () => {
                                   setCustomServices(newServices);
                                 }}
                                 rows={2}
-                                 className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-transparent resize-vertical text-sm"
+                                className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-transparent resize-vertical text-sm"
                                 placeholder="Describe the service..."
                                 required
                               />
@@ -1688,7 +1688,9 @@ const CreatePhotographyListing = () => {
             {/* Step 4: Availability */}
             {currentStep === 4 && (
               <div className="space-y-6">
-                <h2 className="text-2xl font-semibold mb-6">Booking</h2>
+                <h2 className="text-2xl font-semibold mb-6">
+                  About Your Business
+                </h2>
                 <TravelSection
                   travelRange={travelRange}
                   setTravelRange={setTravelRange}
@@ -1836,7 +1838,7 @@ const CreatePhotographyListing = () => {
                 <AlertDialogCancel>Continue Editing</AlertDialogCancel>
                 <AlertDialogAction
                   onClick={handleCancel}
-                 className="bg-black hover:bg-stone-500"
+                  className="bg-black hover:bg-stone-500"
                 >
                   Yes, Cancel
                 </AlertDialogAction>

@@ -11,6 +11,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/context/AuthContext";
 import LikeButton from "@/components/ui/LikeButton";
+import { ServiceInfoGrid } from "@/components/ui/CardInfoGrid";
 
 interface DJDetails {
   user_id: string;
@@ -290,105 +291,21 @@ export default function MakeupDetailsPage() {
 
           {/* Price Range */}
           {dj.min_service_price && (
-            <div className="text-right">
-              <div className="text-3xl font-semibold text-green-800">
+            <div className="flex flex-col items-end">
+              <div className="text-2xl sm:text-3xl font-semibold text-green-800">
                 {dj.min_service_price === dj.max_service_price
                   ? `$${dj.max_service_price.toLocaleString()}`
                   : `$${dj.min_service_price.toLocaleString()} - $${dj.max_service_price.toLocaleString()}`}
               </div>
-              <p className="text-sm text-gray-500">(See Services & Pricing)</p>
+              <p className="text-xs sm:text-sm text-gray-500">
+                (See Services & Pricing)
+              </p>
             </div>
           )}
         </div>
-        {/* Experience */}
-        <div className="mb-12">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-0 mb-12">
-            <div className="flex flex-col items-center text-center border-r border-gray-200 last:border-r-0">
-              <h3 className="text-lg font-semibold mb-3">Experience</h3>
-              <ul className="space-y-2 text-gray-600">
-                <li className="flex items-center gap-2">
-                  <span className="text-slate-600">•</span>
-                  {dj.years_experience} years
-                </li>
-              </ul>
-            </div>
-
-            {/* Booking Deposit */}
-            <div className="flex flex-col items-center text-center border-r border-gray-200 last:border-r-0">
-              <h3 className="text-lg font-semibold mb-3">Booking Deposit</h3>
-              <ul className="space-y-2 text-gray-600">
-                <li className="flex items-center gap-2">
-                  <span className="text-slate-600">•</span>
-                  {dj.deposit === 0
-                    ? "No Deposit Required"
-                    : `${dj.deposit}% of total service cost`}
-                </li>
-              </ul>
-            </div>
-
-            {/* Travel Radius*/}
-            <div className="flex flex-col items-center text-center border-r border-gray-200 last:border-r-0">
-              <h3 className="text-lg font-semibold mb-3">Travel Radius</h3>
-              <ul className="space-y-2 text-gray-600">
-                <li className="flex items-center gap-2">
-                  <span className="text-slate-600">•</span>
-                  {dj.travel_range === 0
-                    ? "No Travel"
-                    : dj.travel_range === -1
-                    ? "Travel Anywhere"
-                    : `${dj.travel_range} miles from ${dj.city}`}
-                </li>
-              </ul>
-            </div>
-
-            {/* Socials */}
-            <div className="flex flex-col items-center text-center border-r border-gray-200 last:border-r-0">
-              <h3 className="text-lg font-semibold mb-3">Socials</h3>
-              {dj.website_url || dj.instagram_url ? (
-                  <ul className="space-y-2 text-sm sm:text-base text-gray-600 text-center">
-                    {dj.website_url && (
-                      <li>
-                        <div className="flex items-center gap-2">
-                          <span className="text-slate-600">•</span>
-                          <a
-                            href={dj.website_url}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="text-black hover:text-stone-500 hover:underline"
-                          >
-                            Website
-                          </a>
-                        </div>
-                      </li>
-                    )}
-                    {dj.instagram_url && (
-                      <li>
-                        <div className="flex items-center gap-2">
-                          <span className="text-slate-600">•</span>
-                          <a
-                            href={dj.instagram_url}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="text-black hover:text-stone-500 hover:underline"
-                          >
-                            Instagram
-                          </a>
-                        </div>
-                      </li>
-                    )}
-                  </ul>
-                ) : (
-                  <ul className="space-y-2 text-sm sm:text-base text-gray-600 text-center">
-                    <li>
-                      <div className="flex items-center gap-2">
-                        <span className="text-slate-600">•</span>
-                        <span>No Social Links Yet!</span>
-                      </div>
-                    </li>
-                  </ul>
-                )}
-            </div>
-          </div>
+        {/* Info Grid - Modern card layout for all screen sizes */}
+        <div className="pb-10">
+          <ServiceInfoGrid service={dj} />
         </div>
 
         {/* About Section */}
@@ -403,17 +320,21 @@ export default function MakeupDetailsPage() {
 
         {/* Specialties */}
         {dj.dj_specialties?.length > 0 && (
-          <div className="mb-12">
-            <h2 className="text-xl md:text-2xl font-bold mb-6">DJ Styles</h2>
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+          <div className="mb-8 sm:mb-12">
+            <h2 className="text-lg sm:text-xl md:text-2xl font-bold mb-4 sm:mb-6">
+              DJ Styles
+            </h2>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4">
               {dj.dj_specialties.map((specialty, index) => (
                 <div
                   key={index}
                   className="p-3 sm:p-4 rounded-lg border border-black bg-stone-100"
-                  >
+                >
                   <div className="flex items-center gap-2">
                     <span className="text-green-800">✓</span>
-                    <span className="text-gray-900">{specialty.specialty}</span>
+                    <span className="text-sm sm:text-base text-gray-900">
+                      {specialty.specialty}
+                    </span>
                   </div>
                 </div>
               ))}
@@ -423,11 +344,11 @@ export default function MakeupDetailsPage() {
 
         {/* Services */}
         {dj.dj_services?.length > 0 && (
-          <div className="mb-12">
-            <h2 className="text-xl md:text-2xl font-bold mb-6">
+          <div className="mb-8 sm:mb-12">
+            <h2 className="text-lg sm:text-xl md:text-2xl font-bold mb-4 sm:mb-6">
               Services & Pricing
             </h2>
-            <div className="flex flex-row gap-4">
+            <div className="flex flex-col lg:flex-row gap-4">
               {/* First Column */}
               <div className="flex-1 flex flex-col gap-4">
                 {dj.dj_services
@@ -448,11 +369,10 @@ export default function MakeupDetailsPage() {
             </div>
           </div>
         )}
-
         {/* Contact Form */}
         <div className="mb-12">
           <h2 className="text-xl md:text-2xl font-bold mb-6 text-center">
-            Contact Artist
+            Contact {dj.business_name}
           </h2>
           <div className="max-w-2xl mx-auto bg-gray-50 p-4 md:p-6 rounded-lg">
             <form onSubmit={handleInquirySubmit} className="space-y-4">
@@ -538,7 +458,7 @@ export default function MakeupDetailsPage() {
               <Button
                 type="submit"
                 className="w-full bg-black hover:bg-stone-500 text-sm sm:text-base py-2 sm:py-3"
-                >
+              >
                 Send Inquiry
               </Button>
             </form>

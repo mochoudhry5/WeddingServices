@@ -11,6 +11,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/context/AuthContext";
 import LikeButton from "@/components/ui/LikeButton";
+import { ServiceInfoGrid } from "@/components/ui/CardInfoGrid";
 
 interface PhotoVideoDetails {
   user_id: string;
@@ -297,111 +298,24 @@ export default function PhotographyDetailsPage() {
                 : `${photoVideo.address}, ${photoVideo.city}, ${photoVideo.state}`}
             </p>
           </div>
-          <div className="md:text-right">
-            {photoVideo.min_service_price && photoVideo.max_service_price && (
-              <>
-                <div className="text-3xl font-semibold text-green-800">
-                  {photoVideo.min_service_price === photoVideo.max_service_price
-                    ? `$${photoVideo.min_service_price.toLocaleString()}`
-                    : `$${photoVideo.min_service_price.toLocaleString()} - $${photoVideo.max_service_price.toLocaleString()}`}
-                </div>
-                <p className="text-sm text-gray-500">(See Service & Pricing)</p>
-              </>
-            )}
-          </div>
+          {/* Price Range - Right aligned */}
+          {photoVideo.min_service_price && (
+            <div className="flex flex-col items-end">
+              <div className="text-2xl sm:text-3xl font-semibold text-green-800">
+                {photoVideo.min_service_price === photoVideo.max_service_price
+                  ? `$${photoVideo.max_service_price.toLocaleString()}`
+                  : `$${photoVideo.min_service_price.toLocaleString()} - $${photoVideo.max_service_price.toLocaleString()}`}
+              </div>
+              <p className="text-xs sm:text-sm text-gray-500">
+                (See Services & Pricing)
+              </p>
+            </div>
+          )}
         </div>
 
         {/* Info Grid */}
-        <div className="mb-12">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-0 mb-12">
-            <div className="flex flex-col items-center text-center border-r border-gray-200 last:border-r-0">
-              <h3 className="text-base sm:text-lg font-semibold mb-3">
-                Experience
-              </h3>
-              <ul className="space-y-2 text-sm sm:text-base text-gray-600">
-                <li className="flex items-center gap-2">
-                  <span className="text-slate-600">•</span>
-                  {photoVideo.years_experience} years
-                </li>
-              </ul>
-            </div>
-
-            {/* Deposit */}
-            <div className="flex flex-col items-center text-center border-r border-gray-200 last:border-r-0">
-              <h3 className="text-base sm:text-lg font-semibold mb-3">
-                Booking Deposit
-              </h3>
-              <ul className="space-y-2 text-sm sm:text-base text-gray-600">
-                <li className="flex items-center gap-2">
-                  <span className="text-slate-600">•</span>
-                  {photoVideo.deposit === 0
-                    ? "No Deposit Required"
-                    : `${photoVideo.deposit}% of total service cost`}
-                </li>
-              </ul>
-            </div>
-
-            {/* Travel Range */}
-            <div className="flex flex-col items-center text-center border-r border-gray-200 last:border-r-0">
-              <h3 className="text-base sm:text-lg font-semibold mb-3">
-                Travel Range
-              </h3>
-              <ul className="space-y-2 text-sm sm:text-base text-gray-600">
-                <li className="flex items-center gap-2">
-                  <span className="text-slate-600">•</span>
-                  {photoVideo.travel_range === 0
-                    ? "No Travel"
-                    : photoVideo.travel_range === -1
-                    ? "Travel Anywhere"
-                    : `${photoVideo.travel_range} miles from ${photoVideo.city}`}
-                </li>
-              </ul>
-            </div>
-
-            {/* Socials */}
-            <div className="flex flex-col items-center text-center border-r border-gray-200 last:border-r-0">
-              <h3 className="text-base sm:text-lg font-semibold mb-3">
-                Socials
-              </h3>
-              {photoVideo.website_url || photoVideo.instagram_url ? (
-                <ul className="space-y-2 text-sm sm:text-base text-gray-600">
-                  {photoVideo.website_url && (
-                    <li className="flex items-center gap-2">
-                      <span className="text-slate-600">•</span>
-                      <a
-                        href={photoVideo.website_url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-black hover:text-stone-500 hover:underline"
-                        >
-                        Website
-                      </a>
-                    </li>
-                  )}
-                  {photoVideo.instagram_url && (
-                    <li className="flex items-center gap-2">
-                      <span className="text-slate-600">•</span>
-                      <a
-                        href={photoVideo.instagram_url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-black hover:text-stone-500 hover:underline"
-                        >
-                        Instagram
-                      </a>
-                    </li>
-                  )}
-                </ul>
-              ) : (
-                <ul className="space-y-2 text-sm sm:text-base text-gray-600">
-                  <li className="flex items-center gap-2">
-                    <span className="text-slate-600">•</span>
-                    No Social Links Yet!
-                  </li>
-                </ul>
-              )}
-            </div>
-          </div>
+        <div className="pb-10">
+          <ServiceInfoGrid service={photoVideo} />
         </div>
 
         {/* About Section */}
@@ -486,7 +400,7 @@ export default function PhotographyDetailsPage() {
         {/* Contact Form */}
         <div className="mb-8 sm:mb-12">
           <h2 className="text-lg sm:text-xl md:text-2xl font-bold mb-4 sm:mb-6 text-center">
-            Contact Artist
+            Contact {photoVideo.business_name}
           </h2>
           <div className="max-w-2xl mx-auto bg-gray-50 p-4 sm:p-6 rounded-lg">
             <form onSubmit={handleInquirySubmit} className="space-y-4">

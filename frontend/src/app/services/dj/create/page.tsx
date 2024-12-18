@@ -504,7 +504,7 @@ const CreateDJListing = () => {
               <div className="text-center w-1/4">Basic Info</div>
               <div className="text-center w-1/4">Portfolio</div>
               <div className="text-center w-1/4">Services</div>
-              <div className="text-center w-1/4">Availability</div>
+              <div className="text-center w-1/4">About Your Business</div>
             </div>
           </div>
 
@@ -1260,7 +1260,7 @@ const CreateDJListing = () => {
             {/* Step 4: Availability */}
             {currentStep === 4 && (
               <div className="space-y-6">
-                <h2 className="text-2xl font-semibold mb-6">Booking</h2>
+                <h2 className="text-2xl font-semibold mb-6">About Your Business</h2>
                 <TravelSection
                   travelRange={travelRange}
                   setTravelRange={setTravelRange}

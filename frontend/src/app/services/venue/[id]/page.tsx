@@ -11,6 +11,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/context/AuthContext";
 import LikeButton from "@/components/ui/LikeButton";
+import { VenueInfoGrid } from "@/components/ui/CardInfoGrid";
 
 interface VenueDetails {
   user_id: string;
@@ -429,175 +430,10 @@ export default function VenueDetailsPage() {
             </div>
           </div>
 
-          {/* Info Grid */}
-          <div className="mb-8 sm:mb-12">
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-0">
-              {/* Capacity */}
-              <div className="flex flex-col h-full sm:border-r border-gray-200">
-                <div className="h-14 flex items-center justify-center">
-                  <h3 className="text-base sm:text-lg font-semibold text-center">
-                    Capacity
-                  </h3>
-                </div>
-                <div className="flex-1 flex flex-col justify-start items-center p-4 pt-0">
-                  <ul className="space-y-2 text-sm sm:text-base text-gray-600 text-center">
-                    <li>
-                      <div className="flex items-center gap-2">
-                        <span className="text-slate-600">•</span>
-                        <span>
-                          <span className="sm:hidden">Min</span>
-                          <span className="hidden sm:inline">Minimum</span>{" "}
-                          guests: {venue.min_guests || "No minimum"}
-                        </span>
-                      </div>
-                    </li>
-                    <li>
-                      <div className="flex items-center gap-2">
-                        <span className="text-slate-600">•</span>
-                        <span>
-                          <span className="sm:hidden">Max</span>
-                          <span className="hidden sm:inline">Maximum</span>{" "}
-                          guests: {venue.max_guests}
-                        </span>
-                      </div>
-                    </li>
-                  </ul>
-                </div>
-              </div>
-
-              {/* Catering Options */}
-              <div className="flex flex-col h-full sm:border-r border-gray-200">
-                <div className="h-14 flex items-center justify-center">
-                  <h3 className="text-base sm:text-lg font-semibold text-center">
-                    Catering Options
-                  </h3>
-                </div>
-                <div className="flex-1 flex flex-col justify-start items-center p-4 pt-0">
-                  <ul className="space-y-2 text-sm sm:text-base text-gray-600 text-center">
-                    <li>
-                      <div className="flex items-center gap-2">
-                        <span className="text-slate-600">•</span>
-                        <span>
-                          {
-                            {
-                              "in-house": (
-                                <>
-                                  <span className="sm:hidden">In-house</span>
-                                  <span className="hidden sm:inline">
-                                    In-House Catering Only
-                                  </span>
-                                </>
-                              ),
-                              outside: (
-                                <>
-                                  <span className="sm:hidden">Outside</span>
-                                  <span className="hidden sm:inline">
-                                    Outside Catering Only
-                                  </span>
-                                </>
-                              ),
-                              both: (
-                                <>
-                                  <span className="sm:hidden">
-                                    In-house & Outside
-                                  </span>
-                                  <span className="hidden sm:inline">
-                                    In-House & Outside Catering Available
-                                  </span>
-                                </>
-                              ),
-                            }[venue.catering_option]
-                          }
-                        </span>
-                      </div>
-                    </li>
-                  </ul>
-                </div>
-              </div>
-
-              {/* Venue Type */}
-              <div className="flex flex-col h-full sm:border-r border-gray-200">
-                <div className="h-14 flex items-center justify-center">
-                  <h3 className="text-base sm:text-lg font-semibold text-center">
-                    Venue Type
-                  </h3>
-                </div>
-                <div className="flex-1 flex flex-col justify-start items-center p-4 pt-0">
-                  <ul className="space-y-2 text-sm sm:text-base text-gray-600 text-center">
-                    <li>
-                      <div className="flex items-center gap-2">
-                        <span className="text-slate-600">•</span>
-                        <span>
-                          {
-                            {
-                              indoor: "Indoor Only",
-                              outdoor: "Outdoor Only",
-                              both: "Indoor & Outdoor",
-                            }[venue.venue_type]
-                          }
-                        </span>
-                      </div>
-                    </li>
-                  </ul>
-                </div>
-              </div>
-
-              {/* Socials */}
-              <div className="flex flex-col h-full">
-                <div className="h-14 flex items-center justify-center">
-                  <h3 className="text-base sm:text-lg font-semibold text-center">
-                    Socials
-                  </h3>
-                </div>
-                <div className="flex-1 flex flex-col justify-start items-center p-4 pt-0">
-                  {venue.website_url || venue.instagram_url ? (
-                    <ul className="space-y-2 text-sm sm:text-base text-gray-600 text-center">
-                      {venue.website_url && (
-                        <li>
-                          <div className="flex items-center gap-2">
-                            <span className="text-slate-600">•</span>
-                            <a
-                              href={venue.website_url}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="text-black hover:text-stone-500 hover:underline"
-                            >
-                              Website
-                            </a>
-                          </div>
-                        </li>
-                      )}
-                      {venue.instagram_url && (
-                        <li>
-                          <div className="flex items-center gap-2">
-                            <span className="text-slate-600">•</span>
-                            <a
-                              href={venue.instagram_url}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="text-black hover:text-stone-500 hover:underline"
-                            >
-                              Instagram
-                            </a>
-                          </div>
-                        </li>
-                      )}
-                    </ul>
-                  ) : (
-                    <ul className="space-y-2 text-sm sm:text-base text-gray-600 text-center">
-                      <li>
-                        <div className="flex items-center gap-2">
-                          <span className="text-slate-600">•</span>
-                          <span>No Social Links Yet!</span>
-                        </div>
-                      </li>
-                    </ul>
-                  )}
-                </div>
-              </div>
-            </div>
+          {/* Info Grid - Modern card layout for all screen sizes */}
+          <div className="pb-10">
+            <VenueInfoGrid venue={venue} />
           </div>
-
           {/* About Section */}
           <div className="px-2 sm:px-0 mb-8 sm:mb-12">
             <h2 className="text-lg sm:text-xl md:text-2xl font-bold mb-3 sm:mb-4">
@@ -665,7 +501,7 @@ export default function VenueDetailsPage() {
           {/* Contact Form */}
           <div className="mb-8 sm:mb-12">
             <h2 className="text-lg sm:text-xl md:text-2xl font-bold mb-4 sm:mb-6 text-center">
-              Contact Venue
+              Contact {venue.business_name}
             </h2>
             <div className="max-w-2xl mx-auto bg-gray-50 p-4 sm:p-6 rounded-lg">
               <form onSubmit={handleInquirySubmit} className="space-y-4">

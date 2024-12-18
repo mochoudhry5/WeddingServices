@@ -11,6 +11,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/context/AuthContext";
 import LikeButton from "@/components/ui/LikeButton";
+import { ServiceInfoGrid } from "@/components/ui/CardInfoGrid";
 
 interface WeddingPlannerDetails {
   user_id: string;
@@ -269,11 +270,11 @@ export default function WeddingDetailsPage() {
         {/* Artist Header */}
         <div className="flex flex-col md:flex-row md:justify-between md:items-start gap-4 mb-8">
           <div>
-            <div className="flex items-center gap-3 mb-2">
+            <div className="flex flex-row flex-wrap items-center gap-2 mb-2">
               <h1 className="text-2xl md:text-3xl font-bold text-gray-900">
                 {weddingPlanner.business_name}
               </h1>
-              <div className="inline-flex items-center px-3 py-1 rounded-full bg-white border border-gray-200 text-sm font-medium">
+              <div className="inline-flex items-center px-2 py-0.5 rounded-full bg-white border border-gray-200 text-xs md:text-sm font-medium whitespace-nowrap">
                 {weddingPlanner.service_type === "both"
                   ? "Wedding Planner & Coordinator"
                   : weddingPlanner.service_type === "weddingPlanner"
@@ -281,122 +282,29 @@ export default function WeddingDetailsPage() {
                   : "Wedding Coordinator"}
               </div>
             </div>
-            {weddingPlanner.is_remote_business ? (
-              <p className="text-gray-600">
-                {weddingPlanner.city}, {weddingPlanner.state} (Remote)
-              </p>
-            ) : (
-              <p className="text-gray-600">
-                {weddingPlanner.address}, {weddingPlanner.city},{" "}
-                {weddingPlanner.state}
-              </p>
-            )}
+            <p className="text-gray-600">
+              {weddingPlanner.is_remote_business
+                ? `${weddingPlanner.city}, ${weddingPlanner.state} (Remote)`
+                : `${weddingPlanner.address}, ${weddingPlanner.city}, ${weddingPlanner.state}`}
+            </p>
           </div>
-          <div className="text-right">
-            {weddingPlanner.min_service_price &&
-              weddingPlanner.max_service_price && (
-                <>
-                  <p className="text-3xl font-semibold text-green-800">
-                    {weddingPlanner.min_service_price ===
-                    weddingPlanner.max_service_price
-                      ? `$${weddingPlanner.min_service_price.toLocaleString()}`
-                      : `$${weddingPlanner.min_service_price.toLocaleString()} - $${weddingPlanner.max_service_price.toLocaleString()}`}
-                  </p>
-                  <p className="text-sm text-gray-500">
-                    {weddingPlanner.min_service_price ===
-                    weddingPlanner.max_service_price
-                      ? "(See Service & Pricing)"
-                      : "(See Service & Pricing)"}
-                  </p>
-                </>
-              )}
-          </div>
+          {/* Price Range - Right aligned */}
+          {weddingPlanner.min_service_price && (
+            <div className="flex flex-col items-end">
+              <div className="text-2xl sm:text-3xl font-semibold text-green-800">
+                {weddingPlanner.min_service_price === weddingPlanner.max_service_price
+                  ? `$${weddingPlanner.max_service_price.toLocaleString()}`
+                  : `$${weddingPlanner.min_service_price.toLocaleString()} - $${weddingPlanner.max_service_price.toLocaleString()}`}
+              </div>
+              <p className="text-xs sm:text-sm text-gray-500">
+                (See Services & Pricing)
+              </p>
+            </div>
+          )}
         </div>
-
-        {/* Description */}
-        <div className="mb-12">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-0 mb-12">
-            {/* Experience */}
-            <div className="flex flex-col items-center text-center border-r border-gray-200 last:border-r-0">
-              <h3 className="text-lg font-semibold mb-3">Experience</h3>
-              <ul className="space-y-2 text-gray-600">
-                <li className="flex items-center gap-2">
-                  <span className="text-slate-600">•</span>
-                  {weddingPlanner.years_experience} years
-                </li>
-              </ul>
-            </div>
-
-            {/* Deposit */}
-            <div className="flex flex-col items-center text-center border-r border-gray-200 last:border-r-0">
-              <h3 className="text-lg font-semibold mb-3">Booking Deposit</h3>
-              <ul className="space-y-2 text-gray-600">
-                <li className="flex items-center gap-2">
-                  <span className="text-slate-600">•</span>
-                  {weddingPlanner.deposit === 0
-                    ? "No Deposit Required"
-                    : `${weddingPlanner.deposit}% of total service cost`}
-                </li>
-              </ul>
-            </div>
-
-            {/* Travel Range */}
-            <div className="flex flex-col items-center text-center border-r border-gray-200 last:border-r-0">
-              <h3 className="text-lg font-semibold mb-3">Travel Range</h3>
-              <ul className="space-y-2 text-gray-600">
-                <li className="flex items-center gap-2">
-                  <span className="text-slate-600">•</span>
-                  {weddingPlanner.travel_range === 0
-                    ? "No Travel"
-                    : weddingPlanner.travel_range === -1
-                    ? "Travel Anywhere"
-                    : `${weddingPlanner.travel_range} miles from ${weddingPlanner.city}`}
-                </li>
-              </ul>
-            </div>
-
-            {/* Socials */}
-            <div className="flex flex-col items-center text-center last:border-r-0">
-              <h3 className="text-lg font-semibold mb-3">Socials</h3>
-              {weddingPlanner.website_url || weddingPlanner.instagram_url ? (
-                <ul className="space-y-2 text-gray-600">
-                  {weddingPlanner.website_url && (
-                    <li className="flex items-center gap-2">
-                      <span className="text-slate-600">•</span>
-                      <a
-                        href={weddingPlanner.website_url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-black hover:text-stone-500 hover:underline"
-                        >
-                        Website
-                      </a>
-                    </li>
-                  )}
-                  {weddingPlanner.instagram_url && (
-                    <li className="flex items-center gap-2">
-                      <span className="text-slate-600">•</span>
-                      <a
-                        href={weddingPlanner.instagram_url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-black hover:text-stone-500 hover:underline"
-                        >
-                        Instagram
-                      </a>
-                    </li>
-                  )}
-                </ul>
-              ) : (
-                <ul className="space-y-2 text-gray-600">
-                  <li className="flex items-center gap-2">
-                    <span className="text-slate-600">•</span>
-                    No Social Links Yet!
-                  </li>
-                </ul>
-              )}
-            </div>
-          </div>
+        {/* Info Grid */}
+        <div className="pb-10">
+          <ServiceInfoGrid service={weddingPlanner} />
         </div>
         <div className="px-2 sm:px-0 mb-8 sm:mb-12">
           <h2 className="text-lg sm:text-xl md:text-2xl font-bold mb-3 sm:mb-4">
@@ -408,38 +316,39 @@ export default function WeddingDetailsPage() {
         </div>
         {/* Specialties */}
         {weddingPlannerStyles.length > 0 && (
-          <div className="mb-12">
-            <h2 className="text-xl md:text-2xl font-bold mb-6">
+          <div className="mb-8 sm:mb-12">
+            <h2 className="text-lg sm:text-xl md:text-2xl font-bold mb-4 sm:mb-6">
               {weddingPlanner.service_type === "weddingPlanner"
                 ? "Wedding Planner Expertise"
                 : weddingPlanner.service_type === "weddingCoordinator"
-                ? "Wedding Coordiinator Expertise"
+                ? "Wedding Coordinator Expertise"
                 : "Wedding Planner & Coordinator Expertise"}
             </h2>
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
-              {weddingPlannerStyles.length > 0 &&
-                weddingPlannerStyles.map((style, index) => (
-                  <div
-                    key={`wedding-planner-${index}`}
-                    className="p-3 sm:p-4 rounded-lg border border-black bg-stone-100"
-                  >
-                    <div className="flex items-center gap-2">
-                      <span className="text-green-800">✓</span>
-                      <span className="text-gray-900">{style}</span>
-                    </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4">
+              {weddingPlannerStyles.map((style, index) => (
+                <div
+                  key={`wedding-planner-${index}`}
+                  className="p-3 sm:p-4 rounded-lg border border-black bg-stone-100"
+                >
+                  <div className="flex items-center gap-2">
+                    <span className="text-green-800">✓</span>
+                    <span className="text-sm sm:text-base text-gray-900">
+                      {style}
+                    </span>
                   </div>
-                ))}
+                </div>
+              ))}
             </div>
           </div>
         )}
 
         {/* Services */}
         {weddingPlanner.wedding_planner_services?.length > 0 && (
-          <div className="mb-12">
-            <h2 className="text-xl md:text-2xl font-bold mb-6">
+          <div className="mb-8 sm:mb-12">
+            <h2 className="text-lg sm:text-xl md:text-2xl font-bold mb-4 sm:mb-6">
               Services & Pricing
             </h2>
-            <div className="flex flex-row gap-4">
+            <div className="flex flex-col lg:flex-row gap-4">
               {/* First Column */}
               <div className="flex-1 flex flex-col gap-4">
                 {weddingPlanner.wedding_planner_services
@@ -462,8 +371,8 @@ export default function WeddingDetailsPage() {
         )}
         {/* Contact Form */}
         <div className="mb-12">
-          <h2 className="text-xl md:text-2xl font-bold mb-6 text-center">
-            Contact Artist
+          <h2 className="text-lg sm:text-xl md:text-2xl font-bold mb-4 sm:mb-6 text-center">
+            Contact {weddingPlanner.business_name}
           </h2>
           <div className="max-w-2xl mx-auto bg-gray-50 p-4 md:p-6 rounded-lg">
             <form onSubmit={handleInquirySubmit} className="space-y-4">
@@ -548,7 +457,7 @@ export default function WeddingDetailsPage() {
               <Button
                 type="submit"
                 className="w-full bg-black hover:bg-stone-500 text-sm sm:text-base py-2 sm:py-3"
-                >
+              >
                 Send Inquiry
               </Button>
             </form>

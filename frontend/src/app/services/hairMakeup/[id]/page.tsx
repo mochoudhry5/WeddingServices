@@ -11,6 +11,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/context/AuthContext";
 import LikeButton from "@/components/ui/LikeButton";
+import { ServiceInfoGrid } from "@/components/ui/CardInfoGrid";
 
 interface HairMakeupDetails {
   user_id: string;
@@ -235,9 +236,9 @@ export default function MakeupDetailsPage() {
     <div className="min-h-screen bg-white">
       <NavBar />
 
-      {/* Hero/Media Section */}
+      {/* Hero/Media Section - Adjusted height for better mobile view */}
       <div className="relative bg-black">
-        <div className="relative h-[60vh] md:h-[80vh]">
+        <div className="relative h-[40vh] sm:h-[50vh] md:h-[60vh] lg:h-[80vh]">
           <MediaCarousel
             media={hairMakeup.hair_makeup_media}
             name={hairMakeup.business_name}
@@ -249,12 +250,13 @@ export default function MakeupDetailsPage() {
 
       {/* Content */}
       <div className="max-w-7xl mx-auto px-4 py-6">
+        {/* Like Button Section */}
         {user?.id !== hairMakeup.user_id && (
-          <div className="max-w-7xl mx-auto px-4 pb-5">
+          <div className="max-w-7xl mx-auto px-2 sm:px-4 pb-5">
             <div className="bg-stone-100 border-black py-2">
-              <div className="max-w-3xl mx-auto px-4 flex flex-col items-center justify-center">
+              <div className="max-w-3xl mx-auto px-2 sm:px-4 flex flex-col items-center justify-center">
                 <div className="flex items-center gap-2">
-                  <span className="text-black text-lg font-semibold">
+                  <span className="text-black text-base sm:text-lg font-semibold">
                     Don't forget this listing!
                   </span>
                   <LikeButton
@@ -269,11 +271,11 @@ export default function MakeupDetailsPage() {
           </div>
         )}
 
-        {/* Artist Header */}
-        <div className="flex flex-col md:flex-row md:justify-between md:items-start gap-4 mb-8">
-          <div>
-            <div className="flex items-center gap-3 mb-2">
-              <h1 className="text-2xl md:text-3xl font-bold text-gray-900">
+        {/* Artist Header - Improved mobile layout */}
+        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-4 mb-8">
+          <div className="flex-1">
+            <div className="flex flex-wrap items-center gap-2 sm:gap-3 mb-2">
+              <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-gray-900">
                 {hairMakeup.business_name}
               </h1>
               <div className="inline-flex items-center px-3 py-1 rounded-full bg-white border border-gray-200 text-sm font-medium">
@@ -284,142 +286,53 @@ export default function MakeupDetailsPage() {
                   : "Hair"}
               </div>
             </div>
-            {hairMakeup.is_remote_business ? (
-              <p className="text-gray-600">
-                {hairMakeup.city}, {hairMakeup.state} (Remote)
-              </p>
-            ) : (
-              <p className="text-gray-600">
-                {hairMakeup.address}, {hairMakeup.city}, {hairMakeup.state}
-              </p>
-            )}
+            <p className="text-sm sm:text-base text-gray-600">
+              {hairMakeup.is_remote_business
+                ? `${hairMakeup.city}, ${hairMakeup.state} (Remote)`
+                : `${hairMakeup.address}, ${hairMakeup.city}, ${hairMakeup.state}`}
+            </p>
           </div>
 
-          {/* Price Range */}
+          {/* Price Range - Right aligned */}
           {hairMakeup.min_service_price && (
-            <div className="text-right">
-              <div className="text-3xl font-semibold text-green-800">
+            <div className="flex flex-col items-end">
+              <div className="text-2xl sm:text-3xl font-semibold text-green-800">
                 {hairMakeup.min_service_price === hairMakeup.max_service_price
                   ? `$${hairMakeup.max_service_price.toLocaleString()}`
                   : `$${hairMakeup.min_service_price.toLocaleString()} - $${hairMakeup.max_service_price.toLocaleString()}`}
               </div>
-              <p className="text-sm text-gray-500">(See Services & Pricing)</p>
+              <p className="text-xs sm:text-sm text-gray-500">
+                (See Services & Pricing)
+              </p>
             </div>
           )}
         </div>
 
-        {/* Description */}
-        <div className="mb-12">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-0 mb-12">
-            {/* Booking Info */}
-            <div className="flex flex-col items-center text-center border-r border-gray-200 last:border-r-0">
-              <h3 className="text-lg font-semibold mb-3">Experience</h3>
-              <ul className="space-y-2 text-gray-600">
-                <li className="flex items-center gap-2">
-                  <span className="text-slate-600">•</span>
-                  {hairMakeup.years_experience} years
-                </li>
-              </ul>
-            </div>
-
-            {/* Booking Notice */}
-            <div className="flex flex-col items-center text-center border-r border-gray-200 last:border-r-0">
-              <h3 className="text-lg font-semibold mb-3">Booking Deposit</h3>
-              <ul className="space-y-2 text-gray-600">
-                <li className="flex items-center gap-2">
-                  <span className="text-slate-600">•</span>
-                  {hairMakeup.deposit === 0
-                    ? "No Deposit Required"
-                    : `${hairMakeup.deposit}% of total service cost`}
-                </li>
-              </ul>
-            </div>
-
-            {/* Travel Radius*/}
-            <div className="flex flex-col items-center text-center border-r border-gray-200 last:border-r-0">
-              <h3 className="text-lg font-semibold mb-3">Travel Radius</h3>
-              <ul className="space-y-2 text-gray-600">
-                <li className="flex items-center gap-2">
-                  <span className="text-slate-600">•</span>
-                  {hairMakeup.travel_range === 0
-                    ? "No Travel"
-                    : hairMakeup.travel_range === -1
-                    ? "Travel Anywhere"
-                    : `${hairMakeup.travel_range} miles from ${hairMakeup.city}`}
-                </li>
-              </ul>
-            </div>
-
-            {/* Socials */}
-            <div className="flex flex-col items-center text-center last:border-r-0">
-              <h3 className="text-lg font-semibold mb-3">Socials</h3>
-              {hairMakeup.website_url || hairMakeup.instagram_url ? (
-                <ul className="space-y-2 text-sm sm:text-base text-gray-600 text-center">
-                  {hairMakeup.website_url && (
-                    <li>
-                      <div className="flex items-center gap-2">
-                        <span className="text-slate-600">•</span>
-                        <a
-                          href={hairMakeup.website_url}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-black hover:text-stone-500 hover:underline"
-                        >
-                          Website
-                        </a>
-                      </div>
-                    </li>
-                  )}
-                  {hairMakeup.instagram_url && (
-                    <li>
-                      <div className="flex items-center gap-2">
-                        <span className="text-slate-600">•</span>
-                        <a
-                          href={hairMakeup.instagram_url}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-black hover:text-stone-500 hover:underline"
-                        >
-                          Instagram
-                        </a>
-                      </div>
-                    </li>
-                  )}
-                </ul>
-              ) : (
-                <ul className="space-y-2 text-sm sm:text-base text-gray-600 text-center">
-                  <li>
-                    <div className="flex items-center gap-2">
-                      <span className="text-slate-600">•</span>
-                      <span>No Social Links Yet!</span>
-                    </div>
-                  </li>
-                </ul>
-              )}
-            </div>
-          </div>
+        {/* Info Grid - Modern card layout for all screen sizes */}
+        <div className="pb-10">
+        <ServiceInfoGrid service={hairMakeup} />
         </div>
-
+        {/* About Section */}
         <div className="px-2 sm:px-0 mb-8 sm:mb-12">
-          <h2 className="text-lg sm:text-xl md:text-2xl font-bold mb-3 sm:mb-4">
+          <h2 className="text-lg sm:text-xl md:text-2xl font-bold mb-3 sm:mb-3">
             About the Business
           </h2>
-          <p className="text-sm sm:text-base text-gray-600 leading-relaxed break-words whitespace-normal">
+          <p className="text-sm sm:text-base text-gray-600 leading-relaxed">
             {hairMakeup.description}
           </p>
         </div>
 
-        {/* Specialties */}
+        {/* Specialties - Responsive grid */}
         {hairMakeup.hair_makeup_specialties?.length > 0 && (
-          <div className="mb-12">
-            <h2 className="text-xl md:text-2xl font-bold mb-6">
+          <div className="mb-8 sm:mb-12">
+            <h2 className="text-lg sm:text-xl md:text-2xl font-bold mb-4 sm:mb-6">
               {hairMakeup.service_type === "makeup"
                 ? "Makeup Styles"
                 : hairMakeup.service_type === "hair"
                 ? "Hair Styles"
                 : "Makeup & Hair Styles"}
             </h2>
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4">
               {hairMakeup.hair_makeup_specialties.map((specialty, index) => (
                 <div
                   key={index}
@@ -427,7 +340,9 @@ export default function MakeupDetailsPage() {
                 >
                   <div className="flex items-center gap-2">
                     <span className="text-green-800">✓</span>
-                    <span className="text-gray-900">{specialty.specialty}</span>
+                    <span className="text-sm sm:text-base text-gray-900">
+                      {specialty.specialty}
+                    </span>
                   </div>
                 </div>
               ))}
@@ -435,13 +350,13 @@ export default function MakeupDetailsPage() {
           </div>
         )}
 
-        {/* Services */}
+        {/* Services - Responsive columns */}
         {hairMakeup.hair_makeup_services?.length > 0 && (
-          <div className="mb-12">
-            <h2 className="text-xl md:text-2xl font-bold mb-6">
+          <div className="mb-8 sm:mb-12">
+            <h2 className="text-lg sm:text-xl md:text-2xl font-bold mb-4 sm:mb-6">
               Services & Pricing
             </h2>
-            <div className="flex flex-row gap-4">
+            <div className="flex flex-col lg:flex-row gap-4">
               {/* First Column */}
               <div className="flex-1 flex flex-col gap-4">
                 {hairMakeup.hair_makeup_services
@@ -463,14 +378,14 @@ export default function MakeupDetailsPage() {
           </div>
         )}
 
-        {/* Contact Form */}
-        <div className="mb-12">
-          <h2 className="text-xl md:text-2xl font-bold mb-6 text-center">
-            Contact Artist
+        {/* Contact Form - More compact on mobile */}
+        <div className="mb-8 sm:mb-12">
+          <h2 className="text-lg sm:text-xl md:text-2xl font-bold mb-4 sm:mb-6 text-center">
+            Contact {hairMakeup.business_name}
           </h2>
-          <div className="max-w-2xl mx-auto bg-gray-50 p-4 md:p-6 rounded-lg">
+          <div className="max-w-2xl mx-auto bg-gray-50 p-4 sm:p-6 rounded-lg">
             <form onSubmit={handleInquirySubmit} className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
                     First Name
@@ -480,6 +395,7 @@ export default function MakeupDetailsPage() {
                     value={inquiryForm.firstName}
                     onChange={handleInputChange}
                     required
+                    className="text-sm sm:text-base"
                   />
                 </div>
                 <div>
@@ -491,6 +407,7 @@ export default function MakeupDetailsPage() {
                     value={inquiryForm.lastName}
                     onChange={handleInputChange}
                     required
+                    className="text-sm sm:text-base"
                   />
                 </div>
               </div>
