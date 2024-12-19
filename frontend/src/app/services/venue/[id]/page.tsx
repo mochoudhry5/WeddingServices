@@ -218,6 +218,7 @@ export default function VenueDetailsPage() {
   const [venue, setVenue] = useState<VenueDetails | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [openIndex, setOpenIndex] = useState<number | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const toggleAccordion = (index: number) => {
     setOpenIndex(openIndex === index ? null : index);
@@ -299,8 +300,54 @@ export default function VenueDetailsPage() {
   const handleInquirySubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    // Add your inquiry submission logic here
-    toast.success("Inquiry sent successfully!");
+    if (!venue) {
+      toast.error("Venue information not found");
+      return;
+    }
+
+    setIsSubmitting(true);
+
+    try {
+      const response = await fetch("/api/venue", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          venueId: venue.id,
+          venueName: venue.business_name,
+          venueOwnerId: venue.user_id,
+          formData: inquiryForm,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || "Failed to send inquiry");
+      }
+
+      toast.success(
+        "Your inquiry has been sent! The venue owner will contact you soon."
+      );
+
+      setInquiryForm({
+        firstName: "",
+        lastName: "",
+        email: "",
+        phone: "",
+        eventDate: "",
+        guestCount: "",
+        message: "",
+      });
+    } catch (error) {
+      console.error("Inquiry submission error:", error);
+      toast.error(
+        "Error sending inquiry. Please try again or contact support."
+      );
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const handleInputChange = (
@@ -408,97 +455,97 @@ export default function VenueDetailsPage() {
           </div>
         )}
 
-        <div>
-          <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-3 sm:gap-4 mb-6 sm:mb-8">
-            <div className="flex-grow">
-              <div className="flex items-center gap-3 mb-2">
-                <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-gray-900">
-                  {venue.business_name}
-                </h1>
-              </div>
-              <p className="text-sm sm:text-base text-gray-600">
-                {venue.address}, {venue.city}, {venue.state}
-              </p>
+        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-3 sm:gap-4 mb-6 sm:mb-8">
+          <div className="flex-grow">
+            <div className="flex items-center gap-3 mb-2">
+              <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-gray-900">
+                {venue.business_name}
+              </h1>
             </div>
-            <div className="flex flex-col items-end">
-              <div className="text-2xl sm:text-3xl font-semibold text-green-800 text-right">
-                ${venue.base_price.toLocaleString()}
-              </div>
-              <p className="text-xs sm:text-sm text-gray-500">
-                Venue Only (See Included)
-              </p>
-            </div>
-          </div>
-
-          {/* Info Grid - Modern card layout for all screen sizes */}
-          <div className="pb-10">
-            <VenueInfoGrid venue={venue} />
-          </div>
-          {/* About Section */}
-          <div className="px-2 sm:px-0 mb-8 sm:mb-12">
-            <h2 className="text-lg sm:text-xl md:text-2xl font-bold mb-3 sm:mb-4">
-              About the Business
-            </h2>
-            <p className="text-sm sm:text-base text-gray-600 leading-relaxed break-words whitespace-normal">
-              {venue.description}
+            <p className="text-sm sm:text-base text-gray-600">
+              {venue.address}, {venue.city}, {venue.state}
             </p>
           </div>
+          <div className="flex flex-col items-end">
+            <div className="text-2xl sm:text-3xl font-semibold text-green-800 text-right">
+              ${venue.base_price.toLocaleString()}
+            </div>
+            <p className="text-xs sm:text-sm text-gray-500">
+              Venue Only (See Included)
+            </p>
+          </div>
+        </div>
 
-          {/* What's Included */}
-          {venue.venue_inclusions?.length > 0 && (
-            <div className="mb-8 sm:mb-12">
-              <h2 className="text-lg sm:text-xl md:text-2xl font-bold mb-4 sm:mb-6">
-                What's Included in the Base Price
-              </h2>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
-                {[...venue.venue_inclusions]
-                  .sort((a, b) => a.name.localeCompare(b.name))
-                  .map((inclusion, index) => (
-                    <div
-                      key={index}
-                      className="p-3 sm:p-4 rounded-lg border border-black bg-stone-100"
-                    >
-                      <div className="flex items-center gap-2">
-                        <span className="text-green-800">✓</span>
-                        <span className="text-sm sm:text-base text-gray-900">
-                          {inclusion.name}
-                        </span>
-                      </div>
+        {/* Info Grid - Modern card layout for all screen sizes */}
+        <div className="pb-10">
+          <VenueInfoGrid venue={venue} />
+        </div>
+        {/* About Section */}
+        <div className="px-2 sm:px-0 mb-8 sm:mb-12">
+          <h2 className="text-lg sm:text-xl md:text-2xl font-bold mb-3 sm:mb-4">
+            About the Business
+          </h2>
+          <p className="text-sm sm:text-base text-gray-600 leading-relaxed break-words whitespace-normal">
+            {venue.description}
+          </p>
+        </div>
+
+        {/* What's Included */}
+        {venue.venue_inclusions?.length > 0 && (
+          <div className="mb-8 sm:mb-12">
+            <h2 className="text-lg sm:text-xl md:text-2xl font-bold mb-4 sm:mb-6">
+              What's Included in the Base Price
+            </h2>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+              {[...venue.venue_inclusions]
+                .sort((a, b) => a.name.localeCompare(b.name))
+                .map((inclusion, index) => (
+                  <div
+                    key={index}
+                    className="p-3 sm:p-4 rounded-lg border border-black bg-stone-100"
+                  >
+                    <div className="flex items-center gap-2">
+                      <span className="text-green-800">✓</span>
+                      <span className="text-sm sm:text-base text-gray-900">
+                        {inclusion.name}
+                      </span>
                     </div>
+                  </div>
+                ))}
+            </div>
+          </div>
+        )}
+
+        {/* Add-ons */}
+        {venue.venue_addons?.length > 0 && (
+          <div className="mb-8 sm:mb-12">
+            <h2 className="text-lg sm:text-xl md:text-2xl font-bold mb-4 sm:mb-6">
+              Available Add-ons
+            </h2>
+            <div className="flex flex-col lg:flex-row gap-3 sm:gap-4">
+              {/* First Column */}
+              <div className="flex-1 flex flex-col gap-3 sm:gap-4">
+                {venue.venue_addons
+                  .filter((_, index) => index % 2 === 0)
+                  .map((addon, index) => (
+                    <ServiceCard key={index * 2} service={addon} />
+                  ))}
+              </div>
+
+              {/* Second Column */}
+              <div className="flex-1 flex flex-col gap-3 sm:gap-4">
+                {venue.venue_addons
+                  .filter((_, index) => index % 2 === 1)
+                  .map((addon, index) => (
+                    <ServiceCard key={index * 2 + 1} service={addon} />
                   ))}
               </div>
             </div>
-          )}
+          </div>
+        )}
 
-          {/* Add-ons */}
-          {venue.venue_addons?.length > 0 && (
-            <div className="mb-8 sm:mb-12">
-              <h2 className="text-lg sm:text-xl md:text-2xl font-bold mb-4 sm:mb-6">
-                Available Add-ons
-              </h2>
-              <div className="flex flex-col lg:flex-row gap-3 sm:gap-4">
-                {/* First Column */}
-                <div className="flex-1 flex flex-col gap-3 sm:gap-4">
-                  {venue.venue_addons
-                    .filter((_, index) => index % 2 === 0)
-                    .map((addon, index) => (
-                      <ServiceCard key={index * 2} service={addon} />
-                    ))}
-                </div>
-
-                {/* Second Column */}
-                <div className="flex-1 flex flex-col gap-3 sm:gap-4">
-                  {venue.venue_addons
-                    .filter((_, index) => index % 2 === 1)
-                    .map((addon, index) => (
-                      <ServiceCard key={index * 2 + 1} service={addon} />
-                    ))}
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* Contact Form */}
+        {/* Contact Form */}
+        {user?.id !== venue.user_id ? (
           <div className="mb-8 sm:mb-12">
             <h2 className="text-lg sm:text-xl md:text-2xl font-bold mb-4 sm:mb-6 text-center">
               Contact {venue.business_name}
@@ -607,16 +654,23 @@ export default function VenueDetailsPage() {
 
                 <Button
                   type="submit"
+                  disabled={isSubmitting}
                   className="w-full bg-black hover:bg-stone-500 text-sm sm:text-base py-2 sm:py-3"
                 >
-                  Send Inquiry
+                  {isSubmitting ? "Sending..." : "Send Inquiry"}
                 </Button>
               </form>
             </div>
           </div>
-        </div>
-        <Footer />
+        ) : (
+          <div className="mb-8 sm:mb-12 text-center">
+            <p className="text-gray-600">
+              Manage your listing from your dashboard.
+            </p>
+          </div>
+        )}
       </div>
+      <Footer />
     </div>
   );
 }

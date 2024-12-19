@@ -502,6 +502,7 @@ export default function CreateVenueListing() {
         .from("venue_listing")
         .insert({
           user_id: user.id,
+          user_email: user.email, // Add user email to the venue listing
           business_name: businessName,
           address: location.address,
           city: location.city,
