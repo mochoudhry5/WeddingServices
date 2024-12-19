@@ -49,34 +49,90 @@ export default function ContactPage() {
           to: "support@anyweds.com",
           subject: `Contact Form: ${formData.subject}`,
           html: `
-            <h2>New Contact Form Submission</h2>
-            <p><strong>From:</strong> ${formData.firstName} ${
-            formData.lastName
-          }</p>
-            <p><strong>Email:</strong> ${formData.email}</p>
-            <p><strong>Subject:</strong> ${formData.subject}</p>
-            <p><strong>Message:</strong></p>
-            <p>${formData.message.replace(/\n/g, "<br>")}</p>
+            <!DOCTYPE html>
+            <html>
+              <head>
+                <meta charset="utf-8">
+                <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                <title>Contact Form Submission</title>
+              </head>
+              <body style="margin: 0; padding: 0; font-family: Arial, sans-serif; line-height: 1.6; background-color: #f9fafb;">
+                <div style="max-width: 600px; margin: 0 auto; padding: 20px;">
+                  <div style="background: linear-gradient(to right, #78716c, #44403c); padding: 2px; border-radius: 8px;">
+                    <div style="background-color: white; padding: 30px; border-radius: 6px;">
+                      <!-- Header -->
+                      <div style="text-align: center; margin-bottom: 30px;">
+                        <h1 style="color: #44403c; font-size: 24px; margin: 0; padding-bottom: 10px; border-bottom: 2px solid #f3f4f6;">
+                          New Contact Form Submission
+                        </h1>
+                      </div>
+  
+                      <!-- Content -->
+                      <div style="margin-top: 20px;">
+                        <div style="background-color: #f8fafc; padding: 20px; border-radius: 6px; margin-bottom: 20px;">
+                          <h2 style="color: #44403c; font-size: 18px; margin: 0 0 15px 0;">Contact Details</h2>
+                          <p style="margin: 0 0 10px 0;">
+                            <strong style="color: #44403c;">Name:</strong> 
+                            <span style="color: #4b5563;">${
+                              formData.firstName
+                            } ${formData.lastName}</span>
+                          </p>
+                          <p style="margin: 0 0 10px 0;">
+                            <strong style="color: #44403c;">Email:</strong> 
+                            <span style="color: #4b5563;">${
+                              formData.email
+                            }</span>
+                          </p>
+                          <p style="margin: 0;">
+                            <strong style="color: #44403c;">Subject:</strong> 
+                            <span style="color: #4b5563;">${
+                              formData.subject
+                            }</span>
+                          </p>
+                        </div>
+  
+                        <div style="background-color: #f8fafc; padding: 20px; border-radius: 6px;">
+                          <h2 style="color: #44403c; font-size: 18px; margin: 0 0 15px 0;">Message</h2>
+                          <div style="color: #4b5563; white-space: pre-wrap;">${formData.message.replace(
+                            /\n/g,
+                            "<br>"
+                          )}</div>
+                        </div>
+                      </div>
+  
+                      <!-- Footer -->
+                      <div style="margin-top: 30px; padding-top: 20px; border-top: 2px solid #f3f4f6; text-align: center; color: #6b7280; font-size: 14px;">
+                        <p style="margin: 0;">This email was sent from the AnyWeds contact form.</p>
+                        <p style="margin: 5px 0 0 0;">© ${new Date().getFullYear()} AnyWeds. All rights reserved.</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </body>
+            </html>
           `,
         }),
       });
 
-      if (response.ok) {
-        toast.success(
-          "Message sent successfully. We'll get back to you within 24 hours."
-        );
-        setFormData({
-          firstName: "",
-          lastName: "",
-          email: "",
-          subject: "",
-          message: "",
-        });
-      } else {
-        throw new Error("Failed to send message");
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || "Failed to send message");
       }
-    } catch (error) {
+
       toast.success(
+        "Message sent successfully. We'll get back to you within 24 hours."
+      );
+      setFormData({
+        firstName: "",
+        lastName: "",
+        email: "",
+        subject: "",
+        message: "",
+      });
+    } catch (error) {
+      console.error("Contact form submission error:", error);
+      toast.error(
         "Error sending message. Please try again or contact us directly at support@anyweds.com"
       );
     } finally {
@@ -181,7 +237,7 @@ export default function ContactPage() {
                       required
                       value={formData.message}
                       onChange={handleChange}
-                      className="w-full rounded-lg border border-gray-300 focus:ring-2 focus:ring-rose-500 focus:border-transparent resize-none p-3 transition-shadow duration-200"
+                      className="w-full rounded-lg border border-gray-300 focus:ring-2 focus:ring-black focus:border-transparent resize-none p-3 transition-shadow duration-200"
                       placeholder="Tell us more about your inquiry..."
                     />
                   </div>
@@ -189,7 +245,7 @@ export default function ContactPage() {
                   <button
                     type="submit"
                     disabled={isSubmitting}
-                    className="w-full bg-gradient-to-r from-stone-700 to-stone-600 text-white py-3 px-4 rounded-lg hover:from-stone-200 hover:to-stone-500 transition-all duration-300 font-medium flex items-center justify-center group disabled:opacity-70"
+                    className="w-full bg-black text-white py-3 px-4 rounded-lg hover:bg-stone-500 transition-all duration-300 font-medium flex items-center justify-center group disabled:opacity-70"
                   >
                     {isSubmitting ? "Sending..." : "Send Message"}
                     <ArrowRight className="ml-2 h-4 w-4 transform group-hover:translate-x-1 transition-transform" />
