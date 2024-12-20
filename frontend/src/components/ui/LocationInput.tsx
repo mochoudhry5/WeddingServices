@@ -340,7 +340,7 @@ const LocationInput = ({
             className="text-gray-400 hover:text-gray-600 focus:outline-none p-1"
             title="Clear location"
           >
-            <X className="bg-gray-400 rounded-lg text-white" size={16} />
+            <X className="" size={16} />
           </button>
         )}
         <button
