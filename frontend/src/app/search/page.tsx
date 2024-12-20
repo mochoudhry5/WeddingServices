@@ -276,13 +276,14 @@ export default function ServicesSearchPage() {
 
         if (withFilters) {
           // Apply price range filter
-          if (filtersToUse.priceRange[0] > 0) {
-            query = query.gte("min_service_price", filtersToUse.priceRange[0]);
+          if (
+            filtersToUse.priceRange[0] > 0 ||
+            filtersToUse.priceRange[1] < 10000
+          ) {
+            query = query
+              .lte("min_service_price", filtersToUse.priceRange[1])
+              .gte("max_service_price", filtersToUse.priceRange[0]);
           }
-          if (filtersToUse.priceRange[1] < 10000) {
-            query = query.lte("max_service_price", filtersToUse.priceRange[1]);
-          }
-
           // Apply location filter
           const { city, state } = filtersToUse.searchQuery;
           if (city || state) {
@@ -332,11 +333,13 @@ export default function ServicesSearchPage() {
 
         if (withFilters) {
           // Apply price range filter - ensure we're handling nulls and using proper comparisons
-          if (filtersToUse.priceRange[0] > 0) {
-            query = query.gte("min_service_price", filtersToUse.priceRange[0]);
-          }
-          if (filtersToUse.priceRange[1] < 10000) {
-            query = query.lte("max_service_price", filtersToUse.priceRange[1]);
+          if (
+            filtersToUse.priceRange[0] > 0 ||
+            filtersToUse.priceRange[1] < 10000
+          ) {
+            query = query
+              .lte("min_service_price", filtersToUse.priceRange[1])
+              .gte("max_service_price", filtersToUse.priceRange[0]);
           }
 
           // Apply location filter
@@ -393,11 +396,13 @@ export default function ServicesSearchPage() {
 
         if (withFilters) {
           // Apply price range filter - ensure we're handling nulls and using proper comparisons
-          if (filtersToUse.priceRange[0] > 0) {
-            query = query.gte("min_service_price", filtersToUse.priceRange[0]);
-          }
-          if (filtersToUse.priceRange[1] < 10000) {
-            query = query.lte("max_service_price", filtersToUse.priceRange[1]);
+          if (
+            filtersToUse.priceRange[0] > 0 ||
+            filtersToUse.priceRange[1] < 10000
+          ) {
+            query = query
+              .lte("min_service_price", filtersToUse.priceRange[1])
+              .gte("max_service_price", filtersToUse.priceRange[0]);
           }
 
           // Apply location filter
@@ -454,11 +459,13 @@ export default function ServicesSearchPage() {
 
         if (withFilters) {
           // Apply price range filter - ensure we're handling nulls and using proper comparisons
-          if (filtersToUse.priceRange[0] > 0) {
-            query = query.gte("min_service_price", filtersToUse.priceRange[0]);
-          }
-          if (filtersToUse.priceRange[1] < 10000) {
-            query = query.lte("max_service_price", filtersToUse.priceRange[1]);
+          if (
+            filtersToUse.priceRange[0] > 0 ||
+            filtersToUse.priceRange[1] < 10000
+          ) {
+            query = query
+              .lte("min_service_price", filtersToUse.priceRange[1])
+              .gte("max_service_price", filtersToUse.priceRange[0]);
           }
 
           // Apply location filter
@@ -895,13 +902,22 @@ export default function ServicesSearchPage() {
                 <Select
                   value={searchFilters.serviceType}
                   onValueChange={(value: ServiceType) => {
-                    const newFilters = {
-                      ...searchFilters,
+                    // Reset all filters except for the new service type
+                    const newFilters: SearchFilters = {
+                      searchQuery: {
+                        enteredLocation: "",
+                        city: "",
+                        state: "",
+                        country: "",
+                      },
+                      priceRange: [0, 10000],
+                      capacity: "all" as CapacityOption,
+                      sortOption: "default" as SortOption,
                       serviceType: value,
                     };
                     setSearchFilters(newFilters);
                     updateURLWithFilters(newFilters);
-                    fetchServiceListings(true, newFilters);
+                    fetchServiceListings(false, newFilters);
                   }}
                 >
                   <SelectTrigger>
