@@ -15,6 +15,7 @@ import { VenueInfoGrid } from "@/components/ui/CardInfoGrid";
 
 interface VenueDetails {
   user_id: string;
+  user_email: string;
   id: string;
   business_name: string;
   address: string;
@@ -250,6 +251,7 @@ export default function VenueDetailsPage() {
           `
           *,
           user_id,
+          user_email,
           venue_media (
             file_path,
             display_order
@@ -327,9 +329,7 @@ export default function VenueDetailsPage() {
         throw new Error(data.error || "Failed to send inquiry");
       }
 
-      toast.success(
-        "Your inquiry has been sent! The venue owner will contact you soon."
-      );
+      toast.success("Your inquiry has been sent! They will contact you soon.");
 
       setInquiryForm({
         firstName: "",

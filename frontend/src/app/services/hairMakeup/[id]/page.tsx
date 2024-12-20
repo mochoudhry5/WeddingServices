@@ -15,6 +15,7 @@ import { ServiceInfoGrid } from "@/components/ui/CardInfoGrid";
 
 interface HairMakeupDetails {
   user_id: string;
+  user_email: string; // Add this line
   id: string;
   business_name: string;
   service_type: "makeup" | "hair" | "both";
@@ -123,6 +124,7 @@ export default function MakeupDetailsPage() {
   const { user } = useAuth();
   const [hairMakeup, setHairMakeup] = useState<HairMakeupDetails | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [inquiryForm, setInquiryForm] = useState<InquiryForm>({
     firstName: "",
     lastName: "",
@@ -147,6 +149,7 @@ export default function MakeupDetailsPage() {
           `
             *,
             user_id,
+            user_email,
             is_remote_business,
             hair_makeup_media (
               file_path,
@@ -186,7 +189,44 @@ export default function MakeupDetailsPage() {
 
   const handleInquirySubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    toast.success("Inquiry sent successfully!");
+    setIsSubmitting(true);
+    try {
+      // Make API call to send inquiry
+      const response = await fetch("/api/inquiry", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          serviceType: "hair-makeup",
+          serviceId: hairMakeup?.id,
+          formData: inquiryForm,
+          businessName: hairMakeup?.business_name,
+        }),
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || "Failed to send inquiry");
+      }
+
+      // Clear form after successful submission
+      setInquiryForm({
+        firstName: "",
+        lastName: "",
+        email: "",
+        phone: "",
+        eventDate: "",
+        message: "",
+      });
+
+      toast.success("Your inquiry has been sent! They will contact you soon.");
+    } catch (error) {
+      console.error("Error sending inquiry:", error);
+      toast.error("Failed to send inquiry. Please try again.");
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const handleInputChange = (
@@ -310,7 +350,7 @@ export default function MakeupDetailsPage() {
 
         {/* Info Grid - Modern card layout for all screen sizes */}
         <div className="pb-10">
-        <ServiceInfoGrid service={hairMakeup} />
+          <ServiceInfoGrid service={hairMakeup} />
         </div>
         {/* About Section */}
         <div className="px-2 sm:px-0 mb-8 sm:mb-12">
@@ -468,9 +508,10 @@ export default function MakeupDetailsPage() {
 
               <Button
                 type="submit"
+                disabled={isSubmitting}
                 className="w-full bg-black hover:bg-stone-500 text-sm sm:text-base py-2 sm:py-3"
               >
-                Send Inquiry
+                {isSubmitting ? "Sending..." : "Send Inquiry"}
               </Button>
             </form>
           </div>

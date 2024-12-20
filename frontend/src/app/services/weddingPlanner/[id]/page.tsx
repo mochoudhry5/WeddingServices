@@ -15,6 +15,7 @@ import { ServiceInfoGrid } from "@/components/ui/CardInfoGrid";
 
 interface WeddingPlannerDetails {
   user_id: string;
+  user_email: string;
   id: string;
   business_name: string;
   years_experience: string;
@@ -118,6 +119,7 @@ export default function WeddingDetailsPage() {
   const [weddingPlanner, setWeddingPlanner] =
     useState<WeddingPlannerDetails | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [inquiryForm, setInquiryForm] = useState<InquiryForm>({
     firstName: "",
     lastName: "",
@@ -142,6 +144,7 @@ export default function WeddingDetailsPage() {
           `
           *,
           user_id,
+          user_email,
           wedding_planner_media (
             file_path,
             display_order
@@ -179,7 +182,44 @@ export default function WeddingDetailsPage() {
 
   const handleInquirySubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    toast.success("Inquiry sent successfully!");
+    setIsSubmitting(true);
+    try {
+      // Make API call to send inquiry
+      const response = await fetch("/api/inquiry", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          serviceType: "wedding-planner",
+          serviceId: weddingPlanner?.id,
+          formData: inquiryForm,
+          businessName: weddingPlanner?.business_name,
+        }),
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || "Failed to send inquiry");
+      }
+
+      // Clear form after successful submission
+      setInquiryForm({
+        firstName: "",
+        lastName: "",
+        email: "",
+        phone: "",
+        eventDate: "",
+        message: "",
+      });
+
+      toast.success("Your inquiry has been sent! They will contact you soon.");
+    } catch (error) {
+      console.error("Error sending inquiry:", error);
+      toast.error("Failed to send inquiry. Please try again.");
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const handleInputChange = (
@@ -292,7 +332,8 @@ export default function WeddingDetailsPage() {
           {weddingPlanner.min_service_price && (
             <div className="flex flex-col items-end">
               <div className="text-2xl sm:text-3xl font-semibold text-green-800">
-                {weddingPlanner.min_service_price === weddingPlanner.max_service_price
+                {weddingPlanner.min_service_price ===
+                weddingPlanner.max_service_price
                   ? `$${weddingPlanner.max_service_price.toLocaleString()}`
                   : `$${weddingPlanner.min_service_price.toLocaleString()} - $${weddingPlanner.max_service_price.toLocaleString()}`}
               </div>
@@ -456,9 +497,10 @@ export default function WeddingDetailsPage() {
               </div>
               <Button
                 type="submit"
+                disabled={isSubmitting}
                 className="w-full bg-black hover:bg-stone-500 text-sm sm:text-base py-2 sm:py-3"
               >
-                Send Inquiry
+                {isSubmitting ? "Sending..." : "Send Inquiry"}
               </Button>
             </form>
           </div>
