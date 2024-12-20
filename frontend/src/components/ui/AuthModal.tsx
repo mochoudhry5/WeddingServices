@@ -114,7 +114,7 @@ export function AuthModals({
                 <Button
                   type="submit"
                   disabled={isLoading}
-                  className="w-full bg-rose-600 hover:bg-rose-700 h-11 text-base font-medium"
+                  className="w-full bg-black hover:bg-stone-500 h-11 text-base font-medium"
                 >
                   {isLoading ? (
                     <svg
@@ -187,7 +187,7 @@ export function AuthModals({
                     <button
                       type="button"
                       onClick={() => setIsForgotPassword(true)}
-                      className="text-sm text-rose-600 hover:text-rose-700"
+                      className="text-sm text-black hover:text-stone-500"
                     >
                       Forgot password?
                     </button>
@@ -196,7 +196,7 @@ export function AuthModals({
                 <Button
                   type="submit"
                   disabled={isLoading}
-                  className="w-full bg-rose-600 hover:bg-rose-700 h-11 text-base font-medium"
+                  className="w-full bg-black hover:bg-stone-500 h-11 text-base font-medium"
                 >
                   {isLoading ? (
                     <svg
@@ -232,7 +232,7 @@ export function AuthModals({
               Don't have an account?{" "}
               <button
                 onClick={onSwitchToSignUp}
-                className="font-medium text-rose-600 hover:text-rose-700"
+                className="font-medium text-black hover:text-stone-500"
               >
                 Sign up
               </button>
@@ -299,7 +299,7 @@ export function AuthModals({
               <Button
                 type="submit"
                 disabled={isLoading}
-                className="w-full bg-rose-600 hover:bg-rose-700 h-11 text-base font-medium"
+                className="w-full bg-black hover:bg-stone-500 h-11 text-base font-medium"
               >
                 {isLoading ? (
                   <svg
@@ -334,7 +334,7 @@ export function AuthModals({
               Already have an account?{" "}
               <button
                 onClick={onSwitchToLogin}
-                className="font-medium text-rose-600 hover:text-rose-700"
+                className="font-medium text-black hover:text-stone-500"
               >
                 Sign in
               </button>
