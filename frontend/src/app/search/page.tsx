@@ -853,7 +853,8 @@ export default function ServicesSearchPage() {
                   ) : (
                     <>
                       <p className="text-slate-600 text-sm mb-2">
-                        Up to {(listing as VenueDetails).max_guests} guests • Venue
+                        Up to {(listing as VenueDetails).max_guests} guests •
+                        Venue
                       </p>
                       <p className="text-slate-600 text-sm mb-3 line-clamp-2">
                         {listing.description}
@@ -894,10 +895,13 @@ export default function ServicesSearchPage() {
                 <Select
                   value={searchFilters.serviceType}
                   onValueChange={(value: ServiceType) => {
-                    setSearchFilters((prev) => ({
-                      ...prev,
+                    const newFilters = {
+                      ...searchFilters,
                       serviceType: value,
-                    }));
+                    };
+                    setSearchFilters(newFilters);
+                    updateURLWithFilters(newFilters);
+                    fetchServiceListings(true, newFilters);
                   }}
                 >
                   <SelectTrigger>
