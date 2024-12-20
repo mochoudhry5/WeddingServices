@@ -33,10 +33,6 @@ const isValidServiceType = (value: string): value is ServiceType => {
   );
 };
 
-const isValidCapacityOption = (value: string): value is CapacityOption => {
-  return ["all", "0-100", "101-200", "201-300", "301+"].includes(value);
-};
-
 const isValidSortOption = (value: string): value is SortOption => {
   return ["default", "price_asc", "price_desc"].includes(value);
 };
@@ -49,7 +45,11 @@ type ServiceType =
   | "weddingPlanner"
   | "dj";
 type SortOption = "price_asc" | "price_desc" | "default";
-type CapacityOption = "all" | "0-100" | "101-200" | "201-300" | "301+";
+
+interface CapacityRange {
+  min: number;
+  max: number;
+}
 
 interface MediaItem {
   file_path: string;
@@ -160,7 +160,7 @@ interface LocationDetails {
 interface SearchFilters {
   searchQuery: LocationDetails;
   priceRange: number[];
-  capacity: CapacityOption;
+  capacity: CapacityRange; // Updated from CapacityOption
   sortOption: SortOption;
   serviceType: ServiceType;
 }
@@ -228,8 +228,8 @@ export default function ServicesSearchPage() {
   // Filter state
   const [searchFilters, setSearchFilters] = useState<SearchFilters>({
     searchQuery: { enteredLocation: "", city: "", state: "", country: "" },
-    priceRange: [0, 10000],
-    capacity: "all",
+    priceRange: [0, 0],
+    capacity: { min: 0, max: 0 },
     sortOption: "default",
     serviceType: isValidServiceType(serviceParam) ? serviceParam : "venue",
   });
@@ -278,11 +278,30 @@ export default function ServicesSearchPage() {
           // Apply price range filter
           if (
             filtersToUse.priceRange[0] > 0 ||
-            filtersToUse.priceRange[1] < 10000
+            filtersToUse.priceRange[1] > 0
           ) {
-            query = query
-              .lte("min_service_price", filtersToUse.priceRange[1])
-              .gte("max_service_price", filtersToUse.priceRange[0]);
+            if (
+              filtersToUse.priceRange[0] > 0 &&
+              filtersToUse.priceRange[1] > 0
+            ) {
+              // If both min and max are specified, find services where ranges overlap:
+              // Service max >= user min AND service min <= user max
+              query = query
+                .gte("max_service_price", filtersToUse.priceRange[0])
+                .lte("min_service_price", filtersToUse.priceRange[1]);
+            } else if (filtersToUse.priceRange[0] > 0) {
+              // If only min is specified, find services that have max price above this
+              query = query.gte(
+                "max_service_price",
+                filtersToUse.priceRange[0]
+              );
+            } else if (filtersToUse.priceRange[1] > 0) {
+              // If only max is specified, find services that have min price below this
+              query = query.lte(
+                "min_service_price",
+                filtersToUse.priceRange[1]
+              );
+            }
           }
           // Apply location filter
           const { city, state } = filtersToUse.searchQuery;
@@ -335,13 +354,31 @@ export default function ServicesSearchPage() {
           // Apply price range filter - ensure we're handling nulls and using proper comparisons
           if (
             filtersToUse.priceRange[0] > 0 ||
-            filtersToUse.priceRange[1] < 10000
+            filtersToUse.priceRange[1] > 0
           ) {
-            query = query
-              .lte("min_service_price", filtersToUse.priceRange[1])
-              .gte("max_service_price", filtersToUse.priceRange[0]);
+            if (
+              filtersToUse.priceRange[0] > 0 &&
+              filtersToUse.priceRange[1] > 0
+            ) {
+              // If both min and max are specified, find services where ranges overlap:
+              // Service max >= user min AND service min <= user max
+              query = query
+                .gte("max_service_price", filtersToUse.priceRange[0])
+                .lte("min_service_price", filtersToUse.priceRange[1]);
+            } else if (filtersToUse.priceRange[0] > 0) {
+              // If only min is specified, find services that have max price above this
+              query = query.gte(
+                "max_service_price",
+                filtersToUse.priceRange[0]
+              );
+            } else if (filtersToUse.priceRange[1] > 0) {
+              // If only max is specified, find services that have min price below this
+              query = query.lte(
+                "min_service_price",
+                filtersToUse.priceRange[1]
+              );
+            }
           }
-
           // Apply location filter
           const { city, state } = filtersToUse.searchQuery;
           if (city || state) {
@@ -398,13 +435,31 @@ export default function ServicesSearchPage() {
           // Apply price range filter - ensure we're handling nulls and using proper comparisons
           if (
             filtersToUse.priceRange[0] > 0 ||
-            filtersToUse.priceRange[1] < 10000
+            filtersToUse.priceRange[1] > 0
           ) {
-            query = query
-              .lte("min_service_price", filtersToUse.priceRange[1])
-              .gte("max_service_price", filtersToUse.priceRange[0]);
+            if (
+              filtersToUse.priceRange[0] > 0 &&
+              filtersToUse.priceRange[1] > 0
+            ) {
+              // If both min and max are specified, find services where ranges overlap:
+              // Service max >= user min AND service min <= user max
+              query = query
+                .gte("max_service_price", filtersToUse.priceRange[0])
+                .lte("min_service_price", filtersToUse.priceRange[1]);
+            } else if (filtersToUse.priceRange[0] > 0) {
+              // If only min is specified, find services that have max price above this
+              query = query.gte(
+                "max_service_price",
+                filtersToUse.priceRange[0]
+              );
+            } else if (filtersToUse.priceRange[1] > 0) {
+              // If only max is specified, find services that have min price below this
+              query = query.lte(
+                "min_service_price",
+                filtersToUse.priceRange[1]
+              );
+            }
           }
-
           // Apply location filter
           const { city, state } = filtersToUse.searchQuery;
           if (city || state) {
@@ -461,13 +516,31 @@ export default function ServicesSearchPage() {
           // Apply price range filter - ensure we're handling nulls and using proper comparisons
           if (
             filtersToUse.priceRange[0] > 0 ||
-            filtersToUse.priceRange[1] < 10000
+            filtersToUse.priceRange[1] > 0
           ) {
-            query = query
-              .lte("min_service_price", filtersToUse.priceRange[1])
-              .gte("max_service_price", filtersToUse.priceRange[0]);
+            if (
+              filtersToUse.priceRange[0] > 0 &&
+              filtersToUse.priceRange[1] > 0
+            ) {
+              // If both min and max are specified, find services where ranges overlap:
+              // Service max >= user min AND service min <= user max
+              query = query
+                .gte("max_service_price", filtersToUse.priceRange[0])
+                .lte("min_service_price", filtersToUse.priceRange[1]);
+            } else if (filtersToUse.priceRange[0] > 0) {
+              // If only min is specified, find services that have max price above this
+              query = query.gte(
+                "max_service_price",
+                filtersToUse.priceRange[0]
+              );
+            } else if (filtersToUse.priceRange[1] > 0) {
+              // If only max is specified, find services that have min price below this
+              query = query.lte(
+                "min_service_price",
+                filtersToUse.priceRange[1]
+              );
+            }
           }
-
           // Apply location filter
           const { city, state } = filtersToUse.searchQuery;
           if (city || state) {
@@ -540,25 +613,30 @@ export default function ServicesSearchPage() {
           if (filtersToUse.priceRange[0] > 0) {
             query = query.gte("base_price", filtersToUse.priceRange[0]);
           }
-          if (filtersToUse.priceRange[1] < 10000) {
+          if (filtersToUse.priceRange[1] > 0) {
             query = query.lte("base_price", filtersToUse.priceRange[1]);
           }
 
           // Apply capacity filter
-          if (filtersToUse.capacity !== "all") {
-            switch (filtersToUse.capacity) {
-              case "0-100":
-                query = query.lte("max_guests", 100);
-                break;
-              case "101-200":
-                query = query.gt("max_guests", 100).lte("max_guests", 200);
-                break;
-              case "201-300":
-                query = query.gt("max_guests", 200).lte("max_guests", 300);
-                break;
-              case "301+":
-                query = query.gt("max_guests", 300);
-                break;
+          if (filtersToUse.capacity.min > 0 || filtersToUse.capacity.max > 0) {
+            if (
+              filtersToUse.capacity.min > 0 &&
+              filtersToUse.capacity.max > 0
+            ) {
+              // Case 1: Both min and max are specified
+              // Find venues where ranges overlap:
+              // Venue max >= user min AND venue min <= user max
+              query = query
+                .gte("max_guests", filtersToUse.capacity.min)
+                .lte("min_guests", filtersToUse.capacity.max);
+            } else if (filtersToUse.capacity.min > 0) {
+              // Case 2: Only min is specified
+              // Find venues that can accommodate at least this many guests
+              query = query.gte("max_guests", filtersToUse.capacity.min);
+            } else if (filtersToUse.capacity.max > 0) {
+              // Case 3: Only max is specified
+              // Find venues that don't require more than this many guests
+              query = query.lte("min_guests", filtersToUse.capacity.max);
             }
           }
 
@@ -631,8 +709,8 @@ export default function ServicesSearchPage() {
   const handleFilterReset = () => {
     const resetFilters: SearchFilters = {
       searchQuery: { enteredLocation: "", city: "", state: "", country: "" },
-      priceRange: [0, 10000],
-      capacity: "all",
+      priceRange: [0, 0],
+      capacity: { min: 0, max: 0 },
       sortOption: "default",
       serviceType: searchFilters.serviceType,
     };
@@ -910,9 +988,9 @@ export default function ServicesSearchPage() {
                         state: "",
                         country: "",
                       },
-                      priceRange: [0, 10000],
-                      capacity: "all" as CapacityOption,
-                      sortOption: "default" as SortOption,
+                      priceRange: [0, 0],
+                      capacity: { min: 0, max: 0 }, // Updated from "all"
+                      sortOption: "default",
                       serviceType: value,
                     };
                     setSearchFilters(newFilters);
@@ -1031,67 +1109,145 @@ export default function ServicesSearchPage() {
                     <div className="mt-6 space-y-6">
                       {/* Price Range */}
                       <div className="px-1">
-                        <h3 className="text-sm font-medium mb-4">
+                        <h3 className="text-sm font-medium mb-1">
                           Price Range
                         </h3>
-                        <Slider
-                          defaultValue={searchFilters.priceRange}
-                          value={searchFilters.priceRange}
-                          max={10000}
-                          step={500}
-                          onValueChange={(value) => {
-                            setSearchFilters((prev) => ({
-                              ...prev,
-                              priceRange: value,
-                            }));
-                          }}
-                          className="mb-2"
-                        />
-                        <div className="flex justify-between text-sm text-slate-600">
-                          <span>
-                            ${searchFilters.priceRange[0].toLocaleString()}
-                          </span>
-                          <span>
-                            ${searchFilters.priceRange[1].toLocaleString()}
-                          </span>
+                        <div className="grid grid-cols-2 gap-4">
+                          <div>
+                            <label className="text-sm text-slate-600">
+                              Minimum Price
+                            </label>
+                            <div className="relative">
+                              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-600">
+                                $
+                              </span>
+                              <input
+                                type="number"
+                                min="0"
+                                value={searchFilters.priceRange[0] || ""}
+                                onChange={(e) => {
+                                  const value = Math.max(
+                                    0,
+                                    parseInt(e.target.value) || 0
+                                  );
+                                  setSearchFilters((prev) => ({
+                                    ...prev,
+                                    priceRange: [value, prev.priceRange[1]],
+                                  }));
+                                }}
+                                className="w-full mt-1 pl-7 pr-3 py-2 border border-slate-200 rounded-lg 
+                   focus:outline-none focus:ring-2 focus:ring-black"
+                                placeholder="Min price"
+                              />
+                            </div>
+                          </div>
+                          <div>
+                            <label className="text-sm text-slate-600">
+                              Maximum Price
+                            </label>
+                            <div className="relative">
+                              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-600">
+                                $
+                              </span>
+                              <input
+                                type="number"
+                                min="0"
+                                value={searchFilters.priceRange[1] || ""}
+                                onChange={(e) => {
+                                  const value = Math.max(
+                                    0,
+                                    parseInt(e.target.value) || 0
+                                  );
+                                  setSearchFilters((prev) => ({
+                                    ...prev,
+                                    priceRange: [prev.priceRange[0], value],
+                                  }));
+                                }}
+                                className="w-full mt-1 pl-7 pr-3 py-2 border border-slate-200 rounded-lg 
+                   focus:outline-none focus:ring-2 focus:ring-black"
+                                placeholder="Max price"
+                              />
+                            </div>
+                          </div>
                         </div>
+                        {/* Add validation message if min > max */}
+                        {searchFilters.priceRange[0] >
+                          searchFilters.priceRange[1] &&
+                          searchFilters.priceRange[1] !== 0 && (
+                            <p className="text-sm text-red-500 mt-2">
+                              Minimum price should not exceed maximum price
+                            </p>
+                          )}
                       </div>
-
                       {/* Capacity - Only show for venues */}
                       {SERVICE_CONFIGS[searchFilters.serviceType]
                         .hasCapacity && (
                         <div>
-                          <h3 className="text-sm font-medium mb-4">
-                            Guest Capacity
+                          <h3 className="text-sm font-medium mb-1">
+                            Guest Capacity Range
                           </h3>
-                          <Select
-                            value={searchFilters.capacity}
-                            onValueChange={(value: string) => {
-                              if (isValidCapacityOption(value)) {
-                                setSearchFilters((prev) => ({
-                                  ...prev,
-                                  capacity: value,
-                                }));
-                              }
-                            }}
-                          >
-                            <SelectTrigger>
-                              <SelectValue placeholder="Select capacity range" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="all">Any capacity</SelectItem>
-                              <SelectItem value="0-100">
-                                Up to 100 guests
-                              </SelectItem>
-                              <SelectItem value="101-200">
-                                101-200 guests
-                              </SelectItem>
-                              <SelectItem value="201-300">
-                                201-300 guests
-                              </SelectItem>
-                              <SelectItem value="301+">301+ guests</SelectItem>
-                            </SelectContent>
-                          </Select>
+                          <div className="grid grid-cols-2 gap-4">
+                            <div>
+                              <label className="text-sm text-slate-600">
+                                Minimum Guests
+                              </label>
+                              <input
+                                type="number"
+                                min="0"
+                                value={searchFilters.capacity.min || ""}
+                                onChange={(e) => {
+                                  const value = Math.max(
+                                    0,
+                                    parseInt(e.target.value) || 0
+                                  );
+                                  setSearchFilters((prev) => ({
+                                    ...prev,
+                                    capacity: {
+                                      ...prev.capacity,
+                                      min: value,
+                                    },
+                                  }));
+                                }}
+                                className="w-full mt-1 px-3 py-2 border border-slate-200 rounded-lg 
+                   focus:outline-none focus:ring-2 focus:ring-black"
+                                placeholder="Min guests"
+                              />
+                            </div>
+                            <div>
+                              <label className="text-sm text-slate-600">
+                                Maximum Guests
+                              </label>
+                              <input
+                                type="number"
+                                min="0"
+                                value={searchFilters.capacity.max || ""}
+                                onChange={(e) => {
+                                  const value = Math.max(
+                                    0,
+                                    parseInt(e.target.value) || 0
+                                  );
+                                  setSearchFilters((prev) => ({
+                                    ...prev,
+                                    capacity: {
+                                      ...prev.capacity,
+                                      max: value,
+                                    },
+                                  }));
+                                }}
+                                className="w-full mt-1 px-3 py-2 border border-slate-200 rounded-lg 
+                   focus:outline-none focus:ring-2 focus:ring-black"
+                                placeholder="Max guests"
+                              />
+                            </div>
+                          </div>
+                          {/* Add validation message if min > max */}
+                          {searchFilters.capacity.min >
+                            searchFilters.capacity.max &&
+                            searchFilters.capacity.max !== 0 && (
+                              <p className="text-sm text-red-500 mt-2">
+                                Minimum guests should not exceed maximum guests
+                              </p>
+                            )}
                         </div>
                       )}
 
