@@ -1287,7 +1287,7 @@ export default function ServicesSearchPage() {
                       )}
                       {/* Sort Options */}
                       <div>
-                        <h3 className="text-sm font-medium mb-4">Sort By</h3>
+                        <h3 className="text-sm font-medium mb-1">Sort By</h3>
                         <Select
                           value={searchFilters.sortOption}
                           onValueChange={(value: string) => {

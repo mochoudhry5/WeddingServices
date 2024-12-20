@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
-import { Loader2, MapPin, Search } from "lucide-react";
+import { Loader2, MapPin, Search, X } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
@@ -209,7 +209,18 @@ const LocationInput = ({
     // Add click listener to document for pac-item clicks
     document.addEventListener("click", handlePacItemClick);
   };
-
+  const handleClear = () => {
+    onChange("");
+    if (onPlaceSelect) {
+      onPlaceSelect({
+        formatted_address: "",
+        address_components: [],
+      });
+    }
+    if (inputRef.current) {
+      inputRef.current.focus();
+    }
+  };
   // Handle place selection
   const handlePlaceSelection = (place: google.maps.places.PlaceResult) => {
     onChange(place.formatted_address || "");
@@ -289,6 +300,9 @@ const LocationInput = ({
     if (e.key === "Enter") {
       e.preventDefault();
     }
+    if (e.key === "Escape" && value) {
+      handleClear();
+    }
   };
 
   if (loadError) {
@@ -314,23 +328,35 @@ const LocationInput = ({
             ? "Getting your location..."
             : placeholder || "Search by location"
         }
-        className={cn("pl-10 pr-10", className)}
+        className={cn("pl-10 pr-20", className)} // Increased right padding for both buttons
         disabled={!isLoaded || isLoadingLocation}
         autoComplete="off"
       />
-      <button
-        type="button"
-        onClick={getCurrentLocation}
-        disabled={!isLoaded || isLoadingLocation}
-        className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 disabled:opacity-50"
-        title="Use current location"
-      >
-        {isLoadingLocation ? (
-          <Loader2 size={20} className="animate-spin" />
-        ) : (
-          <MapPin size={20} />
+      <div className="absolute right-3 top-1/2 transform -translate-y-1/2 flex items-center gap-2">
+        {value && (
+          <button
+            type="button"
+            onClick={handleClear}
+            className="text-gray-400 hover:text-gray-600 focus:outline-none p-1"
+            title="Clear location"
+          >
+            <X className="bg-gray-400 rounded-lg text-white" size={16} />
+          </button>
         )}
-      </button>
+        <button
+          type="button"
+          onClick={getCurrentLocation}
+          disabled={!isLoaded || isLoadingLocation}
+          className="text-gray-400 hover:text-gray-600 disabled:opacity-50"
+          title="Use current location"
+        >
+          {isLoadingLocation ? (
+            <Loader2 size={20} className="animate-spin" />
+          ) : (
+            <MapPin size={20} />
+          )}
+        </button>
+      </div>
     </div>
   );
 };
