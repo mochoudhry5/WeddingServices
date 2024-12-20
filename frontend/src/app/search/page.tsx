@@ -68,9 +68,9 @@ interface VenueDetails {
   min_guests: number | null;
   max_guests: number;
   description: string;
-  rating: number;
   venue_media: MediaItem[];
   created_at: string;
+  catering_option: "in_house" | "preferred" | "outside" | "both" | null; // Added this field
 }
 
 interface HairMakeupDetails {
@@ -160,9 +160,10 @@ interface LocationDetails {
 interface SearchFilters {
   searchQuery: LocationDetails;
   priceRange: number[];
-  capacity: CapacityRange; // Updated from CapacityOption
+  capacity: CapacityRange;
   sortOption: SortOption;
   serviceType: ServiceType;
+  cateringOption: string;
 }
 
 interface ServiceConfig {
@@ -232,6 +233,7 @@ export default function ServicesSearchPage() {
     capacity: { min: 0, max: 0 },
     sortOption: "default",
     serviceType: isValidServiceType(serviceParam) ? serviceParam : "venue",
+    cateringOption: "both", // Added this field
   });
 
   useEffect(() => {
@@ -640,6 +642,17 @@ export default function ServicesSearchPage() {
             }
           }
 
+          if (filtersToUse.cateringOption !== "all") {
+            if (filtersToUse.cateringOption === "in_house") {
+              query = query.or("catering_option.in.(in_house,both)");
+            } else if (filtersToUse.cateringOption === "outside") {
+              query = query.or("catering_option.in.(outside,both)");
+            } else if (filtersToUse.cateringOption === "both") {
+              // No additional filter needed for "both" as these venues should appear in all searches
+              query = query.or("catering_option.in.(in_house,outside,both)");
+            }
+          }
+
           // Apply sorting
           switch (filtersToUse.sortOption) {
             case "price_asc":
@@ -713,12 +726,14 @@ export default function ServicesSearchPage() {
       capacity: { min: 0, max: 0 },
       sortOption: "default",
       serviceType: searchFilters.serviceType,
+      cateringOption: "all", // Reset catering option
     };
     setSearchFilters(resetFilters);
     updateURLWithFilters(resetFilters);
     setIsFilterSheetOpen(false);
     fetchServiceListings(false);
   };
+
   type ServiceDetails = {
     serviceType:
       | "venue"
@@ -990,6 +1005,7 @@ export default function ServicesSearchPage() {
                       },
                       priceRange: [0, 0],
                       capacity: { min: 0, max: 0 }, // Updated from "all"
+                      cateringOption: "both",
                       sortOption: "default",
                       serviceType: value,
                     };
@@ -1114,9 +1130,6 @@ export default function ServicesSearchPage() {
                         </h3>
                         <div className="grid grid-cols-2 gap-4">
                           <div>
-                            <label className="text-sm text-slate-600">
-                              Minimum Price
-                            </label>
                             <div className="relative">
                               <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-600">
                                 $
@@ -1142,9 +1155,6 @@ export default function ServicesSearchPage() {
                             </div>
                           </div>
                           <div>
-                            <label className="text-sm text-slate-600">
-                              Maximum Price
-                            </label>
                             <div className="relative">
                               <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-600">
                                 $
@@ -1188,9 +1198,6 @@ export default function ServicesSearchPage() {
                           </h3>
                           <div className="grid grid-cols-2 gap-4">
                             <div>
-                              <label className="text-sm text-slate-600">
-                                Minimum Guests
-                              </label>
                               <input
                                 type="number"
                                 min="0"
@@ -1214,9 +1221,6 @@ export default function ServicesSearchPage() {
                               />
                             </div>
                             <div>
-                              <label className="text-sm text-slate-600">
-                                Maximum Guests
-                              </label>
                               <input
                                 type="number"
                                 min="0"
@@ -1250,7 +1254,37 @@ export default function ServicesSearchPage() {
                             )}
                         </div>
                       )}
-
+                      {searchFilters.serviceType === "venue" && (
+                        <div className="mt-6">
+                          <h3 className="text-sm font-medium mb-1">
+                            Catering Options
+                          </h3>
+                          <Select
+                            value={searchFilters.cateringOption}
+                            onValueChange={(value: string) => {
+                              setSearchFilters((prev) => ({
+                                ...prev,
+                                cateringOption: value,
+                              }));
+                            }}
+                          >
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select catering option" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="in_house">
+                                In-house Catering
+                              </SelectItem>
+                              <SelectItem value="outside">
+                                Outside Catering
+                              </SelectItem>
+                              <SelectItem value="both">
+                                Both In-house & Outside
+                              </SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      )}
                       {/* Sort Options */}
                       <div>
                         <h3 className="text-sm font-medium mb-4">Sort By</h3>
