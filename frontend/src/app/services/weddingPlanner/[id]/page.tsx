@@ -171,7 +171,7 @@ export default function WeddingDetailsPage() {
         return;
       }
 
-      console.log("Photography & Videography data:", weddingPlannerData);
+      console.log("Wedding Planner & Coordinator data:", weddingPlannerData);
       setWeddingPlanner(weddingPlannerData);
     } catch (error) {
       console.error("Error loading photography & videography listing:", error);

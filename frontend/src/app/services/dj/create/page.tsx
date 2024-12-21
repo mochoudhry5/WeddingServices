@@ -352,6 +352,7 @@ const CreateDJListing = () => {
         .from("dj_listing")
         .insert({
           user_id: user.id,
+          user_email: user.email,
           business_name: businessName,
           years_experience: experience,
           travel_range: isWillingToTravel ? -1 : parseInt(travelRange), // Use -1 to indicate willing to travel anywhere
@@ -607,7 +608,7 @@ const CreateDJListing = () => {
                   <div>
                     <div className="flex items-center mb-1">
                       <label className="block text-sm font-medium text-gray-700">
-                        DJ Styles*
+                        DJ Genres*
                       </label>
                       <button
                         type="button"

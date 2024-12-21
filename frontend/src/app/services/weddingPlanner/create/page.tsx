@@ -342,6 +342,7 @@ const CreateWeddingPlannerListing = () => {
           .from("wedding_planner_listing")
           .insert({
             user_id: user.id,
+            user_email: user.email,
             business_name: businessName,
             years_experience: experience,
             travel_range: isWillingToTravel ? -1 : parseInt(travelRange), // Use -1 to indicate willing to travel anywhere
@@ -1288,7 +1289,9 @@ const CreateWeddingPlannerListing = () => {
             {/* Step 4: Availability */}
             {currentStep === 4 && (
               <div className="space-y-6">
-                <h2 className="text-2xl font-semibold mb-6">About Your Business</h2>
+                <h2 className="text-2xl font-semibold mb-6">
+                  About Your Business
+                </h2>
                 <TravelSection
                   travelRange={travelRange}
                   setTravelRange={setTravelRange}

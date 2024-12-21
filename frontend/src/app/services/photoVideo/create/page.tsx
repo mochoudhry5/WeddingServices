@@ -191,8 +191,6 @@ const CreatePhotographyListing = () => {
         const hasEmptyCustomPhotoStyles = customPhotoStyles.some(
           (style) => style.trim() === ""
         );
-
-        // Check if there are any empty custom hair styles
         const hasEmptyCustomVideoStyles = customVideoStyles.some(
           (style) => style.trim() === ""
         );
@@ -409,6 +407,7 @@ const CreatePhotographyListing = () => {
         .from("photo_video_listing")
         .insert({
           user_id: user.id,
+          user_email: user.email,
           business_name: businessName,
           years_experience: experience,
           travel_range: isWillingToTravel ? -1 : parseInt(travelRange), // Use -1 to indicate willing to travel anywhere
@@ -439,40 +438,70 @@ const CreatePhotographyListing = () => {
         );
       }
 
-      const specialtiesData = [
-        ...specialties.map((specialty) => ({
-          business_id: photoVideo.id,
-          specialty,
-          is_custom: false,
-          style_type: commonPhotoStyles.includes(specialty)
-            ? "photography"
-            : "videography",
-        })),
-        ...customPhotoStyles
-          .filter((style) => style.trim() !== "")
-          .map((style) => ({
-            business_id: photoVideo.id,
-            specialty: style,
-            is_custom: true,
-            style_type: "photography",
-          })),
-        ...customVideoStyles
-          .filter((style) => style.trim() !== "")
-          .map((style) => ({
-            business_id: photoVideo.id,
-            specialty: style,
-            is_custom: true,
-            style_type: "videography",
-          })),
-      ];
-      const { error: specialtiesError } = await supabase
-        .from("photo_video_specialties")
-        .insert(specialtiesData);
+      const uniqueSpecialties = new Set([
+        ...(serviceType === "photography" || serviceType === "both"
+          ? specialties
+              .filter((specialty) => commonPhotoStyles.includes(specialty))
+              .map((specialty) =>
+                JSON.stringify({
+                  specialty,
+                  is_custom: false,
+                  style_type: "photography",
+                })
+              )
+          : []),
+        ...(serviceType === "videography" || serviceType === "both"
+          ? specialties
+              .filter((specialty) => commonVideoStyles.includes(specialty))
+              .map((specialty) =>
+                JSON.stringify({
+                  specialty,
+                  is_custom: false,
+                  style_type: "videography",
+                })
+              )
+          : []),
+        ...(serviceType === "photography" || serviceType === "both"
+          ? customPhotoStyles
+              .filter((style) => style.trim() !== "")
+              .map((style) =>
+                JSON.stringify({
+                  specialty: style,
+                  is_custom: true,
+                  style_type: "photography",
+                })
+              )
+          : []),
+        ...(serviceType === "videography" || serviceType === "both"
+          ? customVideoStyles
+              .filter((style) => style.trim() !== "")
+              .map((style) =>
+                JSON.stringify({
+                  specialty: style,
+                  is_custom: true,
+                  style_type: "videography",
+                })
+              )
+          : []),
+      ]);
 
-      if (specialtiesError) {
-        throw new Error(
-          `Failed to create specialties: ${specialtiesError.message}`
-        );
+      const specialtiesData = Array.from(uniqueSpecialties).map(
+        (specialty) => ({
+          business_id: photoVideo.id,
+          ...JSON.parse(specialty),
+        })
+      );
+
+      if (specialtiesData.length > 0) {
+        const { error: insertSpecialtiesError } = await supabase
+          .from("photo_video_specialties")
+          .insert(specialtiesData);
+
+        if (insertSpecialtiesError) {
+          throw new Error(
+            `Failed to create specialties: ${insertSpecialtiesError.message}`
+          );
+        }
       }
 
       // Upload media files

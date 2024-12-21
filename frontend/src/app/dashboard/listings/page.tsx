@@ -56,7 +56,7 @@ const SERVICE_CONFIGS: ServiceConfigs = {
     mediaTableName: "venue_media",
     storageBucket: "venue-media",
     displayName: "Venue",
-    routePrefix: "venues",
+    routePrefix: "services/venue",
     additionalFields: ["max_guests", "base_price"],
   },
   "photo-video": {
@@ -64,7 +64,7 @@ const SERVICE_CONFIGS: ServiceConfigs = {
     mediaTableName: "photo_video_media",
     storageBucket: "photo-video-media",
     displayName: "Photography & Videography",
-    routePrefix: "services/photo-video",
+    routePrefix: "services/photoVideo",
     additionalFields: ["service_type"],
   },
   "hair-makeup": {
@@ -321,7 +321,7 @@ export default function MyListingsPage() {
           />
           <div className="absolute top-2 left-2 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
             <Link
-              href={`/${config.routePrefix}/${listing.id}/edit`}
+              href={`/${config.routePrefix}/edit/${listing.id}`}
               className="bg-white p-2 rounded-full shadow-lg hover:bg-gray-100 transition-colors"
             >
               <Pencil className="w-4 h-4 text-gray-600" />
@@ -338,7 +338,7 @@ export default function MyListingsPage() {
         </div>
 
         <a
-          href={`/services/${serviceType}/${listing.id}`}
+          href={`/${config.routePrefix}/${listing.id}`}
           className="block hover:cursor-pointer"
         >
           <div className="p-4">
@@ -442,7 +442,7 @@ export default function MyListingsPage() {
             <h1 className="text-2xl font-bold">My Listings</h1>
             <Link
               href="/services"
-              className="bg-gray-500 hover:bg-stone-500 text-white px-4 py-2 rounded-lg transition-colors"
+              className="bg-black hover:bg-stone-500 text-white px-4 py-2 rounded-lg transition-colors"
             >
               Add New Listing
             </Link>
@@ -515,7 +515,7 @@ export default function MyListingsPage() {
                         </p>
                         <Link
                           href="/services"
-                          className="inline-flex items-center px-4 py-2 bg-rose-600 hover:bg-rose-700 text-white rounded-lg transition-colors"
+                          className="inline-flex items-center px-4 py-2 bg-black hover:bg-stone-500 text-white rounded-lg transition-colors"
                         >
                           Create Listing
                         </Link>

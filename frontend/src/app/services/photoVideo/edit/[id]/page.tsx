@@ -1,12 +1,11 @@
 "use client";
 
-import React, { useState } from "react";
-import { useRouter } from "next/navigation";
+import React, { useState, useEffect } from "react";
 import { Upload, Plus, X, DollarSign, Clock } from "lucide-react";
+import { useParams, useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { supabase } from "@/lib/supabase";
 import { Input } from "@/components/ui/input";
-import TravelSection from "@/components/ui/TravelSection";
 import {
   Select,
   SelectContent,
@@ -27,6 +26,7 @@ import {
 import NavBar from "@/components/ui/NavBar";
 import Footer from "@/components/ui/Footer";
 import LocationInput from "@/components/ui/LocationInput";
+import TravelSection from "@/components/ui/TravelSection";
 
 // Types
 interface MediaFile {
@@ -46,54 +46,52 @@ interface Service {
 
 const commonServices = [
   {
-    name: "Bridal Makeup",
-    description: "Complete bridal makeup with trials and touch-ups.",
+    name: "Full Day Photography",
+    description:
+      "Photography for the full day including bride and groom getting ready.",
     suggestedPrice: 0,
     suggestedDuration: 0,
   },
   {
-    name: "Bridal Party Makeup",
-    description: "Professional makeup for bridesmaids.",
-    suggestedPrice: 0,
-    suggestedDuration: 0,
-  },
-  {
-    name: "Preview Makeup",
-    description: "Elegant makeup for relatives.",
+    name: "Party Photography",
+    description: "Professional Photography for the day of Party.",
     suggestedPrice: 0,
     suggestedDuration: 0,
   },
 ];
 
-const commonHairServices = [
+const commonVideoServices = [
   {
-    name: "Bridal Hair",
-    description: "Complete Hair for the day of Bridal.",
+    name: "Full Day Videography",
+    description:
+      "Videography for the full day including bride and groom getting ready.",
     suggestedPrice: 0,
     suggestedDuration: 0,
   },
   {
-    name: "Bridal Party Hair",
-    description: "Professional Hair for Bridal Party.",
-    suggestedPrice: 0,
-    suggestedDuration: 0,
-  },
-  {
-    name: "Preview Hair",
-    description: "Trial Hair Session.",
+    name: "Party Videography",
+    description: "Professional Videography for the day of Party.",
     suggestedPrice: 0,
     suggestedDuration: 0,
   },
 ];
 
-type ServiceType = "makeup" | "hair" | "both";
+type ServiceType = "photography" | "videography" | "both";
 
-const commonMakeupStyles = ["Natural", "Bridal", "Soft Glam"];
+const commonPhotoStyles = ["Editorial", "Fine Arts", "Traditional"];
 
-const commonHairStyles = ["Updo", "Half-Up", "Hollywood Waves"];
+const commonVideoStyles = [
+  "Cinematic",
+  "Traditional",
+  "Storytelling",
+  "Documentary",
+];
 
-const CreateMakeupListing = () => {
+const UpdatePhotoVideoListing = () => {
   const router = useRouter();
+  const params = useParams();
+  const { id } = params;
+
   const [currentStep, setCurrentStep] = useState(1);
   const totalSteps = 4;
   const [showCancelDialog, setShowCancelDialog] = useState(false);
@@ -105,12 +103,12 @@ const CreateMakeupListing = () => {
   const [travelRange, setTravelRange] = useState("");
   const [description, setDescription] = useState("");
   const [specialties, setSpecialties] = useState<string[]>([]);
-  const [customMakeupStyles, setCustomMakeupStyles] = useState<string[]>([]);
-  const [customHairStyles, setCustomHairStyles] = useState<string[]>([]);
+  const [customPhotoStyles, setCustomPhotoStyles] = useState<string[]>([]);
+  const [customVideoStyles, setCustomVideoStyles] = useState<string[]>([]);
   const [websiteUrl, setWebsiteUrl] = useState("");
   const [instagramUrl, setInstagramUrl] = useState("");
   const [isRemoteBusiness, setIsRemoteBusiness] = useState(false);
-  const [serviceType, setServiceType] = useState<ServiceType>("makeup");
+  const [serviceType, setServiceType] = useState<ServiceType>("photography");
   const [isWillingToTravel, setIsWillingToTravel] = useState(false);
   // Replace the individual location states with
   const [location, setLocation] = useState({
@@ -158,14 +156,6 @@ const CreateMakeupListing = () => {
   const countCharacters = (text: string): number => {
     return text.trim().length;
   };
-  const handleNumericInput = (value: string): string => {
-    // Remove leading zeros, prevent negative numbers, and remove decimals
-    let sanitized = value
-      .replace(/^0+/, "")
-      .replace(/-/g, "")
-      .replace(/\./g, "");
-    return sanitized === "" ? "0" : sanitized;
-  };
   const handleDragStart = (index: number) => {
     setDraggedItem(index);
   };
@@ -185,6 +175,148 @@ const CreateMakeupListing = () => {
   const handleDragEnd = () => {
     setDraggedItem(null);
   };
+  useEffect(() => {
+    const fetchPhotoVideoData = async () => {
+      try {
+        const { data: photoVideo, error } = await supabase
+          .from("photo_video_listing")
+          .select(
+            `
+              *,
+              photo_video_media (*),
+              photo_video_specialties (*),
+              photo_video_services (*)
+            `
+          )
+          .eq("id", id)
+          .single();
+
+        if (error) throw error;
+
+        if (photoVideo) {
+          // Basic Information
+          setBusinessName(photoVideo.business_name);
+          setExperience(photoVideo.years_experience);
+          setTravelRange(photoVideo.travel_range?.toString() || "");
+          setIsWillingToTravel(photoVideo.travel_anywhere);
+          setDescription(photoVideo.description);
+          setIsRemoteBusiness(photoVideo.is_remote_business);
+          setServiceType(photoVideo.service_type);
+          setWebsiteUrl(photoVideo.website_url || "");
+          setInstagramUrl(photoVideo.instagram_url || "");
+          setAvailability({ deposit: photoVideo.deposit?.toString() || "" });
+
+          // Location
+          setLocation({
+            enteredLocation: `${photoVideo.address || ""}, ${
+              photoVideo.city
+            }, ${photoVideo.state}, ${photoVideo.country}`.trim(),
+            address: photoVideo.address || "",
+            city: photoVideo.city || "",
+            state: photoVideo.state || "",
+            country: photoVideo.country || "",
+            placeId: photoVideo.place_id || "",
+          });
+
+          // Handle specialties
+          if (
+            photoVideo.photo_video_specialties &&
+            Array.isArray(photoVideo.photo_video_specialties)
+          ) {
+            const photoStyles: string[] = [];
+            const videoStyles: string[] = [];
+            const customPhotoStylesList: string[] = [];
+            const customVideoStylesList: string[] = [];
+
+            photoVideo.photo_video_specialties.forEach((specialty: any) => {
+              if (specialty.style_type === "photography") {
+                if (commonPhotoStyles.includes(specialty.specialty)) {
+                  photoStyles.push(specialty.specialty);
+                } else {
+                  customPhotoStylesList.push(specialty.specialty);
+                }
+              } else if (specialty.style_type === "videography") {
+                if (commonVideoStyles.includes(specialty.specialty)) {
+                  videoStyles.push(specialty.specialty);
+                } else {
+                  customVideoStylesList.push(specialty.specialty);
+                }
+              }
+            });
+
+            setSpecialties([...photoStyles, ...videoStyles]);
+            setCustomPhotoStyles(customPhotoStylesList);
+            setCustomVideoStyles(customVideoStylesList);
+          }
+
+          // Handle media files
+          if (
+            photoVideo.photo_video_media &&
+            Array.isArray(photoVideo.photo_video_media)
+          ) {
+            const existingIds: string[] = [];
+            const mediaFilesList = await Promise.all(
+              photoVideo.photo_video_media.map(async (media: any) => {
+                const {
+                  data: { publicUrl },
+                } = supabase.storage
+                  .from("photo-video-media")
+                  .getPublicUrl(media.file_path);
+
+                existingIds.push(media.id);
+
+                return {
+                  id: media.id,
+                  file: null,
+                  preview: publicUrl,
+                  type: media.media_type as "image" | "video",
+                };
+              })
+            );
+
+            setMediaFiles(mediaFilesList);
+          }
+
+          // Handle services
+          if (
+            photoVideo.photo_video_services &&
+            Array.isArray(photoVideo.photo_video_services)
+          ) {
+            const services: { [key: string]: Service } = {};
+            const customServicesList: Service[] = [];
+
+            photoVideo.photo_video_services.forEach((service: any) => {
+              const serviceObj = {
+                name: service.name,
+                description: service.description,
+                price: service.price,
+                duration: service.duration,
+              };
+
+              if (
+                commonServices.some((cs) => cs.name === service.name) ||
+                commonVideoServices.some((cvs) => cvs.name === service.name)
+              ) {
+                services[service.name] = serviceObj;
+              } else {
+                customServicesList.push({ ...serviceObj, isCustom: true });
+              }
+            });
+
+            setSelectedServices(services);
+            setCustomServices(customServicesList);
+          }
+        }
+      } catch (error) {
+        console.error("Error fetching photo/video data:", error);
+        toast.error("Failed to fetch listing data. Please try again.");
+      }
+    };
+
+    if (id) {
+      fetchPhotoVideoData();
+    }
+  }, [id]);
   // Form Validation
   const validateCurrentStep = () => {
     switch (currentStep) {
@@ -201,49 +333,47 @@ const CreateMakeupListing = () => {
           toast.error(`Please Select Service Offered`);
           return false;
         }
-        const hasEmptyCustomMakeupStyles = customMakeupStyles.some(
+        const hasEmptyCustomPhotoStyles = customPhotoStyles.some(
           (style) => style.trim() === ""
         );
 
-        // Check if there are any empty custom hair styles
-        const hasEmptyCustomHairStyles = customHairStyles.some(
+        const hasEmptyCustomVideoStyles = customVideoStyles.some(
           (style) => style.trim() === ""
         );
 
-        if (hasEmptyCustomMakeupStyles || hasEmptyCustomHairStyles) {
+        if (hasEmptyCustomPhotoStyles || hasEmptyCustomVideoStyles) {
           toast.error("Please fill in all custom styles or remove empty ones");
           return false;
         }
         const hasRequiredStyles = (type: ServiceType): boolean => {
-          const makeupStyles = [
-            ...specialties.filter((style) =>
-              commonMakeupStyles.includes(style)
-            ),
-            ...customMakeupStyles.filter((style) => style.trim() !== ""),
+          const photoStyles = [
+            ...specialties.filter((style) => commonPhotoStyles.includes(style)),
+            ...customPhotoStyles.filter((style) => style.trim() !== ""),
           ];
-          const hairStyles = [
-            ...specialties.filter((style) => commonHairStyles.includes(style)),
-            ...customHairStyles.filter((style) => style.trim() !== ""),
+          const videoStyles = [
+            ...specialties.filter((style) => commonVideoStyles.includes(style)),
+            ...customVideoStyles.filter((style) => style.trim() !== ""),
           ];
 
           switch (type) {
-            case "makeup":
-              return makeupStyles.length > 0;
-            case "hair":
-              return hairStyles.length > 0;
+            case "photography":
+              return photoStyles.length > 0;
+            case "videography":
+              return videoStyles.length > 0;
             case "both":
-              return makeupStyles.length > 0 && hairStyles.length > 0;
+              return photoStyles.length > 0 && videoStyles.length > 0;
           }
         };
 
         if (!hasRequiredStyles(serviceType)) {
           toast.error(
             serviceType === "both"
-              ? "Please select at least one makeup style and one hair style, or add a custom style"
+              ? "Please select at least one photography style and one videography style, or add a custom style"
               : `Please select at least one ${serviceType} style, or add a custom style`
           );
           return false;
         }
+
         if (countCharacters(description) < 100) {
           toast.error(
             `Description must be at least 100 characters. Current count: ${countCharacters(
@@ -252,7 +382,6 @@ const CreateMakeupListing = () => {
           );
           return false;
         }
-
         return (
           businessName &&
           location.enteredLocation &&
@@ -261,10 +390,10 @@ const CreateMakeupListing = () => {
           location.country &&
           description.trim().length >= 100 &&
           (specialties.length > 0 ||
-            customMakeupStyles.length > 0 ||
-            customHairStyles.length > 0) &&
-          !hasEmptyCustomMakeupStyles &&
-          !hasEmptyCustomHairStyles
+            customPhotoStyles.length > 0 ||
+            customVideoStyles.length > 0) &&
+          !hasEmptyCustomPhotoStyles &&
+          !hasEmptyCustomVideoStyles
         );
       case 2:
         if (mediaFiles.length < 5) {
@@ -393,8 +522,144 @@ const CreateMakeupListing = () => {
   const handleCancel = () => {
     window.history.back();
   };
+  const handleMediaUpload = async (
+    businessId: string | string[] | undefined,
+    mediaFiles: MediaFile[]
+  ) => {
+    try {
+      if (!businessId || Array.isArray(businessId)) {
+        throw new Error("Invalid business ID");
+      }
 
-  const handleSubmit = async () => {
+      // 1. Delete existing media records and storage files only for files that are being replaced
+      const { data: existingMedia, error: fetchError } = await supabase
+        .from("photo_video_media")
+        .select("*")
+        .eq("business_id", businessId);
+
+      if (fetchError) {
+        throw new Error(
+          `Failed to fetch existing media: ${fetchError.message}`
+        );
+      }
+
+      // 2. Separate existing files from new files
+      const existingFiles = mediaFiles.filter((file) => !file.file); // Files that already exist (no new File object)
+      const newFiles = mediaFiles.filter(
+        (file): file is MediaFile & { file: File } => Boolean(file.file)
+      ); // New files to upload
+
+      // 3. Create a map of existing files to preserve
+      const existingFileMap = new Map(
+        existingFiles.map((file) => [file.id, file])
+      );
+
+      // 4. Delete records and storage files that are no longer needed
+      const filesToDelete = existingMedia?.filter(
+        (media) => !existingFileMap.has(media.id)
+      );
+
+      if (filesToDelete && filesToDelete.length > 0) {
+        // Delete from storage
+        const { error: storageError } = await supabase.storage
+          .from("photo-video-media")
+          .remove(filesToDelete.map((media) => media.file_path));
+
+        if (storageError) {
+          throw new Error(
+            `Failed to remove old media files: ${storageError.message}`
+          );
+        }
+
+        // Delete records
+        const { error: deleteError } = await supabase
+          .from("photo_video_media")
+          .delete()
+          .in(
+            "id",
+            filesToDelete.map((media) => media.id)
+          );
+
+        if (deleteError) {
+          throw new Error(
+            `Failed to delete old media records: ${deleteError.message}`
+          );
+        }
+      }
+
+      // 5. Upload new files
+      const mediaPromises = newFiles.map(async (file, index) => {
+        const fileExt = file.file.name.split(".").pop();
+        const filePath = `photoVideo/${businessId}/${index}-${Date.now()}.${fileExt}`;
+
+        // Upload the file
+        const { error: uploadError } = await supabase.storage
+          .from("photo-video-media")
+          .upload(filePath, file.file, {
+            upsert: true,
+            contentType: file.file.type,
+          });
+
+        if (uploadError) {
+          throw new Error(
+            `Upload failed for file ${index + 1}: ${uploadError.message}`
+          );
+        }
+
+        // Return the media record data
+        return {
+          business_id: businessId,
+          file_path: filePath,
+          display_order: existingFiles.length + index, // Add to end of existing files
+          media_type: file.type,
+        };
+      });
+
+      // Wait for all uploads to complete
+      const mediaResults = await Promise.allSettled(mediaPromises);
+
+      // Check for any failed uploads
+      const failedUploads = mediaResults.filter(
+        (result): result is PromiseRejectedResult =>
+          result.status === "rejected"
+      );
+
+      if (failedUploads.length > 0) {
+        throw new Error(
+          `Failed to upload ${failedUploads.length} files: ${failedUploads
+            .map((f) => f.reason)
+            .join(", ")}`
+        );
+      }
+
+      // 6. Insert new media records only for newly uploaded files
+      const successfulUploads = mediaResults
+        .filter(
+          (result): result is PromiseFulfilledResult<any> =>
+            result.status === "fulfilled"
+        )
+        .map((result) => result.value);
+
+      if (successfulUploads.length > 0) {
+        const { error: insertError } = await supabase
+          .from("photo_video_media")
+          .insert(successfulUploads);
+
+        if (insertError) {
+          throw new Error(
+            `Failed to update media records: ${insertError.message}`
+          );
+        }
+      }
+
+      return true;
+    } catch (error) {
+      const errorMessage =
+        error instanceof Error ? error.message : "An unknown error occurred";
+      throw new Error(`Media upload failed: ${errorMessage}`);
+    }
+  };
+  const handleUpdate = async () => {
     try {
       if (!travelRange && !isWillingToTravel) {
         toast.error(`Travel Range Must Be Entered`);
@@ -408,7 +673,6 @@ const CreateMakeupListing = () => {
         toast.error("Required Deposit Must Be Entered");
         return;
       }
-
       setIsSubmitting(true);
 
       // Get current user
@@ -417,19 +681,16 @@ const CreateMakeupListing = () => {
         error: authError,
       } = await supabase.auth.getUser();
       if (authError || !user) {
-        toast.error("Please sign in to create a listing");
+        toast.error("Please sign in to update a listing");
         return;
       }
 
-      // Create makeup listing
-      const { data: hairMakeup, error: hairMakeupError } = await supabase
-        .from("hair_makeup_listing")
-        .insert({
-          user_id: user.id,
-          user_email: user.email,
+      const { data: photoVideo, error: photoVideoError } = await supabase
+        .from("photo_video_listing")
+        .update({
           business_name: businessName,
           years_experience: experience,
-          travel_range: isWillingToTravel ? -1 : parseInt(travelRange), // Use -1 to indicate willing to travel anywhere
+          travel_range: isWillingToTravel ? -1 : parseInt(travelRange),
           travel_anywhere: isWillingToTravel,
           is_remote_business: isRemoteBusiness,
           address: isRemoteBusiness ? "" : location.address,
@@ -443,60 +704,73 @@ const CreateMakeupListing = () => {
           description,
           deposit: parseInt(availability.deposit),
         })
+        .eq("id", id)
         .select()
         .single();
 
-      if (hairMakeupError) {
+      if (photoVideoError) {
         throw new Error(
-          `Failed to create Hair & Makeup listing: ${hairMakeupError.message}`
+          `Failed to update Photography & Videography listing: ${photoVideoError.message}`
         );
       }
-      if (!hairMakeup) {
-        throw new Error("Hair & Makeup listing created but no data returned");
+      if (!photoVideo) {
+        throw new Error(
+          "Photography & Videography listing updated but no data returned"
+        );
+      }
+      const { error: deleteSpecialtiesError } = await supabase
+        .from("photo_video_specialties")
+        .delete()
+        .eq("business_id", id);
+
+      if (deleteSpecialtiesError) {
+        throw new Error(
+          `Failed to update specialties: ${deleteSpecialtiesError.message}`
+        );
       }
 
       const uniqueSpecialties = new Set([
-        ...(serviceType === "hair" || serviceType === "both"
+        ...(serviceType === "photography" || serviceType === "both"
           ? specialties
-              .filter((specialty) => commonHairStyles.includes(specialty))
+              .filter((specialty) => commonPhotoStyles.includes(specialty))
               .map((specialty) =>
                 JSON.stringify({
                   specialty,
                   is_custom: false,
-                  style_type: "hair",
+                  style_type: "photography",
                 })
               )
           : []),
-        ...(serviceType === "makeup" || serviceType === "both"
+        ...(serviceType === "videography" || serviceType === "both"
           ? specialties
-              .filter((specialty) => commonMakeupStyles.includes(specialty))
+              .filter((specialty) => commonVideoStyles.includes(specialty))
               .map((specialty) =>
                 JSON.stringify({
                   specialty,
                   is_custom: false,
-                  style_type: "makeup",
+                  style_type: "videography",
                 })
               )
           : []),
-        ...(serviceType === "hair" || serviceType === "both"
-          ? customHairStyles
+        ...(serviceType === "photography" || serviceType === "both"
+          ? customPhotoStyles
               .filter((style) => style.trim() !== "")
               .map((style) =>
                 JSON.stringify({
                   specialty: style,
                   is_custom: true,
-                  style_type: "hair",
+                  style_type: "photography",
                 })
               )
           : []),
-        ...(serviceType === "makeup" || serviceType === "both"
-          ? customMakeupStyles
+        ...(serviceType === "videography" || serviceType === "both"
+          ? customVideoStyles
               .filter((style) => style.trim() !== "")
               .map((style) =>
                 JSON.stringify({
                   specialty: style,
                   is_custom: true,
-                  style_type: "makeup",
+                  style_type: "videography",
                 })
               )
           : []),
@@ -504,98 +778,102 @@ const CreateMakeupListing = () => {
 
       const specialtiesData = Array.from(uniqueSpecialties).map(
         (specialty) => ({
-          business_id: hairMakeup.id,
+          business_id: id,
           ...JSON.parse(specialty),
         })
       );
 
       if (specialtiesData.length > 0) {
         const { error: insertSpecialtiesError } = await supabase
-          .from("hair_makeup_specialties")
+          .from("photo_video_specialties")
           .insert(specialtiesData);
 
         if (insertSpecialtiesError) {
           throw new Error(
-            `Failed to crate specialties: ${insertSpecialtiesError.message}`
+            `Failed to update specialties: ${insertSpecialtiesError.message}`
           );
         }
       }
-
-      // Upload media files
-      const mediaPromises = mediaFiles.map(async (file, index) => {
-        const fileExt = file.file.name.split(".").pop();
-        const filePath = `hairMakeup/${hairMakeup.id}/${index}.${fileExt}`;
-
-        const { error: uploadError } = await supabase.storage
-          .from("hair-makeup-media")
-          .upload(filePath, file.file);
-
-        if (uploadError) {
-          throw new Error(
-            `Failed to upload media file ${index}: ${uploadError.message}`
-          );
+      if (mediaFiles.length > 0 && id) {
+        const uploadSuccess = await handleMediaUpload(id, mediaFiles);
+        if (!uploadSuccess) {
+          throw new Error("Failed to upload media files");
         }
+      }
+      const { error: deleteServicesError } = await supabase
+        .from("photo_video_services")
+        .delete()
+        .eq("business_id", id);
 
-        return {
-          business_id: hairMakeup.id,
-          file_path: filePath,
-          display_order: index,
-        };
-      });
-
-      const mediaResults = await Promise.all(mediaPromises);
-
-      const { error: mediaError } = await supabase
-        .from("hair_makeup_media")
-        .insert(mediaResults);
-
-      if (mediaError) {
+      if (deleteServicesError) {
         throw new Error(
-          `Failed to create media records: ${mediaError.message}`
+          `Failed to remove existing services: ${deleteServicesError.message}`
         );
       }
-      // Insert services
       const allServices = [
-        ...Object.values(selectedServices).map((service) => ({
-          business_id: hairMakeup.id,
-          name: service.name,
-          description: service.description,
-          price: service.price,
-          duration: service.duration,
-          is_custom: false,
-        })),
+        // Handle common services based on serviceType
+        ...(serviceType === "photography" || serviceType === "both"
+          ? Object.values(selectedServices)
+              .filter((service) =>
+                commonServices.some((cs) => cs.name === service.name)
+              )
+              .map((service) => ({
+                business_id: id,
+                name: service.name,
+                description: service.description.trim(),
+                price: service.price,
+                duration: service.duration,
+                is_custom: false,
+              }))
+          : []),
+        ...(serviceType === "videography" || serviceType === "both"
+          ? Object.values(selectedServices)
+              .filter((service) =>
+                commonVideoServices.some((cs) => cs.name === service.name)
+              )
+              .map((service) => ({
+                business_id: id,
+                name: service.name,
+                description: service.description.trim(),
+                price: service.price,
+                duration: service.duration,
+                is_custom: false,
+              }))
+          : []),
+        // Handle custom services - filter out empty ones
         ...customServices
-          .filter((service) => service.name.trim())
+          .filter(
+            (service) => service.name.trim() && service.description.trim()
+          )
           .map((service) => ({
-            business_id: hairMakeup.id,
-            name: service.name,
-            description: service.description,
+            business_id: id,
+            name: service.name.trim(),
+            description: service.description.trim(),
             price: service.price,
             duration: service.duration,
             is_custom: true,
           })),
       ];
-
       if (allServices.length > 0) {
-        const { error: servicesError } = await supabase
-          .from("hair_makeup_services")
+        const { error: insertServicesError } = await supabase
+          .from("photo_video_services")
           .insert(allServices);
 
-        if (servicesError) {
+        if (insertServicesError) {
           throw new Error(
-            `Failed to create services: ${servicesError.message}`
+            `Failed to update services: ${insertServicesError.message}`
           );
         }
       }
 
-      toast.success("Hair & Makeup listing created successfully!");
-      router.push(`/services/hairMakeup/${hairMakeup.id}`);
+      toast.success("Photography & Videography listing updated successfully!");
+      router.push(`/services/photoVideo/${photoVideo.id}`);
     } catch (error) {
-      console.error("Error creating Hair & Makeup listing:", error);
+      console.error("Error creating Photography & Videography listing:", error);
       toast.error(
         error instanceof Error
           ? error.message
-          : "Failed to create Hair & Makeup listing. Please try again."
+          : "Failed to update Photography & Videography listing. Please try again."
       );
     } finally {
       setIsSubmitting(false);
@@ -720,8 +998,6 @@ const CreateMakeupListing = () => {
                     className="w-full"
                     isRemoteLocation={isRemoteBusiness}
                   />
-
-                  {/* Display selected location details */}
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -737,43 +1013,44 @@ const CreateMakeupListing = () => {
                       <SelectValue placeholder="Select services offered" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="makeup">Makeup</SelectItem>
-                      <SelectItem value="hair">Hair</SelectItem>
-                      <SelectItem value="both">Hair & Makeup</SelectItem>
+                      <SelectItem value="photography">Photgraphy</SelectItem>
+                      <SelectItem value="videography">Videography</SelectItem>
+                      <SelectItem value="both">
+                        Photography & Videography
+                      </SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
 
                 {/* Styles Selection */}
                 <div className="space-y-4">
-                  {(serviceType === "makeup" || serviceType === "both") && (
+                  {(serviceType === "photography" ||
+                    serviceType === "both") && (
                     <div>
                       <div className="flex items-center mb-1">
                         <label className="block text-sm font-medium text-gray-700">
-                          Makeup Styles*
+                          Photography Styles*
                         </label>
                         <button
                           type="button"
                           onClick={() => {
-                            if (customMakeupStyles.length === 0) {
-                              setCustomMakeupStyles([""]); // Allow adding the first custom style
+                            if (customPhotoStyles.length === 0) {
+                              setCustomPhotoStyles([""]);
                             } else {
                               const lastStyle =
-                                customMakeupStyles[
-                                  customMakeupStyles.length - 1
-                                ];
+                                customPhotoStyles[customPhotoStyles.length - 1];
                               if (lastStyle && lastStyle.trim() !== "") {
-                                setCustomMakeupStyles([
-                                  ...customMakeupStyles,
+                                setCustomPhotoStyles([
+                                  ...customPhotoStyles,
                                   "",
                                 ]);
                               }
                             }
                           }}
                           disabled={
-                            customMakeupStyles.length > 0 &&
-                            customMakeupStyles[
-                              customMakeupStyles.length - 1
+                            customPhotoStyles.length > 0 &&
+                            customPhotoStyles[
+                              customPhotoStyles.length - 1
                             ].trim() === ""
                           }
                           className="ml-2 p-1 text-gray-400 hover:text-gray-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
@@ -782,7 +1059,7 @@ const CreateMakeupListing = () => {
                         </button>
                       </div>
                       <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                        {commonMakeupStyles.map((style) => (
+                        {commonPhotoStyles.map((style) => (
                           <label
                             key={style}
                             className="relative flex items-center h-12 px-4 rounded-lg border cursor-pointer hover:bg-gray-50"
@@ -812,9 +1089,9 @@ const CreateMakeupListing = () => {
                             </div>
                           </label>
                         ))}
-                        {customMakeupStyles.map((style, index) => (
+                        {customPhotoStyles.map((style, index) => (
                           <div
-                            key={index}
+                            key={`custom-photo-${index}`}
                             className="flex items-center h-12 px-4 rounded-lg border"
                           >
                             <Input
@@ -822,9 +1099,9 @@ const CreateMakeupListing = () => {
                               onChange={(e) => {
                                 // Limit input to 25 characters
                                 if (e.target.value.length <= 25) {
-                                  const newStyles = [...customHairStyles];
+                                  const newStyles = [...customPhotoStyles];
                                   newStyles[index] = e.target.value;
-                                  setCustomMakeupStyles(newStyles);
+                                  setCustomPhotoStyles(newStyles);
                                 }
                               }}
                               maxLength={25}
@@ -834,8 +1111,8 @@ const CreateMakeupListing = () => {
                             <button
                               type="button"
                               onClick={() =>
-                                setCustomMakeupStyles(
-                                  customMakeupStyles.filter(
+                                setCustomPhotoStyles(
+                                  customPhotoStyles.filter(
                                     (_, i) => i !== index
                                   )
                                 )
@@ -849,29 +1126,33 @@ const CreateMakeupListing = () => {
                       </div>
                     </div>
                   )}
-                  {(serviceType === "hair" || serviceType === "both") && (
+                  {(serviceType === "videography" ||
+                    serviceType === "both") && (
                     <div>
                       <div className="flex items-center mb-1">
                         <label className="block text-sm font-medium text-gray-700">
-                          Hair Styles*
+                          Videography Styles*
                         </label>
                         <button
                           type="button"
                           onClick={() => {
-                            if (customHairStyles.length === 0) {
-                              setCustomHairStyles([""]); // Allow adding the first custom style
+                            if (customVideoStyles.length === 0) {
+                              setCustomVideoStyles([""]);
                             } else {
                               const lastStyle =
-                                customHairStyles[customHairStyles.length - 1];
+                                customVideoStyles[customVideoStyles.length - 1];
                               if (lastStyle && lastStyle.trim() !== "") {
-                                setCustomHairStyles([...customHairStyles, ""]);
+                                setCustomVideoStyles([
+                                  ...customVideoStyles,
+                                  "",
+                                ]);
                               }
                             }
                           }}
                           disabled={
-                            customHairStyles.length > 0 &&
-                            customHairStyles[
-                              customHairStyles.length - 1
+                            customVideoStyles.length > 0 &&
+                            customVideoStyles[
+                              customVideoStyles.length - 1
                             ].trim() === ""
                           }
                           className="ml-2 p-1 text-gray-400 hover:text-gray-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
@@ -880,7 +1161,7 @@ const CreateMakeupListing = () => {
                         </button>
                       </div>
                       <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                        {commonHairStyles.map((style) => (
+                        {commonVideoStyles.map((style) => (
                           <label
                             key={style}
                             className="relative flex items-center h-12 px-4 rounded-lg border cursor-pointer hover:bg-gray-50"
@@ -888,7 +1169,7 @@ const CreateMakeupListing = () => {
                             <div className="flex items-center h-5">
                               <input
                                 type="checkbox"
-                                className="h-4 w-4 border-gray-300 rounded"
+                                className="h-4 w-4  border-gray-300 rounded "
                                 checked={specialties.includes(style)}
                                 onChange={(e) => {
                                   if (e.target.checked) {
@@ -910,9 +1191,9 @@ const CreateMakeupListing = () => {
                             </div>
                           </label>
                         ))}
-                        {customHairStyles.map((style, index) => (
+                        {customVideoStyles.map((style, index) => (
                           <div
-                            key={index}
+                            key={`custom-video-${index}`}
                             className="flex items-center h-12 px-4 rounded-lg border"
                           >
                             <Input
@@ -920,9 +1201,9 @@ const CreateMakeupListing = () => {
                               onChange={(e) => {
                                 // Limit input to 25 characters
                                 if (e.target.value.length <= 25) {
-                                  const newStyles = [...customHairStyles];
+                                  const newStyles = [...customVideoStyles];
                                   newStyles[index] = e.target.value;
-                                  setCustomHairStyles(newStyles);
+                                  setCustomVideoStyles(newStyles);
                                 }
                               }}
                               maxLength={25}
@@ -932,8 +1213,10 @@ const CreateMakeupListing = () => {
                             <button
                               type="button"
                               onClick={() =>
-                                setCustomHairStyles(
-                                  customHairStyles.filter((_, i) => i !== index)
+                                setCustomVideoStyles(
+                                  customVideoStyles.filter(
+                                    (_, i) => i !== index
+                                  )
                                 )
                               }
                               className="ml-2 p-2 text-gray-400 hover:text-gray-600 transition-colors"
@@ -1129,10 +1412,11 @@ const CreateMakeupListing = () => {
 
                 {/* Common Services */}
                 <div className="space-y-4">
-                  {(serviceType === "makeup" || serviceType === "both") && (
+                  {(serviceType === "photography" ||
+                    serviceType === "both") && (
                     <>
                       <h3 className="text-lg font-medium mb-4">
-                        Makeup Services
+                        Photography Services
                       </h3>
                       {commonServices.map((service) => (
                         <div
@@ -1206,7 +1490,7 @@ const CreateMakeupListing = () => {
                                       <Input
                                         type="number"
                                         min="0"
-                                        step="1" // Force whole numbers
+                                        step="1"
                                         placeholder="0"
                                         value={
                                           selectedServices[service.name]
@@ -1216,18 +1500,19 @@ const CreateMakeupListing = () => {
                                                 .price
                                         }
                                         onChange={(e) => {
-                                          const sanitizedValue =
-                                            handleNumericInput(e.target.value);
+                                          const sanitizedValue = e.target.value;
                                           setSelectedServices({
                                             ...selectedServices,
                                             [service.name]: {
                                               ...selectedServices[service.name],
-                                              price: Number(sanitizedValue),
+                                              price:
+                                                sanitizedValue === ""
+                                                  ? 0
+                                                  : parseInt(sanitizedValue),
                                             },
                                           });
                                         }}
                                         onKeyDown={(e) => {
-                                          // Prevent decimal point and negative sign
                                           if (e.key === "-" || e.key === ".") {
                                             e.preventDefault();
                                           }
@@ -1238,7 +1523,7 @@ const CreateMakeupListing = () => {
                                   </div>
                                   <div>
                                     <label className="block text-sm font-medium mb-1">
-                                      Duration (minutes)*
+                                      Duration (hours)*
                                     </label>
                                     <div className="relative">
                                       <Clock
@@ -1247,8 +1532,8 @@ const CreateMakeupListing = () => {
                                       />
                                       <Input
                                         type="number"
+                                        step="0.5"
                                         min="0"
-                                        step="1" // Force whole numbers
                                         placeholder="0"
                                         value={
                                           selectedServices[service.name]
@@ -1258,20 +1543,60 @@ const CreateMakeupListing = () => {
                                                 .duration
                                         }
                                         onChange={(e) => {
-                                          const sanitizedValue =
-                                            handleNumericInput(e.target.value);
-                                          setSelectedServices({
-                                            ...selectedServices,
-                                            [service.name]: {
-                                              ...selectedServices[service.name],
-                                              duration: Number(sanitizedValue),
-                                            },
-                                          });
+                                          const sanitizedValue = e.target.value;
+                                          // Allow any numeric input temporarily during typing
+                                          if (
+                                            /^\d*\.?\d{0,1}$/.test(
+                                              sanitizedValue
+                                            )
+                                          ) {
+                                            setSelectedServices({
+                                              ...selectedServices,
+                                              [service.name]: {
+                                                ...selectedServices[
+                                                  service.name
+                                                ],
+                                                duration:
+                                                  sanitizedValue === ""
+                                                    ? 0
+                                                    : parseFloat(
+                                                        sanitizedValue
+                                                      ),
+                                              },
+                                            });
+                                          }
                                         }}
-                                        onKeyDown={(e) => {
-                                          // Prevent decimal point and negative sign
-                                          if (e.key === "-" || e.key === ".") {
-                                            e.preventDefault();
+                                        onBlur={(e) => {
+                                          const value = e.target.value;
+                                          // On blur, format to proper decimal
+                                          if (
+                                            value === "" ||
+                                            isNaN(parseFloat(value))
+                                          ) {
+                                            setSelectedServices({
+                                              ...selectedServices,
+                                              [service.name]: {
+                                                ...selectedServices[
+                                                  service.name
+                                                ],
+                                                duration: 0,
+                                              },
+                                            });
+                                          } else {
+                                            // Round to nearest 0.5
+                                            const roundedValue =
+                                              Math.round(
+                                                parseFloat(value) * 2
+                                              ) / 2;
+                                            setSelectedServices({
+                                              ...selectedServices,
+                                              [service.name]: {
+                                                ...selectedServices[
+                                                  service.name
+                                                ],
+                                                duration: roundedValue,
+                                              },
+                                            });
                                           }
                                         }}
                                         className="pl-8"
@@ -1286,12 +1611,13 @@ const CreateMakeupListing = () => {
                       ))}
                     </>
                   )}
-                  {(serviceType === "hair" || serviceType === "both") && (
+                  {(serviceType === "videography" ||
+                    serviceType === "both") && (
                     <>
                       <h3 className="text-lg font-medium mb-4 mt-6">
-                        Hair Services
+                        Videography Services
                       </h3>
-                      {commonHairServices.map((service) => (
+                      {commonVideoServices.map((service) => (
                         <div
                           key={service.name}
                           className="p-4 border rounded-lg"
@@ -1363,7 +1689,7 @@ const CreateMakeupListing = () => {
                                       <Input
                                         type="number"
                                         min="0"
-                                        step="1" // Force whole numbers
+                                        step="1"
                                         placeholder="0"
                                         value={
                                           selectedServices[service.name]
@@ -1373,18 +1699,19 @@ const CreateMakeupListing = () => {
                                                 .price
                                         }
                                         onChange={(e) => {
-                                          const sanitizedValue =
-                                            handleNumericInput(e.target.value);
+                                          const sanitizedValue = e.target.value;
                                           setSelectedServices({
                                             ...selectedServices,
                                             [service.name]: {
                                               ...selectedServices[service.name],
-                                              price: Number(sanitizedValue),
+                                              price:
+                                                sanitizedValue === ""
+                                                  ? 0
+                                                  : parseInt(sanitizedValue),
                                             },
                                           });
                                         }}
                                         onKeyDown={(e) => {
-                                          // Prevent decimal point and negative sign
                                           if (e.key === "-" || e.key === ".") {
                                             e.preventDefault();
                                           }
@@ -1395,7 +1722,7 @@ const CreateMakeupListing = () => {
                                   </div>
                                   <div>
                                     <label className="block text-sm font-medium mb-1">
-                                      Duration (minutes)*
+                                      Duration (hours)*
                                     </label>
                                     <div className="relative">
                                       <Clock
@@ -1404,8 +1731,8 @@ const CreateMakeupListing = () => {
                                       />
                                       <Input
                                         type="number"
+                                        step="0.5"
                                         min="0"
-                                        step="1" // Force whole numbers
                                         placeholder="0"
                                         value={
                                           selectedServices[service.name]
@@ -1415,20 +1742,60 @@ const CreateMakeupListing = () => {
                                                 .duration
                                         }
                                         onChange={(e) => {
-                                          const sanitizedValue =
-                                            handleNumericInput(e.target.value);
-                                          setSelectedServices({
-                                            ...selectedServices,
-                                            [service.name]: {
-                                              ...selectedServices[service.name],
-                                              duration: Number(sanitizedValue),
-                                            },
-                                          });
+                                          const sanitizedValue = e.target.value;
+                                          // Allow any numeric input temporarily during typing
+                                          if (
+                                            /^\d*\.?\d{0,1}$/.test(
+                                              sanitizedValue
+                                            )
+                                          ) {
+                                            setSelectedServices({
+                                              ...selectedServices,
+                                              [service.name]: {
+                                                ...selectedServices[
+                                                  service.name
+                                                ],
+                                                duration:
+                                                  sanitizedValue === ""
+                                                    ? 0
+                                                    : parseFloat(
+                                                        sanitizedValue
+                                                      ),
+                                              },
+                                            });
+                                          }
                                         }}
-                                        onKeyDown={(e) => {
-                                          // Prevent decimal point and negative sign
-                                          if (e.key === "-" || e.key === ".") {
-                                            e.preventDefault();
+                                        onBlur={(e) => {
+                                          const value = e.target.value;
+                                          // On blur, format to proper decimal
+                                          if (
+                                            value === "" ||
+                                            isNaN(parseFloat(value))
+                                          ) {
+                                            setSelectedServices({
+                                              ...selectedServices,
+                                              [service.name]: {
+                                                ...selectedServices[
+                                                  service.name
+                                                ],
+                                                duration: 0,
+                                              },
+                                            });
+                                          } else {
+                                            // Round to nearest 0.5
+                                            const roundedValue =
+                                              Math.round(
+                                                parseFloat(value) * 2
+                                              ) / 2;
+                                            setSelectedServices({
+                                              ...selectedServices,
+                                              [service.name]: {
+                                                ...selectedServices[
+                                                  service.name
+                                                ],
+                                                duration: roundedValue,
+                                              },
+                                            });
                                           }
                                         }}
                                         className="pl-8"
@@ -1530,23 +1897,23 @@ const CreateMakeupListing = () => {
                                     type="number"
                                     placeholder="0"
                                     min="0"
-                                    step="1" // Force whole numbers
+                                    step="1"
                                     value={
                                       service.price === 0 ? "" : service.price
                                     }
                                     onChange={(e) => {
-                                      const sanitizedValue = handleNumericInput(
-                                        e.target.value
-                                      );
+                                      const sanitizedValue = e.target.value;
                                       const newServices = [...customServices];
                                       newServices[index] = {
                                         ...service,
-                                        price: Number(sanitizedValue),
+                                        price:
+                                          sanitizedValue === ""
+                                            ? 0
+                                            : parseInt(sanitizedValue),
                                       };
                                       setCustomServices(newServices);
                                     }}
                                     onKeyDown={(e) => {
-                                      // Prevent decimal point and negative sign
                                       if (e.key === "-" || e.key === ".") {
                                         e.preventDefault();
                                       }
@@ -1558,7 +1925,7 @@ const CreateMakeupListing = () => {
                               </div>
                               <div>
                                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                                  Duration (minutes)*
+                                  Duration (hours)*
                                 </label>
                                 <div className="relative">
                                   <Clock
@@ -1567,29 +1934,54 @@ const CreateMakeupListing = () => {
                                   />
                                   <Input
                                     type="number"
-                                    placeholder="0"
+                                    step="0.5"
                                     min="0"
-                                    step="1" // Force whole numbers
+                                    placeholder="0"
                                     value={
                                       service.duration === 0
                                         ? ""
                                         : service.duration
                                     }
                                     onChange={(e) => {
-                                      const sanitizedValue = handleNumericInput(
-                                        e.target.value
-                                      );
-                                      const newServices = [...customServices];
-                                      newServices[index] = {
-                                        ...service,
-                                        duration: Number(sanitizedValue),
-                                      };
-                                      setCustomServices(newServices);
+                                      const sanitizedValue = e.target.value;
+                                      // Allow any numeric input temporarily during typing
+                                      if (
+                                        /^\d*\.?\d{0,1}$/.test(sanitizedValue)
+                                      ) {
+                                        const newServices = [...customServices];
+                                        newServices[index] = {
+                                          ...service,
+                                          duration:
+                                            sanitizedValue === ""
+                                              ? 0
+                                              : parseFloat(sanitizedValue),
+                                        };
+                                        setCustomServices(newServices);
+                                      }
                                     }}
-                                    onKeyDown={(e) => {
-                                      // Prevent decimal point and negative sign
-                                      if (e.key === "-" || e.key === ".") {
-                                        e.preventDefault();
+                                    onBlur={(e) => {
+                                      const value = e.target.value;
+                                      // On blur, format to proper decimal
+                                      if (
+                                        value === "" ||
+                                        isNaN(parseFloat(value))
+                                      ) {
+                                        const newServices = [...customServices];
+                                        newServices[index] = {
+                                          ...service,
+                                          duration: 0,
+                                        };
+                                        setCustomServices(newServices);
+                                      } else {
+                                        // Round to nearest 0.5
+                                        const roundedValue =
+                                          Math.round(parseFloat(value) * 2) / 2;
+                                        const newServices = [...customServices];
+                                        newServices[index] = {
+                                          ...service,
+                                          duration: roundedValue,
+                                        };
+                                        setCustomServices(newServices);
                                       }
                                     }}
                                     className="pl-8"
@@ -1658,9 +2050,10 @@ const CreateMakeupListing = () => {
                       step="1" // Force whole numbers
                       value={availability.deposit}
                       onChange={(e) => {
-                        const sanitizedValue = handleNumericInput(
-                          e.target.value
-                        );
+                        // Remove any non-digit characters and leading zeros
+                        const sanitizedValue = e.target.value
+                          .replace(/[^\d]/g, "")
+                          .replace(/^0+(?=\d)/, "");
                         // Only update if the value is within 0-100 range
                         if (
                           sanitizedValue === "" ||
@@ -1689,7 +2082,7 @@ const CreateMakeupListing = () => {
                           });
                           return;
                         }
-                        // Round to nearest whole number and ensure within range
+                        // Ensure within range
                         const roundedValue = Math.min(
                           100,
                           Math.max(0, parseInt(value))
@@ -1707,6 +2100,9 @@ const CreateMakeupListing = () => {
                       %
                     </span>
                   </div>
+                  <p className="mt-1 text-sm text-gray-500">
+                    Enter a whole number between 0 and 100
+                  </p>
                 </div>
               </div>
             )}
@@ -1736,14 +2132,14 @@ const CreateMakeupListing = () => {
               </button>
               <button
                 type="button"
-                onClick={currentStep === totalSteps ? handleSubmit : nextStep}
+                onClick={currentStep === totalSteps ? handleUpdate : nextStep}
                 disabled={isSubmitting}
                 className="px-6 py-2 bg-black text-white rounded-lg hover:bg-stone-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {isSubmitting
-                  ? "Creating..."
+                  ? "Updating..."
                   : currentStep === totalSteps
-                  ? "Create Listing"
+                  ? "Update Listing"
                   : "Next"}
               </button>
             </div>
@@ -1780,4 +2176,4 @@ const CreateMakeupListing = () => {
   );
 };
 
-export default CreateMakeupListing;
+export default UpdatePhotoVideoListing;

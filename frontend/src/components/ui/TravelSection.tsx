@@ -14,6 +14,10 @@ const TravelSection: React.FC<TravelSectionProps> = ({
   isWillingToTravel,
   setIsWillingToTravel,
 }) => {
+  // Display value will be empty if travelRange is -1 or if isWillingToTravel is true
+  const displayValue =
+    isWillingToTravel || travelRange === "-1" ? "" : travelRange;
+
   return (
     <div>
       <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -25,13 +29,13 @@ const TravelSection: React.FC<TravelSectionProps> = ({
             type="number"
             min="0"
             step="1"
-            value={travelRange}
+            value={displayValue}
             onChange={(e) => {
               const sanitizedValue = e.target.value
                 .replace(/^0+/, "")
                 .replace(/-/g, "")
                 .replace(/\./g, "");
-              setTravelRange(sanitizedValue === "" ? "0" : sanitizedValue);
+              setTravelRange(sanitizedValue === "" ? "" : sanitizedValue);
             }}
             onKeyDown={(e) => {
               if (e.key === "-" || e.key === ".") {
@@ -51,7 +55,7 @@ const TravelSection: React.FC<TravelSectionProps> = ({
             onChange={(e) => {
               setIsWillingToTravel(e.target.checked);
               if (e.target.checked) {
-                setTravelRange("0");
+                setTravelRange("-1"); // Still set to -1 internally
               }
             }}
             className="h-4 w-4 text-rose-600 border-gray-300 rounded focus:ring-rose-500"
