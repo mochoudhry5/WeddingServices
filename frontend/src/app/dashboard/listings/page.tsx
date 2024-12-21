@@ -1,12 +1,12 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { useAuth } from "@/context/AuthContext";
 import NavBar from "@/components/ui/NavBar";
 import Footer from "@/components/ui/Footer";
 import MediaCarousel from "@/components/ui/MediaCarousel";
 import { supabase } from "@/lib/supabase";
-import { Pencil, Trash2 } from "lucide-react";
+import { Pencil, Trash2, Plus, Search } from "lucide-react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -17,17 +17,27 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { toast } from "sonner";
 import Link from "next/link";
 import { ProtectedRoute } from "@/components/ui/ProtectedRoute";
 
+// Media type for images/videos
 interface ServiceMedia {
   id: string;
   file_path: string;
   display_order: number;
 }
 
+// Configuration for different service types
 interface ServiceConfig {
   tableName: string;
   mediaTableName: string;
@@ -37,7 +47,7 @@ interface ServiceConfig {
   additionalFields: string[];
 }
 
-// Define possible service types first
+// Available service types
 type ServiceType =
   | "venue"
   | "photo-video"
@@ -45,11 +55,12 @@ type ServiceType =
   | "dj"
   | "wedding-planner";
 
+// Service configuration mapping
 type ServiceConfigs = {
   [K in ServiceType]: ServiceConfig;
 };
 
-// Now define the configurations
+// Service configurations
 const SERVICE_CONFIGS: ServiceConfigs = {
   venue: {
     tableName: "venue_listing",
@@ -93,6 +104,7 @@ const SERVICE_CONFIGS: ServiceConfigs = {
   },
 } as const;
 
+// Base listing interface with common properties
 interface BaseListing {
   id: string;
   user_id: string;
@@ -107,26 +119,51 @@ interface BaseListing {
   max_guests?: number;
   base_price?: number;
   years_experience: number;
-  min_service_price?: number; // Add this
-  max_service_price?: number; // Add this
+  min_service_price?: number;
+  max_service_price?: number;
 }
+
+// Service-based listing interface (for services with price ranges)
 interface ServiceBasedListing extends BaseListing {
   min_service_price: number;
   max_service_price: number;
   service_type: string;
 }
+
+// Venue-specific listing interface
 interface VenueListing extends BaseListing {
   max_guests: number;
   base_price: number;
 }
 
+// Type to hold all listings by service type
 type Listings = {
   [K in ServiceType]: BaseListing[];
 };
 
+// Sort options type
+type SortOption = "newest" | "price-low" | "price-high";
+
+// Type guards
+const isServiceBasedListing = (
+  listing: BaseListing
+): listing is ServiceBasedListing => {
+  return "min_service_price" in listing && "max_service_price" in listing;
+};
+
+const isVenueListing = (listing: BaseListing): listing is VenueListing => {
+  return "max_guests" in listing && "base_price" in listing;
+};
 export default function MyListingsPage() {
   const { user } = useAuth();
   const [listings, setListings] = useState<Listings>({
+    venue: [],
+    "photo-video": [],
+    "hair-makeup": [],
+    dj: [],
+    "wedding-planner": [],
+  });
+  const [filteredListings, setFilteredListings] = useState<Listings>({
     venue: [],
     "photo-video": [],
     "hair-makeup": [],
@@ -138,21 +175,19 @@ export default function MyListingsPage() {
     id: string;
     type: ServiceType;
   } | null>(null);
-  const [activeTab, setActiveTab] = useState<ServiceType>("venue");
-  const isServiceBasedListing = (
-    listing: BaseListing
-  ): listing is ServiceBasedListing => {
-    return "min_service_price" in listing && "max_service_price" in listing;
-  };
-  const isVenueListing = (listing: BaseListing): listing is VenueListing => {
-    return "max_guests" in listing && "base_price" in listing;
-  };
+  const [activeService, setActiveService] = useState<ServiceType>("venue");
+  const [searchTerm, setSearchTerm] = useState("");
+  const [sortBy, setSortBy] = useState<SortOption>("newest");
 
   useEffect(() => {
     if (user) {
       loadAllListings();
     }
   }, [user]);
+
+  useEffect(() => {
+    filterListings();
+  }, [searchTerm, sortBy, listings]);
 
   const loadAllListings = async () => {
     try {
@@ -172,7 +207,7 @@ export default function MyListingsPage() {
           async (serviceType) => {
             const config = SERVICE_CONFIGS[serviceType];
 
-            // Define base fields that all services share
+            // Common base fields for all listings
             const baseFields = [
               "id",
               "user_id",
@@ -184,7 +219,7 @@ export default function MyListingsPage() {
               "created_at",
             ];
 
-            // Add service-specific fields based on service type
+            // Add fields based on service type
             let selectFields;
             switch (serviceType) {
               case "venue":
@@ -197,7 +232,7 @@ export default function MyListingsPage() {
                   ...baseFields,
                   "min_service_price",
                   "max_service_price",
-                  "years_experience",
+                  "years_experience", // Add years_experience only for service-based listings
                 ].join(",");
                 break;
               case "hair-makeup":
@@ -207,7 +242,7 @@ export default function MyListingsPage() {
                   ...baseFields,
                   "min_service_price",
                   "max_service_price",
-                  "years_experience",
+                  "years_experience", // Add years_experience only for service-based listings
                   "service_type",
                 ].join(",");
                 break;
@@ -217,11 +252,11 @@ export default function MyListingsPage() {
               .from(config.tableName)
               .select(
                 `${selectFields},
-              ${config.mediaTableName} (
-                id,
-                file_path,
-                display_order
-              )`
+                ${config.mediaTableName} (
+                  id,
+                  file_path,
+                  display_order
+                )`
               )
               .eq("user_id", user.id)
               .order("created_at", { ascending: false });
@@ -246,6 +281,67 @@ export default function MyListingsPage() {
     }
   };
 
+  const filterListings = () => {
+    const filtered = { ...listings };
+    Object.keys(filtered).forEach((serviceType) => {
+      let serviceListings = [...listings[serviceType as ServiceType]];
+
+      if (searchTerm) {
+        serviceListings = serviceListings.filter(
+          (listing) =>
+            listing.business_name
+              .toLowerCase()
+              .includes(searchTerm.toLowerCase()) ||
+            listing.description
+              .toLowerCase()
+              .includes(searchTerm.toLowerCase()) ||
+            `${listing.city}, ${listing.state}`
+              .toLowerCase()
+              .includes(searchTerm.toLowerCase())
+        );
+      }
+
+      serviceListings.sort((a, b) => {
+        switch (sortBy) {
+          case "newest":
+            return (
+              new Date(b.created_at).getTime() -
+              new Date(a.created_at).getTime()
+            );
+          case "price-low":
+            const aLowPrice = isVenueListing(a)
+              ? a.base_price
+              : isServiceBasedListing(a)
+              ? a.min_service_price
+              : 0;
+            const bLowPrice = isVenueListing(b)
+              ? b.base_price
+              : isServiceBasedListing(b)
+              ? b.min_service_price
+              : 0;
+            return aLowPrice - bLowPrice;
+          case "price-high":
+            const aHighPrice = isVenueListing(a)
+              ? a.base_price
+              : isServiceBasedListing(a)
+              ? a.max_service_price
+              : 0;
+            const bHighPrice = isVenueListing(b)
+              ? b.base_price
+              : isServiceBasedListing(b)
+              ? b.max_service_price
+              : 0;
+            return bHighPrice - aHighPrice;
+          default:
+            return 0;
+        }
+      });
+      filtered[serviceType as ServiceType] = serviceListings;
+    });
+
+    setFilteredListings(filtered);
+  };
+
   const handleDelete = async (listingId: string, serviceType: ServiceType) => {
     try {
       if (!user?.id) {
@@ -262,7 +358,6 @@ export default function MyListingsPage() {
         throw new Error("Listing not found");
       }
 
-      // Delete media from storage
       if (listingToDelete.media?.length > 0) {
         const filePaths = listingToDelete.media.map((media) => media.file_path);
         const { error: storageError } = await supabase.storage
@@ -272,7 +367,6 @@ export default function MyListingsPage() {
         if (storageError) throw storageError;
       }
 
-      // Delete the listing record
       const { error: deleteError } = await supabase
         .from(config.tableName)
         .delete()
@@ -281,7 +375,6 @@ export default function MyListingsPage() {
 
       if (deleteError) throw deleteError;
 
-      // Update local state
       setListings((prev) => ({
         ...prev,
         [serviceType]: prev[serviceType].filter(
@@ -305,10 +398,7 @@ export default function MyListingsPage() {
     const config = SERVICE_CONFIGS[serviceType];
 
     return (
-      <div
-        key={listing.id}
-        className="bg-white rounded-xl shadow-md overflow-hidden hover:shadow-lg transition-shadow duration-300 group"
-      >
+      <div className="bg-white rounded-xl shadow-sm overflow-hidden hover:shadow-md transition-all duration-300 group">
         <div className="relative">
           <MediaCarousel
             media={listing.media}
@@ -319,260 +409,252 @@ export default function MyListingsPage() {
             service={serviceType}
             initialLiked={true}
           />
-          <div className="absolute top-2 left-2 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-            <Link
-              href={`/${config.routePrefix}/edit/${listing.id}`}
-              className="bg-white p-2 rounded-full shadow-lg hover:bg-gray-100 transition-colors"
+          {/* Action buttons - moved outside of Link to prevent event bubbling */}
+          <div className="absolute top-2 right-2 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity z-10">
+            <button
+              onClick={(e) => {
+                e.preventDefault(); // Prevent triggering the parent Link
+                window.location.href = `/${config.routePrefix}/edit/${listing.id}`;
+              }}
+              className="bg-white/90 p-2 rounded-full shadow-lg hover:bg-white transition-colors"
             >
               <Pencil className="w-4 h-4 text-gray-600" />
-            </Link>
+            </button>
             <button
-              onClick={() =>
-                setListingToDelete({ id: listing.id, type: serviceType })
-              }
-              className="bg-white p-2 rounded-full shadow-lg hover:bg-gray-100 transition-colors"
+              onClick={(e) => {
+                e.preventDefault(); // Prevent triggering the parent Link
+                setListingToDelete({ id: listing.id, type: serviceType });
+              }}
+              className="bg-white/90 p-2 rounded-full shadow-lg hover:bg-white transition-colors"
             >
               <Trash2 className="w-4 h-4 text-red-600" />
             </button>
           </div>
         </div>
 
-        <a
-          href={`/${config.routePrefix}/${listing.id}`}
-          className="block hover:cursor-pointer"
-        >
+        <Link href={`/${config.routePrefix}/${listing.id}`} className="block">
           <div className="p-4">
-            <h3 className="text-lg font-semibold mb-1 group-hover:text-stone-500 transition-colors">
-              {listing.business_name}
-            </h3>
+            <div className="flex justify-between items-start mb-2">
+              <h3 className="text-lg font-semibold group-hover:text-stone-500 transition-colors">
+                {listing.business_name}
+              </h3>
+              {isVenueListing(listing) ? (
+                <span className="text-lg font-semibold text-green-800">
+                  ${listing.base_price.toLocaleString()}
+                </span>
+              ) : (
+                isServiceBasedListing(listing) && (
+                  <span className="text-lg font-semibold text-green-800">
+                    {listing.min_service_price === listing.max_service_price
+                      ? `$${listing.min_service_price.toLocaleString()}`
+                      : `$${listing.min_service_price.toLocaleString()} - $${listing.max_service_price.toLocaleString()}`}
+                  </span>
+                )
+              )}
+            </div>
 
-            {isVenueListing(listing) ? (
-              <>
-                <p className="text-slate-600 text-sm mb-2">
-                  Up to {listing.max_guests} guests • Venue
+            <div className="space-y-2">
+              {isVenueListing(listing) ? (
+                <p className="text-gray-600 text-sm">
+                  Up to {listing.max_guests.toLocaleString()} guests • Venue
                 </p>
-                <p className="text-slate-600 text-sm mb-3 line-clamp-2">
-                  {listing.description}
+              ) : (
+                <p className="text-gray-600 text-sm">
+                  {listing.years_experience} years experience •{" "}
+                  {serviceType === "hair-makeup" &&
+                    (listing.service_type === "both"
+                      ? "Hair & Makeup"
+                      : listing.service_type === "hair"
+                      ? "Hair"
+                      : "Makeup")}
+                  {serviceType === "photo-video" &&
+                    (listing.service_type === "both"
+                      ? "Photography & Videography"
+                      : listing.service_type === "photography"
+                      ? "Photography"
+                      : "Videography")}
+                  {serviceType === "wedding-planner" &&
+                    (listing.service_type === "both"
+                      ? "Wedding Planner & Coordinator"
+                      : listing.service_type === "weddingPlanner"
+                      ? "Wedding Planner"
+                      : "Wedding Coordinator")}
+                  {serviceType === "dj" && "DJ"}
                 </p>
-                <div className="flex justify-between items-center border-t pt-2">
-                  <div className="text-sm text-slate-600">
-                    {listing.city}, {listing.state}
-                  </div>
-                  <div className="text-lg font-semibold text-green-800">
-                    ${listing.base_price.toLocaleString()}
-                  </div>
-                </div>
-              </>
-            ) : (
-              isServiceBasedListing(listing) && (
-                <>
-                  <p className="text-slate-600 text-sm mb-2">
-                    {listing.years_experience} years experience •{" "}
-                    {serviceType === "hair-makeup" && (
-                      <>
-                        {listing.service_type === "both"
-                          ? "Hair & Makeup"
-                          : listing.service_type === "hair"
-                          ? "Hair"
-                          : "Makeup"}
-                      </>
-                    )}
-                    {serviceType === "photo-video" && (
-                      <>
-                        {listing.service_type === "both"
-                          ? "Photography & Videography"
-                          : listing.service_type === "photography"
-                          ? "Photography"
-                          : "Videography"}
-                      </>
-                    )}
-                    {serviceType === "wedding-planner" && (
-                      <>
-                        {listing.service_type === "both"
-                          ? "Wedding Planner & Coordinator"
-                          : listing.service_type === "weddingPlanner"
-                          ? "Wedding Planner"
-                          : "Wedding Coordinator"}
-                      </>
-                    )}
-                    {serviceType === "dj" && "DJ"}
-                  </p>
-                  <p className="text-slate-600 text-sm mb-3 line-clamp-2">
-                    {listing.description}
-                  </p>
-                  <div className="flex justify-between items-center border-t pt-2">
-                    <div className="text-sm text-slate-600">
-                      {listing.city}, {listing.state}
-                    </div>
-                    <div className="text-lg font-semibold text-green-800">
-                      {listing.min_service_price === listing.max_service_price
-                        ? `$${listing.min_service_price.toLocaleString()}`
-                        : `$${listing.min_service_price.toLocaleString()} - $${listing.max_service_price.toLocaleString()}`}
-                    </div>
-                  </div>
-                </>
-              )
-            )}
+              )}
+
+              <p className="text-gray-600 text-sm line-clamp-2">
+                {listing.description}
+              </p>
+
+              <p className="text-sm text-gray-600">
+                {listing.city}, {listing.state}
+              </p>
+            </div>
           </div>
-        </a>
+        </Link>
       </div>
     );
   };
 
-  const totalListings = Object.values(listings).reduce(
-    (sum, serviceListings) => sum + serviceListings.length,
-    0
+  // UI Component renderers
+  const renderServiceNav = () => (
+    <div className="flex overflow-x-auto gap-2 p-2 bg-white rounded-lg shadow-sm no-scrollbar">
+      {(Object.keys(SERVICE_CONFIGS) as ServiceType[]).map((serviceType) => (
+        <button
+          key={serviceType}
+          onClick={() => setActiveService(serviceType)}
+          className={`px-4 py-2 rounded-lg whitespace-nowrap transition-all ${
+            activeService === serviceType
+              ? "bg-black text-white"
+              : "bg-gray-100 hover:bg-gray-200 text-gray-700"
+          } ${listings[serviceType].length === 0 ? "opacity-50" : ""}`}
+        >
+          {SERVICE_CONFIGS[serviceType].displayName}
+          <span className="ml-2 px-2 py-0.5 text-xs rounded-full bg-white/20">
+            {listings[serviceType].length}
+          </span>
+        </button>
+      ))}
+    </div>
   );
 
-  // Calculate total listings for each service type
-  const serviceCounts = Object.entries(listings).reduce(
-    (acc, [type, items]) => {
-      acc[type as ServiceType] = items.length;
-      return acc;
-    },
-    {} as Record<ServiceType, number>
+  const renderFilters = () => (
+    <div className="flex flex-col sm:flex-row gap-4 mb-6">
+      <div className="relative flex-grow">
+        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+        <Input
+          type="text"
+          placeholder="Search by name, description or location..."
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          className="pl-10"
+        />
+      </div>
+      <Select
+        value={sortBy}
+        onValueChange={(value: SortOption) => setSortBy(value)}
+      >
+        <SelectTrigger className="w-[180px]">
+          <SelectValue placeholder="Sort by..." />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem value="newest">Newest First</SelectItem>
+          <SelectItem value="price-low">Price: Low to High</SelectItem>
+          <SelectItem value="price-high">Price: High to Low</SelectItem>
+        </SelectContent>
+      </Select>
+    </div>
+  );
+
+  const renderEmptyState = () => (
+    <div className="text-center py-12 bg-white rounded-lg shadow-sm">
+      <div className="mb-4">
+        <Plus className="mx-auto h-12 w-12 text-gray-400" />
+      </div>
+      <h3 className="text-lg font-medium text-gray-900 mb-2">
+        No {SERVICE_CONFIGS[activeService].displayName} Listings
+      </h3>
+      <p className="text-gray-500 mb-6">
+        Create your first{" "}
+        {SERVICE_CONFIGS[activeService].displayName.toLowerCase()} listing
+      </p>
+      <Button asChild>
+        <Link href="/services">Create Listing</Link>
+      </Button>
+    </div>
+  );
+
+  const renderLoadingState = () => (
+    <div className="space-y-4">
+      <div className="h-12 bg-gray-200 rounded-lg animate-pulse" />
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+        {[...Array(3)].map((_, i) => (
+          <div
+            key={i}
+            className="bg-white rounded-xl shadow-sm overflow-hidden"
+          >
+            <div className="animate-pulse">
+              <div className="h-48 bg-gray-200" />
+              <div className="p-4 space-y-3">
+                <div className="h-4 bg-gray-200 rounded w-3/4" />
+                <div className="h-3 bg-gray-200 rounded w-1/2" />
+                <div className="h-3 bg-gray-200 rounded w-5/6" />
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
   );
 
   return (
     <ProtectedRoute>
       <div className="flex flex-col min-h-screen bg-gray-50">
         <NavBar />
-        <div className="flex-1 flex flex-col">
-          <div className="mb-[6%] max-w-7xl mx-auto px-4 py-8">
-            <div className="flex justify-between items-center mb-8">
-              <h1 className="text-2xl font-bold">My Listings</h1>
-              <Link
-                href="/services"
-                className="bg-black hover:bg-stone-500 text-white px-4 py-2 rounded-lg transition-colors"
-              >
-                Add New Listing
-              </Link>
+        <div className="flex-1">
+          <div className="max-w-7xl mx-auto px-4 py-8">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
+              <h1 className="text-3xl font-bold">My Listings</h1>
+              <Button asChild>
+                <Link href="/services">
+                  <Plus className="w-4 h-4 mr-2" />
+                  Add New Listing
+                </Link>
+              </Button>
             </div>
 
             {isLoading ? (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                {[...Array(3)].map((_, i) => (
-                  <div
-                    key={i}
-                    className="bg-white rounded-xl shadow-md overflow-hidden"
-                  >
-                    <div className="animate-pulse">
-                      <div className="h-48 bg-slate-200" />
-                      <div className="p-4 space-y-3">
-                        <div className="h-4 bg-slate-200 rounded w-3/4" />
-                        <div className="h-3 bg-slate-200 rounded w-1/2" />
-                        <div className="h-3 bg-slate-200 rounded w-5/6" />
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            ) : totalListings > 0 ? (
-              <Tabs
-                defaultValue={activeTab}
-                onValueChange={(value) => setActiveTab(value as ServiceType)}
-                className="w-full"
-              >
-                <TabsList className="mb-8">
-                  {(Object.keys(SERVICE_CONFIGS) as ServiceType[]).map(
-                    (serviceType) => (
-                      <TabsTrigger
-                        key={serviceType}
-                        value={serviceType}
-                        className="min-w-[120px]"
-                        disabled={serviceCounts[serviceType] === 0}
-                      >
-                        {SERVICE_CONFIGS[serviceType].displayName}
-                        {serviceCounts[serviceType] > 0 && (
-                          <span className="ml-2 text-xs px-2 py-0.5 bg-gray-200 text-green-700 rounded-full border-black">
-                            {serviceCounts[serviceType]}
-                          </span>
-                        )}
-                      </TabsTrigger>
-                    )
-                  )}
-                </TabsList>
-
-                {(Object.keys(SERVICE_CONFIGS) as ServiceType[]).map(
-                  (serviceType) => (
-                    <TabsContent key={serviceType} value={serviceType}>
-                      {listings[serviceType].length > 0 ? (
-                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                          {listings[serviceType].map((listing) =>
-                            renderListingCard(listing, serviceType)
-                          )}
-                        </div>
-                      ) : (
-                        <div className="text-center py-12 bg-white rounded-lg shadow">
-                          <h3 className="text-lg font-medium text-gray-900 mb-2">
-                            No {SERVICE_CONFIGS[serviceType].displayName}{" "}
-                            Listings
-                          </h3>
-                          <p className="text-gray-500 mb-6">
-                            Start by creating your first{" "}
-                            {SERVICE_CONFIGS[
-                              serviceType
-                            ].displayName.toLowerCase()}{" "}
-                            listing
-                          </p>
-                          <Link
-                            href="/services"
-                            className="inline-flex items-center px-4 py-2 bg-black hover:bg-stone-500 text-white rounded-lg transition-colors"
-                          >
-                            Create Listing
-                          </Link>
-                        </div>
-                      )}
-                    </TabsContent>
-                  )
-                )}
-              </Tabs>
+              renderLoadingState()
             ) : (
-              <div className="text-center py-12 bg-white rounded-lg shadow">
-                <h3 className="text-lg font-medium text-gray-900 mb-2">
-                  No listings yet
-                </h3>
-                <p className="text-gray-500 mb-6">
-                  Start by creating your first listing
-                </p>
-                <Link
-                  href="/services"
-                  className="inline-flex items-center px-4 py-2 bg-black hover:bg-stone-500 text-white rounded-lg transition-colors"
-                >
-                  Create Listing
-                </Link>
-              </div>
+              <>
+                {renderServiceNav()}
+                <div className="mt-6">
+                  {renderFilters()}
+                  {filteredListings[activeService].length > 0 ? (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                      {filteredListings[activeService].map((listing) => (
+                        <div key={listing.id} className="group">
+                          {renderListingCard(listing, activeService)}
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    renderEmptyState()
+                  )}
+                </div>
+              </>
             )}
           </div>
-
-          <AlertDialog
-            open={!!listingToDelete}
-            onOpenChange={() => setListingToDelete(null)}
-          >
-            <AlertDialogContent>
-              <AlertDialogHeader>
-                <AlertDialogTitle>Delete Listing</AlertDialogTitle>
-                <AlertDialogDescription>
-                  Are you sure you want to delete this listing? This action
-                  cannot be undone.
-                </AlertDialogDescription>
-              </AlertDialogHeader>
-              <AlertDialogFooter>
-                <AlertDialogCancel>Cancel</AlertDialogCancel>
-                <AlertDialogAction
-                  onClick={() =>
-                    listingToDelete &&
-                    handleDelete(listingToDelete.id, listingToDelete.type)
-                  }
-                  className="bg-red-600 hover:bg-red-700"
-                >
-                  Delete
-                </AlertDialogAction>
-              </AlertDialogFooter>
-            </AlertDialogContent>
-          </AlertDialog>
         </div>
         <Footer />
+
+        <AlertDialog
+          open={!!listingToDelete}
+          onOpenChange={() => setListingToDelete(null)}
+        >
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Delete Listing</AlertDialogTitle>
+              <AlertDialogDescription>
+                Are you sure you want to delete this listing? This action cannot
+                be undone.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogAction
+                onClick={() =>
+                  listingToDelete &&
+                  handleDelete(listingToDelete.id, listingToDelete.type)
+                }
+                className="bg-red-600 hover:bg-red-700"
+              >
+                Delete
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </div>
     </ProtectedRoute>
   );
