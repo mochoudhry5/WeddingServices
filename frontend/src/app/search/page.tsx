@@ -788,24 +788,41 @@ export default function ServicesSearchPage() {
   const renderServiceListings = () => {
     if (isLoading) {
       return (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-          {[...Array(6)].map((_, index) => (
-            <div
-              key={index}
-              className="bg-white rounded-xl shadow-md overflow-hidden"
-            >
-              <div className="animate-pulse">
-                <div className="h-48 bg-slate-200" />
-                <div className="p-4 space-y-3">
-                  <div className="h-4 bg-slate-200 rounded w-3/4" />
-                  <div className="h-3 bg-slate-200 rounded w-1/2" />
-                  <div className="h-3 bg-slate-200 rounded w-5/6" />
-                  <div className="h-3 bg-slate-200 rounded w-4/6" />
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+              {[...Array(6)].map((_, index) => (
+                <div
+                  key={index}
+                  className="bg-white rounded-xl shadow-sm overflow-hidden hover:shadow-lg transition-shadow duration-300"
+                >
+                  <div className="animate-pulse">
+                    {/* Media carousel placeholder with fixed aspect ratio */}
+                    <div className="aspect-[4/3] bg-slate-200" />
+                    
+                    <div className="p-4">
+                      {/* Business name */}
+                      <div className="mb-2">
+                        <div className="h-6 bg-slate-200 rounded w-2/3" />
+                      </div>
+
+                      {/* Service type and experience */}
+                      <div className="h-4 bg-slate-200 rounded w-3/4 mb-2" />
+                      
+                      {/* Description - two lines */}
+                      <div className="space-y-2 mb-3">
+                        <div className="h-4 bg-slate-200 rounded w-full" />
+                        <div className="h-4 bg-slate-200 rounded w-4/5" />
+                      </div>
+
+                      {/* Location and price */}
+                      <div className="flex justify-between items-center pt-2 border-t">
+                        <div className="h-4 bg-slate-200 rounded w-1/3" />
+                        <div className="h-6 bg-slate-200 rounded w-1/4" />
+                      </div>
+                    </div>
+                  </div>
                 </div>
-              </div>
+              ))}
             </div>
-          ))}
-        </div>
       );
     }
 
@@ -859,7 +876,7 @@ export default function ServicesSearchPage() {
     }
 
     return (
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
         {serviceListings.map((listing) => {
           // Type guard function to check if listing is a makeup artist
           const isRange = (
@@ -1011,13 +1028,14 @@ export default function ServicesSearchPage() {
   };
 
   return (
-    <div className="flex flex-col min-h-screen">
+    <div className="min-h-screen flex flex-col bg-gray-50">
       <NavBar />
 
       {/* Search Bar */}
-      <div className="flex-1 flex flex-col">
-        <div className="sticky top-0 z-10 bg-white border-b border-gray-200 shadow-sm">
-          <div className="max-w-7xl mx-auto px-4 py-4">
+      <main className="flex-grow flex flex-col">
+      {/* Sticky search bar */}
+      <div className="sticky top-0 z-10 bg-white border-b border-gray-200 shadow-sm">
+        <div className="max-w-7xl mx-auto px-4 py-4">
             <form onSubmit={handleSearchSubmit}>
               <div className="flex flex-col sm:flex-row gap-3">
                 {/* Service Type Selector */}
@@ -1371,13 +1389,14 @@ export default function ServicesSearchPage() {
           </div>
         </div>
 
-        {/* Results Count */}
+        <div className="flex-grow">
+        {/* Results count */}
         <div className="max-w-7xl mx-auto px-4 py-4">
           <p className="text-sm text-gray-600">
             {serviceListings.length} found in{" "}
             {serviceListings.length === 1
               ? SERVICE_CONFIGS[searchFilters.serviceType].singularName
-              : SERVICE_CONFIGS[searchFilters.serviceType].pluralName}{" "}
+              : SERVICE_CONFIGS[searchFilters.serviceType].pluralName}
           </p>
         </div>
 
@@ -1385,7 +1404,8 @@ export default function ServicesSearchPage() {
         <div className="max-w-7xl mx-auto px-4 pb-8">
           {renderServiceListings()}
         </div>
-      </div>
+        </div>
+      </main>
       <Footer />
     </div>
   );
