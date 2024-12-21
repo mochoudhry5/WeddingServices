@@ -11,13 +11,7 @@ import {
 import NavBar from "@/components/ui/NavBar";
 import Footer from "@/components/ui/Footer";
 import LocationInput from "@/components/ui/LocationInput";
-import {
-  Heart,
-  Camera,
-  LucideIcon,
-  Ban,
-  DollarSign,
-} from "lucide-react";
+import { Heart, Camera, LucideIcon, Ban, DollarSign } from "lucide-react";
 
 interface FeatureCardProps {
   icon: LucideIcon;
@@ -120,6 +114,7 @@ const ImageCarousel = () => {
     </div>
   );
 };
+
 interface GooglePlace {
   formatted_address?: string;
   address_components?: Array<{
@@ -143,26 +138,27 @@ interface GooglePlace {
       };
     };
   };
-  name?: string; // Name of the place, e.g., "Central Park"
-  place_id?: string; // Unique identifier for the place
-  types?: string[]; // Array of place types, e.g., ["locality", "political"]
-  url?: string; // Google Maps URL for the place
-  vicinity?: string; // General location description, e.g., "New York, NY"
+  name?: string;
+  place_id?: string;
+  types?: string[];
+  url?: string;
+  vicinity?: string;
   plus_code?: {
-    compound_code: string; // Localized code, e.g., "CWC8+W5"
-    global_code: string; // Global code, e.g., "849VCWC8+W5"
+    compound_code: string;
+    global_code: string;
   };
-  utc_offset_minutes?: number; // Timezone offset in minutes
+  utc_offset_minutes?: number;
   photos?: Array<{
     height: number;
     width: number;
     html_attributions: string[];
-    photo_reference: string; // Reference to fetch the photo from the API
+    photo_reference: string;
   }>;
-  icon?: string; // URL to the place's icon
-  icon_background_color?: string; // Background color for the icon
-  icon_mask_base_uri?: string; // Mask URI for custom styling of the icon
+  icon?: string;
+  icon_background_color?: string;
+  icon_mask_base_uri?: string;
 }
+
 export default function HomePage() {
   const [serviceType, setServiceType] = useState("venue");
   const [countryQuery, setCountryQuery] = useState("");
@@ -187,6 +183,7 @@ export default function HomePage() {
     setCityQuery(city || "");
     setStateQuery(state || "");
     setCountryQuery(country || "");
+    setFullQuery(place.formatted_address || "");
   };
 
   const extractLocationDetails = (place: GooglePlace) => {
@@ -206,119 +203,124 @@ export default function HomePage() {
   };
 
   return (
-    <div className="min-h-screen">
+    <div className="flex flex-col min-h-screen">
       <NavBar />
 
-      <div className="relative min-h-[calc(100vh-64px)]">
-        <div className="absolute inset-0">
-          <ImageCarousel />
+      {/* Main Content Wrapper */}
+      <div className="flex-1 flex flex-col">
+        {/* Hero Section */}
+        <div className="relative flex-shrink-0">
+          <div className="absolute inset-0">
+            <ImageCarousel />
+          </div>
+
+          <div className="relative z-10 flex flex-col items-center justify-center min-h-[calc(100vh-64px)] px-4">
+            <div className="w-full max-w-xl text-center">
+              <h2 className="text-5xl font-bold text-white mb-6">
+                Find your perfect wedding venue & services
+              </h2>
+              <p className="text-xl text-white/90 mb-8">
+                Discover and book unique venues, talented makeup artists, and
+                professional photographers for your special day
+              </p>
+
+              <form
+                onSubmit={handleSearch}
+                className="w-full bg-neutral-900/70 backdrop-blur-sm p-6 rounded-2xl"
+              >
+                <div className="flex flex-col gap-4">
+                  <Select value={serviceType} onValueChange={setServiceType}>
+                    <SelectTrigger className="bg-white/20 border-0 text-white">
+                      <SelectValue placeholder="Service Type" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="venue">Venue</SelectItem>
+                      <SelectItem value="hairMakeup">Hair & Makeup</SelectItem>
+                      <SelectItem value="photoVideo">
+                        Photography/Videography
+                      </SelectItem>
+                      <SelectItem value="weddingPlanner">
+                        Wedding Planner & Coordinator
+                      </SelectItem>
+                      <SelectItem value="dj">DJ</SelectItem>
+                    </SelectContent>
+                  </Select>
+
+                  <LocationInput
+                    value={fullQuery}
+                    onChange={setFullQuery}
+                    onPlaceSelect={handlePlaceSelect}
+                    placeholder="Search by location"
+                    className="bg-white/20 border-0 text-white placeholder:text-neutral-400"
+                  />
+
+                  <button
+                    type="submit"
+                    className="bg-stone-300 hover:bg-stone-200 text-black px-8 py-3 rounded-lg transition-colors duration-300 w-full font-medium"
+                  >
+                    Search
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
         </div>
 
-        <div className="relative z-10 flex flex-col items-center justify-center min-h-[calc(100vh-64px)] px-4">
-          <div className="w-full max-w-xl text-center">
-            <h2 className="text-5xl font-bold text-white mb-6">
-              Find your perfect wedding venue & services
-            </h2>
-            <p className="text-xl text-white/90 mb-8">
-              Discover and book unique venues, talented makeup artists, and
-              professional photographers for your special day
-            </p>
+        {/* Features Section */}
+        <section className="relative z-10 py-20 bg-neutral-50">
+          <div className="max-w-7xl mx-auto px-4">
+            <div className="text-center mb-10">
+              <h2 className="text-4xl font-bold text-neutral-900 mb-4">
+                Why Choose AnyWeds?
+              </h2>
+              <p className="text-neutral-600 text-lg max-w-2xl mx-auto">
+                We're revolutionizing how couples plan their perfect wedding day
+              </p>
+            </div>
 
-            <form
-              onSubmit={handleSearch}
-              className="w-full bg-neutral-900/70 backdrop-blur-sm p-6 rounded-2xl"
-            >
-              <div className="flex flex-col gap-4">
-                <Select value={serviceType} onValueChange={setServiceType}>
-                  <SelectTrigger className="bg-white/20 border-0 text-white">
-                    <SelectValue placeholder="Service Type" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="venue">Venue</SelectItem>
-                    <SelectItem value="hairMakeup">Hair & Makeup</SelectItem>
-                    <SelectItem value="photoVideo">
-                      Photography/Videography
-                    </SelectItem>
-                    <SelectItem value="weddingPlanner">
-                      Wedding Planner & Coordinator
-                    </SelectItem>
-                    <SelectItem value="dj">DJ</SelectItem>
-                  </SelectContent>
-                </Select>
-
-                <LocationInput
-                  value={fullQuery}
-                  onChange={setFullQuery}
-                  onPlaceSelect={handlePlaceSelect}
-                  placeholder="Search by location"
-                  className="bg-white/20 border-0 text-white placeholder:text-neutral-400"
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+              {[
+                {
+                  icon: Heart,
+                  title: "Curated Selection",
+                  description:
+                    "Search by price, location, and other preferences.",
+                  delay: 100,
+                },
+                {
+                  icon: Camera,
+                  title: "Visual First",
+                  description:
+                    "High-quality photos to help you make informed decisions",
+                  delay: 200,
+                },
+                {
+                  icon: DollarSign,
+                  title: "Quick Estimate",
+                  description:
+                    "Obtain an estimate without needing to contact anyone.",
+                  delay: 300,
+                },
+                {
+                  icon: Ban,
+                  title: "No Fees",
+                  description:
+                    "We recognize the importance of staying within your budget.",
+                  delay: 400,
+                },
+              ].map((feature) => (
+                <FeatureCard
+                  key={feature.title}
+                  icon={feature.icon}
+                  title={feature.title}
+                  description={feature.description}
+                  delay={feature.delay}
                 />
-
-                <button
-                  type="submit"
-                  className="bg-stone-300 hover:bg-stone-200 text-black text- px-8 py-3 rounded-lg transition-colors duration-300 w-full font-medium"
-                >
-                  Search
-                </button>
-              </div>
-            </form>
+              ))}
+            </div>
           </div>
-        </div>
+        </section>
       </div>
-
-      <section className="relative z-10 py-10 bg-neutral-50">
-        <div className="max-w-7xl mx-auto px-4">
-          <div className="text-center mb-10">
-            <h2 className="text-4xl font-bold text-neutral-900 mb-4">
-              Why Choose AnyWeds?
-            </h2>
-            <p className="text-neutral-600 text-lg max-w-2xl mx-auto">
-              We're revolutionizing how couples plan their perfect wedding day
-            </p>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {[
-              {
-                icon: Heart,
-                title: "Curated Selection",
-                description:
-                  "Search by price, location, and other preferences.",
-                delay: 100,
-              },
-              {
-                icon: Camera,
-                title: "Visual First",
-                description:
-                  "High-quality photos to help you make informed decisions",
-                delay: 200,
-              },
-              {
-                icon: DollarSign,
-                title: "Quick Estimate",
-                description:
-                  "Obtain an estimate without needing to contact anyone.",
-                delay: 300,
-              },
-              {
-                icon: Ban,
-                title: "No Fees",
-                description:
-                  "We recognize the importance of staying within your budget.",
-                delay: 400,
-              },
-            ].map((feature) => (
-              <FeatureCard
-                key={feature.title}
-                icon={feature.icon}
-                title={feature.title}
-                description={feature.description}
-                delay={feature.delay}
-              />
-            ))}
-          </div>
-        </div>
-      </section>
 
       <Footer />
     </div>

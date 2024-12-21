@@ -24,7 +24,7 @@ import {
   SheetTrigger,
 } from "@/components/ui/sheet";
 import { Slider } from "@/components/ui/slider";
-import { SlidersHorizontal } from "lucide-react";
+import { SlidersHorizontal, FileSearch } from "lucide-react";
 
 // Type Guards
 const isValidServiceType = (value: string): value is ServiceType => {
@@ -811,20 +811,49 @@ export default function ServicesSearchPage() {
 
     if (serviceListings.length === 0) {
       return (
-        <div className="text-center py-12">
-          <p className="text-lg text-slate-600">
-            No{" "}
-            {searchFilters.serviceType === "hairMakeup"
-              ? "makeup artists"
-              : "venues"}{" "}
-            found matching your criteria.
-          </p>
-          <button
-            onClick={handleFilterReset}
-            className="mt-4 text-black hover:text-stone-500"
-          >
-            Clear all filters
-          </button>
+        <div className="max-w-md mx-auto text-center">
+          <div className="bg-white rounded-lg shadow-sm p-8">
+            {/* Icon */}
+            <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-stone-100 flex items-center justify-center">
+              <FileSearch className="w-8 h-8 text-stone-600" />
+            </div>
+
+            {/* Title */}
+            <h2 className="text-xl font-semibold text-gray-900 mb-2">
+              No Results Found
+            </h2>
+
+            {/* Description */}
+            <p className="text-gray-600 mb-6">
+              We couldn't find any{" "}
+              {searchFilters.serviceType === "hairMakeup"
+                ? "makeup artists"
+                : searchFilters.serviceType === "photoVideo"
+                ? "photographers or videographers"
+                : searchFilters.serviceType === "weddingPlanner"
+                ? "wedding planners"
+                : searchFilters.serviceType === "dj"
+                ? "DJs"
+                : "venues"}{" "}
+              matching your current filters.
+            </p>
+
+            {/* Actions */}
+            <div className="space-y-3">
+              <button
+                onClick={handleFilterReset}
+                className="w-full px-4 py-2 bg-black text-white rounded-lg hover:bg-stone-800 transition-colors duration-300"
+              >
+                Clear All Filters
+              </button>
+              <button
+                onClick={() => (window.location.href = "/")}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors duration-300"
+              >
+                Back to Homepage
+              </button>
+            </div>
+          </div>
         </div>
       );
     }
@@ -982,379 +1011,381 @@ export default function ServicesSearchPage() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50">
+    <div className="flex flex-col min-h-screen">
       <NavBar />
 
       {/* Search Bar */}
-      <div className="sticky top-0 z-10 bg-white border-b border-gray-200 shadow-sm">
-        <div className="max-w-7xl mx-auto px-4 py-4">
-          <form onSubmit={handleSearchSubmit}>
-            <div className="flex flex-col sm:flex-row gap-3">
-              {/* Service Type Selector */}
-              <div className="w-full sm:w-32">
-                <Select
-                  value={searchFilters.serviceType}
-                  onValueChange={(value: ServiceType) => {
-                    // Reset all filters except for the new service type
-                    const newFilters: SearchFilters = {
+      <div className="flex-1 flex flex-col">
+        <div className="sticky top-0 z-10 bg-white border-b border-gray-200 shadow-sm">
+          <div className="max-w-7xl mx-auto px-4 py-4">
+            <form onSubmit={handleSearchSubmit}>
+              <div className="flex flex-col sm:flex-row gap-3">
+                {/* Service Type Selector */}
+                <div className="w-full sm:w-32">
+                  <Select
+                    value={searchFilters.serviceType}
+                    onValueChange={(value: ServiceType) => {
+                      // Reset all filters except for the new service type
+                      const newFilters: SearchFilters = {
+                        searchQuery: {
+                          enteredLocation: "",
+                          city: "",
+                          state: "",
+                          country: "",
+                        },
+                        priceRange: [0, 0],
+                        capacity: { min: 0, max: 0 }, // Updated from "all"
+                        cateringOption: "both",
+                        sortOption: "default",
+                        serviceType: value,
+                      };
+                      setSearchFilters(newFilters);
+                      updateURLWithFilters(newFilters);
+                      fetchServiceListings(false, newFilters);
+                    }}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Service Type" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="venue">Venue</SelectItem>
+                      <SelectItem value="hairMakeup">Hair & Makeup</SelectItem>
+                      <SelectItem value="photoVideo">
+                        Photography & Videography
+                      </SelectItem>
+                      <SelectItem value="weddingPlanner">
+                        Wedding Planner & Coordinator
+                      </SelectItem>
+                      <SelectItem value="dj">DJ</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {/* Location Input */}
+                <LocationInput
+                  value={searchFilters.searchQuery.enteredLocation}
+                  onChange={(value) =>
+                    setSearchFilters((prev) => ({
+                      ...prev,
                       searchQuery: {
-                        enteredLocation: "",
-                        city: "",
-                        state: "",
-                        country: "",
+                        ...prev.searchQuery,
+                        enteredLocation: value,
                       },
-                      priceRange: [0, 0],
-                      capacity: { min: 0, max: 0 }, // Updated from "all"
-                      cateringOption: "both",
-                      sortOption: "default",
-                      serviceType: value,
-                    };
-                    setSearchFilters(newFilters);
-                    updateURLWithFilters(newFilters);
-                    fetchServiceListings(false, newFilters);
+                    }))
+                  }
+                  onPlaceSelect={(place) => {
+                    let city = "";
+                    let state = "";
+                    let country = "";
+
+                    place.address_components?.forEach((component) => {
+                      if (component.types.includes("locality")) {
+                        city = component.long_name;
+                      }
+                      if (
+                        component.types.includes("administrative_area_level_1")
+                      ) {
+                        state = component.long_name;
+                      }
+                      if (component.types.includes("country")) {
+                        country = component.long_name;
+                      }
+                    });
+
+                    setSearchFilters((prev) => ({
+                      ...prev,
+                      searchQuery: {
+                        enteredLocation: place.formatted_address || "",
+                        city,
+                        state,
+                        country,
+                      },
+                    }));
                   }}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Service Type" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="venue">Venue</SelectItem>
-                    <SelectItem value="hairMakeup">Hair & Makeup</SelectItem>
-                    <SelectItem value="photoVideo">
-                      Photography & Videography
-                    </SelectItem>
-                    <SelectItem value="weddingPlanner">
-                      Wedding Planner & Coordinator
-                    </SelectItem>
-                    <SelectItem value="dj">DJ</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
+                  placeholder={
+                    SERVICE_CONFIGS[searchFilters.serviceType].locationBased
+                      ? "Search by location"
+                      : `Search for ${
+                          SERVICE_CONFIGS[searchFilters.serviceType].pluralName
+                        }`
+                  }
+                  className="w-full"
+                />
 
-              {/* Location Input */}
-              <LocationInput
-                value={searchFilters.searchQuery.enteredLocation}
-                onChange={(value) =>
-                  setSearchFilters((prev) => ({
-                    ...prev,
-                    searchQuery: {
-                      ...prev.searchQuery,
-                      enteredLocation: value,
-                    },
-                  }))
-                }
-                onPlaceSelect={(place) => {
-                  let city = "";
-                  let state = "";
-                  let country = "";
+                {/* Search and Filter Buttons */}
+                <div className="flex gap-2 sm:w-[168px]">
+                  <button
+                    type="submit"
+                    className="w-20 bg-black hover:bg-stone-500 text-white rounded-lg transition-colors duration-300"
+                  >
+                    Search
+                  </button>
 
-                  place.address_components?.forEach((component) => {
-                    if (component.types.includes("locality")) {
-                      city = component.long_name;
-                    }
-                    if (
-                      component.types.includes("administrative_area_level_1")
-                    ) {
-                      state = component.long_name;
-                    }
-                    if (component.types.includes("country")) {
-                      country = component.long_name;
-                    }
-                  });
+                  <Sheet
+                    open={isFilterSheetOpen}
+                    onOpenChange={setIsFilterSheetOpen}
+                  >
+                    <SheetTrigger asChild>
+                      <button
+                        type="button"
+                        className={`w-20 flex items-center justify-center gap-1 border rounded-lg hover:bg-slate-50 ${
+                          isFiltered
+                            ? "border-black text-black"
+                            : "border-slate-200 text-slate-700"
+                        }`}
+                      >
+                        <SlidersHorizontal size={20} />
+                        <span>Filters</span>
+                      </button>
+                    </SheetTrigger>
 
-                  setSearchFilters((prev) => ({
-                    ...prev,
-                    searchQuery: {
-                      enteredLocation: place.formatted_address || "",
-                      city,
-                      state,
-                      country,
-                    },
-                  }));
-                }}
-                placeholder={
-                  SERVICE_CONFIGS[searchFilters.serviceType].locationBased
-                    ? "Search by location"
-                    : `Search for ${
-                        SERVICE_CONFIGS[searchFilters.serviceType].pluralName
-                      }`
-                }
-                className="w-full"
-              />
+                    <SheetContent side="right" className="w-full max-w-md">
+                      <SheetHeader>
+                        <SheetTitle>Filter Options</SheetTitle>
+                        <SheetDescription>
+                          Customize your{" "}
+                          {
+                            SERVICE_CONFIGS[searchFilters.serviceType]
+                              .singularName
+                          }{" "}
+                          search results
+                        </SheetDescription>
+                      </SheetHeader>
 
-              {/* Search and Filter Buttons */}
-              <div className="flex gap-2 sm:w-[168px]">
-                <button
-                  type="submit"
-                  className="w-20 bg-black hover:bg-stone-500 text-white rounded-lg transition-colors duration-300"
-                >
-                  Search
-                </button>
-
-                <Sheet
-                  open={isFilterSheetOpen}
-                  onOpenChange={setIsFilterSheetOpen}
-                >
-                  <SheetTrigger asChild>
-                    <button
-                      type="button"
-                      className={`w-20 flex items-center justify-center gap-1 border rounded-lg hover:bg-slate-50 ${
-                        isFiltered
-                          ? "border-black text-black"
-                          : "border-slate-200 text-slate-700"
-                      }`}
-                    >
-                      <SlidersHorizontal size={20} />
-                      <span>Filters</span>
-                    </button>
-                  </SheetTrigger>
-
-                  <SheetContent side="right" className="w-full max-w-md">
-                    <SheetHeader>
-                      <SheetTitle>Filter Options</SheetTitle>
-                      <SheetDescription>
-                        Customize your{" "}
-                        {
-                          SERVICE_CONFIGS[searchFilters.serviceType]
-                            .singularName
-                        }{" "}
-                        search results
-                      </SheetDescription>
-                    </SheetHeader>
-
-                    <div className="mt-6 space-y-6">
-                      {/* Price Range */}
-                      <div className="px-1">
-                        <h3 className="text-sm font-medium mb-1">
-                          Price Range
-                        </h3>
-                        <div className="grid grid-cols-2 gap-4">
-                          <div>
-                            <div className="relative">
-                              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-600">
-                                $
-                              </span>
-                              <input
-                                type="number"
-                                min="0"
-                                value={searchFilters.priceRange[0] || ""}
-                                onChange={(e) => {
-                                  const value = Math.max(
-                                    0,
-                                    parseInt(e.target.value) || 0
-                                  );
-                                  setSearchFilters((prev) => ({
-                                    ...prev,
-                                    priceRange: [value, prev.priceRange[1]],
-                                  }));
-                                }}
-                                className="w-full mt-1 pl-7 pr-3 py-2 border border-slate-200 rounded-lg 
-                   focus:outline-none focus:ring-2 focus:ring-black"
-                                placeholder="Min price"
-                              />
-                            </div>
-                          </div>
-                          <div>
-                            <div className="relative">
-                              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-600">
-                                $
-                              </span>
-                              <input
-                                type="number"
-                                min="0"
-                                value={searchFilters.priceRange[1] || ""}
-                                onChange={(e) => {
-                                  const value = Math.max(
-                                    0,
-                                    parseInt(e.target.value) || 0
-                                  );
-                                  setSearchFilters((prev) => ({
-                                    ...prev,
-                                    priceRange: [prev.priceRange[0], value],
-                                  }));
-                                }}
-                                className="w-full mt-1 pl-7 pr-3 py-2 border border-slate-200 rounded-lg 
-                   focus:outline-none focus:ring-2 focus:ring-black"
-                                placeholder="Max price"
-                              />
-                            </div>
-                          </div>
-                        </div>
-                        {/* Add validation message if min > max */}
-                        {searchFilters.priceRange[0] >
-                          searchFilters.priceRange[1] &&
-                          searchFilters.priceRange[1] !== 0 && (
-                            <p className="text-sm text-red-500 mt-2">
-                              Minimum price should not exceed maximum price
-                            </p>
-                          )}
-                      </div>
-                      {/* Capacity - Only show for venues */}
-                      {SERVICE_CONFIGS[searchFilters.serviceType]
-                        .hasCapacity && (
-                        <div>
+                      <div className="mt-6 space-y-6">
+                        {/* Price Range */}
+                        <div className="px-1">
                           <h3 className="text-sm font-medium mb-1">
-                            Guest Capacity Range
+                            Price Range
                           </h3>
                           <div className="grid grid-cols-2 gap-4">
                             <div>
-                              <input
-                                type="number"
-                                min="0"
-                                value={searchFilters.capacity.min || ""}
-                                onChange={(e) => {
-                                  const value = Math.max(
-                                    0,
-                                    parseInt(e.target.value) || 0
-                                  );
-                                  setSearchFilters((prev) => ({
-                                    ...prev,
-                                    capacity: {
-                                      ...prev.capacity,
-                                      min: value,
-                                    },
-                                  }));
-                                }}
-                                className="w-full mt-1 px-3 py-2 border border-slate-200 rounded-lg 
+                              <div className="relative">
+                                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-600">
+                                  $
+                                </span>
+                                <input
+                                  type="number"
+                                  min="0"
+                                  value={searchFilters.priceRange[0] || ""}
+                                  onChange={(e) => {
+                                    const value = Math.max(
+                                      0,
+                                      parseInt(e.target.value) || 0
+                                    );
+                                    setSearchFilters((prev) => ({
+                                      ...prev,
+                                      priceRange: [value, prev.priceRange[1]],
+                                    }));
+                                  }}
+                                  className="w-full mt-1 pl-7 pr-3 py-2 border border-slate-200 rounded-lg 
                    focus:outline-none focus:ring-2 focus:ring-black"
-                                placeholder="Min guests"
-                              />
+                                  placeholder="Min price"
+                                />
+                              </div>
                             </div>
                             <div>
-                              <input
-                                type="number"
-                                min="0"
-                                value={searchFilters.capacity.max || ""}
-                                onChange={(e) => {
-                                  const value = Math.max(
-                                    0,
-                                    parseInt(e.target.value) || 0
-                                  );
-                                  setSearchFilters((prev) => ({
-                                    ...prev,
-                                    capacity: {
-                                      ...prev.capacity,
-                                      max: value,
-                                    },
-                                  }));
-                                }}
-                                className="w-full mt-1 px-3 py-2 border border-slate-200 rounded-lg 
+                              <div className="relative">
+                                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-600">
+                                  $
+                                </span>
+                                <input
+                                  type="number"
+                                  min="0"
+                                  value={searchFilters.priceRange[1] || ""}
+                                  onChange={(e) => {
+                                    const value = Math.max(
+                                      0,
+                                      parseInt(e.target.value) || 0
+                                    );
+                                    setSearchFilters((prev) => ({
+                                      ...prev,
+                                      priceRange: [prev.priceRange[0], value],
+                                    }));
+                                  }}
+                                  className="w-full mt-1 pl-7 pr-3 py-2 border border-slate-200 rounded-lg 
                    focus:outline-none focus:ring-2 focus:ring-black"
-                                placeholder="Max guests"
-                              />
+                                  placeholder="Max price"
+                                />
+                              </div>
                             </div>
                           </div>
                           {/* Add validation message if min > max */}
-                          {searchFilters.capacity.min >
-                            searchFilters.capacity.max &&
-                            searchFilters.capacity.max !== 0 && (
+                          {searchFilters.priceRange[0] >
+                            searchFilters.priceRange[1] &&
+                            searchFilters.priceRange[1] !== 0 && (
                               <p className="text-sm text-red-500 mt-2">
-                                Minimum guests should not exceed maximum guests
+                                Minimum price should not exceed maximum price
                               </p>
                             )}
                         </div>
-                      )}
-                      {searchFilters.serviceType === "venue" && (
-                        <div className="mt-6">
-                          <h3 className="text-sm font-medium mb-1">
-                            Catering Options
-                          </h3>
+                        {/* Capacity - Only show for venues */}
+                        {SERVICE_CONFIGS[searchFilters.serviceType]
+                          .hasCapacity && (
+                          <div>
+                            <h3 className="text-sm font-medium mb-1">
+                              Guest Capacity Range
+                            </h3>
+                            <div className="grid grid-cols-2 gap-4">
+                              <div>
+                                <input
+                                  type="number"
+                                  min="0"
+                                  value={searchFilters.capacity.min || ""}
+                                  onChange={(e) => {
+                                    const value = Math.max(
+                                      0,
+                                      parseInt(e.target.value) || 0
+                                    );
+                                    setSearchFilters((prev) => ({
+                                      ...prev,
+                                      capacity: {
+                                        ...prev.capacity,
+                                        min: value,
+                                      },
+                                    }));
+                                  }}
+                                  className="w-full mt-1 px-3 py-2 border border-slate-200 rounded-lg 
+                   focus:outline-none focus:ring-2 focus:ring-black"
+                                  placeholder="Min guests"
+                                />
+                              </div>
+                              <div>
+                                <input
+                                  type="number"
+                                  min="0"
+                                  value={searchFilters.capacity.max || ""}
+                                  onChange={(e) => {
+                                    const value = Math.max(
+                                      0,
+                                      parseInt(e.target.value) || 0
+                                    );
+                                    setSearchFilters((prev) => ({
+                                      ...prev,
+                                      capacity: {
+                                        ...prev.capacity,
+                                        max: value,
+                                      },
+                                    }));
+                                  }}
+                                  className="w-full mt-1 px-3 py-2 border border-slate-200 rounded-lg 
+                   focus:outline-none focus:ring-2 focus:ring-black"
+                                  placeholder="Max guests"
+                                />
+                              </div>
+                            </div>
+                            {/* Add validation message if min > max */}
+                            {searchFilters.capacity.min >
+                              searchFilters.capacity.max &&
+                              searchFilters.capacity.max !== 0 && (
+                                <p className="text-sm text-red-500 mt-2">
+                                  Minimum guests should not exceed maximum
+                                  guests
+                                </p>
+                              )}
+                          </div>
+                        )}
+                        {searchFilters.serviceType === "venue" && (
+                          <div className="mt-6">
+                            <h3 className="text-sm font-medium mb-1">
+                              Catering Options
+                            </h3>
+                            <Select
+                              value={searchFilters.cateringOption}
+                              onValueChange={(value: string) => {
+                                setSearchFilters((prev) => ({
+                                  ...prev,
+                                  cateringOption: value,
+                                }));
+                              }}
+                            >
+                              <SelectTrigger>
+                                <SelectValue placeholder="Select catering option" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="in_house">
+                                  In-house Catering
+                                </SelectItem>
+                                <SelectItem value="outside">
+                                  Outside Catering
+                                </SelectItem>
+                                <SelectItem value="both">
+                                  Both In-house & Outside
+                                </SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
+                        )}
+                        {/* Sort Options */}
+                        <div>
+                          <h3 className="text-sm font-medium mb-1">Sort By</h3>
                           <Select
-                            value={searchFilters.cateringOption}
+                            value={searchFilters.sortOption}
                             onValueChange={(value: string) => {
-                              setSearchFilters((prev) => ({
-                                ...prev,
-                                cateringOption: value,
-                              }));
+                              if (isValidSortOption(value)) {
+                                setSearchFilters((prev) => ({
+                                  ...prev,
+                                  sortOption: value,
+                                }));
+                              }
                             }}
                           >
                             <SelectTrigger>
-                              <SelectValue placeholder="Select catering option" />
+                              <SelectValue placeholder="Select sorting option" />
                             </SelectTrigger>
                             <SelectContent>
-                              <SelectItem value="in_house">
-                                In-house Catering
+                              <SelectItem value="default">Featured</SelectItem>
+                              <SelectItem value="price_asc">
+                                Price: Low to High
                               </SelectItem>
-                              <SelectItem value="outside">
-                                Outside Catering
-                              </SelectItem>
-                              <SelectItem value="both">
-                                Both In-house & Outside
+                              <SelectItem value="price_desc">
+                                Price: High to Low
                               </SelectItem>
                             </SelectContent>
                           </Select>
                         </div>
-                      )}
-                      {/* Sort Options */}
-                      <div>
-                        <h3 className="text-sm font-medium mb-1">Sort By</h3>
-                        <Select
-                          value={searchFilters.sortOption}
-                          onValueChange={(value: string) => {
-                            if (isValidSortOption(value)) {
-                              setSearchFilters((prev) => ({
-                                ...prev,
-                                sortOption: value,
-                              }));
-                            }
-                          }}
-                        >
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select sorting option" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="default">Featured</SelectItem>
-                            <SelectItem value="price_asc">
-                              Price: Low to High
-                            </SelectItem>
-                            <SelectItem value="price_desc">
-                              Price: High to Low
-                            </SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
 
-                      {/* Action Buttons */}
-                      <div className="flex gap-3 pt-6">
-                        <button
-                          type="button"
-                          onClick={handleFilterApply}
-                          className="flex-1 py-3 text-sm text-white bg-black hover:bg-stone-500 rounded-lg transition-colors duration-300"
-                        >
-                          Apply Filters
-                        </button>
-                        <button
-                          type="button"
-                          onClick={handleFilterReset}
-                          className="flex-1 py-3 text-sm border border-black text-black hover:bg-gray-300 rounded-lg transition-colors duration-300"
-                        >
-                          Clear
-                        </button>
+                        {/* Action Buttons */}
+                        <div className="flex gap-3 pt-6">
+                          <button
+                            type="button"
+                            onClick={handleFilterApply}
+                            className="flex-1 py-3 text-sm text-white bg-black hover:bg-stone-500 rounded-lg transition-colors duration-300"
+                          >
+                            Apply Filters
+                          </button>
+                          <button
+                            type="button"
+                            onClick={handleFilterReset}
+                            className="flex-1 py-3 text-sm border border-black text-black hover:bg-gray-300 rounded-lg transition-colors duration-300"
+                          >
+                            Clear
+                          </button>
+                        </div>
                       </div>
-                    </div>
-                  </SheetContent>
-                </Sheet>
+                    </SheetContent>
+                  </Sheet>
+                </div>
               </div>
-            </div>
-          </form>
+            </form>
+          </div>
+        </div>
+
+        {/* Results Count */}
+        <div className="max-w-7xl mx-auto px-4 py-4">
+          <p className="text-sm text-gray-600">
+            {serviceListings.length} found in{" "}
+            {serviceListings.length === 1
+              ? SERVICE_CONFIGS[searchFilters.serviceType].singularName
+              : SERVICE_CONFIGS[searchFilters.serviceType].pluralName}{" "}
+          </p>
+        </div>
+
+        {/* Results Grid */}
+        <div className="max-w-7xl mx-auto px-4 pb-8">
+          {renderServiceListings()}
         </div>
       </div>
-
-      {/* Results Count */}
-      <div className="max-w-7xl mx-auto px-4 py-4">
-        <p className="text-sm text-gray-600">
-          {serviceListings.length} found in{" "}
-          {serviceListings.length === 1
-            ? SERVICE_CONFIGS[searchFilters.serviceType].singularName
-            : SERVICE_CONFIGS[searchFilters.serviceType].pluralName}{" "}
-        </p>
-      </div>
-
-      {/* Results Grid */}
-      <div className="max-w-7xl mx-auto px-4 pb-8">
-        {renderServiceListings()}
-      </div>
-
       <Footer />
     </div>
   );

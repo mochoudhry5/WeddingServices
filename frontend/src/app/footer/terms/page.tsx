@@ -195,91 +195,94 @@ export default function TermsPage() {
   const lastUpdated = "December 13, 2024";
 
   return (
-    <div className="min-h-screen flex flex-col">
+    <div className="flex flex-col min-h-screen">
       <NavBar />
 
-      <main className="flex-grow">
-        {/* Hero Section */}
-        <div className="relative bg-gradient-to-b from-stone-200 to-white">
-          <div className="absolute inset-0 bg-grid-gray-100/50 [mask-image:linear-gradient(0deg,white,rgba(255,255,255,0.6))]" />
-          <div className="relative max-w-7xl mx-auto px-4 py-16 sm:py-24 text-center">
-            <h1 className="text-4xl md:text-5xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-stone-400 to-black mb-6">
-              Terms of Service
-            </h1>
-            <p className="text-xl text-gray-600">Last updated: {lastUpdated}</p>
-          </div>
-        </div>
-
-        {/* Terms Content */}
-        <div className="max-w-7xl mx-auto px-4 pb-20">
-          <div className="max-w-4xl mx-auto">
-            {/* Welcome Section */}
-            <div className="bg-white rounded-2xl p-8 shadow-sm mb-8">
-              <p className="text-lg text-gray-600 leading-relaxed">
-                Welcome to AnyWeds! These Terms of Service govern your use of
-                the AnyWeds platform, which connects users with wedding-related
-                vendors worldwide. By accessing or using our Services, you agree
-                to comply with these Terms.
+      <div className="flex-1 flex flex-col">
+        <main className="flex-grow">
+          {/* Hero Section */}
+          <div className="relative bg-gradient-to-b from-stone-200 to-white">
+            <div className="absolute inset-0 bg-grid-gray-100/50 [mask-image:linear-gradient(0deg,white,rgba(255,255,255,0.6))]" />
+            <div className="relative max-w-7xl mx-auto px-4 py-16 sm:py-24 text-center">
+              <h1 className="text-4xl md:text-5xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-stone-400 to-black mb-6">
+                Terms of Service
+              </h1>
+              <p className="text-xl text-gray-600">
+                Last updated: {lastUpdated}
               </p>
             </div>
+          </div>
 
-            {/* Terms Sections */}
-            <div className="space-y-8">
-              {terms.map((section, index) => (
-                <div
-                  key={index}
-                  className="bg-white rounded-2xl p-8 shadow-sm hover:shadow-md transition-shadow"
-                >
-                  <div className="flex items-start gap-6">
-                    {section.icon && (
-                      <div className="bg-stone-200 rounded-xl p-3">
-                        <section.icon className="w-6 h-6 text-black" />
+          {/* Terms Content */}
+          <div className="max-w-7xl mx-auto px-4 pb-20">
+            <div className="max-w-4xl mx-auto">
+              {/* Welcome Section */}
+              <div className="bg-white rounded-2xl p-8 shadow-sm mb-8">
+                <p className="text-lg text-gray-600 leading-relaxed">
+                  Welcome to AnyWeds! These Terms of Service govern your use of
+                  the AnyWeds platform, which connects users with
+                  wedding-related vendors worldwide. By accessing or using our
+                  Services, you agree to comply with these Terms.
+                </p>
+              </div>
+
+              {/* Terms Sections */}
+              <div className="space-y-8">
+                {terms.map((section, index) => (
+                  <div
+                    key={index}
+                    className="bg-white rounded-2xl p-8 shadow-sm hover:shadow-md transition-shadow"
+                  >
+                    <div className="flex items-start gap-6">
+                      {section.icon && (
+                        <div className="bg-stone-200 rounded-xl p-3">
+                          <section.icon className="w-6 h-6 text-black" />
+                        </div>
+                      )}
+                      <div className="flex-1">
+                        <h2 className="text-xl font-semibold text-gray-900 mb-4">
+                          {section.title}
+                        </h2>
+                        <ul className="space-y-3">
+                          {section.content.map((point, pointIndex) => (
+                            <li
+                              key={pointIndex}
+                              className="flex items-start gap-3 text-gray-600"
+                            >
+                              <span className="text-slate-600 mt-1.5">•</span>
+                              <span>{point}</span>
+                            </li>
+                          ))}
+                        </ul>
                       </div>
-                    )}
-                    <div className="flex-1">
-                      <h2 className="text-xl font-semibold text-gray-900 mb-4">
-                        {section.title}
-                      </h2>
-                      <ul className="space-y-3">
-                        {section.content.map((point, pointIndex) => (
-                          <li
-                            key={pointIndex}
-                            className="flex items-start gap-3 text-gray-600"
-                          >
-                            <span className="text-slate-600 mt-1.5">•</span>
-                            <span>{point}</span>
-                          </li>
-                        ))}
-                      </ul>
                     </div>
                   </div>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
 
-            {/* Contact Section */}
-            <div className="mt-12 bg-gradient-to-br from-stone-100 to-stone-50 rounded-2xl p-8">
-              <h2 className="text-2xl font-semibold text-gray-900 mb-4">
-                Contact Us
-              </h2>
-              <p className="text-black mb-6">
-                For questions or concerns regarding these Terms, please contact
-                us:
-              </p>
-              <div className="space-y-4">
-                <a
-                  href="mailto:support@anyweds.com"
-                  className="flex items-center gap-3 text-gray-600 hover:text-stone-400 transition-colors"
-                >
-                  <Mail className="w-5 h-5" />
-                  support@anyweds.com
-                </a>
+              {/* Contact Section */}
+              <div className="mt-12 bg-gradient-to-br from-stone-100 to-stone-50 rounded-2xl p-8">
+                <h2 className="text-2xl font-semibold text-gray-900 mb-4">
+                  Contact Us
+                </h2>
+                <p className="text-black mb-6">
+                  For questions or concerns regarding these Terms, please
+                  contact us:
+                </p>
+                <div className="space-y-4">
+                  <a
+                    href="mailto:support@anyweds.com"
+                    className="flex items-center gap-3 text-gray-600 hover:text-stone-400 transition-colors"
+                  >
+                    <Mail className="w-5 h-5" />
+                    support@anyweds.com
+                  </a>
+                </div>
               </div>
             </div>
           </div>
-        </div>
-      </main>
-
+        </main>
+      </div>
       <Footer />
     </div>
   );

@@ -385,50 +385,50 @@ function SettingsPage() {
 
   return (
     <ProtectedRoute>
-      <div className="min-h-screen bg-gray-50">
+      <div className="flex flex-col min-h-screen">
         <NavBar />
+        <div className="flex-1 bg-gray-50">
+          <div className="max-w-5xl mx-auto px-4 py-8">
+            <div className="flex flex-col md:flex-row gap-6">
+              {/* Sidebar Navigation */}
+              <div className="w-full md:w-56 flex-shrink-0">
+                <div className="bg-white rounded-lg shadow-sm">
+                  <nav className="space-y-1">
+                    {menuItems.map((item) => (
+                      <button
+                        key={item.id}
+                        onClick={() => setActiveSection(item.id)}
+                        className={`w-full flex items-center space-x-3 px-4 py-3 text-sm transition-colors ${
+                          activeSection === item.id
+                            ? "bg-stone-300 text-black font-medium"
+                            : "text-gray-600 hover:bg-gray-50"
+                        }`}
+                      >
+                        <item.icon size={20} />
+                        <span>{item.label}</span>
+                      </button>
+                    ))}
 
-        <div className="max-w-5xl mx-auto px-4 py-8">
-          <div className="flex flex-col md:flex-row gap-6">
-            {/* Sidebar Navigation */}
-            <div className="w-full md:w-56 flex-shrink-0">
-              <div className="bg-white rounded-lg shadow-sm">
-                <nav className="space-y-1">
-                  {menuItems.map((item) => (
                     <button
-                      key={item.id}
-                      onClick={() => setActiveSection(item.id)}
-                      className={`w-full flex items-center space-x-3 px-4 py-3 text-sm transition-colors ${
-                        activeSection === item.id
-                          ? "bg-stone-300 text-black font-medium"
-                          : "text-gray-600 hover:bg-gray-50"
-                      }`}
+                      onClick={() => setShowLogoutDialog(true)}
+                      className="w-full flex items-center space-x-3 px-4 py-3 text-sm text-gray-600 hover:bg-gray-50 transition-colors"
                     >
-                      <item.icon size={20} />
-                      <span>{item.label}</span>
+                      <LogOut size={20} />
+                      <span>Logout</span>
                     </button>
-                  ))}
-
-                  <button
-                    onClick={() => setShowLogoutDialog(true)}
-                    className="w-full flex items-center space-x-3 px-4 py-3 text-sm text-gray-600 hover:bg-gray-50 transition-colors"
-                  >
-                    <LogOut size={20} />
-                    <span>Logout</span>
-                  </button>
-                </nav>
+                  </nav>
+                </div>
               </div>
-            </div>
 
-            {/* Main Content */}
-            <div className="flex-1">
-              <div className="bg-white rounded-lg shadow-sm p-6">
-                {renderContent()}
+              {/* Main Content */}
+              <div className="flex-1">
+                <div className="bg-white rounded-lg shadow-sm p-6">
+                  {renderContent()}
+                </div>
               </div>
             </div>
           </div>
         </div>
-
         <Footer />
 
         {/* Logout Confirmation Dialog */}
