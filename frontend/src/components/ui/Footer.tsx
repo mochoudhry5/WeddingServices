@@ -85,7 +85,7 @@ export default function Footer() {
           </div>
 
           {/* Copyright - Reduced top padding */}
-          <div className="px-4 py-2">
+          <div className="px-4">
             <p className="text-sm text-black text-center">
               © {new Date().getFullYear()} AnyWeds. All rights reserved.
             </p>

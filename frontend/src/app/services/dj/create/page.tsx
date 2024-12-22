@@ -45,6 +45,17 @@ interface Service {
   isCustom?: boolean;
 }
 
+interface LocationState {
+  enteredLocation: string;
+  address: string;
+  city: string;
+  state: string;
+  country: string;
+  placeId: string;
+  latitude: number | null;
+  longitude: number | null;
+}
+
 const commonServices = [
   {
     name: "DJ Session",
@@ -82,13 +93,15 @@ const CreateDJListing = () => {
   const [isRemoteBusiness, setIsRemoteBusiness] = useState(false);
   const [isWillingToTravel, setIsWillingToTravel] = useState(false);
   // Replace the individual location states with
-  const [location, setLocation] = useState({
+  const [location, setLocation] = useState<LocationState>({
     enteredLocation: "",
     address: "",
     city: "",
     state: "",
     country: "",
     placeId: "",
+    latitude: null,
+    longitude: null,
   });
 
   // Media State
@@ -356,7 +369,7 @@ const CreateDJListing = () => {
           user_email: user.email,
           business_name: businessName,
           years_experience: experience,
-          travel_range: isWillingToTravel ? -1 : parseInt(travelRange), // Use -1 to indicate willing to travel anywhere
+          travel_range: isWillingToTravel ? -1 : parseInt(travelRange),
           travel_anywhere: isWillingToTravel,
           is_remote_business: isRemoteBusiness,
           address: isRemoteBusiness ? "" : location.address,
@@ -364,6 +377,8 @@ const CreateDJListing = () => {
           state: location.state,
           country: location.country,
           place_id: location.placeId,
+          latitude: location.latitude, 
+          longitude: location.longitude,
           website_url: websiteUrl || null,
           instagram_url: instagramUrl || null,
           description,
@@ -565,7 +580,16 @@ const CreateDJListing = () => {
                           let city = "";
                           let state = "";
                           let country = "";
+                          let latitude: number | null = null;
+                          let longitude: number | null = null;
 
+                          // Extract coordinates from place geometry
+                          if (place.geometry && place.geometry.location) {
+                            latitude = place.geometry.location.lat();
+                            longitude = place.geometry.location.lng();
+                          }
+
+                          // Extract address components as before
                           place.address_components?.forEach((component) => {
                             if (
                               component.types.includes("street_number") ||
@@ -597,6 +621,8 @@ const CreateDJListing = () => {
                             state,
                             country,
                             placeId: place.place_id || "",
+                            latitude: latitude || 74.0060,
+                            longitude: longitude || 40.7128,
                           });
                         }}
                         placeholder={

@@ -70,7 +70,9 @@ interface VenueDetails {
   description: string;
   venue_media: MediaItem[];
   created_at: string;
-  catering_option: "in_house" | "preferred" | "outside" | "both" | null; // Added this field
+  catering_option: "in_house" | "preferred" | "outside" | "both" | null;
+  latitude: number;
+  longitude: number;
 }
 
 interface HairMakeupDetails {
@@ -89,6 +91,8 @@ interface HairMakeupDetails {
   rating: number;
   created_at: string;
   service_type: "makeup" | "hair" | "both";
+  latitude: number;
+  longitude: number;
 }
 
 interface PhotoVideoDetails {
@@ -107,6 +111,8 @@ interface PhotoVideoDetails {
   max_service_price: number;
   rating: number;
   created_at: string;
+  latitude: number;
+  longitude: number;
 }
 
 interface DJDetails {
@@ -124,6 +130,8 @@ interface DJDetails {
   max_service_price: number;
   rating: number;
   created_at: string;
+  latitude: number;
+  longitude: number;
 }
 
 interface WeddingPlannerDetails {
@@ -141,6 +149,8 @@ interface WeddingPlannerDetails {
   max_service_price: number;
   rating: number;
   created_at: string;
+  latitude: number;
+  longitude: number;
 }
 
 type ServiceListingItem =
@@ -172,6 +182,20 @@ interface ServiceConfig {
   hasCapacity: boolean;
   locationBased: boolean;
   priceType: "flat" | "range" | "service-based";
+}
+
+interface Coordinates {
+  lat: number;
+  lng: number;
+}
+
+interface LocationDetails {
+  enteredLocation: string;
+  city: string;
+  state: string;
+  country: string;
+  coordinates?: Coordinates;
+  address?: string;
 }
 
 const SERVICE_CONFIGS: Record<ServiceType, ServiceConfig> = {
@@ -258,12 +282,35 @@ export default function ServicesSearchPage() {
     }
   }, []);
 
+  const calculateDistance = (
+    coords1: Coordinates,
+    coords2: Coordinates
+  ): number => {
+    const R = 6371; // Earth's radius in kilometers
+    const dLat = ((coords2.lat - coords1.lat) * Math.PI) / 180;
+    const dLon = ((coords2.lng - coords1.lng) * Math.PI) / 180;
+    const a =
+      Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+      Math.cos((coords1.lat * Math.PI) / 180) *
+        Math.cos((coords2.lat * Math.PI) / 180) *
+        Math.sin(dLon / 2) *
+        Math.sin(dLon / 2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    return R * c;
+  };
+
   const fetchServiceListings = async (
     withFilters = false,
     filtersToUse = searchFilters
   ) => {
     try {
       setIsLoading(true);
+
+      // Handle exact address matching
+      const hasExactAddress = Boolean(filtersToUse.searchQuery.address);
+      let listingsWithDistance: (ServiceListingItem & { distance?: number })[] =
+        [];
+
       if (filtersToUse.serviceType === "photoVideo") {
         let query = supabase.from("photo_video_listing").select(`
           *,
@@ -277,6 +324,25 @@ export default function ServicesSearchPage() {
         `);
 
         if (withFilters) {
+          if (hasExactAddress) {
+            // For exact address match
+            query = query.eq("address", filtersToUse.searchQuery.address);
+          } else if (
+            filtersToUse.searchQuery.city ||
+            filtersToUse.searchQuery.state
+          ) {
+            let locationFilters = [];
+            if (filtersToUse.searchQuery.city)
+              locationFilters.push(
+                `city.ilike.%${filtersToUse.searchQuery.city}%`
+              );
+            if (filtersToUse.searchQuery.state)
+              locationFilters.push(
+                `state.ilike.%${filtersToUse.searchQuery.state}%`
+              );
+            query = query.or(locationFilters.join(","));
+          }
+
           // Apply price range filter
           if (
             filtersToUse.priceRange[0] > 0 ||
@@ -286,32 +352,20 @@ export default function ServicesSearchPage() {
               filtersToUse.priceRange[0] > 0 &&
               filtersToUse.priceRange[1] > 0
             ) {
-              // If both min and max are specified, find services where ranges overlap:
-              // Service max >= user min AND service min <= user max
               query = query
                 .gte("max_service_price", filtersToUse.priceRange[0])
                 .lte("min_service_price", filtersToUse.priceRange[1]);
             } else if (filtersToUse.priceRange[0] > 0) {
-              // If only min is specified, find services that have max price above this
               query = query.gte(
                 "max_service_price",
                 filtersToUse.priceRange[0]
               );
             } else if (filtersToUse.priceRange[1] > 0) {
-              // If only max is specified, find services that have min price below this
               query = query.lte(
                 "min_service_price",
                 filtersToUse.priceRange[1]
               );
             }
-          }
-          // Apply location filter
-          const { city, state } = filtersToUse.searchQuery;
-          if (city || state) {
-            let locationFilters = [];
-            if (city) locationFilters.push(`city.ilike.%${city}%`);
-            if (state) locationFilters.push(`state.ilike.%${state}%`);
-            query = query.or(locationFilters.join(","));
           }
 
           // Apply sorting
@@ -328,18 +382,29 @@ export default function ServicesSearchPage() {
         }
 
         const { data: photoVideoData, error: photoVideoError } = await query;
-
         if (photoVideoError) throw photoVideoError;
 
-        const processedPhotoVideo = (photoVideoData || []).map(
-          (photoVideo) => ({
-            ...photoVideo,
+        if (photoVideoData && photoVideoData.length > 0) {
+          listingsWithDistance = photoVideoData.map((item) => ({
+            ...item,
             rating: 4.5 + Math.random() * 0.5,
-            photography_media: photoVideo.photo_video_media || [],
-          })
-        );
+            photo_video_media: item.photo_video_media || [],
+          }));
 
-        setServiceListings(processedPhotoVideo);
+          if (filtersToUse.searchQuery.coordinates && !hasExactAddress) {
+            listingsWithDistance = listingsWithDistance
+              .map((item) => ({
+                ...item,
+                distance: calculateDistance(
+                  filtersToUse.searchQuery.coordinates!,
+                  { lat: item.latitude, lng: item.longitude }
+                ),
+              }))
+              .sort((a, b) => (a.distance || 0) - (b.distance || 0));
+          }
+        } else if (hasExactAddress) {
+          listingsWithDistance = [];
+        }
       } else if (filtersToUse.serviceType === "hairMakeup") {
         let query = supabase.from("hair_makeup_listing").select(`
           *,
@@ -350,10 +415,27 @@ export default function ServicesSearchPage() {
           hair_makeup_services (
             price
           )
-          `);
+        `);
 
         if (withFilters) {
-          // Apply price range filter - ensure we're handling nulls and using proper comparisons
+          if (hasExactAddress) {
+            query = query.eq("address", filtersToUse.searchQuery.address);
+          } else if (
+            filtersToUse.searchQuery.city ||
+            filtersToUse.searchQuery.state
+          ) {
+            let locationFilters = [];
+            if (filtersToUse.searchQuery.city)
+              locationFilters.push(
+                `city.ilike.%${filtersToUse.searchQuery.city}%`
+              );
+            if (filtersToUse.searchQuery.state)
+              locationFilters.push(
+                `state.ilike.%${filtersToUse.searchQuery.state}%`
+              );
+            query = query.or(locationFilters.join(","));
+          }
+
           if (
             filtersToUse.priceRange[0] > 0 ||
             filtersToUse.priceRange[1] > 0
@@ -362,35 +444,22 @@ export default function ServicesSearchPage() {
               filtersToUse.priceRange[0] > 0 &&
               filtersToUse.priceRange[1] > 0
             ) {
-              // If both min and max are specified, find services where ranges overlap:
-              // Service max >= user min AND service min <= user max
               query = query
                 .gte("max_service_price", filtersToUse.priceRange[0])
                 .lte("min_service_price", filtersToUse.priceRange[1]);
             } else if (filtersToUse.priceRange[0] > 0) {
-              // If only min is specified, find services that have max price above this
               query = query.gte(
                 "max_service_price",
                 filtersToUse.priceRange[0]
               );
             } else if (filtersToUse.priceRange[1] > 0) {
-              // If only max is specified, find services that have min price below this
               query = query.lte(
                 "min_service_price",
                 filtersToUse.priceRange[1]
               );
             }
           }
-          // Apply location filter
-          const { city, state } = filtersToUse.searchQuery;
-          if (city || state) {
-            let locationFilters = [];
-            if (city) locationFilters.push(`city.ilike.%${city}%`);
-            if (state) locationFilters.push(`state.ilike.%${state}%`);
-            query = query.or(locationFilters.join(","));
-          }
 
-          // Apply sorting
           switch (filtersToUse.sortOption) {
             case "price_asc":
               query = query.order("min_service_price", { ascending: true });
@@ -404,23 +473,28 @@ export default function ServicesSearchPage() {
         }
 
         const { data: hairMakeupData, error: hairMakeupError } = await query;
+        if (hairMakeupError) throw hairMakeupError;
 
-        // Better error handling
-        if (hairMakeupError) {
-          console.error("Supabase Error:", hairMakeupError);
-          throw hairMakeupError;
+        if (hairMakeupData && hairMakeupData.length > 0) {
+          listingsWithDistance = hairMakeupData.map((item) => ({
+            ...item,
+            rating: 4.5 + Math.random() * 0.5,
+          }));
+
+          if (filtersToUse.searchQuery.coordinates && !hasExactAddress) {
+            listingsWithDistance = listingsWithDistance
+              .map((item) => ({
+                ...item,
+                distance: calculateDistance(
+                  filtersToUse.searchQuery.coordinates!,
+                  { lat: item.latitude, lng: item.longitude }
+                ),
+              }))
+              .sort((a, b) => (a.distance || 0) - (b.distance || 0));
+          }
+        } else if (hasExactAddress) {
+          listingsWithDistance = [];
         }
-
-        if (!hairMakeupData) {
-          throw new Error("No data returned from query");
-        }
-
-        const processedHairMakeup = hairMakeupData.map((hairMakeup) => ({
-          ...hairMakeup,
-          rating: 4.5 + Math.random() * 0.5,
-        }));
-
-        setServiceListings(processedHairMakeup);
       } else if (filtersToUse.serviceType === "dj") {
         let query = supabase.from("dj_listing").select(`
           *,
@@ -431,10 +505,27 @@ export default function ServicesSearchPage() {
           dj_services (
             price
           )
-          `);
+        `);
 
         if (withFilters) {
-          // Apply price range filter - ensure we're handling nulls and using proper comparisons
+          if (hasExactAddress) {
+            query = query.eq("address", filtersToUse.searchQuery.address);
+          } else if (
+            filtersToUse.searchQuery.city ||
+            filtersToUse.searchQuery.state
+          ) {
+            let locationFilters = [];
+            if (filtersToUse.searchQuery.city)
+              locationFilters.push(
+                `city.ilike.%${filtersToUse.searchQuery.city}%`
+              );
+            if (filtersToUse.searchQuery.state)
+              locationFilters.push(
+                `state.ilike.%${filtersToUse.searchQuery.state}%`
+              );
+            query = query.or(locationFilters.join(","));
+          }
+
           if (
             filtersToUse.priceRange[0] > 0 ||
             filtersToUse.priceRange[1] > 0
@@ -443,35 +534,22 @@ export default function ServicesSearchPage() {
               filtersToUse.priceRange[0] > 0 &&
               filtersToUse.priceRange[1] > 0
             ) {
-              // If both min and max are specified, find services where ranges overlap:
-              // Service max >= user min AND service min <= user max
               query = query
                 .gte("max_service_price", filtersToUse.priceRange[0])
                 .lte("min_service_price", filtersToUse.priceRange[1]);
             } else if (filtersToUse.priceRange[0] > 0) {
-              // If only min is specified, find services that have max price above this
               query = query.gte(
                 "max_service_price",
                 filtersToUse.priceRange[0]
               );
             } else if (filtersToUse.priceRange[1] > 0) {
-              // If only max is specified, find services that have min price below this
               query = query.lte(
                 "min_service_price",
                 filtersToUse.priceRange[1]
               );
             }
           }
-          // Apply location filter
-          const { city, state } = filtersToUse.searchQuery;
-          if (city || state) {
-            let locationFilters = [];
-            if (city) locationFilters.push(`city.ilike.%${city}%`);
-            if (state) locationFilters.push(`state.ilike.%${state}%`);
-            query = query.or(locationFilters.join(","));
-          }
 
-          // Apply sorting
           switch (filtersToUse.sortOption) {
             case "price_asc":
               query = query.order("min_service_price", { ascending: true });
@@ -485,23 +563,28 @@ export default function ServicesSearchPage() {
         }
 
         const { data: djData, error: djError } = await query;
+        if (djError) throw djError;
 
-        // Better error handling
-        if (djError) {
-          console.error("Supabase Error:", djError);
-          throw djError;
+        if (djData && djData.length > 0) {
+          listingsWithDistance = djData.map((item) => ({
+            ...item,
+            rating: 4.5 + Math.random() * 0.5,
+          }));
+
+          if (filtersToUse.searchQuery.coordinates && !hasExactAddress) {
+            listingsWithDistance = listingsWithDistance
+              .map((item) => ({
+                ...item,
+                distance: calculateDistance(
+                  filtersToUse.searchQuery.coordinates!,
+                  { lat: item.latitude, lng: item.longitude }
+                ),
+              }))
+              .sort((a, b) => (a.distance || 0) - (b.distance || 0));
+          }
+        } else if (hasExactAddress) {
+          listingsWithDistance = [];
         }
-
-        if (!djData) {
-          throw new Error("No data returned from query");
-        }
-
-        const processedDJ = djData.map((dj) => ({
-          ...dj,
-          rating: 4.5 + Math.random() * 0.5,
-        }));
-
-        setServiceListings(processedDJ);
       } else if (filtersToUse.serviceType === "weddingPlanner") {
         let query = supabase.from("wedding_planner_listing").select(`
           *,
@@ -512,10 +595,27 @@ export default function ServicesSearchPage() {
           wedding_planner_services (
             price
           )
-          `);
+        `);
 
         if (withFilters) {
-          // Apply price range filter - ensure we're handling nulls and using proper comparisons
+          if (hasExactAddress) {
+            query = query.eq("address", filtersToUse.searchQuery.address);
+          } else if (
+            filtersToUse.searchQuery.city ||
+            filtersToUse.searchQuery.state
+          ) {
+            let locationFilters = [];
+            if (filtersToUse.searchQuery.city)
+              locationFilters.push(
+                `city.ilike.%${filtersToUse.searchQuery.city}%`
+              );
+            if (filtersToUse.searchQuery.state)
+              locationFilters.push(
+                `state.ilike.%${filtersToUse.searchQuery.state}%`
+              );
+            query = query.or(locationFilters.join(","));
+          }
+
           if (
             filtersToUse.priceRange[0] > 0 ||
             filtersToUse.priceRange[1] > 0
@@ -524,35 +624,22 @@ export default function ServicesSearchPage() {
               filtersToUse.priceRange[0] > 0 &&
               filtersToUse.priceRange[1] > 0
             ) {
-              // If both min and max are specified, find services where ranges overlap:
-              // Service max >= user min AND service min <= user max
               query = query
                 .gte("max_service_price", filtersToUse.priceRange[0])
                 .lte("min_service_price", filtersToUse.priceRange[1]);
             } else if (filtersToUse.priceRange[0] > 0) {
-              // If only min is specified, find services that have max price above this
               query = query.gte(
                 "max_service_price",
                 filtersToUse.priceRange[0]
               );
             } else if (filtersToUse.priceRange[1] > 0) {
-              // If only max is specified, find services that have min price below this
               query = query.lte(
                 "min_service_price",
                 filtersToUse.priceRange[1]
               );
             }
           }
-          // Apply location filter
-          const { city, state } = filtersToUse.searchQuery;
-          if (city || state) {
-            let locationFilters = [];
-            if (city) locationFilters.push(`city.ilike.%${city}%`);
-            if (state) locationFilters.push(`state.ilike.%${state}%`);
-            query = query.or(locationFilters.join(","));
-          }
 
-          // Apply sorting
           switch (filtersToUse.sortOption) {
             case "price_asc":
               query = query.order("min_service_price", { ascending: true });
@@ -567,44 +654,57 @@ export default function ServicesSearchPage() {
 
         const { data: weddingPlannerData, error: weddingPlannerError } =
           await query;
+        if (weddingPlannerError) throw weddingPlannerError;
 
-        // Better error handling
-        if (weddingPlannerError) {
-          console.error("Supabase Error:", weddingPlannerError);
-          throw weddingPlannerError;
-        }
-
-        if (!weddingPlannerData) {
-          throw new Error("No data returned from query");
-        }
-
-        const processedMakeupArtists = weddingPlannerData.map(
-          (weddingPlanner) => ({
-            ...weddingPlanner,
+        if (weddingPlannerData && weddingPlannerData.length > 0) {
+          listingsWithDistance = weddingPlannerData.map((item) => ({
+            ...item,
             rating: 4.5 + Math.random() * 0.5,
-          })
-        );
+          }));
 
-        setServiceListings(processedMakeupArtists);
+          if (filtersToUse.searchQuery.coordinates && !hasExactAddress) {
+            listingsWithDistance = listingsWithDistance
+              .map((item) => ({
+                ...item,
+                distance: calculateDistance(
+                  filtersToUse.searchQuery.coordinates!,
+                  { lat: item.latitude, lng: item.longitude }
+                ),
+              }))
+              .sort((a, b) => (a.distance || 0) - (b.distance || 0));
+          }
+        } else if (hasExactAddress) {
+          listingsWithDistance = [];
+        }
       } else {
-        // Fetch venues
-        let query = supabase.from("venue_listing").select(
-          `
-            *,
-            venue_media (
-              file_path,
-              display_order
-            )
-          `
-        );
+        // Venues
+        let query = supabase.from("venue_listing").select(`
+          *,
+          venue_media (
+            file_path,
+            display_order
+          )
+        `);
 
         if (withFilters) {
-          // Apply location filter
-          const { city, state } = filtersToUse.searchQuery;
-          if (city || state) {
+          // First priority: Exact address match
+          if (hasExactAddress) {
+            query = query.eq("address", filtersToUse.searchQuery.address);
+          }
+          // Second priority: City/State match
+          else if (
+            filtersToUse.searchQuery.city ||
+            filtersToUse.searchQuery.state
+          ) {
             let locationFilters = [];
-            if (city) locationFilters.push(`city.ilike.%${city}%`);
-            if (state) locationFilters.push(`state.ilike.%${state}%`);
+            if (filtersToUse.searchQuery.city)
+              locationFilters.push(
+                `city.ilike.%${filtersToUse.searchQuery.city}%`
+              );
+            if (filtersToUse.searchQuery.state)
+              locationFilters.push(
+                `state.ilike.%${filtersToUse.searchQuery.state}%`
+              );
             query = query.or(locationFilters.join(","));
           }
 
@@ -622,30 +722,26 @@ export default function ServicesSearchPage() {
               filtersToUse.capacity.min > 0 &&
               filtersToUse.capacity.max > 0
             ) {
-              // Case 1: Both min and max are specified
-              // Find venues where ranges overlap:
-              // Venue max >= user min AND venue min <= user max
+              // Both min and max specified
               query = query
                 .gte("max_guests", filtersToUse.capacity.min)
                 .lte("min_guests", filtersToUse.capacity.max);
             } else if (filtersToUse.capacity.min > 0) {
-              // Case 2: Only min is specified
-              // Find venues that can accommodate at least this many guests
+              // Only min specified
               query = query.gte("max_guests", filtersToUse.capacity.min);
             } else if (filtersToUse.capacity.max > 0) {
-              // Case 3: Only max is specified
-              // Find venues that don't require more than this many guests
+              // Only max specified
               query = query.lte("min_guests", filtersToUse.capacity.max);
             }
           }
 
+          // Apply catering filter
           if (filtersToUse.cateringOption !== "all") {
             if (filtersToUse.cateringOption === "in_house") {
               query = query.or("catering_option.in.(in_house,both)");
             } else if (filtersToUse.cateringOption === "outside") {
               query = query.or("catering_option.in.(outside,both)");
             } else if (filtersToUse.cateringOption === "both") {
-              // No additional filter needed for "both" as these venues should appear in all searches
               query = query.or("catering_option.in.(in_house,outside,both)");
             }
           }
@@ -659,23 +755,39 @@ export default function ServicesSearchPage() {
               query = query.order("base_price", { ascending: false });
               break;
             default:
-              break;
+              query = query.order("created_at", { ascending: false });
           }
         }
 
         const { data: venueData, error: venueError } = await query;
-
         if (venueError) throw venueError;
 
-        const processedVenues = (venueData || []).map((venue) => ({
-          ...venue,
-          rating: 4.5 + Math.random() * 0.5,
-          venue_media: venue.venue_media || [],
-        }));
+        if (venueData && venueData.length > 0) {
+          listingsWithDistance = venueData.map((venue) => ({
+            ...venue,
+            rating: 4.5 + Math.random() * 0.5,
+            venue_media: venue.venue_media || [],
+          }));
 
-        setServiceListings(processedVenues);
+          // If we have coordinates and no exact address match, calculate and sort by distance
+          if (filtersToUse.searchQuery.coordinates && !hasExactAddress) {
+            listingsWithDistance = listingsWithDistance
+              .map((venue) => ({
+                ...venue,
+                distance: calculateDistance(
+                  filtersToUse.searchQuery.coordinates!,
+                  { lat: venue.latitude, lng: venue.longitude }
+                ),
+              }))
+              .sort((a, b) => (a.distance || 0) - (b.distance || 0));
+          }
+        } else if (hasExactAddress) {
+          // If searching for exact address and no matches found, return empty
+          listingsWithDistance = [];
+        }
       }
 
+      setServiceListings(listingsWithDistance);
       setIsFiltered(withFilters);
     } catch (error: any) {
       console.error("Error fetching service listings:", error);
@@ -1028,12 +1140,11 @@ export default function ServicesSearchPage() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-gray-50">
+    <div className="min-h-screen flex flex-col">
       <NavBar />
-
       <main className="flex-grow flex flex-col">
         {/* Sticky search bar */}
-        <div className="sticky top-0 z-10 bg-white border-b border-gray-200">
+        <div className="sticky top-0 z-10 mt-5">
           <div className="max-w-7xl mx-auto px-4 py-3">
             <form onSubmit={handleSearchSubmit}>
               <div className="flex items-center gap-3">
@@ -1140,6 +1251,7 @@ export default function ServicesSearchPage() {
                       }}
                       placeholder="Search by Location"
                       className="w-full h-11 pl-10 pr-10 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-black"
+                      isSearch={true}
                     />
                   </div>
                 </div>
@@ -1156,7 +1268,6 @@ export default function ServicesSearchPage() {
                   {/* Sort Dropdown */}
                   <div className="w-52">
                     <Select
-                    
                       value={searchFilters.sortOption}
                       onValueChange={(value: string) => {
                         if (isValidSortOption(value)) {
@@ -1178,9 +1289,7 @@ export default function ServicesSearchPage() {
                       <SelectTrigger className="h-11 border border-gray-400 rounded-full px-4">
                         <div className="flex items-center gap-1">
                           <span className="text-base">Sort:</span>
-                          <SelectValue
-                            placeholder="Featured"
-                          >
+                          <SelectValue placeholder="Featured">
                             <span className="text-base">
                               {searchFilters.sortOption === "price_desc"
                                 ? "High to Low"
@@ -1192,13 +1301,22 @@ export default function ServicesSearchPage() {
                         </div>
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="price_desc" className="font-medium text-base">
+                        <SelectItem
+                          value="price_desc"
+                          className="font-medium text-base"
+                        >
                           Price: High to Low
                         </SelectItem>
-                        <SelectItem value="price_asc" className="font-medium text-base">
+                        <SelectItem
+                          value="price_asc"
+                          className="font-medium text-base"
+                        >
                           Price: Low to High
                         </SelectItem>
-                        <SelectItem value="default" className="font-medium text-base">
+                        <SelectItem
+                          value="default"
+                          className="font-medium text-base"
+                        >
                           Featured
                         </SelectItem>
                       </SelectContent>
@@ -1213,7 +1331,7 @@ export default function ServicesSearchPage() {
                     <SheetTrigger asChild>
                       <button
                         type="button"
-                        className="h-11 px-4 flex items-center gap-2 border border-gray-400 rounded-full hover:bg-gray-50"
+                        className="h-11 px-4 flex items-center gap-2 bg-white border border-gray-400 rounded-full hover:bg-gray-100"
                       >
                         <SlidersHorizontal size={18} />
                         <span>Filters</span>
@@ -1406,7 +1524,7 @@ export default function ServicesSearchPage() {
           </div>
         </div>
 
-        <div className="flex-grow">
+        <div className="flex-grow bg-gray-70">
           {/* Results count */}
           <div className="max-w-7xl mx-auto px-4 py-4">
             <p className="text-sm text-gray-600">
@@ -1423,7 +1541,9 @@ export default function ServicesSearchPage() {
           </div>
         </div>
       </main>
-      <Footer />
+      <div className="mt-20">
+        <Footer />
+      </div>
     </div>
   );
 }
