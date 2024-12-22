@@ -27,17 +27,38 @@ import {
   SheetTitle,
   SheetTrigger,
 } from "@/components/ui/sheet";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { AuthModals } from "./AuthModal";
 import { useAuth } from "@/context/AuthContext";
+import { toast } from "sonner";
 
 export default function NavBar() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isLoginOpen, setIsLoginOpen] = useState(false);
   const [isSignUpOpen, setIsSignUpOpen] = useState(false);
   const { user, signOut, loading } = useAuth();
+  const [showLogoutDialog, setShowLogoutDialog] = useState(false);
 
+  const handleLogout = async () => {
+    try {
+      await signOut();
+      window.location.href = "/";
+    } catch (error) {
+      toast.error("Failed to logout. Please try again.");
+      console.error("Error during logout:", error);
+    }
+  };
   const getInitials = () => {
     if (!user?.email) return "?";
     return user.email
@@ -135,8 +156,8 @@ export default function NavBar() {
                 </Link>
                 <button
                   onClick={() => {
-                    signOut();
                     setIsMobileMenuOpen(false);
+                    setShowLogoutDialog(true);
                   }}
                   className="flex w-full items-center gap-2 rounded-lg px-2 py-3 text-sm font-medium text-red-600 hover:bg-red-50"
                 >
@@ -235,7 +256,7 @@ export default function NavBar() {
                     </DropdownMenuItem>
                     <DropdownMenuSeparator />
                     <DropdownMenuItem
-                      onClick={signOut}
+                      onClick={() => setShowLogoutDialog(true)}
                       className="cursor-pointer text-red-600 focus:text-red-600 focus:bg-red-50"
                     >
                       <LogOut className="mr-2 h-4 w-4" />
@@ -320,6 +341,25 @@ export default function NavBar() {
         onSwitchToSignUp={handleSwitchToSignUp}
         onSwitchToLogin={handleSwitchToLogin}
       />
+      <AlertDialog open={showLogoutDialog} onOpenChange={setShowLogoutDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Confirm Logout</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to logout?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleLogout}
+              className="bg-black text-white hover:bg-stone-500"
+            >
+              Logout
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </header>
   );
 }
