@@ -935,6 +935,7 @@ export default function ServicesSearchPage() {
               <a
                 href={`/services/${searchFilters.serviceType}/${listing.id}`}
                 className="block hover:cursor-pointer"
+                target="_blank"
               >
                 <div className="p-4">
                   <h3 className="text-lg font-semibold mb-1 group-hover:text-stone-500 transition-colors">

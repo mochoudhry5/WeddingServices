@@ -95,16 +95,16 @@ interface VenueFormData {
 
 const commonInclusions = [
   "Bridal Suite",
-  "Chairs & Tables",
+  "Chairs & Tables (with Flatware)",
   "Free Parking",
   "Restrooms",
   "Wi-fi",
   "Security",
-  "Audio-Visual Equipment",
+  "Included Stay",
   "Climate Control",
   "Stage and Lighting",
   "Cleaning Services",
-  "Outdoor Area",
+  "Chairs & Tables",
   "Kitchen Access",
 ];
 
