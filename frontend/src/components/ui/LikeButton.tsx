@@ -114,7 +114,7 @@ export default function LikeButton({
           .eq(serviceConfig.idField, itemId);
 
         if (error) throw error;
-        toast.success(`Removed  ${serviceConfig.pluralName} Listing from Favorites`);
+        toast.success(`Removed  ${serviceConfig.pluralName} listing from favorites`);
         onUnlike?.();
       } else {
         // Like
@@ -125,7 +125,7 @@ export default function LikeButton({
         });
 
         if (error) throw error;
-        toast.success(`Saved ${serviceConfig.pluralName} Listing to Favorites`);
+        toast.success(`Saved ${serviceConfig.pluralName} listing to favorites`);
       }
 
       setIsLiked(!isLiked);

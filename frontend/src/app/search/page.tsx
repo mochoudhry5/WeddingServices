@@ -588,18 +588,15 @@ export default function ServicesSearchPage() {
         setServiceListings(processedMakeupArtists);
       } else {
         // Fetch venues
-        let query = supabase
-          .from("venue_listing")
-          .select(
-            `
+        let query = supabase.from("venue_listing").select(
+          `
             *,
             venue_media (
               file_path,
               display_order
             )
           `
-          )
-          .order("created_at", { ascending: false });
+        );
 
         if (withFilters) {
           // Apply location filter
@@ -660,6 +657,8 @@ export default function ServicesSearchPage() {
               break;
             case "price_desc":
               query = query.order("base_price", { ascending: false });
+              break;
+            default:
               break;
           }
         }
@@ -789,40 +788,40 @@ export default function ServicesSearchPage() {
     if (isLoading) {
       return (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
-              {[...Array(6)].map((_, index) => (
-                <div
-                  key={index}
-                  className="bg-white rounded-xl shadow-sm overflow-hidden hover:shadow-lg transition-shadow duration-300"
-                >
-                  <div className="animate-pulse">
-                    {/* Media carousel placeholder with fixed aspect ratio */}
-                    <div className="aspect-[4/3] bg-slate-200" />
-                    
-                    <div className="p-4">
-                      {/* Business name */}
-                      <div className="mb-2">
-                        <div className="h-6 bg-slate-200 rounded w-2/3" />
-                      </div>
+          {[...Array(6)].map((_, index) => (
+            <div
+              key={index}
+              className="bg-white rounded-xl shadow-sm overflow-hidden hover:shadow-lg transition-shadow duration-300"
+            >
+              <div className="animate-pulse">
+                {/* Media carousel placeholder with fixed aspect ratio */}
+                <div className="aspect-[4/3] bg-slate-200" />
 
-                      {/* Service type and experience */}
-                      <div className="h-4 bg-slate-200 rounded w-3/4 mb-2" />
-                      
-                      {/* Description - two lines */}
-                      <div className="space-y-2 mb-3">
-                        <div className="h-4 bg-slate-200 rounded w-full" />
-                        <div className="h-4 bg-slate-200 rounded w-4/5" />
-                      </div>
+                <div className="p-4">
+                  {/* Business name */}
+                  <div className="mb-2">
+                    <div className="h-6 bg-slate-200 rounded w-2/3" />
+                  </div>
 
-                      {/* Location and price */}
-                      <div className="flex justify-between items-center pt-2 border-t">
-                        <div className="h-4 bg-slate-200 rounded w-1/3" />
-                        <div className="h-6 bg-slate-200 rounded w-1/4" />
-                      </div>
-                    </div>
+                  {/* Service type and experience */}
+                  <div className="h-4 bg-slate-200 rounded w-3/4 mb-2" />
+
+                  {/* Description - two lines */}
+                  <div className="space-y-2 mb-3">
+                    <div className="h-4 bg-slate-200 rounded w-full" />
+                    <div className="h-4 bg-slate-200 rounded w-4/5" />
+                  </div>
+
+                  {/* Location and price */}
+                  <div className="flex justify-between items-center pt-2 border-t">
+                    <div className="h-4 bg-slate-200 rounded w-1/3" />
+                    <div className="h-6 bg-slate-200 rounded w-1/4" />
                   </div>
                 </div>
-              ))}
+              </div>
             </div>
+          ))}
+        </div>
       );
     }
 
@@ -1032,19 +1031,17 @@ export default function ServicesSearchPage() {
     <div className="min-h-screen flex flex-col bg-gray-50">
       <NavBar />
 
-      {/* Search Bar */}
       <main className="flex-grow flex flex-col">
-      {/* Sticky search bar */}
-      <div className="sticky top-0 z-10 bg-white border-b border-gray-200 shadow-sm">
-        <div className="max-w-7xl mx-auto px-4 py-4">
+        {/* Sticky search bar */}
+        <div className="sticky top-0 z-10 bg-white border-b border-gray-200">
+          <div className="max-w-7xl mx-auto px-4 py-3">
             <form onSubmit={handleSearchSubmit}>
-              <div className="flex flex-col sm:flex-row gap-3">
+              <div className="flex items-center gap-3">
                 {/* Service Type Selector */}
-                <div className="w-full sm:w-32">
+                <div className="w-32">
                   <Select
                     value={searchFilters.serviceType}
                     onValueChange={(value: ServiceType) => {
-                      // Reset all filters except for the new service type
                       const newFilters: SearchFilters = {
                         searchQuery: {
                           enteredLocation: "",
@@ -1053,7 +1050,7 @@ export default function ServicesSearchPage() {
                           country: "",
                         },
                         priceRange: [0, 0],
-                        capacity: { min: 0, max: 0 }, // Updated from "all"
+                        capacity: { min: 0, max: 0 },
                         cateringOption: "both",
                         sortOption: "default",
                         serviceType: value,
@@ -1063,8 +1060,8 @@ export default function ServicesSearchPage() {
                       fetchServiceListings(false, newFilters);
                     }}
                   >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Service Type" />
+                    <SelectTrigger className="border border-gray-200 rounded-lg px-3 py-2 h-11">
+                      <SelectValue placeholder="Venue" />
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="venue">Venue</SelectItem>
@@ -1081,66 +1078,134 @@ export default function ServicesSearchPage() {
                 </div>
 
                 {/* Location Input */}
-                <LocationInput
-                  value={searchFilters.searchQuery.enteredLocation}
-                  onChange={(value) =>
-                    setSearchFilters((prev) => ({
-                      ...prev,
-                      searchQuery: {
-                        ...prev.searchQuery,
-                        enteredLocation: value,
-                      },
-                    }))
-                  }
-                  onPlaceSelect={(place) => {
-                    let city = "";
-                    let state = "";
-                    let country = "";
-
-                    place.address_components?.forEach((component) => {
-                      if (component.types.includes("locality")) {
-                        city = component.long_name;
+                <div className="flex-1">
+                  <div className="relative">
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        width="20"
+                        height="20"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      >
+                        <circle cx="11" cy="11" r="8" />
+                        <line x1="21" y1="21" x2="16.65" y2="16.65" />
+                      </svg>
+                    </span>
+                    <LocationInput
+                      value={searchFilters.searchQuery.enteredLocation}
+                      onChange={(value) =>
+                        setSearchFilters((prev) => ({
+                          ...prev,
+                          searchQuery: {
+                            ...prev.searchQuery,
+                            enteredLocation: value,
+                          },
+                        }))
                       }
-                      if (
-                        component.types.includes("administrative_area_level_1")
-                      ) {
-                        state = component.long_name;
-                      }
-                      if (component.types.includes("country")) {
-                        country = component.long_name;
-                      }
-                    });
+                      onPlaceSelect={(place) => {
+                        let city = "";
+                        let state = "";
+                        let country = "";
 
-                    setSearchFilters((prev) => ({
-                      ...prev,
-                      searchQuery: {
-                        enteredLocation: place.formatted_address || "",
-                        city,
-                        state,
-                        country,
-                      },
-                    }));
-                  }}
-                  placeholder={
-                    SERVICE_CONFIGS[searchFilters.serviceType].locationBased
-                      ? "Search by location"
-                      : `Search for ${
-                          SERVICE_CONFIGS[searchFilters.serviceType].pluralName
-                        }`
-                  }
-                  className="w-full"
-                  isSearch={true}
-                />
+                        place.address_components?.forEach((component) => {
+                          if (component.types.includes("locality")) {
+                            city = component.long_name;
+                          }
+                          if (
+                            component.types.includes(
+                              "administrative_area_level_1"
+                            )
+                          ) {
+                            state = component.long_name;
+                          }
+                          if (component.types.includes("country")) {
+                            country = component.long_name;
+                          }
+                        });
 
-                {/* Search and Filter Buttons */}
-                <div className="flex gap-2 sm:w-[168px]">
+                        setSearchFilters((prev) => ({
+                          ...prev,
+                          searchQuery: {
+                            enteredLocation: place.formatted_address || "",
+                            city,
+                            state,
+                            country,
+                          },
+                        }));
+                      }}
+                      placeholder="Search by Location"
+                      className="w-full h-11 pl-10 pr-10 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-black"
+                    />
+                  </div>
+                </div>
+
+                {/* Search, Sort, and Filter Buttons */}
+                <div className="flex items-center gap-3">
                   <button
                     type="submit"
-                    className="w-20 bg-black hover:bg-stone-500 text-white rounded-lg transition-colors duration-300"
+                    className="h-11 px-6 bg-black hover:bg-black/90 text-white text-base font-semibold rounded-lg transition-colors duration-300"
                   >
                     Search
                   </button>
 
+                  {/* Sort Dropdown */}
+                  <div className="w-52">
+                    <Select
+                    
+                      value={searchFilters.sortOption}
+                      onValueChange={(value: string) => {
+                        if (isValidSortOption(value)) {
+                          setSearchFilters((prev) => ({
+                            ...prev,
+                            sortOption: value as SortOption,
+                          }));
+                          const updatedFilters = {
+                            ...searchFilters,
+                            sortOption: value as SortOption,
+                          };
+
+                          updateURLWithFilters(updatedFilters);
+                          fetchServiceListings(true, updatedFilters);
+                          console.log(updatedFilters);
+                        }
+                      }}
+                    >
+                      <SelectTrigger className="h-11 border border-gray-400 rounded-full px-4">
+                        <div className="flex items-center gap-1">
+                          <span className="text-base">Sort:</span>
+                          <SelectValue
+                            placeholder="Featured"
+                          >
+                            <span className="text-base">
+                              {searchFilters.sortOption === "price_desc"
+                                ? "High to Low"
+                                : searchFilters.sortOption === "price_asc"
+                                ? "Low to High"
+                                : "Featured"}
+                            </span>
+                          </SelectValue>
+                        </div>
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="price_desc" className="font-medium text-base">
+                          Price: High to Low
+                        </SelectItem>
+                        <SelectItem value="price_asc" className="font-medium text-base">
+                          Price: Low to High
+                        </SelectItem>
+                        <SelectItem value="default" className="font-medium text-base">
+                          Featured
+                        </SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  {/* Filter Button */}
                   <Sheet
                     open={isFilterSheetOpen}
                     onOpenChange={setIsFilterSheetOpen}
@@ -1148,13 +1213,9 @@ export default function ServicesSearchPage() {
                     <SheetTrigger asChild>
                       <button
                         type="button"
-                        className={`w-20 flex items-center justify-center gap-1 border rounded-lg hover:bg-slate-50 ${
-                          isFiltered
-                            ? "border-black text-black"
-                            : "border-slate-200 text-slate-700"
-                        }`}
+                        className="h-11 px-4 flex items-center gap-2 border border-gray-400 rounded-full hover:bg-gray-50"
                       >
-                        <SlidersHorizontal size={20} />
+                        <SlidersHorizontal size={18} />
                         <span>Filters</span>
                       </button>
                     </SheetTrigger>
@@ -1199,7 +1260,7 @@ export default function ServicesSearchPage() {
                                     }));
                                   }}
                                   className="w-full mt-1 pl-7 pr-3 py-2 border border-slate-200 rounded-lg 
-                   focus:outline-none focus:ring-2 focus:ring-black"
+                                  focus:outline-none focus:ring-2 focus:ring-black"
                                   placeholder="Min price"
                                 />
                               </div>
@@ -1224,21 +1285,14 @@ export default function ServicesSearchPage() {
                                     }));
                                   }}
                                   className="w-full mt-1 pl-7 pr-3 py-2 border border-slate-200 rounded-lg 
-                   focus:outline-none focus:ring-2 focus:ring-black"
+                                  focus:outline-none focus:ring-2 focus:ring-black"
                                   placeholder="Max price"
                                 />
                               </div>
                             </div>
                           </div>
-                          {/* Add validation message if min > max */}
-                          {searchFilters.priceRange[0] >
-                            searchFilters.priceRange[1] &&
-                            searchFilters.priceRange[1] !== 0 && (
-                              <p className="text-sm text-red-500 mt-2">
-                                Minimum price should not exceed maximum price
-                              </p>
-                            )}
                         </div>
+
                         {/* Capacity - Only show for venues */}
                         {SERVICE_CONFIGS[searchFilters.serviceType]
                           .hasCapacity && (
@@ -1247,66 +1301,55 @@ export default function ServicesSearchPage() {
                               Guest Capacity Range
                             </h3>
                             <div className="grid grid-cols-2 gap-4">
-                              <div>
-                                <input
-                                  type="number"
-                                  min="0"
-                                  value={searchFilters.capacity.min || ""}
-                                  onChange={(e) => {
-                                    const value = Math.max(
-                                      0,
-                                      parseInt(e.target.value) || 0
-                                    );
-                                    setSearchFilters((prev) => ({
-                                      ...prev,
-                                      capacity: {
-                                        ...prev.capacity,
-                                        min: value,
-                                      },
-                                    }));
-                                  }}
-                                  className="w-full mt-1 px-3 py-2 border border-slate-200 rounded-lg 
-                   focus:outline-none focus:ring-2 focus:ring-black"
-                                  placeholder="Min guests"
-                                />
-                              </div>
-                              <div>
-                                <input
-                                  type="number"
-                                  min="0"
-                                  value={searchFilters.capacity.max || ""}
-                                  onChange={(e) => {
-                                    const value = Math.max(
-                                      0,
-                                      parseInt(e.target.value) || 0
-                                    );
-                                    setSearchFilters((prev) => ({
-                                      ...prev,
-                                      capacity: {
-                                        ...prev.capacity,
-                                        max: value,
-                                      },
-                                    }));
-                                  }}
-                                  className="w-full mt-1 px-3 py-2 border border-slate-200 rounded-lg 
-                   focus:outline-none focus:ring-2 focus:ring-black"
-                                  placeholder="Max guests"
-                                />
-                              </div>
+                              <input
+                                type="number"
+                                min="0"
+                                value={searchFilters.capacity.min || ""}
+                                onChange={(e) => {
+                                  const value = Math.max(
+                                    0,
+                                    parseInt(e.target.value) || 0
+                                  );
+                                  setSearchFilters((prev) => ({
+                                    ...prev,
+                                    capacity: {
+                                      ...prev.capacity,
+                                      min: value,
+                                    },
+                                  }));
+                                }}
+                                className="w-full mt-1 px-3 py-2 border border-slate-200 rounded-lg 
+                                focus:outline-none focus:ring-2 focus:ring-black"
+                                placeholder="Min guests"
+                              />
+                              <input
+                                type="number"
+                                min="0"
+                                value={searchFilters.capacity.max || ""}
+                                onChange={(e) => {
+                                  const value = Math.max(
+                                    0,
+                                    parseInt(e.target.value) || 0
+                                  );
+                                  setSearchFilters((prev) => ({
+                                    ...prev,
+                                    capacity: {
+                                      ...prev.capacity,
+                                      max: value,
+                                    },
+                                  }));
+                                }}
+                                className="w-full mt-1 px-3 py-2 border border-slate-200 rounded-lg 
+                                focus:outline-none focus:ring-2 focus:ring-black"
+                                placeholder="Max guests"
+                              />
                             </div>
-                            {/* Add validation message if min > max */}
-                            {searchFilters.capacity.min >
-                              searchFilters.capacity.max &&
-                              searchFilters.capacity.max !== 0 && (
-                                <p className="text-sm text-red-500 mt-2">
-                                  Minimum guests should not exceed maximum
-                                  guests
-                                </p>
-                              )}
                           </div>
                         )}
+
+                        {/* Catering Options - Only show for venues */}
                         {searchFilters.serviceType === "venue" && (
-                          <div className="mt-6">
+                          <div>
                             <h3 className="text-sm font-medium mb-1">
                               Catering Options
                             </h3>
@@ -1336,34 +1379,6 @@ export default function ServicesSearchPage() {
                             </Select>
                           </div>
                         )}
-                        {/* Sort Options */}
-                        <div>
-                          <h3 className="text-sm font-medium mb-1">Sort By</h3>
-                          <Select
-                            value={searchFilters.sortOption}
-                            onValueChange={(value: string) => {
-                              if (isValidSortOption(value)) {
-                                setSearchFilters((prev) => ({
-                                  ...prev,
-                                  sortOption: value,
-                                }));
-                              }
-                            }}
-                          >
-                            <SelectTrigger>
-                              <SelectValue placeholder="Select sorting option" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="default">Featured</SelectItem>
-                              <SelectItem value="price_asc">
-                                Price: Low to High
-                              </SelectItem>
-                              <SelectItem value="price_desc">
-                                Price: High to Low
-                              </SelectItem>
-                            </SelectContent>
-                          </Select>
-                        </div>
 
                         {/* Action Buttons */}
                         <div className="flex gap-3 pt-6">
@@ -1392,20 +1407,20 @@ export default function ServicesSearchPage() {
         </div>
 
         <div className="flex-grow">
-        {/* Results count */}
-        <div className="max-w-7xl mx-auto px-4 py-4">
-          <p className="text-sm text-gray-600">
-            {serviceListings.length} found in{" "}
-            {serviceListings.length === 1
-              ? SERVICE_CONFIGS[searchFilters.serviceType].singularName
-              : SERVICE_CONFIGS[searchFilters.serviceType].pluralName}
-          </p>
-        </div>
+          {/* Results count */}
+          <div className="max-w-7xl mx-auto px-4 py-4">
+            <p className="text-sm text-gray-600">
+              {serviceListings.length} found in{" "}
+              {serviceListings.length === 1
+                ? SERVICE_CONFIGS[searchFilters.serviceType].singularName
+                : SERVICE_CONFIGS[searchFilters.serviceType].pluralName}
+            </p>
+          </div>
 
-        {/* Results Grid */}
-        <div className="max-w-7xl mx-auto px-4 pb-8">
-          {renderServiceListings()}
-        </div>
+          {/* Results Grid */}
+          <div className="max-w-7xl mx-auto px-4 pb-8">
+            {renderServiceListings()}
+          </div>
         </div>
       </main>
       <Footer />

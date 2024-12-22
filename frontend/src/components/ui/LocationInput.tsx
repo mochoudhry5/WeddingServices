@@ -161,7 +161,7 @@ const LocationInput = ({
       };
 
       onPlaceSelect?.(place);
-      toast.success("Location found successfully");
+      toast.success("Life has been made easier!");
     } catch (error) {
       toast.error(
         error instanceof Error ? error.message : "Failed to get your location"
@@ -328,8 +328,8 @@ const LocationInput = ({
           !isLoaded
             ? "Loading..."
             : isLoadingLocation
-            ? "Getting your location..."
-            : placeholder || "Search by location"
+            ? "Making Life Easier..."
+            : placeholder || "Search by Location"
         }
         className={cn("pl-10 pr-20", className)} // Increased right padding for both buttons
         disabled={!isLoaded || isLoadingLocation}

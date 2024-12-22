@@ -250,7 +250,7 @@ export default function HomePage() {
                     value={fullQuery}
                     onChange={setFullQuery}
                     onPlaceSelect={handlePlaceSelect}
-                    placeholder="Search by location"
+                    placeholder="Search by Location"
                     className="bg-white/20 border-0 text-white placeholder:text-neutral-400"
                     isSearch={true}
                   />
