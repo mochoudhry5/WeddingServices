@@ -31,6 +31,7 @@ interface LocationInputProps {
   placeholder?: string;
   className?: string;
   isRemoteLocation?: boolean;
+  isSearch?: boolean;
 }
 
 const LocationInput = ({
@@ -40,6 +41,7 @@ const LocationInput = ({
   placeholder,
   className,
   isRemoteLocation = false,
+  isSearch = false,
 }: LocationInputProps) => {
   const inputRef = useRef<HTMLInputElement>(null);
   const autocompleteRef = useRef<google.maps.places.Autocomplete | null>(null);
@@ -176,6 +178,11 @@ const LocationInput = ({
     if (autocompleteRef.current) {
       google.maps.event.clearInstanceListeners(autocompleteRef.current);
     }
+
+    const determine = isSearch ? ["geocode"] : (
+      isRemoteLocation ? ["(regions)"] : ["address"]
+    )
+    
     // Configure autocomplete based on isRemoteLocation
     const autocompleteOptions: google.maps.places.AutocompleteOptions = {
       componentRestrictions: { country: "us" },
@@ -186,11 +193,7 @@ const LocationInput = ({
         "name",
         "place_id",
       ],
-      types: isRemoteLocation
-        ? ["(cities)"]
-        : /^\d/.test(value)
-        ? ["address"]
-        : ["(cities)"],
+      types: determine
     };
 
     autocompleteRef.current = new window.google.maps.places.Autocomplete(

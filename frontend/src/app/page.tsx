@@ -252,6 +252,7 @@ export default function HomePage() {
                     onPlaceSelect={handlePlaceSelect}
                     placeholder="Search by location"
                     className="bg-white/20 border-0 text-white placeholder:text-neutral-400"
+                    isSearch={true}
                   />
 
                   <button

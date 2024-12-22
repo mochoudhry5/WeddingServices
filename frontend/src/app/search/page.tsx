@@ -1129,6 +1129,7 @@ export default function ServicesSearchPage() {
                         }`
                   }
                   className="w-full"
+                  isSearch={true}
                 />
 
                 {/* Search and Filter Buttons */}
