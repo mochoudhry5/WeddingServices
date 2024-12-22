@@ -326,7 +326,6 @@ export default function MakeupDetailsPage() {
               <div className="max-w-3xl mx-auto px-2 sm:px-4 flex flex-col items-center justify-center">
                 <div className="flex items-center gap-2">
                   <span className="text-black text-base sm:text-lg font-semibold">
-                    Don't forget this listing!
                   </span>
                   <LikeButton
                     itemId={hairMakeup.id}
