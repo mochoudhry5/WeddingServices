@@ -87,6 +87,17 @@ const commonHairServices = [
   },
 ];
 
+interface LocationState {
+  enteredLocation: string;
+  address: string;
+  city: string;
+  state: string;
+  country: string;
+  placeId: string;
+  latitude: number | null;
+  longitude: number | null;
+}
+
 type ServiceType = "makeup" | "hair" | "both";
 
 const commonMakeupStyles = ["Natural", "Bridal", "Soft Glam"];
@@ -114,13 +125,15 @@ const CreateMakeupListing = () => {
   const [serviceType, setServiceType] = useState<ServiceType>("makeup");
   const [isWillingToTravel, setIsWillingToTravel] = useState(false);
   // Replace the individual location states with
-  const [location, setLocation] = useState({
+  const [location, setLocation] = useState<LocationState>({
     enteredLocation: "",
     address: "",
     city: "",
     state: "",
     country: "",
     placeId: "",
+    latitude: null,
+    longitude: null,
   });
 
   // Media State
@@ -443,6 +456,8 @@ const CreateMakeupListing = () => {
           instagram_url: instagramUrl || null,
           description,
           deposit: parseInt(availability.deposit),
+          latitude: location.latitude, 
+          longitude: location.longitude,
         })
         .select()
         .single();
@@ -590,7 +605,8 @@ const CreateMakeupListing = () => {
       }
 
       toast.success("Hair & Makeup listing created successfully!");
-      router.push(`/services/hairMakeup/${hairMakeup.id}`);
+      router.push(`/services`);
+      router.replace(`/services/hairMakeup/${hairMakeup.id}`);
     } catch (error) {
       console.error("Error creating Hair & Makeup listing:", error);
       toast.error(
@@ -669,7 +685,6 @@ const CreateMakeupListing = () => {
                           ? "Service Area*"
                           : "Business Address*"}
                       </label>
-
                       <LocationInput
                         value={location.enteredLocation}
                         onChange={(value) =>
@@ -683,7 +698,16 @@ const CreateMakeupListing = () => {
                           let city = "";
                           let state = "";
                           let country = "";
+                          let latitude: number | null = null;
+                          let longitude: number | null = null;
 
+                          // Extract coordinates from place geometry
+                          if (place.geometry && place.geometry.location) {
+                            latitude = place.geometry.location.lat();
+                            longitude = place.geometry.location.lng();
+                          }
+
+                          // Extract address components as before
                           place.address_components?.forEach((component) => {
                             if (
                               component.types.includes("street_number") ||
@@ -715,6 +739,8 @@ const CreateMakeupListing = () => {
                             state,
                             country,
                             placeId: place.place_id || "",
+                            latitude: latitude || 74.0060,
+                            longitude: longitude || 40.7128,
                           });
                         }}
                         placeholder={

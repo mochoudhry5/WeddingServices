@@ -44,6 +44,17 @@ interface Service {
   isCustom?: boolean;
 }
 
+interface LocationState {
+  enteredLocation: string;
+  address: string;
+  city: string;
+  state: string;
+  country: string;
+  placeId: string;
+  latitude: number | null;
+  longitude: number | null;
+}
+
 const commonWeddingPlannerServices = [
   {
     name: "Wedding Planner",
@@ -89,13 +100,15 @@ const CreateWeddingPlannerListing = () => {
   const [serviceType, setServiceType] = useState<ServiceType>("weddingPlanner");
   const [isWillingToTravel, setIsWillingToTravel] = useState(false);
   // Replace the individual location states with
-  const [location, setLocation] = useState({
+  const [location, setLocation] = useState<LocationState>({
     enteredLocation: "",
     address: "",
     city: "",
     state: "",
     country: "",
     placeId: "",
+    latitude: null,
+    longitude: null,
   });
 
   // Media State
@@ -359,6 +372,8 @@ const CreateWeddingPlannerListing = () => {
             instagram_url: instagramUrl || null,
             description,
             deposit: parseInt(availability.deposit),
+            latitude: location.latitude, 
+            longitude: location.longitude,
           })
           .select()
           .single();
@@ -466,7 +481,8 @@ const CreateWeddingPlannerListing = () => {
       toast.success(
         "Wedding Planner & Coordinator listing created successfully!"
       );
-      router.push(`/services/weddingPlanner/${weddingPlanner.id}`);
+      router.push(`/services`);
+      router.replace(`/services/weddingPlanner/${weddingPlanner.id}`);
     } catch (error) {
       console.error(
         "Error creating Wedding Planner & Coordinator listing:",
@@ -562,7 +578,16 @@ const CreateWeddingPlannerListing = () => {
                           let city = "";
                           let state = "";
                           let country = "";
+                          let latitude: number | null = null;
+                          let longitude: number | null = null;
 
+                          // Extract coordinates from place geometry
+                          if (place.geometry && place.geometry.location) {
+                            latitude = place.geometry.location.lat();
+                            longitude = place.geometry.location.lng();
+                          }
+
+                          // Extract address components as before
                           place.address_components?.forEach((component) => {
                             if (
                               component.types.includes("street_number") ||
@@ -594,6 +619,8 @@ const CreateWeddingPlannerListing = () => {
                             state,
                             country,
                             placeId: place.place_id || "",
+                            latitude: latitude || 74.0060,
+                            longitude: longitude || 40.7128,
                           });
                         }}
                         placeholder={

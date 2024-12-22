@@ -37,6 +37,17 @@ interface MediaFile {
   type: "image" | "video";
 }
 
+interface LocationState {
+  enteredLocation: string;
+  address: string;
+  city: string;
+  state: string;
+  country: string;
+  placeId: string;
+  latitude: number | null;
+  longitude: number | null;
+}
+
 interface Service {
   name: string;
   description: string;
@@ -109,13 +120,15 @@ const CreatePhotographyListing = () => {
   const [serviceType, setServiceType] = useState<ServiceType>("photography");
   const [isWillingToTravel, setIsWillingToTravel] = useState(false);
   // Replace the individual location states with
-  const [location, setLocation] = useState({
+  const [location, setLocation] = useState<LocationState>({
     enteredLocation: "",
     address: "",
     city: "",
     state: "",
     country: "",
     placeId: "",
+    latitude: null,
+    longitude: null,
   });
 
   // Media State
@@ -424,6 +437,8 @@ const CreatePhotographyListing = () => {
           instagram_url: instagramUrl || null,
           description,
           deposit: parseInt(availability.deposit),
+          latitude: location.latitude, 
+          longitude: location.longitude,
         })
         .select()
         .single();
@@ -573,7 +588,8 @@ const CreatePhotographyListing = () => {
       }
 
       toast.success("Photography & Videography listing created successfully!");
-      router.push(`/services/photoVideo/${photoVideo.id}`);
+      router.push(`/services`);
+      router.replace(`/services/photoVideo/${photoVideo.id}`);
     } catch (error) {
       console.error("Error creating Photography & Videography listing:", error);
       toast.error(
@@ -666,7 +682,16 @@ const CreatePhotographyListing = () => {
                           let city = "";
                           let state = "";
                           let country = "";
+                          let latitude: number | null = null;
+                          let longitude: number | null = null;
 
+                          // Extract coordinates from place geometry
+                          if (place.geometry && place.geometry.location) {
+                            latitude = place.geometry.location.lat();
+                            longitude = place.geometry.location.lng();
+                          }
+
+                          // Extract address components as before
                           place.address_components?.forEach((component) => {
                             if (
                               component.types.includes("street_number") ||
@@ -698,6 +723,8 @@ const CreatePhotographyListing = () => {
                             state,
                             country,
                             placeId: place.place_id || "",
+                            latitude: latitude || 74.0060,
+                            longitude: longitude || 40.7128,
                           });
                         }}
                         placeholder={

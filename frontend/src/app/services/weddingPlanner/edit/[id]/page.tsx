@@ -765,7 +765,8 @@ const UpdateweddingPlannerListing = () => {
       toast.success(
         "Wedding Planner & Coordinator listing updated successfully!"
       );
-      router.push(`/services/weddingPlanner/${weddingPlanner.id}`);
+      router.push(`/dashboard/listings`);
+      router.replace(`/services/weddingPlanner/${weddingPlanner.id}`);
     } catch (error) {
       console.error(
         "Error creating Wedding Planner & Coordinator  listing:",

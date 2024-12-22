@@ -936,7 +936,8 @@ export default function UpdateVenueListing() {
         throw new Error("Failed to update add-ons");
       }
       toast.success("Venue listing updated successfully!");
-      router.push(`/services/venue/${venue.id}`);
+      router.push(`/dashboard/listings`);
+      router.replace(`/services/venue/${venue.id}`);
     } catch (error) {
       console.error("Error creating venue:", error);
       toast.error(

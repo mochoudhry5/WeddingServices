@@ -868,7 +868,8 @@ const UpdatePhotoVideoListing = () => {
       }
 
       toast.success("Photography & Videography listing updated successfully!");
-      router.push(`/services/photoVideo/${photoVideo.id}`);
+      router.push(`/dashboard/listings`);
+      router.replace(`/services/photoVideo/${photoVideo.id}`);
     } catch (error) {
       console.error("Error creating Photography & Videography listing:", error);
       toast.error(

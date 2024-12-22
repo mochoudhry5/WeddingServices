@@ -873,7 +873,8 @@ const UpdateHairMakeupListing = () => {
       }
 
       toast.success("Hair & Makeup listing updated successfully!");
-      router.push(`/services/hairMakeup/${hairMakeup.id}`);
+      router.push(`/dashboard/listings`);
+      router.replace(`/services/hairMakeup/${hairMakeup.id}`);
     } catch (error) {
       console.error("Error creating Hair & Makeup listing:", error);
       toast.error(

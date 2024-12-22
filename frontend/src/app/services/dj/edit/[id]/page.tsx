@@ -149,7 +149,7 @@ const UpdateDJListing = () => {
   const handleDragEnd = () => {
     setDraggedItem(null);
   };
-  
+
   useEffect(() => {
     const fetchDJData = async () => {
       try {
@@ -180,13 +180,13 @@ const UpdateDJListing = () => {
           setInstagramUrl(dj.instagram_url || "");
           setAvailability({ deposit: dj.deposit?.toString() || "" });
 
-          const parsedLocation = `${dj.address !== "" ? dj.address + ", " : ""}${dj.city}, ${dj.state}, ${
-            dj.country
-          }`.trim();
-          
+          const parsedLocation = `${
+            dj.address !== "" ? dj.address + ", " : ""
+          }${dj.city}, ${dj.state}, ${dj.country}`.trim();
+
           // Location
           setLocation({
-            enteredLocation: parsedLocation, 
+            enteredLocation: parsedLocation,
             address: dj.address || "",
             city: dj.city || "",
             state: dj.state || "",
@@ -732,7 +732,8 @@ const UpdateDJListing = () => {
       }
 
       toast.success("DJ listing updated successfully!");
-      router.push(`/services/dj/${dj.id}`);
+      router.push(`/dashboard/listings`);
+      router.replace(`/services/dj/${dj.id}`);
     } catch (error) {
       console.error("Error creating DJ listing:", error);
       toast.error(

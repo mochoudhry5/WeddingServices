@@ -487,7 +487,8 @@ const CreateDJListing = () => {
       }
 
       toast.success("DJ listing created successfully!");
-      router.push(`/services/dj/${dj.id}`);
+      router.push(`/services`);
+      router.replace(`/services/dj/${dj.id}`);
     } catch (error) {
       console.error("Error creating DJ listing:", error);
       toast.error(
