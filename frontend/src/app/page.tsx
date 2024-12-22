@@ -165,6 +165,9 @@ export default function HomePage() {
   const [stateQuery, setStateQuery] = useState("");
   const [cityQuery, setCityQuery] = useState("");
   const [fullQuery, setFullQuery] = useState("");
+  const [lat, setLat] = useState(""); 
+  const [long, setLong] = useState(""); 
+  const [address, setAddress] = useState("");
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -174,19 +177,28 @@ export default function HomePage() {
       state: stateQuery,
       country: countryQuery,
       enteredLocation: fullQuery,
+      address: address, 
+      lat:lat, 
+      long: long
     });
     window.location.href = `/search?${params.toString()}`;
   };
 
   const handlePlaceSelect = (place: GooglePlace) => {
-    const { city, state, country } = extractLocationDetails(place);
+    const { city, state, country, lat, long, address } = extractLocationDetails(place);
     setCityQuery(city || "");
     setStateQuery(state || "");
     setCountryQuery(country || "");
     setFullQuery(place.formatted_address || "");
+    setLat(lat); 
+    setLong(long); 
+    setAddress(address || ""); 
   };
 
   const extractLocationDetails = (place: GooglePlace) => {
+    let lat = ""; 
+    let long = ""; 
+
     const city = place.address_components?.find((component) =>
       component.types.includes("locality")
     )?.long_name;
@@ -199,7 +211,16 @@ export default function HomePage() {
       component.types.includes("country")
     )?.long_name;
 
-    return { city, state, country };
+    if (place.geometry && place.geometry.location) {
+      lat = place.geometry.location.lat().toLocaleString();
+      long = place.geometry.location.lng().toLocaleString();
+    }
+
+    const address = place.address_components?.find((component) =>
+      component.types.includes("street_number")
+    )?.long_name;
+
+    return { city, state, country, lat, long, address };
   };
 
   return (

@@ -165,6 +165,8 @@ interface LocationDetails {
   city: string;
   state: string;
   country: string;
+  address: string;
+  coordinates?: Coordinates;
 }
 
 interface SearchFilters {
@@ -187,15 +189,6 @@ interface ServiceConfig {
 interface Coordinates {
   lat: number;
   lng: number;
-}
-
-interface LocationDetails {
-  enteredLocation: string;
-  city: string;
-  state: string;
-  country: string;
-  coordinates?: Coordinates;
-  address?: string;
 }
 
 const SERVICE_CONFIGS: Record<ServiceType, ServiceConfig> = {
@@ -252,7 +245,13 @@ export default function ServicesSearchPage() {
 
   // Filter state
   const [searchFilters, setSearchFilters] = useState<SearchFilters>({
-    searchQuery: { enteredLocation: "", city: "", state: "", country: "" },
+    searchQuery: {
+      enteredLocation: "",
+      city: "",
+      state: "",
+      country: "",
+      address: "",
+    },
     priceRange: [0, 0],
     capacity: { min: 0, max: 0 },
     sortOption: "default",
@@ -267,16 +266,27 @@ export default function ServicesSearchPage() {
     const city = (params.get("city") || "").trim();
     const state = (params.get("state") || "").trim();
     const country = (params.get("country") || "").trim();
+    const address = (params.get("address") || "").trim();
+    const lat = parseFloat((params.get("lat") || "").trim());
+    const long = parseFloat((params.get("long") || "").trim());
+    const newCoordinate: Coordinates = { lat, lng: long };
 
     if (serviceParam || enteredLocation) {
       const updatedFilters = {
         ...searchFilters,
         serviceType: isValidServiceType(serviceParam) ? serviceParam : "venue",
-        searchQuery: { enteredLocation, city, state, country },
+        searchQuery: {
+          enteredLocation,
+          city,
+          state,
+          country,
+          address,
+          coordinates: newCoordinate,
+        },
       };
 
       setSearchFilters(updatedFilters);
-      fetchServiceListings(true, updatedFilters);
+      fetchServiceListings(false, updatedFilters);
     } else {
       fetchServiceListings();
     }
@@ -305,9 +315,9 @@ export default function ServicesSearchPage() {
   ) => {
     try {
       setIsLoading(true);
-
+      console.log(filtersToUse);
       // Handle exact address matching
-      const hasExactAddress = Boolean(filtersToUse.searchQuery.address);
+      const hasExactAddress = Boolean(filtersToUse.searchQuery.address != "");
       let listingsWithDistance: (ServiceListingItem & { distance?: number })[] =
         [];
 
@@ -322,27 +332,26 @@ export default function ServicesSearchPage() {
             price
           )
         `);
+        if (hasExactAddress) {
+          // For exact address match
+          query = query.eq("address", filtersToUse.searchQuery.address);
+        } else if (
+          filtersToUse.searchQuery.city ||
+          filtersToUse.searchQuery.state
+        ) {
+          let locationFilters = [];
+          if (filtersToUse.searchQuery.city)
+            locationFilters.push(
+              `city.ilike.%${filtersToUse.searchQuery.city}%`
+            );
+          if (filtersToUse.searchQuery.state)
+            locationFilters.push(
+              `state.ilike.%${filtersToUse.searchQuery.state}%`
+            );
+          query = query.or(locationFilters.join(","));
+        }
 
         if (withFilters) {
-          if (hasExactAddress) {
-            // For exact address match
-            query = query.eq("address", filtersToUse.searchQuery.address);
-          } else if (
-            filtersToUse.searchQuery.city ||
-            filtersToUse.searchQuery.state
-          ) {
-            let locationFilters = [];
-            if (filtersToUse.searchQuery.city)
-              locationFilters.push(
-                `city.ilike.%${filtersToUse.searchQuery.city}%`
-              );
-            if (filtersToUse.searchQuery.state)
-              locationFilters.push(
-                `state.ilike.%${filtersToUse.searchQuery.state}%`
-              );
-            query = query.or(locationFilters.join(","));
-          }
-
           // Apply price range filter
           if (
             filtersToUse.priceRange[0] > 0 ||
@@ -417,25 +426,25 @@ export default function ServicesSearchPage() {
           )
         `);
 
-        if (withFilters) {
-          if (hasExactAddress) {
-            query = query.eq("address", filtersToUse.searchQuery.address);
-          } else if (
-            filtersToUse.searchQuery.city ||
-            filtersToUse.searchQuery.state
-          ) {
-            let locationFilters = [];
-            if (filtersToUse.searchQuery.city)
-              locationFilters.push(
-                `city.ilike.%${filtersToUse.searchQuery.city}%`
-              );
-            if (filtersToUse.searchQuery.state)
-              locationFilters.push(
-                `state.ilike.%${filtersToUse.searchQuery.state}%`
-              );
-            query = query.or(locationFilters.join(","));
-          }
+        if (hasExactAddress) {
+          query = query.eq("address", filtersToUse.searchQuery.address);
+        } else if (
+          filtersToUse.searchQuery.city ||
+          filtersToUse.searchQuery.state
+        ) {
+          let locationFilters = [];
+          if (filtersToUse.searchQuery.city)
+            locationFilters.push(
+              `city.ilike.%${filtersToUse.searchQuery.city}%`
+            );
+          if (filtersToUse.searchQuery.state)
+            locationFilters.push(
+              `state.ilike.%${filtersToUse.searchQuery.state}%`
+            );
+          query = query.or(locationFilters.join(","));
+        }
 
+        if (withFilters) {
           if (
             filtersToUse.priceRange[0] > 0 ||
             filtersToUse.priceRange[1] > 0
@@ -507,25 +516,25 @@ export default function ServicesSearchPage() {
           )
         `);
 
-        if (withFilters) {
-          if (hasExactAddress) {
-            query = query.eq("address", filtersToUse.searchQuery.address);
-          } else if (
-            filtersToUse.searchQuery.city ||
-            filtersToUse.searchQuery.state
-          ) {
-            let locationFilters = [];
-            if (filtersToUse.searchQuery.city)
-              locationFilters.push(
-                `city.ilike.%${filtersToUse.searchQuery.city}%`
-              );
-            if (filtersToUse.searchQuery.state)
-              locationFilters.push(
-                `state.ilike.%${filtersToUse.searchQuery.state}%`
-              );
-            query = query.or(locationFilters.join(","));
-          }
+        if (hasExactAddress) {
+          query = query.eq("address", filtersToUse.searchQuery.address);
+        } else if (
+          filtersToUse.searchQuery.city ||
+          filtersToUse.searchQuery.state
+        ) {
+          let locationFilters = [];
+          if (filtersToUse.searchQuery.city)
+            locationFilters.push(
+              `city.ilike.%${filtersToUse.searchQuery.city}%`
+            );
+          if (filtersToUse.searchQuery.state)
+            locationFilters.push(
+              `state.ilike.%${filtersToUse.searchQuery.state}%`
+            );
+          query = query.or(locationFilters.join(","));
+        }
 
+        if (withFilters) {
           if (
             filtersToUse.priceRange[0] > 0 ||
             filtersToUse.priceRange[1] > 0
@@ -596,26 +605,24 @@ export default function ServicesSearchPage() {
             price
           )
         `);
-
+        if (hasExactAddress) {
+          query = query.eq("address", filtersToUse.searchQuery.address);
+        } else if (
+          filtersToUse.searchQuery.city ||
+          filtersToUse.searchQuery.state
+        ) {
+          let locationFilters = [];
+          if (filtersToUse.searchQuery.city)
+            locationFilters.push(
+              `city.ilike.%${filtersToUse.searchQuery.city}%`
+            );
+          if (filtersToUse.searchQuery.state)
+            locationFilters.push(
+              `state.ilike.%${filtersToUse.searchQuery.state}%`
+            );
+          query = query.or(locationFilters.join(","));
+        }
         if (withFilters) {
-          if (hasExactAddress) {
-            query = query.eq("address", filtersToUse.searchQuery.address);
-          } else if (
-            filtersToUse.searchQuery.city ||
-            filtersToUse.searchQuery.state
-          ) {
-            let locationFilters = [];
-            if (filtersToUse.searchQuery.city)
-              locationFilters.push(
-                `city.ilike.%${filtersToUse.searchQuery.city}%`
-              );
-            if (filtersToUse.searchQuery.state)
-              locationFilters.push(
-                `state.ilike.%${filtersToUse.searchQuery.state}%`
-              );
-            query = query.or(locationFilters.join(","));
-          }
-
           if (
             filtersToUse.priceRange[0] > 0 ||
             filtersToUse.priceRange[1] > 0
@@ -685,29 +692,27 @@ export default function ServicesSearchPage() {
             display_order
           )
         `);
+        if (hasExactAddress) {
+          query = query.eq("address", filtersToUse.searchQuery.address);
+        }
+        // Second priority: City/State match
+        else if (
+          filtersToUse.searchQuery.city ||
+          filtersToUse.searchQuery.state
+        ) {
+          let locationFilters = [];
+          if (filtersToUse.searchQuery.city)
+            locationFilters.push(
+              `city.ilike.%${filtersToUse.searchQuery.city}%`
+            );
+          if (filtersToUse.searchQuery.state)
+            locationFilters.push(
+              `state.ilike.%${filtersToUse.searchQuery.state}%`
+            );
+          query = query.or(locationFilters.join(","));
+        }
 
         if (withFilters) {
-          // First priority: Exact address match
-          if (hasExactAddress) {
-            query = query.eq("address", filtersToUse.searchQuery.address);
-          }
-          // Second priority: City/State match
-          else if (
-            filtersToUse.searchQuery.city ||
-            filtersToUse.searchQuery.state
-          ) {
-            let locationFilters = [];
-            if (filtersToUse.searchQuery.city)
-              locationFilters.push(
-                `city.ilike.%${filtersToUse.searchQuery.city}%`
-              );
-            if (filtersToUse.searchQuery.state)
-              locationFilters.push(
-                `state.ilike.%${filtersToUse.searchQuery.state}%`
-              );
-            query = query.or(locationFilters.join(","));
-          }
-
           // Apply price range
           if (filtersToUse.priceRange[0] > 0) {
             query = query.gte("base_price", filtersToUse.priceRange[0]);
@@ -808,6 +813,7 @@ export default function ServicesSearchPage() {
       params.set("city", newFilters.searchQuery.city);
       params.set("state", newFilters.searchQuery.state);
       params.set("country", newFilters.searchQuery.country);
+      params.set("address", newFilters.searchQuery.address);
     }
 
     window.history.pushState(
@@ -832,7 +838,7 @@ export default function ServicesSearchPage() {
 
   const handleFilterReset = () => {
     const resetFilters: SearchFilters = {
-      searchQuery: { enteredLocation: "", city: "", state: "", country: "" },
+      searchQuery: searchFilters.searchQuery,
       priceRange: [0, 0],
       capacity: { min: 0, max: 0 },
       sortOption: "default",
@@ -1159,6 +1165,7 @@ export default function ServicesSearchPage() {
                           city: "",
                           state: "",
                           country: "",
+                          address: "",
                         },
                         priceRange: [0, 0],
                         capacity: { min: 0, max: 0 },
@@ -1222,6 +1229,8 @@ export default function ServicesSearchPage() {
                         let city = "";
                         let state = "";
                         let country = "";
+                        let address = "";
+                        let coordinates: Coordinates = { lat: 0, lng: 0 };
 
                         place.address_components?.forEach((component) => {
                           if (component.types.includes("locality")) {
@@ -1237,6 +1246,13 @@ export default function ServicesSearchPage() {
                           if (component.types.includes("country")) {
                             country = component.long_name;
                           }
+                          if (component.types.includes("street_number")) {
+                            address = component.long_name;
+                          }
+                          if (place.geometry && place.geometry.location) {
+                            coordinates.lat = place.geometry.location.lat();
+                            coordinates.lng = place.geometry.location.lng();
+                          }
                         });
 
                         setSearchFilters((prev) => ({
@@ -1246,6 +1262,8 @@ export default function ServicesSearchPage() {
                             city,
                             state,
                             country,
+                            address,
+                            coordinates,
                           },
                         }));
                       }}
@@ -1282,7 +1300,6 @@ export default function ServicesSearchPage() {
 
                           updateURLWithFilters(updatedFilters);
                           fetchServiceListings(true, updatedFilters);
-                          console.log(updatedFilters);
                         }
                       }}
                     >
