@@ -235,11 +235,8 @@ export default function CreateServicePage() {
         <div className="min-h-screen bg-gray-50 py-8 sm:py-4">
           <div className="max-w-4xl mx-auto px-4">
             <div className="mb-8 sm:mb-5 text-center">
-              <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">
-                List Your Service
-              </h1>
               <div className="mt-2 flex items-center justify-center gap-2">
-                <p className="text-base sm:text-lg text-gray-600">
+                <p className="text-base sm:text-xl text-black font-bold">
                   Choose the type of service you want to offer
                 </p>
               </div>
