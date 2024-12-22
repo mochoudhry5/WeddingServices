@@ -304,7 +304,7 @@ export default function HomePage() {
                 },
                 {
                   icon: Ban,
-                  title: "No Fees",
+                  title: "No Service Fees",
                   description:
                     "We recognize the importance of staying within your budget.",
                   delay: 400,
