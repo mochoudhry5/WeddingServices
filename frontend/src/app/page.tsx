@@ -11,63 +11,125 @@ import {
 import NavBar from "@/components/ui/NavBar";
 import Footer from "@/components/ui/Footer";
 import LocationInput from "@/components/ui/LocationInput";
-import { Heart, Camera, LucideIcon, Ban, DollarSign } from "lucide-react";
+import { Heart, Gem, Ban, DollarSign } from "lucide-react";
 
-interface FeatureCardProps {
-  icon: LucideIcon;
-  title: string;
-  description: string;
-  delay: number;
-}
+const WhyChooseSection = () => {
+  const [activeFeature, setActiveFeature] = useState(0);
+  const containerRef = useRef(null);
 
-const FeatureCard = ({
-  icon: Icon,
-  title,
-  description,
-  delay,
-}: FeatureCardProps) => {
-  const cardRef = useRef<HTMLDivElement>(null);
-  const [isVisible, setIsVisible] = useState(false);
-
-  useEffect(() => {
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (entry.isIntersecting) {
-          setIsVisible(true);
-        }
-      },
-      {
-        threshold: 0.1,
-      }
-    );
-
-    if (cardRef.current) {
-      observer.observe(cardRef.current);
-    }
-
-    return () => {
-      if (cardRef.current) {
-        observer.unobserve(cardRef.current);
-      }
-    };
-  }, []);
+  const features = [
+    {
+      icon: Gem,
+      title: "Curated Services",
+      description:
+        "Curated Services connects you with the best venues and trusted professionals, from event planners to photographers, to make your occasion truly memorable.",
+      cardDescription: "",
+      image: "/../../images/home/DreamVenue.jpg",
+    },
+    {
+      icon: DollarSign,
+      title: "On-Demand Pricing",
+      description:
+        "On-demand pricing gives you instant access to service details and costs, no contact needed.",
+      cardDescription: "",
+      image: "/api/placeholder/600/400",
+    },
+    {
+      icon: Ban,
+      title: "Hassle Free",
+      description:
+        "Pages designed to save you time, with only the essential information you need—no endless scrolling.",
+      cardDescription: "",
+      image: "/api/placeholder/600/400",
+    },
+  ];
 
   return (
-    <div
-      ref={cardRef}
-      className={`transform transition-all duration-1000 ease-out ${
-        isVisible ? "translate-y-0 opacity-100" : "translate-y-10 opacity-0"
-      }`}
-      style={{ transitionDelay: `${delay}ms` }}
-    >
-      <div className="p-6 bg-white/5 backdrop-blur-sm rounded-2xl border border-neutral-200 transition-colors hover:border-neutral-300">
-        <div className="w-12 h-12 bg-stone-200 rounded-xl flex items-center justify-center mb-4">
-          <Icon className="w-6 h-6 text-neutral-600" />
-        </div>
-        <h3 className="text-xl font-semibold text-neutral-900 mb-2">{title}</h3>
-        <p className="text-neutral-600">{description}</p>
+    <section className="relative overflow-hidden bg-rose-50/30 py-24">
+      {/* Decorative Elements */}
+      <div className="absolute inset-0">
+        <div className="absolute left-0 top-0 h-64 w-64 rounded-full bg-rose-100/20 blur-3xl" />
+        <div className="absolute right-0 top-1/2 h-64 w-64 rounded-full bg-rose-100/20 blur-3xl" />
       </div>
-    </div>
+
+      <div className="relative mx-auto max-w-7xl px-4">
+        {/* Elegant Header */}
+        <div className="mb-20 text-center">
+          <div className="mb-6 flex justify-center">
+            <div className="relative">
+              <div className="absolute -left-8 -top-8 h-16 w-16 bg-[url('/api/placeholder/64/64')] opacity-10" />
+              <div className="absolute -right-8 -bottom-8 h-16 w-16 bg-[url('/api/placeholder/64/64')] opacity-10" />
+              <h2 className="relative text-4xl font-light tracking-wide text-stone-800 md:text-5xl">
+                Why Choose
+                <span className="ml-3 font-serif italic text-black">
+                  AnyWeds
+                </span>
+              </h2>
+            </div>
+          </div>
+          <p className="mx-auto max-w-2xl text-lg text-stone-600">
+            Let us help you create the wedding of your dreams with our curated
+            selection of venues and vendors
+          </p>
+        </div>
+
+        <div className="grid gap-16 lg:grid-cols-2">
+          {/* Left Side - Feature Showcase */}
+          <div className="space-y-8">
+            {features.map((feature, index) => (
+              <div
+                key={index}
+                className={`group cursor-pointer rounded-2xl border transition-all duration-500 ${
+                  activeFeature === index
+                    ? "border-black bg-white shadow-lg"
+                    : "border-transparent bg-white/50 hover:border-black hover:bg-white"
+                }`}
+                onClick={() => setActiveFeature(index)}
+              >
+                <div className="p-8">
+                  <div className="mb-4 flex items-center">
+                    <div
+                      className={`rounded-xl p-3 transition-colors ${
+                        activeFeature === index ? "bg-white" : "bg-white"
+                      }`}
+                    >
+                      <feature.icon
+                        className={`h-6 w-6 ${
+                          activeFeature === index
+                            ? "text-black"
+                            : "text-stone-400"
+                        }`}
+                      />
+                    </div>
+                    <h3 className="ml-4 text-2xl font-light text-stone-800">
+                      {feature.title}
+                    </h3>
+                  </div>
+
+                  <p className="text-stone-600">{feature.description}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* Right Side - Visual Preview */}
+          <div className="relative hidden lg:block">
+            <div className="sticky top-8">
+              <div className="overflow-hidden rounded-2xl bg-white shadow-xl">
+                <div className="relative">
+                  <img
+                    src={features[activeFeature].image}
+                    alt={features[activeFeature].title}
+                    className="h-[600px] w-full object-cover"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-stone-900/40 to-transparent" />
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
   );
 };
 
@@ -165,8 +227,8 @@ export default function HomePage() {
   const [stateQuery, setStateQuery] = useState("");
   const [cityQuery, setCityQuery] = useState("");
   const [fullQuery, setFullQuery] = useState("");
-  const [lat, setLat] = useState(""); 
-  const [long, setLong] = useState(""); 
+  const [lat, setLat] = useState("");
+  const [long, setLong] = useState("");
   const [address, setAddress] = useState("");
 
   const handleSearch = (e: React.FormEvent) => {
@@ -177,27 +239,28 @@ export default function HomePage() {
       state: stateQuery,
       country: countryQuery,
       enteredLocation: fullQuery,
-      address: address, 
-      lat:lat, 
-      long: long
+      address: address,
+      lat: lat,
+      long: long,
     });
     window.location.href = `/search?${params.toString()}`;
   };
 
   const handlePlaceSelect = (place: GooglePlace) => {
-    const { city, state, country, lat, long, address } = extractLocationDetails(place);
+    const { city, state, country, lat, long, address } =
+      extractLocationDetails(place);
     setCityQuery(city || "");
     setStateQuery(state || "");
     setCountryQuery(country || "");
     setFullQuery(place.formatted_address || "");
-    setLat(lat); 
-    setLong(long); 
-    setAddress(address || ""); 
+    setLat(lat);
+    setLong(long);
+    setAddress(address || "");
   };
 
   const extractLocationDetails = (place: GooglePlace) => {
-    let lat = ""; 
-    let long = ""; 
+    let lat = "";
+    let long = "";
 
     const city = place.address_components?.find((component) =>
       component.types.includes("locality")
@@ -288,60 +351,8 @@ export default function HomePage() {
           </div>
         </div>
 
-        {/* Features Section */}
-        <section className="relative z-10 py-20 bg-neutral-50">
-          <div className="max-w-7xl mx-auto px-4">
-            <div className="text-center mb-10">
-              <h2 className="text-4xl font-bold text-neutral-900 mb-4">
-                Why Choose AnyWeds?
-              </h2>
-              <p className="text-neutral-600 text-lg max-w-2xl mx-auto">
-                We're revolutionizing how couples plan their perfect wedding day
-              </p>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-              {[
-                {
-                  icon: Heart,
-                  title: "Curated Selection",
-                  description:
-                    "Search by price, location, and other preferences.",
-                  delay: 100,
-                },
-                {
-                  icon: Camera,
-                  title: "Visual First",
-                  description:
-                    "High-quality photos to help you make informed decisions",
-                  delay: 200,
-                },
-                {
-                  icon: DollarSign,
-                  title: "Quick Estimate",
-                  description:
-                    "Obtain an estimate without needing to contact anyone.",
-                  delay: 300,
-                },
-                {
-                  icon: Ban,
-                  title: "No Service Fees",
-                  description:
-                    "We recognize the importance of staying within your budget.",
-                  delay: 400,
-                },
-              ].map((feature) => (
-                <FeatureCard
-                  key={feature.title}
-                  icon={feature.icon}
-                  title={feature.title}
-                  description={feature.description}
-                  delay={feature.delay}
-                />
-              ))}
-            </div>
-          </div>
-        </section>
+        {/* Why Choose Section */}
+        <WhyChooseSection />
       </div>
 
       <Footer />
