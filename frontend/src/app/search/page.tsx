@@ -242,52 +242,45 @@ export default function ServicesSearchPage() {
   // Initialize filters from URL params
   const params = new URLSearchParams(window.location.search);
   const serviceParam = (params.get("service") || "").trim();
+  const minPrice = parseInt(params.get("minPrice") || "0");
+  const maxPrice = parseInt(params.get("maxPrice") || "0");
+  const minCapacity = parseInt(params.get("minCapacity") || "0");
+  const maxCapacity = parseInt(params.get("maxCapacity") || "0");
+  const sortOption = params.get("sort") || "default";
+  const cateringOption = params.get("catering") || "both";
 
   // Filter state
   const [searchFilters, setSearchFilters] = useState<SearchFilters>({
     searchQuery: {
-      enteredLocation: "",
-      city: "",
-      state: "",
-      country: "",
-      address: "",
+      enteredLocation: params.get("enteredLocation") || "",
+      city: params.get("city") || "",
+      state: params.get("state") || "",
+      country: params.get("country") || "",
+      address: params.get("address") || "",
+      coordinates:
+        params.get("lat") && params.get("lng")
+          ? {
+              lat: parseFloat(params.get("lat")!),
+              lng: parseFloat(params.get("lng")!),
+            }
+          : undefined,
     },
-    priceRange: [0, 0],
-    capacity: { min: 0, max: 0 },
-    sortOption: "default",
+    priceRange: [minPrice, maxPrice],
+    capacity: { min: minCapacity, max: maxCapacity },
+    sortOption: isValidSortOption(sortOption)
+      ? (sortOption as SortOption)
+      : "default",
     serviceType: isValidServiceType(serviceParam) ? serviceParam : "venue",
-    cateringOption: "both", // Added this field
+    cateringOption: cateringOption,
   });
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
-    const serviceParam = (params.get("service") || "").trim();
-    const enteredLocation = (params.get("enteredLocation") || "").trim();
-    const city = (params.get("city") || "").trim();
-    const state = (params.get("state") || "").trim();
-    const country = (params.get("country") || "").trim();
-    const address = (params.get("address") || "").trim();
-    const lat = parseFloat((params.get("lat") || "").trim());
-    const long = parseFloat((params.get("long") || "").trim());
-    const newCoordinate: Coordinates = { lat, lng: long };
-
-    if (serviceParam || enteredLocation) {
-      const updatedFilters = {
-        ...searchFilters,
-        serviceType: isValidServiceType(serviceParam) ? serviceParam : "venue",
-        searchQuery: {
-          enteredLocation,
-          city,
-          state,
-          country,
-          address,
-          coordinates: newCoordinate,
-        },
-      };
-
-      setSearchFilters(updatedFilters);
-      fetchServiceListings(false, updatedFilters);
+    if (params.toString()) {
+      // If there are any URL parameters, fetch with filters
+      fetchServiceListings(true, searchFilters);
     } else {
+      // Otherwise, fetch without filters
       fetchServiceListings();
     }
   }, []);
@@ -572,6 +565,7 @@ export default function ServicesSearchPage() {
         }
 
         const { data: djData, error: djError } = await query;
+
         if (djError) throw djError;
 
         if (djData && djData.length > 0) {
@@ -580,7 +574,9 @@ export default function ServicesSearchPage() {
             rating: 4.5 + Math.random() * 0.5,
           }));
 
-          if (filtersToUse.searchQuery.coordinates && !hasExactAddress) {
+          if (filtersToUse.searchQuery.coordinates && !hasExactAddress && 
+            filtersToUse.sortOption === "default"
+          ) {
             listingsWithDistance = listingsWithDistance
               .map((item) => ({
                 ...item,
@@ -806,17 +802,45 @@ export default function ServicesSearchPage() {
   const updateURLWithFilters = (newFilters: SearchFilters) => {
     const params = new URLSearchParams();
 
+    // Service type
     params.set("service", newFilters.serviceType);
 
+    // Location details
     if (newFilters.searchQuery.enteredLocation) {
       params.set("enteredLocation", newFilters.searchQuery.enteredLocation);
       params.set("city", newFilters.searchQuery.city);
       params.set("state", newFilters.searchQuery.state);
       params.set("country", newFilters.searchQuery.country);
       params.set("address", newFilters.searchQuery.address);
+
+      if (newFilters.searchQuery.coordinates) {
+        params.set("lat", newFilters.searchQuery.coordinates.lat.toString());
+        params.set("lng", newFilters.searchQuery.coordinates.lng.toString());
+      }
     }
 
-    window.history.pushState(
+    // Price range
+    if (newFilters.priceRange[0] > 0)
+      params.set("minPrice", newFilters.priceRange[0].toString());
+    if (newFilters.priceRange[1] > 0)
+      params.set("maxPrice", newFilters.priceRange[1].toString());
+
+    // Capacity
+    if (newFilters.capacity.min > 0)
+      params.set("minCapacity", newFilters.capacity.min.toString());
+    if (newFilters.capacity.max > 0)
+      params.set("maxCapacity", newFilters.capacity.max.toString());
+
+    // Sort option
+    if (newFilters.sortOption !== "default")
+      params.set("sort", newFilters.sortOption);
+
+    // Catering option
+    if (newFilters.cateringOption !== "both")
+      params.set("catering", newFilters.cateringOption);
+
+    // Update URL without refreshing the page
+    window.history.replaceState(
       {},
       "",
       `${window.location.pathname}?${params.toString()}`
