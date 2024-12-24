@@ -5,7 +5,7 @@ import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { useLoadScript } from "@react-google-maps/api";
 
-const libraries: "places"[] = ["places"];
+const libraries: ["places"] = ["places"];
 
 interface GooglePlace {
   formatted_address?: string;
@@ -52,7 +52,6 @@ const LocationInput = ({
     libraries,
   });
 
-  // Function to get user's location
   const getCurrentLocation = async () => {
     if (!isLoaded) {
       toast.error("Google Maps is not loaded yet");
@@ -161,7 +160,7 @@ const LocationInput = ({
       };
 
       onPlaceSelect?.(place);
-      toast.success("Life has been made easier!");
+      toast.success("Location found!");
     } catch (error) {
       toast.error(
         error instanceof Error ? error.message : "Failed to get your location"
@@ -174,16 +173,14 @@ const LocationInput = ({
   const initializeAutocomplete = () => {
     if (!inputRef.current || !isLoaded) return;
 
-    // Clean up previous autocomplete instance
     if (autocompleteRef.current) {
       google.maps.event.clearInstanceListeners(autocompleteRef.current);
     }
 
     const determine = isSearch ? ["geocode"] : (
       isRemoteLocation ? ["(regions)"] : ["address"]
-    )
-    
-    // Configure autocomplete based on isRemoteLocation
+    );
+
     const autocompleteOptions: google.maps.places.AutocompleteOptions = {
       componentRestrictions: { country: "us" },
       fields: [
@@ -201,17 +198,22 @@ const LocationInput = ({
       autocompleteOptions
     );
 
-    // Handle place selection
     autocompleteRef.current.addListener("place_changed", () => {
-      const place = autocompleteRef.current?.getPlace();
-      if (place && place.formatted_address) {
+      try {
+        const place = autocompleteRef.current?.getPlace();
+        if (!place) {
+          throw new Error("No place selected");
+        }
         handlePlaceSelection(place);
+      } catch (error) {
+        console.error('Error handling place selection:', error);
+        toast.error("Something went wrong while selecting the location");
       }
     });
 
-    // Add click listener to document for pac-item clicks
     document.addEventListener("click", handlePacItemClick);
   };
+
   const handleClear = () => {
     onChange("");
     if (onPlaceSelect) {
@@ -224,30 +226,40 @@ const LocationInput = ({
       inputRef.current.focus();
     }
   };
-  // Handle place selection
+
   const handlePlaceSelection = (place: google.maps.places.PlaceResult) => {
-    onChange(place.formatted_address || "");
+    try {
+      if (!place.formatted_address && !place.name) {
+        throw new Error("Invalid place selected");
+      }
 
-    const googlePlace: GooglePlace = {
-      formatted_address: place.formatted_address,
-      address_components: place.address_components?.map((component) => ({
-        long_name: component.long_name,
-        short_name: component.short_name,
-        types: component.types,
-      })),
-      geometry: place.geometry
-        ? {
-            location: {
-              lat: () => place.geometry!.location!.lat(),
-              lng: () => place.geometry!.location!.lng(),
-            },
-          }
-        : undefined,
-      name: place.name,
-      place_id: place.place_id,
-    };
+      const address = place.formatted_address || place.name || "";
+      onChange(address);
 
-    onPlaceSelect?.(googlePlace);
+      const googlePlace: GooglePlace = {
+        formatted_address: address,
+        address_components: place.address_components?.map((component) => ({
+          long_name: component.long_name,
+          short_name: component.short_name,
+          types: component.types,
+        })),
+        geometry: place.geometry
+          ? {
+              location: {
+                lat: () => place.geometry!.location!.lat(),
+                lng: () => place.geometry!.location!.lng(),
+              },
+            }
+          : undefined,
+        name: place.name,
+        place_id: place.place_id,
+      };
+
+      onPlaceSelect?.(googlePlace);
+    } catch (error) {
+      console.error('Error in handlePlaceSelection:', error);
+      toast.error("Unable to process the selected location");
+    }
   };
 
   const handlePacItemClick = (e: MouseEvent) => {
@@ -270,7 +282,6 @@ const LocationInput = ({
     }
   };
 
-  // Effect to load user's location on mount
   useEffect(() => {
     const hasLoadedLocation = localStorage.getItem("hasLoadedLocation");
 
@@ -284,7 +295,6 @@ const LocationInput = ({
     loadInitialLocation();
   }, [isLoaded]);
 
-  // Initialize autocomplete when script is loaded or isRemoteLocation changes
   useEffect(() => {
     if (isLoaded) {
       initializeAutocomplete();
@@ -296,9 +306,8 @@ const LocationInput = ({
         google.maps.event.clearInstanceListeners(autocompleteRef.current);
       }
     };
-  }, [isLoaded, isRemoteLocation, /^\d/.test(value)]);
+  }, [isLoaded, isRemoteLocation, isSearch]);
 
-  // Prevent form submission on Enter
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === "Enter") {
       e.preventDefault();
@@ -328,10 +337,10 @@ const LocationInput = ({
           !isLoaded
             ? "Loading..."
             : isLoadingLocation
-            ? "Making Life Easier..."
+            ? "Getting location..."
             : placeholder || "Search by Location"
         }
-        className={cn("pl-10 pr-20", className)} // Increased right padding for both buttons
+        className={cn("pl-10 pr-20", className)}
         disabled={!isLoaded || isLoadingLocation}
         autoComplete="off"
       />
