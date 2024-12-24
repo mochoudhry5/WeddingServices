@@ -106,7 +106,7 @@ export default function ResetPassword() {
             <Button
               type="submit"
               disabled={isLoading}
-              className="w-full bg-rose-600 hover:bg-rose-700 h-11 text-base font-medium"
+              className="w-full bg-black hover:bg-stone-500 h-11 text-base font-medium"
             >
               {isLoading ? (
                 <svg
