@@ -91,112 +91,162 @@ export async function POST(req: Request) {
 
     // Owner email template
     const ownerEmailHtml = `
-      <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 24px; background-color: #f9fafb;">
-        <div style="background-color: white; border-radius: 16px; padding: 32px; box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);">
-          <h1 style="color: #1a1a1a; font-size: 24px; font-weight: 600; margin: 0 0 24px 0; text-align: center;">
-            Inquiry for ${businessName}
+  <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 24px; background-color: #f5f5f4;">
+    <div style="background: linear-gradient(135deg, #78716c 0%, #57534e 100%); padding: 3px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);">
+      <div style="background-color: #fafaf9; border-radius: 10px; padding: 32px;">
+        <!-- AnyWeds Logo/Header -->
+        <div style="text-align: center; margin-bottom: 25px;">
+          <h1 style="color: #44403c; font-size: 36px; margin: 0; font-weight: bold; letter-spacing: 0.5px;">
+            AnyWeds
           </h1>
-          
-          <p style="font-size: 16px; color: #4b5563; margin: 0 0 24px 0; line-height: 1.6;">
-            You've received a new inquiry for <strong style="color: #1a1a1a;">${businessName}</strong>. Below you will find the necessary details regarding the inquiry.
-          </p>
-
-          <div style="background-color: #f3f4f6; border-radius: 12px; padding: 24px; margin-bottom: 24px;">
-            <h2 style="color: #1a1a1a; font-size: 18px; font-weight: 600; margin: 0 0 16px 0;">
-              Contact Information
-            </h2>
-            <table style="width: 100%; border-collapse: collapse;">
-              <tr>
-                <td style="padding: 8px 0; color: #6b7280; width: 140px;">Name</td>
-                <td style="padding: 8px 0; color: #1a1a1a; font-weight: 500;">${
-                  formData.firstName
-                } ${formData.lastName}</td>
-              </tr>
-              <tr>
-                <td style="padding: 8px 0; color: #6b7280;">Email</td>
-                <td style="padding: 8px 0; color: #1a1a1a; font-weight: 500;">${
-                  formData.email
-                }</td>
-              </tr>
-              <tr>
-                <td style="padding: 8px 0; color: #6b7280;">Phone</td>
-                <td style="padding: 8px 0; color: #1a1a1a; font-weight: 500;">${
-                  formData.phone
-                }</td>
-              </tr>
-              <tr>
-                <td style="padding: 8px 0; color: #6b7280;">Event Date</td>
-                <td style="padding: 8px 0; color: #1a1a1a; font-weight: 500;">${
-                  formData.eventDate
-                }</td>
-              </tr>
-            </table>
-          </div>
-
-          <div style="background-color: #f3f4f6; border-radius: 12px; padding: 24px;">
-            <h2 style="color: #1a1a1a; font-size: 18px; font-weight: 600; margin: 0 0 16px 0;">
-              Message
-            </h2>
-            <p style="color: #1a1a1a; margin: 0; line-height: 1.6;">
-              ${formData.message.replace(/\n/g, "<br>")}
-            </p>
-          </div>
-
-          <p style="font-size: 14px; color: #6b7280; margin: 24px 0 0 0; text-align: center;">
-            You can reply directly to this email to contact the client.
+          <p style="color: #78716c; font-size: 16px; margin: 8px 0 0 0; font-style: italic;">
+            Your Wedding, Your Way
           </p>
         </div>
+        
+        <div style="background: linear-gradient(to right, #78716c, #a8a29e); height: 2px; width: 50px; margin: 0 auto 20px;"></div>
+        
+        <h2 style="color: #44403c; font-size: 24px; font-weight: 600; margin: 0 0 24px 0; text-align: center;">
+          New Inquiry for ${businessName}
+        </h2>
+        
+        <p style="font-size: 16px; color: #57534e; margin: 0 0 24px 0; line-height: 1.6;">
+          You've received a new inquiry through AnyWeds for <strong style="color: #44403c;">${businessName}</strong>. Below you will find the necessary details regarding the inquiry.
+        </p>
+
+        <div style="background-color: #f5f5f4; border: 1px solid #e7e5e4; border-radius: 8px; padding: 24px; margin-bottom: 24px;">
+          <h2 style="color: #44403c; font-size: 18px; font-weight: 600; margin: 0 0 16px 0;">
+            Contact Information
+          </h2>
+          <table style="width: 100%; border-collapse: collapse;">
+            <tr>
+              <td style="padding: 8px 0; color: #78716c; width: 140px;">Name</td>
+              <td style="padding: 8px 0; color: #44403c; font-weight: 500;">${
+                formData.firstName
+              } ${formData.lastName}</td>
+            </tr>
+            <tr>
+              <td style="padding: 8px 0; color: #78716c;">Email</td>
+              <td style="padding: 8px 0; color: #44403c; font-weight: 500;">${
+                formData.email
+              }</td>
+            </tr>
+            <tr>
+              <td style="padding: 8px 0; color: #78716c;">Phone</td>
+              <td style="padding: 8px 0; color: #44403c; font-weight: 500;">${
+                formData.phone
+              }</td>
+            </tr>
+            <tr>
+              <td style="padding: 8px 0; color: #78716c;">Event Date</td>
+              <td style="padding: 8px 0; color: #44403c; font-weight: 500;">${
+                formData.eventDate
+              }</td>
+            </tr>
+          </table>
+        </div>
+
+        <div style="background-color: #f5f5f4; border: 1px solid #e7e5e4; border-radius: 8px; padding: 24px;">
+          <h2 style="color: #44403c; font-size: 18px; font-weight: 600; margin: 0 0 16px 0;">
+            Message
+          </h2>
+          <p style="color: #44403c; margin: 0; line-height: 1.6;">
+            ${formData.message.replace(/\n/g, "<br>")}
+          </p>
+        </div>
+
+        <p style="font-size: 14px; color: #78716c; margin: 24px 0 0 0; text-align: center;">
+          You can reply directly to this email to contact the client.
+        </p>
+
+        <!-- Footer -->
+        <div style="margin-top: 35px; padding-top: 25px; border-top: 1px solid #e7e5e4; text-align: center;">
+          <p style="margin: 8px 0 0 0; color: #78716c; font-size: 14px;">© 2024 AnyWeds. All rights reserved.</p>
+          <div style="margin-top: 15px;">
+            <a href="https://anyweds.com" 
+               style="color: #57534e; text-decoration: none; font-weight: 500; border: 1px solid #d6d3d1; padding: 8px 16px; border-radius: 6px; font-size: 14px; background-color: #fafaf9;">
+              www.anyweds.com
+            </a>
+          </div>
+        </div>
       </div>
-    `;
+    </div>
+  </div>
+`;
 
     // Inquirer email template
     const inquirerEmailHtml = `
-      <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 24px; background-color: #f9fafb;">
-        <div style="background-color: white; border-radius: 16px; padding: 32px; box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);">
-          <h1 style="color: #1a1a1a; font-size: 24px; font-weight: 600; margin: 0 0 24px 0; text-align: center;">
-            Thank You for Your Inquiry
-          </h1>
+    <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 24px; background-color: #f5f5f4;">
+      <div style="background: linear-gradient(135deg, #78716c 0%, #57534e 100%); padding: 3px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);">
+        <div style="background-color: #fafaf9; border-radius: 10px; padding: 32px;">
+          <!-- AnyWeds Logo/Header -->
+          <div style="text-align: center; margin-bottom: 25px;">
+            <h1 style="color: #44403c; font-size: 36px; margin: 0; font-weight: bold; letter-spacing: 0.5px;">
+              AnyWeds
+            </h1>
+            <p style="color: #78716c; font-size: 16px; margin: 8px 0 0 0; font-style: italic;">
+              Your Wedding, Your Way
+            </p>
+          </div>
           
-          <p style="font-size: 16px; color: #4b5563; margin: 0 0 24px 0; line-height: 1.6;">
+          <div style="background: linear-gradient(to right, #78716c, #a8a29e); height: 2px; width: 50px; margin: 0 auto 20px;"></div>
+  
+          <h2 style="color: #44403c; font-size: 24px; font-weight: 600; margin: 0 0 24px 0; text-align: center;">
+            Thank You for Your Inquiry
+          </h2>
+          
+          <p style="font-size: 16px; color: #57534e; margin: 0 0 24px 0; line-height: 1.6;">
             Dear ${formData.firstName},
           </p>
           
-          <p style="font-size: 16px; color: #4b5563; margin: 0 0 24px 0; line-height: 1.6;">
-            We've received your inquiry for <strong style="color: #1a1a1a;">${businessName}</strong>. The business owner will review your request and get in touch with you soon.
+          <p style="font-size: 16px; color: #57534e; margin: 0 0 24px 0; line-height: 1.6;">
+            Thank you for using AnyWeds to connect with <strong style="color: #44403c;">${businessName}</strong>. The business owner will review your request and get in touch with you soon.
           </p>
           
-          <div style="background-color: #f3f4f6; border-radius: 12px; padding: 24px; margin: 24px 0;">
-            <h2 style="color: #1a1a1a; font-size: 18px; font-weight: 600; margin: 0 0 16px 0;">
+          <div style="background-color: #f5f5f4; border: 1px solid #e7e5e4; border-radius: 8px; padding: 24px; margin: 24px 0;">
+            <h2 style="color: #44403c; font-size: 18px; font-weight: 600; margin: 0 0 16px 0;">
               Your Details
             </h2>
             <table style="width: 100%; border-collapse: collapse;">
               <tr>
-                <td style="padding: 8px 0; color: #6b7280; width: 140px;">Event Date</td>
-                <td style="padding: 8px 0; color: #1a1a1a; font-weight: 500;">${
+                <td style="padding: 8px 0; color: #78716c; width: 140px;">Event Date</td>
+                <td style="padding: 8px 0; color: #44403c; font-weight: 500;">${
                   formData.eventDate
                 }</td>
               </tr>
             </table>
           </div>
-
-          <div style="background-color: #f3f4f6; border-radius: 12px; padding: 24px; margin: 24px 0;">
-            <h2 style="color: #1a1a1a; font-size: 18px; font-weight: 600; margin: 0 0 16px 0;">
+  
+          <div style="background-color: #f5f5f4; border: 1px solid #e7e5e4; border-radius: 8px; padding: 24px; margin: 24px 0;">
+            <h2 style="color: #44403c; font-size: 18px; font-weight: 600; margin: 0 0 16px 0;">
               Your Message
             </h2>
-            <p style="color: #1a1a1a; margin: 0; line-height: 1.6;">
+            <p style="color: #44403c; margin: 0; line-height: 1.6;">
               ${formData.message.replace(/\n/g, "<br>")}
             </p>
           </div>
-
-          <p style="font-size: 16px; color: #4b5563; margin: 0 0 8px 0; line-height: 1.6;">
+  
+          <p style="font-size: 16px; color: #57534e; margin: 0 0 8px 0; line-height: 1.6;">
             Best regards,
           </p>
-          <p style="font-size: 16px; color: #1a1a1a; font-weight: 500; margin: 0;">
+          <p style="font-size: 16px; color: #44403c; font-weight: 500; margin: 0;">
             The AnyWeds Team
           </p>
+  
+          <!-- Footer -->
+          <div style="margin-top: 35px; padding-top: 25px; border-top: 1px solid #e7e5e4; text-align: center;">
+            <p style="margin: 8px 0 0 0; color: #78716c; font-size: 14px;">© 2024 AnyWeds. All rights reserved.</p>
+            <div style="margin-top: 15px;">
+              <a href="https://anyweds.com" 
+                 style="color: #57534e; text-decoration: none; font-weight: 500; border: 1px solid #d6d3d1; padding: 8px 16px; border-radius: 6px; font-size: 14px; background-color: #fafaf9;">
+                www.anyweds.com
+              </a>
+            </div>
+          </div>
         </div>
       </div>
-    `;
+    </div>
+  `;
 
     // Send email to business owner
     await transporter.sendMail({
