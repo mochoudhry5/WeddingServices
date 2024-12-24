@@ -32,7 +32,7 @@ const WhyChooseSection = () => {
       description:
         "On-demand pricing gives you instant access to service details and costs, no contact needed.",
       cardDescription: "",
-      image: "/api/placeholder/600/400",
+      image: "/../../images/home/OnDemand.jpg",
     },
     {
       icon: Ban,
@@ -40,7 +40,7 @@ const WhyChooseSection = () => {
       description:
         "Pages designed to save you time, with only the essential information you need—no endless scrolling.",
       cardDescription: "",
-      image: "/api/placeholder/600/400",
+      image: "/../../images/home/HassleFree.jpg",
     },
   ];
 
