@@ -176,7 +176,7 @@ const PricingInput = ({
         onChange({
           ...value,
           pricingType: newType,
-          guestIncrement: newType === "per-guest" ? 100 : undefined,
+          guestIncrement: newType === "per-guest" ? 1 : undefined,
         });
       }}
     >
@@ -1246,7 +1246,7 @@ export default function CreateVenueListing() {
                                         guestIncrement:
                                           addon.suggestedPricingType ===
                                           "per-guest"
-                                            ? 100
+                                            ? 1
                                             : undefined,
                                         description: addon.description,
                                       },
