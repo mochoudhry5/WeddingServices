@@ -43,7 +43,7 @@ export default function Footer() {
                     <Facebook size={20} />
                   </a>
                   <a
-                    href="#"
+                    href="https://www.instagram.com/anyweds/" target="_blank"
                     className="text-black transition-colors p-2 rounded-full"
                     aria-label="Instagram"
                   >
