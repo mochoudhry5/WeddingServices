@@ -2,7 +2,7 @@
 
 import { createContext, useContext, useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
-import { User } from "@supabase/supabase-js";
+import { AuthSessionMissingError, User } from "@supabase/supabase-js";
 
 interface AuthContextType {
   user: User | null;
@@ -50,8 +50,27 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const signOut = async () => {
-    const { error } = await supabase.auth.signOut();
-    if (error) throw error;
+    try {
+      const { error } = await supabase.auth.signOut();
+      if (error) {
+        throw error;
+      } else {
+        // Clear browser storage
+        localStorage.clear();
+        sessionStorage.clear();
+      }
+    } catch (error) {
+      if (error instanceof AuthSessionMissingError) {
+        // Session is already missing, clear user state and browser storage
+        setUser(null);
+        localStorage.clear();
+        sessionStorage.clear();
+      } else {
+        // Handle other errors
+        console.error("Error during logout:", error);
+        throw error;
+      }
+    }
   };
 
   const resetPassword = async (email: string) => {
