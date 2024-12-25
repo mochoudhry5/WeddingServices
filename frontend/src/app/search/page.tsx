@@ -23,8 +23,7 @@ import {
   SheetTitle,
   SheetTrigger,
 } from "@/components/ui/sheet";
-import { Slider } from "@/components/ui/slider";
-import { SlidersHorizontal, FileSearch } from "lucide-react";
+import { SlidersHorizontal, FileSearch, ArrowUpDown } from "lucide-react";
 
 // Type Guards
 const isValidServiceType = (value: string): value is ServiceType => {
@@ -151,6 +150,7 @@ interface WeddingPlannerDetails {
   created_at: string;
   latitude: number;
   longitude: number;
+  service_type: "weddingPlanner" | "weddingCoordinator" | "both"
 }
 
 type ServiceListingItem =
@@ -228,7 +228,6 @@ const SERVICE_CONFIGS: Record<ServiceType, ServiceConfig> = {
     priceType: "flat",
   },
 };
-
 export default function ServicesSearchPage() {
   // State Management
   const [serviceListings, setServiceListings] = useState<ServiceListingItem[]>(
@@ -277,10 +276,8 @@ export default function ServicesSearchPage() {
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     if (params.toString()) {
-      // If there are any URL parameters, fetch with filters
       fetchServiceListings(true, searchFilters);
     } else {
-      // Otherwise, fetch without filters
       fetchServiceListings();
     }
   }, []);
@@ -574,7 +571,9 @@ export default function ServicesSearchPage() {
             rating: 4.5 + Math.random() * 0.5,
           }));
 
-          if (filtersToUse.searchQuery.coordinates && !hasExactAddress && 
+          if (
+            filtersToUse.searchQuery.coordinates &&
+            !hasExactAddress &&
             filtersToUse.sortOption === "default"
           ) {
             listingsWithDistance = listingsWithDistance
@@ -839,7 +838,6 @@ export default function ServicesSearchPage() {
     if (newFilters.cateringOption !== "both")
       params.set("catering", newFilters.cateringOption);
 
-    // Update URL without refreshing the page
     window.history.replaceState(
       {},
       "",
@@ -867,7 +865,7 @@ export default function ServicesSearchPage() {
       capacity: { min: 0, max: 0 },
       sortOption: "default",
       serviceType: searchFilters.serviceType,
-      cateringOption: "all", // Reset catering option
+      cateringOption: "all",
     };
     setSearchFilters(resetFilters);
     updateURLWithFilters(resetFilters);
@@ -884,6 +882,7 @@ export default function ServicesSearchPage() {
       | "wedding-planner";
     media: MediaItem[];
   };
+
   const determineServiceDetails = (
     listing: ServiceListingItem
   ): ServiceDetails => {
@@ -925,261 +924,18 @@ export default function ServicesSearchPage() {
     // Fallback case (should never happen with proper types)
     throw new Error("Unknown service type");
   };
-
-  const renderServiceListings = () => {
-    if (isLoading) {
-      return (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
-          {[...Array(6)].map((_, index) => (
-            <div
-              key={index}
-              className="bg-white rounded-xl shadow-sm overflow-hidden hover:shadow-lg transition-shadow duration-300"
-            >
-              <div className="animate-pulse">
-                {/* Media carousel placeholder with fixed aspect ratio */}
-                <div className="aspect-[4/3] bg-slate-200" />
-
-                <div className="p-4">
-                  {/* Business name */}
-                  <div className="mb-2">
-                    <div className="h-6 bg-slate-200 rounded w-2/3" />
-                  </div>
-
-                  {/* Service type and experience */}
-                  <div className="h-4 bg-slate-200 rounded w-3/4 mb-2" />
-
-                  {/* Description - two lines */}
-                  <div className="space-y-2 mb-3">
-                    <div className="h-4 bg-slate-200 rounded w-full" />
-                    <div className="h-4 bg-slate-200 rounded w-4/5" />
-                  </div>
-
-                  {/* Location and price */}
-                  <div className="flex justify-between items-center pt-2 border-t">
-                    <div className="h-4 bg-slate-200 rounded w-1/3" />
-                    <div className="h-6 bg-slate-200 rounded w-1/4" />
-                  </div>
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
-      );
-    }
-
-    if (serviceListings.length === 0) {
-      return (
-        <div className="max-w-md mx-auto text-center">
-          <div className="bg-white rounded-lg shadow-sm p-8">
-            {/* Icon */}
-            <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-stone-100 flex items-center justify-center">
-              <FileSearch className="w-8 h-8 text-stone-600" />
-            </div>
-
-            {/* Title */}
-            <h2 className="text-xl font-semibold text-gray-900 mb-2">
-              No Results Found
-            </h2>
-
-            {/* Description */}
-            <p className="text-gray-600 mb-6">
-              We couldn't find any{" "}
-              {searchFilters.serviceType === "hairMakeup"
-                ? "makeup artists"
-                : searchFilters.serviceType === "photoVideo"
-                ? "photographers or videographers"
-                : searchFilters.serviceType === "weddingPlanner"
-                ? "wedding planners"
-                : searchFilters.serviceType === "dj"
-                ? "DJs"
-                : "venues"}{" "}
-              matching your current filters.
-            </p>
-
-            {/* Actions */}
-            <div className="space-y-3">
-              <button
-                onClick={handleFilterReset}
-                className="w-full px-4 py-2 bg-black text-white rounded-lg hover:bg-stone-800 transition-colors duration-300"
-              >
-                Clear All Filters
-              </button>
-              <button
-                onClick={() => (window.location.href = "/")}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors duration-300"
-              >
-                Back to Homepage
-              </button>
-            </div>
-          </div>
-        </div>
-      );
-    }
-
-    return (
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
-        {serviceListings.map((listing) => {
-          // Type guard function to check if listing is a makeup artist
-          const isRange = (
-            listing: ServiceListingItem
-          ): listing is HairMakeupDetails => {
-            return (
-              "hair_makeup_media" in listing ||
-              "photo_video_media" in listing ||
-              "dj_media" in listing ||
-              "wedding_planner_media" in listing
-            );
-          };
-
-          const isHairMakeup = (
-            listing: ServiceListingItem
-          ): listing is HairMakeupDetails => {
-            return "hair_makeup_media" in listing;
-          };
-
-          const isPhotoVideo = (
-            listing: ServiceListingItem
-          ): listing is PhotoVideoDetails => {
-            return "photo_video_media" in listing;
-          };
-          const isWeddingPlanner = (
-            listing: ServiceListingItem
-          ): listing is PhotoVideoDetails => {
-            return "wedding_planner_media" in listing;
-          };
-          const isDJ = (listing: ServiceListingItem): listing is DJDetails => {
-            return "dj_media" in listing;
-          };
-
-          const currentListing = isHairMakeup(listing)
-            ? listing
-            : (listing as VenueDetails);
-
-          const { serviceType, media } = determineServiceDetails(listing);
-
-          return (
-            <div
-              key={listing.id}
-              className="bg-white rounded-xl shadow-md overflow-hidden hover:shadow-lg transition-shadow duration-300 group"
-            >
-              <div className="relative">
-                <MediaCarousel
-                  media={media}
-                  serviceName={listing.business_name}
-                  itemId={listing.id}
-                  creatorId={listing.user_id}
-                  userLoggedIn={user?.id}
-                  service={serviceType}
-                />
-              </div>
-
-              <a
-                href={`/services/${searchFilters.serviceType}/${listing.id}`}
-                className="block hover:cursor-pointer"
-                target="_blank"
-              >
-                <div className="p-4">
-                  <h3 className="text-lg font-semibold mb-1 group-hover:text-stone-500 transition-colors">
-                    {listing.business_name}
-                  </h3>
-
-                  {isRange(listing) ? (
-                    <>
-                      {isHairMakeup(listing) && (
-                        <p className="text-slate-600 text-sm mb-2">
-                          {listing.years_experience} years experience •{" "}
-                          {listing.service_type === "both"
-                            ? "Hair & Makeup"
-                            : listing.service_type === "makeup"
-                            ? "Makeup"
-                            : "Hair"}
-                        </p>
-                      )}
-                      {isPhotoVideo(listing) && (
-                        <p className="text-slate-600 text-sm mb-2">
-                          {listing.years_experience} years experience •{" "}
-                          {listing.service_type === "both"
-                            ? "Photography & Videography"
-                            : listing.service_type === "photography"
-                            ? "Photography"
-                            : "Videography"}
-                        </p>
-                      )}
-                      {isWeddingPlanner(listing) && (
-                        <p className="text-slate-600 text-sm mb-2">
-                          {listing.years_experience} years experience •{" "}
-                          {listing.service_type === "both"
-                            ? "Wedding Planner & Coordinator"
-                            : listing.service_type === "weddingPlanner"
-                            ? "Wedding Planner"
-                            : "Wedding Coordinator"}
-                        </p>
-                      )}
-                      {isDJ(listing) && (
-                        <p className="text-slate-600 text-sm mb-2">
-                          {listing.years_experience} years experience • DJ
-                        </p>
-                      )}
-                      <p className="text-slate-600 text-sm mb-3 line-clamp-2">
-                        {listing.description}
-                      </p>
-                      <div className="flex justify-between items-center border-t pt-2">
-                        <div className="text-sm text-slate-600">
-                          {listing.city}, {listing.state}
-                        </div>
-                        {listing.min_service_price !== null &&
-                          listing.max_service_price !== null && (
-                            <div className="text-lg font-semibold text-green-800">
-                              {listing.min_service_price ===
-                              listing.max_service_price
-                                ? `$${listing.min_service_price.toLocaleString()}`
-                                : `$${listing.min_service_price.toLocaleString()} - $${listing.max_service_price.toLocaleString()}`}
-                            </div>
-                          )}
-                      </div>
-                    </>
-                  ) : (
-                    <>
-                      <p className="text-slate-600 text-sm mb-2">
-                        Up to {(listing as VenueDetails).max_guests} guests •
-                        Venue
-                      </p>
-                      <p className="text-slate-600 text-sm mb-3 line-clamp-2">
-                        {listing.description}
-                      </p>
-                      <div className="flex justify-between items-center pt-2 border-t">
-                        <div className="text-sm text-slate-600">
-                          {listing.city}, {listing.state}
-                        </div>
-                        <div className="text-lg font-semibold text-green-800">
-                          $
-                          {(
-                            listing as VenueDetails
-                          ).base_price.toLocaleString()}
-                        </div>
-                      </div>
-                    </>
-                  )}
-                </div>
-              </a>
-            </div>
-          );
-        })}
-      </div>
-    );
-  };
-
   return (
     <div className="min-h-screen flex flex-col">
       <NavBar />
-      <main className="flex-grow flex flex-col">
-        {/* Sticky search bar */}
-        <div className="sticky top-0 z-10 mt-5">
-          <div className="max-w-7xl mx-auto px-4 py-3">
+
+      <main className="flex-grow flex flex-col bg-gray-50">
+        {/* Search Bar - Fixed at top */}
+        <div className="bg-white border-b border-gray-200">
+          <div className="max-w-7xl mx-auto w-full px-4 py-4 sm:px-6 lg:px-8">
             <form onSubmit={handleSearchSubmit}>
-              <div className="flex items-center gap-3">
-                {/* Service Type Selector */}
-                <div className="w-32">
+              <div className="flex flex-col gap-4 sm:flex-row sm:items-start md:items-center">
+                {/* Service Type Select */}
+                <div className="w-full sm:w-auto md:w-48">
                   <Select
                     value={searchFilters.serviceType}
                     onValueChange={(value: ServiceType) => {
@@ -1194,7 +950,7 @@ export default function ServicesSearchPage() {
                         priceRange: [0, 0],
                         capacity: { min: 0, max: 0 },
                         cateringOption: "both",
-                        sortOption: "default",
+                        sortOption: "default", // This is now correctly typed as SortOption
                         serviceType: value,
                       };
                       setSearchFilters(newFilters);
@@ -1202,15 +958,13 @@ export default function ServicesSearchPage() {
                       fetchServiceListings(false, newFilters);
                     }}
                   >
-                    <SelectTrigger className="border border-gray-200 rounded-lg px-3 py-2 h-11">
-                      <SelectValue placeholder="Venue" />
+                    <SelectTrigger className="h-12 w-full">
+                      <SelectValue placeholder="Select service" />
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="venue">Venue</SelectItem>
                       <SelectItem value="hairMakeup">Hair & Makeup</SelectItem>
-                      <SelectItem value="photoVideo">
-                        Photography & Videography
-                      </SelectItem>
+                      <SelectItem value="photoVideo">Photo & Video</SelectItem>
                       <SelectItem value="weddingPlanner">
                         Wedding Planner & Coordinator
                       </SelectItem>
@@ -1219,152 +973,108 @@ export default function ServicesSearchPage() {
                   </Select>
                 </div>
 
-                {/* Location Input */}
-                <div className="flex-1">
-                  <div className="relative">
-                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
-                      <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        width="20"
-                        height="20"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="2"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      >
-                        <circle cx="11" cy="11" r="8" />
-                        <line x1="21" y1="21" x2="16.65" y2="16.65" />
-                      </svg>
-                    </span>
-                    <LocationInput
-                      value={searchFilters.searchQuery.enteredLocation}
-                      onChange={(value) =>
-                        setSearchFilters((prev) => ({
-                          ...prev,
-                          searchQuery: {
-                            ...prev.searchQuery,
-                            enteredLocation: value,
-                          },
-                        }))
-                      }
-                      onPlaceSelect={(place) => {
-                        let city = "";
-                        let state = "";
-                        let country = "";
-                        let address = "";
-                        let coordinates: Coordinates = { lat: 0, lng: 0 };
+                {/* Location Search */}
+                <div className="flex-grow">
+                  <LocationInput
+                    value={searchFilters.searchQuery.enteredLocation}
+                    onChange={(value) =>
+                      setSearchFilters((prev) => ({
+                        ...prev,
+                        searchQuery: {
+                          ...prev.searchQuery,
+                          enteredLocation: value,
+                        },
+                      }))
+                    }
+                    onPlaceSelect={(place) => {
+                      let city = "";
+                      let state = "";
+                      let country = "";
+                      let address = "";
+                      let coordinates: Coordinates = { lat: 0, lng: 0 };
 
-                        place.address_components?.forEach((component) => {
-                          if (component.types.includes("locality")) {
-                            city = component.long_name;
-                          }
-                          if (
-                            component.types.includes(
-                              "administrative_area_level_1"
-                            )
-                          ) {
-                            state = component.long_name;
-                          }
-                          if (component.types.includes("country")) {
-                            country = component.long_name;
-                          }
-                          if (component.types.includes("street_number")) {
-                            address = component.long_name;
-                          }
-                          if (place.geometry && place.geometry.location) {
-                            coordinates.lat = place.geometry.location.lat();
-                            coordinates.lng = place.geometry.location.lng();
-                          }
-                        });
+                      place.address_components?.forEach((component) => {
+                        if (component.types.includes("locality")) {
+                          city = component.long_name;
+                        }
+                        if (
+                          component.types.includes(
+                            "administrative_area_level_1"
+                          )
+                        ) {
+                          state = component.long_name;
+                        }
+                        if (component.types.includes("country")) {
+                          country = component.long_name;
+                        }
+                        if (component.types.includes("street_number")) {
+                          address = component.long_name;
+                        }
+                        if (place.geometry && place.geometry.location) {
+                          coordinates.lat = place.geometry.location.lat();
+                          coordinates.lng = place.geometry.location.lng();
+                        }
+                      });
 
-                        setSearchFilters((prev) => ({
-                          ...prev,
-                          searchQuery: {
-                            enteredLocation: place.formatted_address || "",
-                            city,
-                            state,
-                            country,
-                            address,
-                            coordinates,
-                          },
-                        }));
-                      }}
-                      placeholder="Search by Location"
-                      className="w-full h-11 pl-10 pr-10 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-black"
-                      isSearch={true}
-                    />
-                  </div>
+                      setSearchFilters((prev) => ({
+                        ...prev,
+                        searchQuery: {
+                          enteredLocation: place.formatted_address || "",
+                          city,
+                          state,
+                          country,
+                          address,
+                          coordinates,
+                        },
+                      }));
+                    }}
+                    placeholder="Search by location..."
+                    className="h-12 w-full"
+                    isSearch={true}
+                  />
                 </div>
 
-                {/* Search, Sort, and Filter Buttons */}
-                <div className="flex items-center gap-3">
+                {/* Search Button and Filters */}
+                <div className="flex gap-2 sm:gap-3">
+                  {/* Search Button */}
                   <button
                     type="submit"
-                    className="h-11 px-6 bg-black hover:bg-black/90 text-white text-base font-semibold rounded-lg transition-colors duration-300"
+                    className="h-12 px-6 bg-black text-white font-medium rounded-lg hover:bg-black/90 transition-colors whitespace-nowrap"
                   >
                     Search
                   </button>
 
-                  {/* Sort Dropdown */}
-                  <div className="w-52">
-                    <Select
-                      value={searchFilters.sortOption}
-                      onValueChange={(value: string) => {
-                        if (isValidSortOption(value)) {
-                          setSearchFilters((prev) => ({
-                            ...prev,
-                            sortOption: value as SortOption,
-                          }));
-                          const updatedFilters = {
-                            ...searchFilters,
-                            sortOption: value as SortOption,
-                          };
-
-                          updateURLWithFilters(updatedFilters);
-                          fetchServiceListings(true, updatedFilters);
-                        }
-                      }}
-                    >
-                      <SelectTrigger className="h-11 border border-gray-400 rounded-full px-4">
-                        <div className="flex items-center gap-1">
-                          <span className="text-base">Sort:</span>
-                          <SelectValue placeholder="Featured">
-                            <span className="text-base">
-                              {searchFilters.sortOption === "price_desc"
-                                ? "High to Low"
-                                : searchFilters.sortOption === "price_asc"
-                                ? "Low to High"
-                                : "Featured"}
-                            </span>
-                          </SelectValue>
-                        </div>
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem
-                          value="price_desc"
-                          className="font-medium text-base"
-                        >
-                          Price: High to Low
-                        </SelectItem>
-                        <SelectItem
-                          value="price_asc"
-                          className="font-medium text-base"
-                        >
-                          Price: Low to High
-                        </SelectItem>
-                        <SelectItem
-                          value="default"
-                          className="font-medium text-base"
-                        >
-                          Featured
-                        </SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  {/* Filter Button */}
+                  {/* Sort Dropdown - Hidden on mobile */}
+                  <Select
+                    value={searchFilters.sortOption}
+                    onValueChange={(value: string) => {
+                      if (isValidSortOption(value)) {
+                        const updatedFilters = {
+                          ...searchFilters,
+                          sortOption: value as SortOption,
+                        };
+                        setSearchFilters(updatedFilters);
+                        updateURLWithFilters(updatedFilters);
+                        fetchServiceListings(true, updatedFilters);
+                      }
+                    }}
+                  >
+                    <SelectTrigger className="h-12 px-4 flex items-center gap-2 border border-gray-300 rounded-lg hover:bg-gray-50">
+                      <ArrowUpDown className="h-5 w-5" />
+                      <span className="hidden sm:inline">Sort</span>
+                      <span className="sr-only">Sort by</span>
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="default">Featured</SelectItem>
+                      <SelectItem value="price_desc">
+                        Price: High to Low
+                      </SelectItem>
+                      <SelectItem value="price_asc">
+                        Price: Low to High
+                      </SelectItem>
+                    </SelectContent>
+                  </Select>
+                  {/* Filter Sheet */}
                   <Sheet
                     open={isFilterSheetOpen}
                     onOpenChange={setIsFilterSheetOpen}
@@ -1372,15 +1082,17 @@ export default function ServicesSearchPage() {
                     <SheetTrigger asChild>
                       <button
                         type="button"
-                        className="h-11 px-4 flex items-center gap-2 bg-white border border-gray-400 rounded-full hover:bg-gray-100"
+                        className="h-12 px-4 flex items-center gap-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
                       >
-                        <SlidersHorizontal size={18} />
-                        <span>Filters</span>
+                        <SlidersHorizontal className="h-5 w-5" />
+                        <span className="hidden sm:inline">Filters</span>
                       </button>
                     </SheetTrigger>
-
-                    <SheetContent side="right" className="w-full max-w-md">
-                      <SheetHeader>
+                    <SheetContent
+                      side="right"
+                      className="w-full sm:max-w-md overflow-y-auto"
+                    >
+                      <SheetHeader className="space-y-2 sm:space-y-3">
                         <SheetTitle>Filter Options</SheetTitle>
                         <SheetDescription>
                           Customize your{" "}
@@ -1388,76 +1100,99 @@ export default function ServicesSearchPage() {
                             SERVICE_CONFIGS[searchFilters.serviceType]
                               .singularName
                           }{" "}
-                          search results
+                          search
                         </SheetDescription>
                       </SheetHeader>
 
                       <div className="mt-6 space-y-6">
+                        {/* Mobile Sort Option */}
+                        <div className="block md:hidden">
+                          <h3 className="text-sm font-medium mb-2">Sort By</h3>
+                          <Select
+                            value={searchFilters.sortOption}
+                            onValueChange={(value: string) => {
+                              if (isValidSortOption(value)) {
+                                setSearchFilters((prev) => ({
+                                  ...prev,
+                                  sortOption: value as SortOption,
+                                }));
+                              }
+                            }}
+                          >
+                            <SelectTrigger className="w-full">
+                              <SelectValue placeholder="Sort by" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="price_desc">
+                                Price: High to Low
+                              </SelectItem>
+                              <SelectItem value="price_asc">
+                                Price: Low to High
+                              </SelectItem>
+                              <SelectItem value="default">Featured</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+
                         {/* Price Range */}
-                        <div className="px-1">
-                          <h3 className="text-sm font-medium mb-1">
+                        <div>
+                          <h3 className="text-sm font-medium mb-2">
                             Price Range
                           </h3>
                           <div className="grid grid-cols-2 gap-4">
-                            <div>
-                              <div className="relative">
-                                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-600">
-                                  $
-                                </span>
-                                <input
-                                  type="number"
-                                  min="0"
-                                  value={searchFilters.priceRange[0] || ""}
-                                  onChange={(e) => {
-                                    const value = Math.max(
-                                      0,
-                                      parseInt(e.target.value) || 0
-                                    );
-                                    setSearchFilters((prev) => ({
-                                      ...prev,
-                                      priceRange: [value, prev.priceRange[1]],
-                                    }));
-                                  }}
-                                  className="w-full mt-1 pl-7 pr-3 py-2 border border-slate-200 rounded-lg 
-                                  focus:outline-none focus:ring-2 focus:ring-black"
-                                  placeholder="Min price"
-                                />
-                              </div>
+                            <div className="relative">
+                              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">
+                                $
+                              </span>
+                              <input
+                                type="number"
+                                min="0"
+                                value={searchFilters.priceRange[0] || ""}
+                                onChange={(e) => {
+                                  const value = Math.max(
+                                    0,
+                                    parseInt(e.target.value) || 0
+                                  );
+                                  setSearchFilters((prev) => ({
+                                    ...prev,
+                                    priceRange: [value, prev.priceRange[1]],
+                                  }));
+                                }}
+                                className="w-full pl-7 pr-3 py-2 border rounded-lg focus:ring-2 focus:ring-black focus:border-transparent"
+                                placeholder="Min"
+                              />
                             </div>
-                            <div>
-                              <div className="relative">
-                                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-600">
-                                  $
-                                </span>
-                                <input
-                                  type="number"
-                                  min="0"
-                                  value={searchFilters.priceRange[1] || ""}
-                                  onChange={(e) => {
-                                    const value = Math.max(
-                                      0,
-                                      parseInt(e.target.value) || 0
-                                    );
-                                    setSearchFilters((prev) => ({
-                                      ...prev,
-                                      priceRange: [prev.priceRange[0], value],
-                                    }));
-                                  }}
-                                  className="w-full mt-1 pl-7 pr-3 py-2 border border-slate-200 rounded-lg 
-                                  focus:outline-none focus:ring-2 focus:ring-black"
-                                  placeholder="Max price"
-                                />
-                              </div>
+                            <div className="relative">
+                              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">
+                                $
+                              </span>
+                              <input
+                                type="number"
+                                min="0"
+                                value={searchFilters.priceRange[1] || ""}
+                                onChange={(e) => {
+                                  const value = Math.max(
+                                    0,
+                                    parseInt(e.target.value) || 0
+                                  );
+                                  setSearchFilters((prev) => ({
+                                    ...prev,
+                                    priceRange: [prev.priceRange[0], value],
+                                  }));
+                                }}
+                                className="w-full pl-7 pr-3 py-2 border rounded-lg focus:ring-2 focus:ring-black focus:border-transparent"
+                                placeholder="Max"
+                              />
                             </div>
                           </div>
                         </div>
 
-                        {/* Capacity - Only show for venues */}
+                        {/* Capacity (Venues only) */}
                         {SERVICE_CONFIGS[searchFilters.serviceType]
                           .hasCapacity && (
                           <div>
-                            <h3 className="text-sm font-medium mb-1">
-                              Guest Capacity Range
+                            <h3 className="text-sm font-medium mb-2">
+                              Guest Capacity
                             </h3>
                             <div className="grid grid-cols-2 gap-4">
                               <input
@@ -1471,14 +1206,10 @@ export default function ServicesSearchPage() {
                                   );
                                   setSearchFilters((prev) => ({
                                     ...prev,
-                                    capacity: {
-                                      ...prev.capacity,
-                                      min: value,
-                                    },
+                                    capacity: { ...prev.capacity, min: value },
                                   }));
                                 }}
-                                className="w-full mt-1 px-3 py-2 border border-slate-200 rounded-lg 
-                                focus:outline-none focus:ring-2 focus:ring-black"
+                                className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-black focus:border-transparent"
                                 placeholder="Min guests"
                               />
                               <input
@@ -1492,24 +1223,20 @@ export default function ServicesSearchPage() {
                                   );
                                   setSearchFilters((prev) => ({
                                     ...prev,
-                                    capacity: {
-                                      ...prev.capacity,
-                                      max: value,
-                                    },
+                                    capacity: { ...prev.capacity, max: value },
                                   }));
                                 }}
-                                className="w-full mt-1 px-3 py-2 border border-slate-200 rounded-lg 
-                                focus:outline-none focus:ring-2 focus:ring-black"
+                                className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-black focus:border-transparent"
                                 placeholder="Max guests"
                               />
                             </div>
                           </div>
                         )}
 
-                        {/* Catering Options - Only show for venues */}
+                        {/* Catering Options (Venues only) */}
                         {searchFilters.serviceType === "venue" && (
                           <div>
-                            <h3 className="text-sm font-medium mb-1">
+                            <h3 className="text-sm font-medium mb-2">
                               Catering Options
                             </h3>
                             <Select
@@ -1521,39 +1248,39 @@ export default function ServicesSearchPage() {
                                 }));
                               }}
                             >
-                              <SelectTrigger>
-                                <SelectValue placeholder="Select catering option" />
+                              <SelectTrigger className="w-full">
+                                <SelectValue placeholder="Select option" />
                               </SelectTrigger>
                               <SelectContent>
                                 <SelectItem value="in_house">
-                                  In-house Catering
+                                  In-house Only
                                 </SelectItem>
                                 <SelectItem value="outside">
-                                  Outside Catering
+                                  Outside Only
                                 </SelectItem>
                                 <SelectItem value="both">
-                                  Both In-house & Outside
+                                  Both Allowed
                                 </SelectItem>
                               </SelectContent>
                             </Select>
                           </div>
                         )}
 
-                        {/* Action Buttons */}
+                        {/* Filter Actions */}
                         <div className="flex gap-3 pt-6">
                           <button
                             type="button"
                             onClick={handleFilterApply}
-                            className="flex-1 py-3 text-sm text-white bg-black hover:bg-stone-500 rounded-lg transition-colors duration-300"
+                            className="flex-1 py-2.5 bg-black text-white rounded-lg hover:bg-black/90 transition-colors"
                           >
                             Apply Filters
                           </button>
                           <button
                             type="button"
                             onClick={handleFilterReset}
-                            className="flex-1 py-3 text-sm border border-black text-black hover:bg-gray-300 rounded-lg transition-colors duration-300"
+                            className="flex-1 py-2.5 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
                           >
-                            Clear
+                            Reset
                           </button>
                         </div>
                       </div>
@@ -1565,9 +1292,10 @@ export default function ServicesSearchPage() {
           </div>
         </div>
 
-        <div className="flex-grow bg-gray-70">
-          {/* Results count */}
-          <div className="max-w-7xl mx-auto px-4 py-4">
+        {/* Results Section */}
+        <div className="flex-grow">
+          {/* Results Count */}
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
             <p className="text-sm text-gray-600">
               {serviceListings.length} found in{" "}
               {serviceListings.length === 1
@@ -1577,12 +1305,227 @@ export default function ServicesSearchPage() {
           </div>
 
           {/* Results Grid */}
-          <div className="max-w-7xl mx-auto px-4 pb-8">
-            {renderServiceListings()}
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-8">
+            {isLoading ? (
+              // Loading Grid
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+                {[...Array(6)].map((_, index) => (
+                  <div
+                    key={index}
+                    className="bg-white rounded-xl shadow-sm overflow-hidden animate-pulse"
+                  >
+                    <div className="aspect-[4/3] bg-gray-200" />
+                    <div className="p-4 space-y-3">
+                      <div className="h-6 bg-gray-200 rounded w-3/4" />
+                      <div className="h-4 bg-gray-200 rounded w-1/2" />
+                      <div className="h-4 bg-gray-200 rounded w-full" />
+                      <div className="pt-3 flex justify-between items-center border-t">
+                        <div className="h-4 bg-gray-200 rounded w-1/3" />
+                        <div className="h-6 bg-gray-200 rounded w-1/4" />
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : serviceListings.length === 0 ? ( // No Results State
+              <div className="max-w-md mx-auto px-4 sm:px-0 text-center">
+                <div className="bg-white rounded-xl shadow-sm p-6 sm:p-8">
+                  <div className="w-16 h-16 mx-auto mb-4 bg-gray-100 rounded-full flex items-center justify-center">
+                    <FileSearch className="w-8 h-8 text-gray-500" />
+                  </div>
+                  <h2 className="text-xl font-semibold mb-2">
+                    No Results Found
+                  </h2>
+                  <p className="text-gray-600 mb-6">
+                    We couldn't find any{" "}
+                    {searchFilters.serviceType === "hairMakeup"
+                      ? "makeup artists"
+                      : searchFilters.serviceType === "photoVideo"
+                      ? "photographers or videographers"
+                      : searchFilters.serviceType === "weddingPlanner"
+                      ? "wedding planners"
+                      : searchFilters.serviceType === "dj"
+                      ? "DJs"
+                      : "venues"}{" "}
+                    matching your search criteria.
+                  </p>
+                  <div className="space-y-3">
+                    <button
+                      onClick={handleFilterReset}
+                      className="w-full px-4 py-2 bg-black text-white rounded-lg hover:bg-black/90 transition-colors"
+                    >
+                      Clear All Filters
+                    </button>
+                    <button
+                      onClick={() => (window.location.href = "/")}
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+                    >
+                      Back to Homepage
+                    </button>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              // Results Grid
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+                {serviceListings.map((listing) => (
+                  <div
+                    key={listing.id}
+                    className="bg-white rounded-xl shadow-sm overflow-hidden hover:shadow-lg transition-shadow duration-300 group"
+                  >
+                    {/* Media Carousel */}
+                    <div className="relative">
+                      <MediaCarousel
+                        media={determineServiceDetails(listing).media}
+                        serviceName={listing.business_name}
+                        itemId={listing.id}
+                        creatorId={listing.user_id}
+                        userLoggedIn={user?.id}
+                        service={determineServiceDetails(listing).serviceType}
+                      />
+                    </div>
+
+                    {/* Listing Details */}
+                    <a
+                      href={`/services/${searchFilters.serviceType}/${listing.id}`}
+                      className="block hover:cursor-pointer"
+                      target="_blank"
+                    >
+                      <div className="p-4">
+                        <h3 className="text-base sm:text-lg font-semibold mb-1 line-clamp-1 group-hover:text-gray-600 transition-colors">
+                          {listing.business_name}
+                        </h3>
+
+                        {"venue_media" in listing ? (
+                          // Venue Details
+                          <>
+                            <p className="text-xs sm:text-sm text-gray-600 mb-2">
+                              Up to {listing.max_guests} guests • Venue
+                            </p>
+                            <p className="text-xs sm:text-sm text-gray-600 mb-3 line-clamp-2">
+                              {listing.description}
+                            </p>
+                            <div className="pt-3 flex justify-between items-center border-t">
+                              <div className="text-xs sm:text-sm text-gray-600 truncate mr-2">
+                                {listing.city}, {listing.state}
+                              </div>
+                              <div className="text-sm sm:text-base font-semibold text-green-800 whitespace-nowrap">
+                                ${listing.base_price.toLocaleString()}
+                              </div>
+                            </div>
+                          </>
+                        ) : "hair_makeup_media" in listing ? (
+                          // Hair & Makeup Details
+                          <>
+                            <p className="text-xs sm:text-sm text-gray-600 mb-2">
+                              {listing.years_experience} years experience •{" "}
+                              {listing.service_type === "both"
+                                ? "Hair & Makeup"
+                                : listing.service_type === "makeup"
+                                ? "Makeup"
+                                : "Hair"}
+                            </p>
+                            <p className="text-xs sm:text-sm text-gray-600 mb-3 line-clamp-2">
+                              {listing.description}
+                            </p>
+                            <div className="pt-3 flex justify-between items-center border-t">
+                              <div className="text-xs sm:text-sm text-gray-600 truncate mr-2">
+                                {listing.city}, {listing.state}
+                              </div>
+                              <div className="text-sm sm:text-base font-semibold text-green-800 whitespace-nowrap">
+                                {listing.min_service_price ===
+                                listing.max_service_price
+                                  ? `$${listing.min_service_price.toLocaleString()}`
+                                  : `$${listing.min_service_price.toLocaleString()} - ${listing.max_service_price.toLocaleString()}`}
+                              </div>
+                            </div>
+                          </>
+                        ) : "photo_video_media" in listing ? (
+                          // Photo & Video Details
+                          <>
+                            <p className="text-xs sm:text-sm text-gray-600 mb-2">
+                              {listing.years_experience} years experience •{" "}
+                              {listing.service_type === "both"
+                                ? "Photography & Videography"
+                                : listing.service_type === "photography"
+                                ? "Photography"
+                                : "Videography"}
+                            </p>
+                            <p className="text-xs sm:text-sm text-gray-600 mb-3 line-clamp-2">
+                              {listing.description}
+                            </p>
+                            <div className="pt-3 flex justify-between items-center border-t">
+                              <div className="text-xs sm:text-sm text-gray-600 truncate mr-2">
+                                {listing.city}, {listing.state}
+                              </div>
+                              <div className="text-sm sm:text-base font-semibold text-green-800 whitespace-nowrap">
+                                {listing.min_service_price ===
+                                listing.max_service_price
+                                  ? `$${listing.min_service_price.toLocaleString()}`
+                                  : `$${listing.min_service_price.toLocaleString()} - ${listing.max_service_price.toLocaleString()}`}
+                              </div>
+                            </div>
+                          </>
+                        ) : "dj_media" in listing ? (
+                          // DJ and Wedding Planner Details
+                          <>
+                            <p className="text-xs sm:text-sm text-gray-600 mb-2">
+                              {listing.years_experience} years experience •
+                              {" DJ"}
+                            </p>
+                            <p className="text-xs sm:text-sm text-gray-600 mb-3 line-clamp-2">
+                              {listing.description}
+                            </p>
+                            <div className="pt-3 flex justify-between items-center border-t">
+                              <div className="text-xs sm:text-sm text-gray-600 truncate mr-2">
+                                {listing.city}, {listing.state}
+                              </div>
+                              <div className="text-sm sm:text-base font-semibold text-green-800 whitespace-nowrap">
+                                {listing.min_service_price ===
+                                listing.max_service_price
+                                  ? `$${listing.min_service_price.toLocaleString()}`
+                                  : `$${listing.min_service_price.toLocaleString()} - ${listing.max_service_price.toLocaleString()}`}
+                              </div>
+                            </div>
+                          </>
+                        ) : (
+                          <>
+                            <p className="text-xs sm:text-sm text-gray-600 mb-2">
+                              {listing.years_experience} years experience •{" "}
+                              {listing.service_type === "both"
+                                ? "Wedding Planner & Coordinator"
+                                : listing.service_type === "weddingPlanner"
+                                ? "Wedding Planner"
+                                : "Wedding Coordinator"}
+                            </p>
+                            <p className="text-xs sm:text-sm text-gray-600 mb-3 line-clamp-2">
+                              {listing.description}
+                            </p>
+                            <div className="pt-3 flex justify-between items-center border-t">
+                              <div className="text-xs sm:text-sm text-gray-600 truncate mr-2">
+                                {listing.city}, {listing.state}
+                              </div>
+                              <div className="text-sm sm:text-base font-semibold text-green-800 whitespace-nowrap">
+                                {listing.min_service_price ===
+                                listing.max_service_price
+                                  ? `$${listing.min_service_price.toLocaleString()}`
+                                  : `$${listing.min_service_price.toLocaleString()} - ${listing.max_service_price.toLocaleString()}`}
+                              </div>
+                            </div>
+                          </>
+                        )}
+                      </div>
+                    </a>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         </div>
       </main>
-      <div className="mt-20">
+
+      {/* Footer */}
+      <div className="mt-8 sm:mt-16">
         <Footer />
       </div>
     </div>
