@@ -45,13 +45,7 @@ const WhyChooseSection = () => {
   ];
 
   return (
-    <section className="relative overflow-hidden bg-rose-50/30 py-24">
-      {/* Decorative Elements */}
-      <div className="absolute inset-0">
-        <div className="absolute left-0 top-0 h-64 w-64 rounded-full bg-rose-100/20 blur-3xl" />
-        <div className="absolute right-0 top-1/2 h-64 w-64 rounded-full bg-rose-100/20 blur-3xl" />
-      </div>
-
+    <section className="relative overflow-hidden bg-white py-24">
       <div className="relative mx-auto max-w-7xl px-4">
         {/* Elegant Header */}
         <div className="mb-20 text-center">
