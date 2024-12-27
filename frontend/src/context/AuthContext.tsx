@@ -1,5 +1,4 @@
 "use client";
-
 import { createContext, useContext, useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { AuthSessionMissingError, User } from "@supabase/supabase-js";
@@ -11,6 +10,7 @@ interface AuthContextType {
   signUp: (email: string, password: string) => Promise<void>;
   signOut: () => Promise<void>;
   resetPassword: (email: string) => Promise<void>;
+  signInWithGoogle: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -20,13 +20,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Check active sessions and sets the user
     supabase.auth.getSession().then(({ data: { session } }) => {
       setUser(session?.user ?? null);
       setLoading(false);
     });
 
-    // Listen for changes in auth state
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((_, session) => {
@@ -49,24 +47,32 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     if (error) throw error;
   };
 
+  const signInWithGoogle = async () => {
+    console.log(window.location.origin);
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: "google",
+      options: {
+        redirectTo: `${window.location.origin}/auth/callback`,
+      },
+    });
+    if (error) throw error;
+  };
+
   const signOut = async () => {
     try {
       const { error } = await supabase.auth.signOut();
       if (error) {
         throw error;
       } else {
-        // Clear browser storage
         localStorage.clear();
         sessionStorage.clear();
       }
     } catch (error) {
       if (error instanceof AuthSessionMissingError) {
-        // Session is already missing, clear user state and browser storage
         setUser(null);
         localStorage.clear();
         sessionStorage.clear();
       } else {
-        // Handle other errors
         console.error("Error during logout:", error);
         throw error;
       }
@@ -78,7 +84,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       redirectTo: `${window.location.origin}/auth/reset-password`,
     });
     if (error) {
-      // Handle specific Supabase errors with custom messages
       const errorMessage = (() => {
         if (error.message.includes("Invalid email")) {
           return "The email address is not valid.";
@@ -100,7 +105,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   return (
     <AuthContext.Provider
-      value={{ user, loading, signIn, signUp, signOut, resetPassword }}
+      value={{
+        user,
+        loading,
+        signIn,
+        signUp,
+        signOut,
+        resetPassword,
+        signInWithGoogle,
+      }}
     >
       {!loading && children}
     </AuthContext.Provider>
