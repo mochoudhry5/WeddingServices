@@ -364,7 +364,7 @@ function SettingsPage() {
   const menuItems = [
     { id: "account", label: "Account", icon: User },
     { id: "security", label: "Security", icon: Shield },
-    { id: "notifications", label: "Notifications", icon: Bell },
+    // { id: "notifications", label: "Notifications", icon: Bell },
     // { id: "payments", label: "Payments", icon: CreditCard },
   ];
 
@@ -374,8 +374,8 @@ function SettingsPage() {
         return <AccountSettings />;
       case "security":
         return <SecuritySettings />;
-      case "notifications":
-        return <NotificationSettings />;
+      // case "notifications":
+      //   return <NotificationSettings />;
       // case "payments":
       //   return <PaymentSettings />;
       default:
