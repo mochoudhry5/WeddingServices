@@ -1410,7 +1410,7 @@ export default function UpdateVenueListing() {
                           className="ml-2 p-1 flex items-center gap-1.5 text-gray-400 hover:text-gray-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                         >
                           <Plus size={16} />
-                          <span className="text-sm hidden sm:inline">
+                          <span className="text-sm sm:inline">
                             Add Inclusion
                           </span>
                         </button>
