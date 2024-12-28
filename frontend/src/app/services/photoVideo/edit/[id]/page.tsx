@@ -1065,9 +1065,12 @@ const UpdatePhotoVideoListing = () => {
                                   customPhotoStyles.length - 1
                                 ].trim() === ""
                               }
-                              className="ml-2 p-1 text-gray-400 hover:text-gray-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                              className="ml-2 p-1 flex items-center gap-1.5 text-gray-400 hover:text-gray-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                             >
                               <Plus size={16} />
+                              <span className="text-sm hidden sm:inline">
+                                Add Style
+                              </span>
                             </button>
                           </div>
                           <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
@@ -1169,9 +1172,12 @@ const UpdatePhotoVideoListing = () => {
                                   customVideoStyles.length - 1
                                 ].trim() === ""
                               }
-                              className="ml-2 p-1 text-gray-400 hover:text-gray-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                              className="ml-2 p-1 flex items-center gap-1.5 text-gray-400 hover:text-gray-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                             >
                               <Plus size={16} />
+                              <span className="text-sm hidden sm:inline">
+                                Add Style
+                              </span>
                             </button>
                           </div>
                           <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
@@ -1873,7 +1879,7 @@ const UpdatePhotoVideoListing = () => {
                           className="flex items-center gap-2 text-black hover:text-stone-500"
                         >
                           <Plus size={20} />
-                          <span>Add Custom Service</span>
+                          <span>Add Service</span>
                         </button>
                       </div>
 
