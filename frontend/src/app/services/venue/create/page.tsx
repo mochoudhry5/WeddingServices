@@ -530,7 +530,7 @@ export default function CreateVenueListing() {
           website_url: websiteUrl || null,
           instagram_url: instagramUrl || null,
           description,
-          latitude: location.latitude, 
+          latitude: location.latitude,
           longitude: location.longitude,
         })
         .select()
@@ -765,7 +765,7 @@ export default function CreateVenueListing() {
                             state,
                             country,
                             placeId: place.place_id || "",
-                            latitude: latitude || 74.0060,
+                            latitude: latitude || 74.006,
                             longitude: longitude || 40.7128,
                           });
                         }}
@@ -915,8 +915,7 @@ export default function CreateVenueListing() {
                         </Select>
                       </div>
                     </div>
-                    <div className="grid grid-cols-2 gap-4">
-                      {/* Website URL */}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">
                           Website URL
@@ -929,7 +928,6 @@ export default function CreateVenueListing() {
                           className="w-full"
                         />
                       </div>
-
                       {/* Instagram URL */}
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -1431,39 +1429,39 @@ export default function CreateVenueListing() {
                 )}
               </div>
               {/* Navigation Buttons */}
-              <div className="flex justify-between items-center">
+              <div className="flex flex-col sm:flex-row justify-between items-center gap-3 sm:gap-0">
                 <button
                   type="button"
                   onClick={() => setShowCancelDialog(true)}
-                  className="px-6 py-2 text-gray-600 hover:text-gray-800 transition-colors"
+                  className="w-full sm:w-auto px-4 sm:px-6 py-2 text-gray-600 hover:text-gray-800 transition-colors"
                   disabled={isSubmitting}
                 >
                   Cancel
                 </button>
 
-                <div className="flex gap-3">
-                  <button
-                    type="button"
-                    onClick={prevStep}
-                    className={`px-6 py-2 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50 transition-colors ${
-                      currentStep === 1 ? "invisible" : ""
-                    }`}
-                    disabled={isSubmitting}
-                  >
-                    Previous
-                  </button>
+                <div className="flex gap-3 w-full sm:w-auto">
+                  {currentStep > 1 && (
+                    <button
+                      type="button"
+                      onClick={prevStep}
+                      className="flex-1 sm:flex-none px-4 sm:px-6 py-2 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50"
+                      disabled={isSubmitting}
+                    >
+                      Previous
+                    </button>
+                  )}
                   <button
                     type="button"
                     onClick={
                       currentStep === totalSteps ? handleSubmit : nextStep
                     }
                     disabled={isSubmitting}
-                    className="px-6 py-2 bg-black text-white rounded-lg hover:bg-stone-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="flex-1 sm:flex-none px-4 sm:px-6 py-2 bg-black text-white rounded-lg hover:bg-stone-500 disabled:opacity-50"
                   >
                     {isSubmitting
                       ? "Creating..."
                       : currentStep === totalSteps
-                      ? "Submit"
+                      ? "Create Listing"
                       : "Next"}
                   </button>
                 </div>

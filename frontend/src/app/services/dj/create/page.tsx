@@ -377,7 +377,7 @@ const CreateDJListing = () => {
           state: location.state,
           country: location.country,
           place_id: location.placeId,
-          latitude: location.latitude, 
+          latitude: location.latitude,
           longitude: location.longitude,
           website_url: websiteUrl || null,
           instagram_url: instagramUrl || null,
@@ -509,12 +509,13 @@ const CreateDJListing = () => {
           <div className="min-h-screen bg-gray-50 py-12">
             <div className="max-w-4xl mx-auto px-4">
               {/* Progress Bar */}
-              <div className="mb-8">
+              <div className="mb-4 sm:mb-6 md:mb-8">
+                {/* Responsive margin */}
                 <div className="flex justify-between mb-2">
                   {[...Array(totalSteps)].map((_, index) => (
                     <div
                       key={index}
-                      className={`flex-1 h-2 mx-1 rounded-full ${
+                      className={`flex-1 h-1.5 sm:h-2 mx-0.5 sm:mx-1 rounded-full ${
                         index + 1 <= currentStep ? "bg-black" : "bg-gray-200"
                       }`}
                     />
@@ -529,8 +530,7 @@ const CreateDJListing = () => {
               </div>
 
               {/* Form Content */}
-              <div className="bg-white rounded-xl shadow-sm p-6 mb-6">
-                {/* Step 1: Basic Information */}
+              <div className="bg-white rounded-xl shadow-sm p-4 sm:p-5 md:p-6 mb-4 sm:mb-6">
                 {currentStep === 1 && (
                   <div className="space-y-6">
                     <h2 className="text-2xl font-semibold mb-6">
@@ -622,7 +622,7 @@ const CreateDJListing = () => {
                             state,
                             country,
                             placeId: place.place_id || "",
-                            latitude: latitude || 74.0060,
+                            latitude: latitude || 74.006,
                             longitude: longitude || 40.7128,
                           });
                         }}
@@ -732,7 +732,7 @@ const CreateDJListing = () => {
                         </div>
                       </div>
                     </div>
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 xs:grid-cols-2 md:grid-cols-3 gap-2 sm:gap-4">
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">
                           Website URL
@@ -777,7 +777,6 @@ const CreateDJListing = () => {
                     </div>
                   </div>
                 )}
-
                 {/* Step 2: Portfolio */}
                 {currentStep === 2 && (
                   <div className="space-y-6">
@@ -907,7 +906,6 @@ const CreateDJListing = () => {
                     </div>
                   </div>
                 )}
-
                 {/* Step 3: Services */}
                 {currentStep === 3 && (
                   <div className="space-y-6">
@@ -1331,7 +1329,6 @@ const CreateDJListing = () => {
                     </div>
                   </div>
                 )}
-
                 {/* Step 4: Availability */}
                 {currentStep === 4 && (
                   <div className="space-y-6">
@@ -1430,34 +1427,34 @@ const CreateDJListing = () => {
               </div>
 
               {/* Navigation Buttons */}
-              <div className="flex justify-between items-center">
+              <div className="flex flex-col sm:flex-row justify-between items-center gap-3 sm:gap-0">
                 <button
                   type="button"
                   onClick={() => setShowCancelDialog(true)}
-                  className="px-6 py-2 text-gray-600 hover:text-gray-800 transition-colors"
+                  className="w-full sm:w-auto px-4 sm:px-6 py-2 text-gray-600 hover:text-gray-800 transition-colors"
                   disabled={isSubmitting}
                 >
                   Cancel
                 </button>
 
-                <div className="flex gap-3">
-                  <button
-                    type="button"
-                    onClick={prevStep}
-                    className={`px-6 py-2 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50 transition-colors ${
-                      currentStep === 1 ? "invisible" : ""
-                    }`}
-                    disabled={isSubmitting}
-                  >
-                    Previous
-                  </button>
+                <div className="flex gap-3 w-full sm:w-auto">
+                  {currentStep > 1 && (
+                    <button
+                      type="button"
+                      onClick={prevStep}
+                      className="flex-1 sm:flex-none px-4 sm:px-6 py-2 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50"
+                      disabled={isSubmitting}
+                    >
+                      Previous
+                    </button>
+                  )}
                   <button
                     type="button"
                     onClick={
                       currentStep === totalSteps ? handleSubmit : nextStep
                     }
                     disabled={isSubmitting}
-                    className="px-6 py-2 bg-black text-white rounded-lg hover:bg-stone-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="flex-1 sm:flex-none px-4 sm:px-6 py-2 bg-black text-white rounded-lg hover:bg-stone-500 disabled:opacity-50"
                   >
                     {isSubmitting
                       ? "Creating..."
