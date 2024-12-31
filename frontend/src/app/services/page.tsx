@@ -1,13 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import {
-  Building2,
-  Camera,
-  Paintbrush,
-  NotebookPen,
-  Music,
-} from "lucide-react";
+import { Building2, Camera, Brush, NotebookPen, Music } from "lucide-react";
 import NavBar from "@/components/ui/NavBar";
 import Footer from "@/components/ui/Footer";
 import { toast } from "sonner";
@@ -58,7 +52,7 @@ const services: Service[] = [
   {
     id: "hairMakeup",
     name: "Hair & Makeup",
-    icon: Paintbrush,
+    icon: Brush,
     description:
       "Offer your professional hair/makeup services to brides and wedding parties.",
     available: true,
