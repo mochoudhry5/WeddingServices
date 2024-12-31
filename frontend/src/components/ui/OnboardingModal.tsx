@@ -83,7 +83,7 @@ const OnboardingModal = ({
             {/* Step 1 */}
             <div
               className="relative flex gap-4 items-start p-4 rounded-lg bg-white shadow-sm border border-gray-100 
-                         transition-all duration-200 hover:shadow-md hover:border-stone-500 group"
+                         transition-all duration-200 group"
             >
               <div
                 className="w-10 h-10 rounded-full bg-black flex items-center justify-center flex-shrink-0
@@ -92,7 +92,7 @@ const OnboardingModal = ({
                 <span className="text-lg font-semibold text-white">1</span>
               </div>
               <div className="flex-1 min-w-0">
-                <h3 className="text-base font-semibold text-gray-900 mb-1 group-hover:text-stone-500 transition-colors">
+                <h3 className="text-base font-semibold text-gray-900 mb-1 transition-colors">
                   Create Your Listing
                 </h3>
                 <p className="text-sm text-gray-600">
@@ -105,7 +105,7 @@ const OnboardingModal = ({
             {/* Step 2 */}
             <div
               className="relative flex gap-4 items-start p-4 rounded-lg bg-white shadow-sm border border-gray-100 
-                         transition-all duration-200 hover:shadow-md hover:border-stone-500 group"
+                         transition-all duration-200 group"
             >
               <div
                 className="w-10 h-10 rounded-full bg-black flex items-center justify-center flex-shrink-0
@@ -114,7 +114,7 @@ const OnboardingModal = ({
                 <span className="text-lg font-semibold text-white">2</span>
               </div>
               <div className="flex-1 min-w-0">
-                <h3 className="text-base font-semibold text-gray-900 mb-1 group-hover:text-stone-500 transition-colors">
+                <h3 className="text-base font-semibold text-gray-900 mb-1 transition-colors">
                   Get Discovered
                 </h3>
                 <p className="text-sm text-gray-600">
@@ -127,7 +127,7 @@ const OnboardingModal = ({
             {/* Step 3 */}
             <div
               className="relative flex gap-4 items-start p-4 rounded-lg bg-white shadow-sm border border-gray-100 
-                         transition-all duration-200 hover:shadow-md hover:border-stone-500 group"
+                         transition-all duration-200 group"
             >
               <div
                 className="w-10 h-10 rounded-full bg-black flex items-center justify-center flex-shrink-0
@@ -136,7 +136,7 @@ const OnboardingModal = ({
                 <span className="text-lg font-semibold text-white">3</span>
               </div>
               <div className="flex-1 min-w-0">
-                <h3 className="text-base font-semibold text-gray-900 mb-1 group-hover:text-stone-500 transition-colors">
+                <h3 className="text-base font-semibold text-gray-900 mb-1 transition-colors">
                   Bookings
                 </h3>
                 <p className="text-sm text-gray-600">
@@ -157,7 +157,7 @@ const OnboardingModal = ({
             {/* FAQ Items */}
             <div
               className="p-4 rounded-lg bg-white shadow-sm border border-gray-100 
-                          transition-all duration-200 hover:shadow-md hover:border-black"
+                          transition-all duration-200"
             >
               <h3 className="text-base font-semibold text-gray-900 mb-1">
                 How much does it cost to list my service?
@@ -170,7 +170,7 @@ const OnboardingModal = ({
 
             <div
               className="p-4 rounded-lg bg-white shadow-sm border border-gray-100 
-                          transition-all duration-200 hover:shadow-md hover:border-black"
+                          transition-all duration-200"
             >
               <h3 className="text-base font-semibold text-gray-900 mb-1">
                 Can I list multiple services?
@@ -183,7 +183,7 @@ const OnboardingModal = ({
 
             <div
               className="p-4 rounded-lg bg-white shadow-sm border border-gray-100 
-                          transition-all duration-200 hover:shadow-md hover:border-black"
+                          transition-all duration-200"
             >
               <h3 className="text-base font-semibold text-gray-900 mb-1">
                 Can I edit my listing after publishing?
