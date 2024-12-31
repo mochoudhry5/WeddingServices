@@ -16,6 +16,7 @@ const footerLinks = {
   Services: [
     { name: "List Your Service", href: "/services" },
     { name: "Search For Service", href: "/" },
+    { name: "Pricing", href: "/footer/pricing" },
   ],
 };
 
