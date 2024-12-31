@@ -12,6 +12,7 @@ import NavBar from "@/components/ui/NavBar";
 import Footer from "@/components/ui/Footer";
 import LocationInput from "@/components/ui/LocationInput";
 import { Heart, Gem, Ban, DollarSign } from "lucide-react";
+import UserType from "@/components/ui/UserType";
 
 const WhyChooseSection = () => {
   const [activeFeature, setActiveFeature] = useState(0);
@@ -283,7 +284,7 @@ export default function HomePage() {
   return (
     <div className="flex flex-col min-h-screen">
       <NavBar />
-
+      <UserType/>
       {/* Main Content Wrapper */}
       <div className="flex-1 flex flex-col">
         {/* Hero Section */}
