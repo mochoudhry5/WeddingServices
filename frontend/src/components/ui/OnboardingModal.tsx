@@ -58,11 +58,13 @@ const OnboardingModal = ({
   const handleClose = async () => {
     if (dontShowAgain && user) {
       try {
-        const { error } = await supabase.from("user_preferences").upsert({
-          id: user.id,
-          show_onboarding_listing: false,
-          updated_at: new Date().toISOString(),
-        });
+        const { error } = await supabase
+          .from("user_preferences")
+          .update({
+            show_onboarding_listing: false,
+            updated_at: new Date().toISOString(),
+          })
+          .eq("id", user.id);
 
         if (error) throw error;
       } catch (error) {
