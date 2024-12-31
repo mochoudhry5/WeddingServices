@@ -11,6 +11,7 @@ import {
   ListChecks,
   Heart,
   LogIn,
+  PersonStanding,
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -187,6 +188,16 @@ export default function NavBar() {
                     className="flex items-center gap-2 rounded-lg px-2 py-3 text-sm font-medium hover:bg-gray-100"
                     onClick={() => setIsMobileMenuOpen(false)}
                   >
+                    <PersonStanding className="h-4 w-4" />
+                    My Leads
+                  </Link>
+                )}
+                {isVendor && (
+                  <Link
+                    href="/dashboard/listings"
+                    className="flex items-center gap-2 rounded-lg px-2 py-3 text-sm font-medium hover:bg-gray-100"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                  >
                     <ListChecks className="h-4 w-4" />
                     My Listings
                   </Link>
@@ -307,6 +318,17 @@ export default function NavBar() {
                         <span>Settings</span>
                       </Link>
                     </DropdownMenuItem>
+                    {isVendor && (
+                      <DropdownMenuItem asChild>
+                        <Link
+                          href="/dashboard/listings"
+                          className="cursor-pointer flex w-full items-center"
+                        >
+                          <PersonStanding className="mr-2 h-4 w-4" />
+                          <span>My Leads</span>
+                        </Link>
+                      </DropdownMenuItem>
+                    )}
                     {isVendor && (
                       <DropdownMenuItem asChild>
                         <Link
