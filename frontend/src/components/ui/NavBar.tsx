@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import {
   LogOut,
@@ -42,6 +42,7 @@ import { Button } from "@/components/ui/button";
 import { AuthModals } from "./AuthModal";
 import { useAuth } from "@/context/AuthContext";
 import { toast } from "sonner";
+import { supabase } from "@/lib/supabase";
 
 export default function NavBar() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -49,6 +50,27 @@ export default function NavBar() {
   const [isSignUpOpen, setIsSignUpOpen] = useState(false);
   const { user, signOut, loading } = useAuth();
   const [showLogoutDialog, setShowLogoutDialog] = useState(false);
+  const [isVendor, setIsVendor] = useState(false);
+
+  useEffect(() => {
+    const checkVendorStatus = async () => {
+      if (!user?.id) return;
+      try {
+        const { data, error } = await supabase
+          .from("user_preferences")
+          .select("is_vendor")
+          .eq("id", user.id)
+          .single();
+
+        if (error) throw error;
+        setIsVendor(data.is_vendor === true);
+      } catch (error) {
+        console.error("Error fetching vendor status:", error);
+      }
+    };
+
+    checkVendorStatus();
+  }, [user]);
 
   const handleLogout = async () => {
     try {
@@ -138,16 +160,18 @@ export default function NavBar() {
                   </span>
                 </div>
               </div>
-              <div className="border-t pt-4">
-                <Link
-                  href="/services"
-                  className="flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium text-black hover:bg-stone-200"
-                  onClick={() => setIsMobileMenuOpen(false)}
-                >
-                  <Plus className="h-4 w-4" />
-                  List Your Service
-                </Link>
-              </div>
+              {isVendor && (
+                <div className="border-t pt-4">
+                  <Link
+                    href="/services"
+                    className="flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium text-black hover:bg-stone-200"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                  >
+                    <Plus className="h-4 w-4" />
+                    List Your Service
+                  </Link>
+                </div>
+              )}
               <div className="border-t pt-4 space-y-2">
                 <Link
                   href="/settings"
@@ -157,14 +181,16 @@ export default function NavBar() {
                   <Settings className="h-4 w-4" />
                   Settings
                 </Link>
-                <Link
-                  href="/dashboard/listings"
-                  className="flex items-center gap-2 rounded-lg px-2 py-3 text-sm font-medium hover:bg-gray-100"
-                  onClick={() => setIsMobileMenuOpen(false)}
-                >
-                  <ListChecks className="h-4 w-4" />
-                  My Listings
-                </Link>
+                {isVendor && (
+                  <Link
+                    href="/dashboard/listings"
+                    className="flex items-center gap-2 rounded-lg px-2 py-3 text-sm font-medium hover:bg-gray-100"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                  >
+                    <ListChecks className="h-4 w-4" />
+                    My Listings
+                  </Link>
+                )}
                 <Link
                   href="/dashboard/liked"
                   className="flex items-center gap-2 rounded-lg px-2 py-3 text-sm font-medium hover:bg-gray-100"
@@ -233,12 +259,14 @@ export default function NavBar() {
         <div className="flex items-center gap-6">
           {user ? (
             <>
-              <Link
-                href="/services"
-                className="hidden md:flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium text-black transition-colors hover:bg-stone-200"
-              >
-                List Your Service
-              </Link>
+              {isVendor && (
+                <Link
+                  href="/services"
+                  className="hidden md:flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium text-black transition-colors hover:bg-stone-200"
+                >
+                  List Your Service
+                </Link>
+              )}
               <div className="hidden md:block">
                 <DropdownMenu>
                   <DropdownMenuTrigger className="focus:outline-none">
@@ -279,15 +307,17 @@ export default function NavBar() {
                         <span>Settings</span>
                       </Link>
                     </DropdownMenuItem>
-                    <DropdownMenuItem asChild>
-                      <Link
-                        href="/dashboard/listings"
-                        className="cursor-pointer flex w-full items-center"
-                      >
-                        <ListChecks className="mr-2 h-4 w-4" />
-                        <span>My Listings</span>
-                      </Link>
-                    </DropdownMenuItem>
+                    {isVendor && (
+                      <DropdownMenuItem asChild>
+                        <Link
+                          href="/dashboard/listings"
+                          className="cursor-pointer flex w-full items-center"
+                        >
+                          <ListChecks className="mr-2 h-4 w-4" />
+                          <span>My Listings</span>
+                        </Link>
+                      </DropdownMenuItem>
+                    )}
                     <DropdownMenuItem asChild>
                       <Link
                         href="/dashboard/liked"
