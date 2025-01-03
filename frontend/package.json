@@ -26,6 +26,7 @@
     "@react-google-maps/api": "^2.20.3",
     "@supabase/auth-helpers-nextjs": "^0.10.0",
     "@supabase/supabase-js": "^2.46.1",
+    "@vercel/analytics": "^1.4.1",
     "checkbox": "^0.0.1",
     "class-variance-authority": "^0.7.0",
     "clsx": "^2.1.1",
