@@ -284,7 +284,7 @@ export default function HomePage() {
   return (
     <div className="flex flex-col min-h-screen">
       <NavBar />
-      <UserType/>
+
       {/* Main Content Wrapper */}
       <div className="flex-1 flex flex-col">
         {/* Hero Section */}

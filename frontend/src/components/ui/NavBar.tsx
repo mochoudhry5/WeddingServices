@@ -12,7 +12,15 @@ import {
   Heart,
   LogIn,
   PersonStanding,
+  Building2,
+  Users,
 } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -42,16 +50,19 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { AuthModals } from "./AuthModal";
 import { useAuth } from "@/context/AuthContext";
-import { toast } from "sonner";
 import { supabase } from "@/lib/supabase";
+import { toast } from "sonner";
+import { cn } from "@/lib/utils";
 
 export default function NavBar() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isLoginOpen, setIsLoginOpen] = useState(false);
   const [isSignUpOpen, setIsSignUpOpen] = useState(false);
-  const { user, signOut, loading } = useAuth();
   const [showLogoutDialog, setShowLogoutDialog] = useState(false);
-  const [isVendor, setIsVendor] = useState(false);
+  const [isVendor, setIsVendor] = useState<boolean | null>(null);
+  const [showTypeModal, setShowTypeModal] = useState(false);
+  const [selectedType, setSelectedType] = useState<"vendor" | "couple" | null>(null);
+  const { user, signOut, loading } = useAuth();
 
   useEffect(() => {
     const checkVendorStatus = async () => {
@@ -64,7 +75,11 @@ export default function NavBar() {
           .single();
 
         if (error) throw error;
-        setIsVendor(data.is_vendor === true);
+        
+        if (data.is_vendor === null) {
+          setShowTypeModal(true);
+        }
+        setIsVendor(data.is_vendor);
       } catch (error) {
         console.error("Error fetching vendor status:", error);
       }
@@ -72,6 +87,31 @@ export default function NavBar() {
 
     checkVendorStatus();
   }, [user]);
+
+  const handleTypeSubmit = async () => {
+    if (!user?.id || selectedType === null) {
+      toast.error("Please make a selection");
+      return;
+    }
+
+    try {
+      const { error } = await supabase
+        .from("user_preferences")
+        .update({
+          is_vendor: selectedType === "vendor",
+          updated_at: new Date().toISOString()
+        })
+        .eq("id", user.id);
+
+      if (error) throw error;
+      setIsVendor(selectedType === "vendor");
+      setShowTypeModal(false);
+      toast.success("Preferences updated successfully!");
+    } catch (error) {
+      console.error("Error updating user type:", error);
+      toast.error("Failed to update preferences");
+    }
+  };
 
   const handleLogout = async () => {
     try {
@@ -82,6 +122,7 @@ export default function NavBar() {
       console.error("Error during logout:", error);
     }
   };
+
   const getInitials = () => {
     if (!user?.email) return "?";
     return user.email
@@ -93,7 +134,7 @@ export default function NavBar() {
 
   const handleSwitchToSignUp = () => {
     setIsLoginOpen(false);
-    setIsMobileMenuOpen(false); // Close mobile menu when switching
+    setIsMobileMenuOpen(false);
     setTimeout(() => {
       setIsSignUpOpen(true);
     }, 500);
@@ -101,7 +142,7 @@ export default function NavBar() {
 
   const handleSwitchToLogin = () => {
     setIsSignUpOpen(false);
-    setIsMobileMenuOpen(false); // Close mobile menu when switching
+    setIsMobileMenuOpen(false);
     setTimeout(() => {
       setIsLoginOpen(true);
     }, 500);
@@ -109,22 +150,147 @@ export default function NavBar() {
 
   const handleLoginClose = () => {
     setIsLoginOpen(false);
-    setIsMobileMenuOpen(false); // Close mobile menu when closing login modal
+    setIsMobileMenuOpen(false);
   };
 
   const handleSignUpClose = () => {
     setIsSignUpOpen(false);
-    setIsMobileMenuOpen(false); // Close mobile menu when closing signup modal
+    setIsMobileMenuOpen(false);
   };
 
   const handleOpenLogin = () => {
     setIsLoginOpen(true);
-    setIsMobileMenuOpen(false); // Close mobile menu when opening login
+    setIsMobileMenuOpen(false);
   };
 
   const handleOpenSignUp = () => {
     setIsSignUpOpen(true);
-    setIsMobileMenuOpen(false); // Close mobile menu when opening signup
+    setIsMobileMenuOpen(false);
+  };
+
+  const UserTypeModal = () => {
+    const [currentSelection, setCurrentSelection] = useState<"vendor" | "couple" | null>(selectedType);
+  
+    const options = [
+      {
+        id: "vendor",
+        icon: Building2,
+        title: "I'm a Wedding Vendor",
+        description: "List your services and connect with couples"
+      },
+      {
+        id: "couple",
+        icon: Users,
+        title: "I'm Planning a Wedding",
+        description: "Discover and book amazing venues and vendors"
+      }
+    ] as const;
+  
+    const handleSubmit = async () => {
+      if (!user?.id || !currentSelection) {
+        toast.error("Please make a selection");
+        return;
+      }
+  
+      try {
+        const { error } = await supabase
+          .from("user_preferences")
+          .update({
+            is_vendor: currentSelection === "vendor",
+            updated_at: new Date().toISOString()
+          })
+          .eq("id", user.id);
+  
+        if (error) throw error;
+        setIsVendor(currentSelection === "vendor");
+        setShowTypeModal(false);
+        toast.success("Preferences updated successfully!");
+      } catch (error) {
+        console.error("Error updating user type:", error);
+        toast.error("Failed to update preferences");
+      }
+    };
+  
+    return (
+      <Dialog 
+        open={showTypeModal} 
+        onOpenChange={(open) => {
+          if (!open && showTypeModal) return;
+          setShowTypeModal(open);
+        }}
+      >
+        <DialogContent className="sm:max-w-xl p-6">
+          <DialogHeader className="pb-6 relative">
+            <div className="absolute -top-1 left-1/2 -translate-x-1/2">
+              <div className="w-12 h-1 bg-black rounded-full" />
+            </div>
+            <DialogTitle className="text-center">
+              <div className="flex flex-col items-center space-y-3">
+                <div className="text-2xl md:text-3xl font-bold">Welcome to AnyWeds</div>
+                <p className="text-sm md:text-base text-muted-foreground max-w-sm">
+                  Let us know how you'll be using the platform
+                </p>
+              </div>
+            </DialogTitle>
+          </DialogHeader>
+  
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {options.map(({ id, icon: Icon, title, description }) => {
+              const isSelected = currentSelection === id;
+              
+              return (
+                <button
+                  key={id}
+                  onClick={() => setCurrentSelection(id)}
+                  className={cn(
+                    "relative overflow-hidden rounded-xl border transition-all duration-300",
+                    isSelected 
+                      ? "bg-black border-black" 
+                      : "bg-white border-stone-200 hover:border-black"
+                  )}
+                >
+                  <div className="p-6 flex flex-col items-center text-center space-y-4">
+                    <div className={cn(
+                      "rounded-full p-3 transition-all duration-300",
+                      isSelected ? "bg-white/10" : "bg-stone-100"
+                    )}>
+                      <Icon className={cn(
+                        "h-6 w-6 transition-colors duration-300",
+                        isSelected ? "text-white" : "text-stone-600"
+                      )} />
+                    </div>
+                    <div>
+                      <h3 className={cn(
+                        "text-lg font-semibold mb-1 transition-colors duration-300",
+                        isSelected ? "text-white" : "text-stone-900"
+                      )}>
+                        {title}
+                      </h3>
+                      <p className={cn(
+                        "text-sm transition-colors duration-300",
+                        isSelected ? "text-stone-300" : "text-stone-600"
+                      )}>
+                        {description}
+                      </p>
+                    </div>
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+  
+          <div className="mt-6">
+            <Button
+              onClick={handleSubmit}
+              disabled={!currentSelection}
+              className="w-full h-12 text-base font-medium bg-black hover:bg-stone-800 disabled:bg-stone-300"
+            >
+              Continue
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+    );
   };
 
   const MobileMenu = () => (
@@ -223,44 +389,32 @@ export default function NavBar() {
               </div>
             </>
           ) : (
-            <>
-              <Link
-                href="/services"
-                className="flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium text-black hover:bg-stone-200"
-                onClick={() => setIsMobileMenuOpen(false)}
+            <div className="border-t pt-4 space-y-2">
+              <button
+                onClick={handleOpenLogin}
+                className="flex w-full items-center gap-2 rounded-lg px-2 py-3 text-sm font-medium hover:bg-gray-100"
               >
-                <Plus className="h-4 w-4" />
-                List Your Service
-              </Link>
-              <div className="border-t pt-4 space-y-2">
-                <button
-                  onClick={handleOpenLogin}
-                  className="flex w-full items-center gap-2 rounded-lg px-2 py-3 text-sm font-medium hover:bg-gray-100"
-                >
-                  <LogIn className="h-4 w-4" />
-                  Log in
-                </button>
-                <button
-                  onClick={handleOpenSignUp}
-                  className="flex w-full items-center gap-2 rounded-lg px-2 py-3 text-sm font-medium hover:bg-gray-100"
-                >
-                  <User className="h-4 w-4" />
-                  Sign up
-                </button>
-              </div>
-            </>
+                <LogIn className="h-4 w-4" />
+                Log in
+              </button>
+              <button
+                onClick={handleOpenSignUp}
+                className="flex w-full items-center gap-2 rounded-lg px-2 py-3 text-sm font-medium hover:bg-gray-100"
+              >
+                <User className="h-4 w-4" />
+                Sign up
+              </button>
+            </div>
           )}
         </div>
       </SheetContent>
     </Sheet>
   );
-
   return (
     <header className="sticky top-0 z-50 w-full bg-white shadow-md">
       <div className="max-w-8xl mx-auto flex h-16 items-center justify-between px-4">
         {/* Left Section */}
         <div className="flex items-center gap-8">
-          {/* Logo */}
           <Link href="/" className="flex items-center gap-2">
             <span className="text-3xl font-bold text-black">AnyWeds</span>
           </Link>
@@ -319,26 +473,26 @@ export default function NavBar() {
                       </Link>
                     </DropdownMenuItem>
                     {isVendor && (
-                      <DropdownMenuItem asChild>
-                        <Link
-                          href="/dashboard/listings"
-                          className="cursor-pointer flex w-full items-center"
-                        >
-                          <PersonStanding className="mr-2 h-4 w-4" />
-                          <span>My Leads</span>
-                        </Link>
-                      </DropdownMenuItem>
-                    )}
-                    {isVendor && (
-                      <DropdownMenuItem asChild>
-                        <Link
-                          href="/dashboard/listings"
-                          className="cursor-pointer flex w-full items-center"
-                        >
-                          <ListChecks className="mr-2 h-4 w-4" />
-                          <span>My Listings</span>
-                        </Link>
-                      </DropdownMenuItem>
+                      <>
+                        <DropdownMenuItem asChild>
+                          <Link
+                            href="/dashboard/listings"
+                            className="cursor-pointer flex w-full items-center"
+                          >
+                            <PersonStanding className="mr-2 h-4 w-4" />
+                            <span>My Leads</span>
+                          </Link>
+                        </DropdownMenuItem>
+                        <DropdownMenuItem asChild>
+                          <Link
+                            href="/dashboard/listings"
+                            className="cursor-pointer flex w-full items-center"
+                          >
+                            <ListChecks className="mr-2 h-4 w-4" />
+                            <span>My Listings</span>
+                          </Link>
+                        </DropdownMenuItem>
+                      </>
                     )}
                     <DropdownMenuItem asChild>
                       <Link
@@ -364,12 +518,6 @@ export default function NavBar() {
           ) : (
             <>
               <div className="hidden md:flex items-center gap-6">
-                <Link
-                  href="/services"
-                  className="rounded-lg px-4 py-2 text-sm font-medium text-black-600 transition-colors hover:bg-stone-200"
-                >
-                  List Your Service
-                </Link>
                 <button
                   onClick={() => setIsLoginOpen(true)}
                   className="text-sm font-medium text-gray-700 hover:text-stone-500 transition-colors"
@@ -386,12 +534,13 @@ export default function NavBar() {
             </>
           )}
 
-          {/* Mobile Menu Button - Only show for logged in users */}
           <div className="md:hidden">
             <MobileMenu />
           </div>
         </div>
       </div>
+
+      {/* Modals */}
       <AuthModals
         isLoginOpen={isLoginOpen}
         isSignUpOpen={isSignUpOpen}
@@ -400,6 +549,7 @@ export default function NavBar() {
         onSwitchToSignUp={handleSwitchToSignUp}
         onSwitchToLogin={handleSwitchToLogin}
       />
+      <UserTypeModal />
       <AlertDialog open={showLogoutDialog} onOpenChange={setShowLogoutDialog}>
         <AlertDialogContent>
           <AlertDialogHeader>
