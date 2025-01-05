@@ -61,7 +61,9 @@ export default function NavBar() {
   const [showLogoutDialog, setShowLogoutDialog] = useState(false);
   const [isVendor, setIsVendor] = useState<boolean | null>(null);
   const [showTypeModal, setShowTypeModal] = useState(false);
-  const [selectedType, setSelectedType] = useState<"vendor" | "couple" | null>(null);
+  const [selectedType, setSelectedType] = useState<"vendor" | "couple" | null>(
+    null
+  );
   const { user, signOut, loading } = useAuth();
 
   useEffect(() => {
@@ -75,7 +77,7 @@ export default function NavBar() {
           .single();
 
         if (error) throw error;
-        
+
         if (data.is_vendor === null) {
           setShowTypeModal(true);
         }
@@ -99,7 +101,7 @@ export default function NavBar() {
         .from("user_preferences")
         .update({
           is_vendor: selectedType === "vendor",
-          updated_at: new Date().toISOString()
+          updated_at: new Date().toISOString(),
         })
         .eq("id", user.id);
 
@@ -169,38 +171,40 @@ export default function NavBar() {
   };
 
   const UserTypeModal = () => {
-    const [currentSelection, setCurrentSelection] = useState<"vendor" | "couple" | null>(selectedType);
-  
+    const [currentSelection, setCurrentSelection] = useState<
+      "vendor" | "couple" | null
+    >(selectedType);
+
     const options = [
       {
         id: "vendor",
         icon: Building2,
         title: "I'm a Wedding Vendor",
-        description: "List your services and connect with couples"
+        description: "List your services and connect with couples",
       },
       {
         id: "couple",
         icon: Users,
         title: "I'm Planning a Wedding",
-        description: "Discover and book amazing venues and vendors"
-      }
+        description: "Discover and book amazing venues and vendors",
+      },
     ] as const;
-  
+
     const handleSubmit = async () => {
       if (!user?.id || !currentSelection) {
         toast.error("Please make a selection");
         return;
       }
-  
+
       try {
         const { error } = await supabase
           .from("user_preferences")
           .update({
             is_vendor: currentSelection === "vendor",
-            updated_at: new Date().toISOString()
+            updated_at: new Date().toISOString(),
           })
           .eq("id", user.id);
-  
+
         if (error) throw error;
         setIsVendor(currentSelection === "vendor");
         setShowTypeModal(false);
@@ -210,10 +214,10 @@ export default function NavBar() {
         toast.error("Failed to update preferences");
       }
     };
-  
+
     return (
-      <Dialog 
-        open={showTypeModal} 
+      <Dialog
+        open={showTypeModal}
         onOpenChange={(open) => {
           if (!open && showTypeModal) return;
           setShowTypeModal(open);
@@ -226,50 +230,60 @@ export default function NavBar() {
             </div>
             <DialogTitle className="text-center">
               <div className="flex flex-col items-center space-y-3">
-                <div className="text-2xl md:text-3xl font-bold">Welcome to AnyWeds</div>
+                <div className="text-2xl md:text-3xl font-bold">
+                  Welcome to AnyWeds
+                </div>
                 <p className="text-sm md:text-base text-muted-foreground max-w-sm">
                   Let us know how you'll be using the platform
                 </p>
               </div>
             </DialogTitle>
           </DialogHeader>
-  
+
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {options.map(({ id, icon: Icon, title, description }) => {
               const isSelected = currentSelection === id;
-              
+
               return (
                 <button
                   key={id}
                   onClick={() => setCurrentSelection(id)}
                   className={cn(
                     "relative overflow-hidden rounded-xl border transition-all duration-300",
-                    isSelected 
-                      ? "bg-black border-black" 
+                    isSelected
+                      ? "bg-black border-black"
                       : "bg-white border-stone-200 hover:border-black"
                   )}
                 >
                   <div className="p-6 flex flex-col items-center text-center space-y-4">
-                    <div className={cn(
-                      "rounded-full p-3 transition-all duration-300",
-                      isSelected ? "bg-white/10" : "bg-stone-100"
-                    )}>
-                      <Icon className={cn(
-                        "h-6 w-6 transition-colors duration-300",
-                        isSelected ? "text-white" : "text-stone-600"
-                      )} />
+                    <div
+                      className={cn(
+                        "rounded-full p-3 transition-all duration-300",
+                        isSelected ? "bg-white/10" : "bg-stone-100"
+                      )}
+                    >
+                      <Icon
+                        className={cn(
+                          "h-6 w-6 transition-colors duration-300",
+                          isSelected ? "text-white" : "text-stone-600"
+                        )}
+                      />
                     </div>
                     <div>
-                      <h3 className={cn(
-                        "text-lg font-semibold mb-1 transition-colors duration-300",
-                        isSelected ? "text-white" : "text-stone-900"
-                      )}>
+                      <h3
+                        className={cn(
+                          "text-lg font-semibold mb-1 transition-colors duration-300",
+                          isSelected ? "text-white" : "text-stone-900"
+                        )}
+                      >
                         {title}
                       </h3>
-                      <p className={cn(
-                        "text-sm transition-colors duration-300",
-                        isSelected ? "text-stone-300" : "text-stone-600"
-                      )}>
+                      <p
+                        className={cn(
+                          "text-sm transition-colors duration-300",
+                          isSelected ? "text-stone-300" : "text-stone-600"
+                        )}
+                      >
                         {description}
                       </p>
                     </div>
@@ -278,7 +292,7 @@ export default function NavBar() {
               );
             })}
           </div>
-  
+
           <div className="mt-6">
             <Button
               onClick={handleSubmit}
@@ -336,6 +350,18 @@ export default function NavBar() {
                   >
                     <Plus className="h-4 w-4" />
                     List Your Service
+                  </Link>
+                </div>
+              )}
+              {!isVendor && (
+                <div className="border-t pt-4">
+                  <Link
+                    href="/quickReach"
+                    className="flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium text-black hover:bg-stone-200"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                  >
+                    <Plus className="h-4 w-4" />
+                    Quick Reach
                   </Link>
                 </div>
               )}
@@ -430,6 +456,14 @@ export default function NavBar() {
                   className="hidden md:flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium text-black transition-colors hover:bg-stone-200"
                 >
                   List Your Service
+                </Link>
+              )}
+              {!isVendor && (
+                <Link
+                  href="/quickReach"
+                  className="hidden md:flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium text-black transition-colors hover:bg-stone-200"
+                >
+                  Quick Reach
                 </Link>
               )}
               <div className="hidden md:block">

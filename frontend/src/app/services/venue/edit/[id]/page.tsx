@@ -1426,7 +1426,7 @@ export default function UpdateVenueListing() {
                             <div className="flex items-center h-5">
                               <input
                                 type="checkbox"
-                                className="h-4 w-4 border-gray-300 rounded"
+                                className="h-4 w-4 rounded border-gray-300 accent-black focus:ring-black focus:ring-offset-0"
                                 checked={includedItems.includes(inclusion)}
                                 onChange={(e) => {
                                   if (e.target.checked) {
@@ -1513,7 +1513,7 @@ export default function UpdateVenueListing() {
                             <div className="flex items-center h-5 pt-1">
                               <input
                                 type="checkbox"
-                                className="h-4 w-4 border-gray-300 rounded"
+                                className="h-4 w-4 rounded border-gray-300 accent-black focus:ring-black focus:ring-offset-0"
                                 checked={addon.name in selectedAddOns}
                                 onChange={(e) => {
                                   if (e.target.checked) {

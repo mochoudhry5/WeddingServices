@@ -272,8 +272,8 @@ export default function CreateServicePage() {
                         size={28}
                         className={
                           selected === service.id
-                            ? "text-black-500"
-                            : "text-gray-600"
+                            ? "text-black"
+                            : "text-gray-500"
                         }
                       />
                     </div>

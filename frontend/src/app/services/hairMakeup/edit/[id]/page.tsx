@@ -939,7 +939,7 @@ const UpdateHairMakeupListing = () => {
                         type="checkbox"
                         checked={isRemoteBusiness}
                         onChange={(e) => setIsRemoteBusiness(e.target.checked)}
-                        className="h-4 w-4 border-gray-300 rounded"
+                        className="h-4 w-4 rounded border-gray-300 accent-black focus:ring-black focus:ring-offset-0"
                       />
                       <label className="text-sm font-medium text-gray-700">
                         This is a remote business (no physical location)
@@ -1079,7 +1079,7 @@ const UpdateHairMakeupListing = () => {
                                 <div className="flex items-center h-5">
                                   <input
                                     type="checkbox"
-                                    className="h-4 w-4 border-gray-300 rounded"
+                                    className="h-4 w-4 rounded border-gray-300 accent-black focus:ring-black focus:ring-offset-0"
                                     checked={specialties.includes(style)}
                                     onChange={(e) => {
                                       if (e.target.checked) {
@@ -1185,7 +1185,7 @@ const UpdateHairMakeupListing = () => {
                                 <div className="flex items-center h-5">
                                   <input
                                     type="checkbox"
-                                    className="h-4 w-4  border-gray-300 rounded "
+                                    className="h-4 w-4 rounded border-gray-300 accent-black focus:ring-black focus:ring-offset-0"
                                     checked={specialties.includes(style)}
                                     onChange={(e) => {
                                       if (e.target.checked) {
@@ -1439,6 +1439,7 @@ const UpdateHairMakeupListing = () => {
                               <div className="flex items-start space-x-4">
                                 <input
                                   type="checkbox"
+                                  className="h-4 w-4 rounded border-gray-300 accent-black focus:ring-black focus:ring-offset-0"
                                   checked={service.name in selectedServices}
                                   onChange={(e) => {
                                     if (e.target.checked) {
@@ -1459,7 +1460,6 @@ const UpdateHairMakeupListing = () => {
                                       setSelectedServices(newServices);
                                     }
                                   }}
-                                  className="mt-1"
                                 />
                                 <div className="flex-1">
                                   <h3 className="font-medium">
@@ -1651,6 +1651,7 @@ const UpdateHairMakeupListing = () => {
                               <div className="flex items-start space-x-4">
                                 <input
                                   type="checkbox"
+                                  className="h-4 w-4 rounded border-gray-300 accent-black focus:ring-black focus:ring-offset-0"
                                   checked={service.name in selectedServices}
                                   onChange={(e) => {
                                     if (e.target.checked) {
@@ -1671,7 +1672,6 @@ const UpdateHairMakeupListing = () => {
                                       setSelectedServices(newServices);
                                     }
                                   }}
-                                  className="mt-1"
                                 />
                                 <div className="flex-1">
                                   <h3 className="font-medium">

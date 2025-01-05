@@ -58,7 +58,7 @@ const TravelSection: React.FC<TravelSectionProps> = ({
                 setTravelRange("-1"); // Still set to -1 internally
               }
             }}
-            className="h-4 w-4 text-rose-600 border-gray-300 rounded focus:ring-rose-500"
+            className="h-4 w-4 rounded border-gray-300 accent-black focus:ring-black focus:ring-offset-0"
             id="willing-to-travel"
           />
           <label

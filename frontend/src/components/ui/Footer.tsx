@@ -1,5 +1,8 @@
 "use client";
 import React from "react";
+import { useState, useEffect } from "react";
+import { supabase } from "@/lib/supabase";
+import { useAuth } from "@/context/AuthContext";
 import { Facebook, Instagram, Twitter } from "lucide-react";
 
 const footerLinks = {
@@ -21,6 +24,29 @@ const footerLinks = {
 };
 
 export default function Footer() {
+  const [isVendor, setIsVendor] = useState<boolean | null>(null);
+  const { user } = useAuth();
+
+  useEffect(() => {
+    const checkVendorStatus = async () => {
+      if (!user?.id) return;
+      try {
+        const { data, error } = await supabase
+          .from("user_preferences")
+          .select("is_vendor")
+          .eq("id", user.id)
+          .single();
+
+        if (error) throw error;
+
+        setIsVendor(data.is_vendor);
+      } catch (error) {
+        console.error("Error fetching vendor status:", error);
+      }
+    };
+
+    checkVendorStatus();
+  }, [user]);
   return (
     <footer className="border-t border-gray-100 bg-gray-100">
       <div className="max-w-8xl mx-auto">
@@ -44,7 +70,8 @@ export default function Footer() {
                     <Facebook size={20} />
                   </a>
                   <a
-                    href="https://www.instagram.com/anyweds/" target="_blank"
+                    href="https://www.instagram.com/anyweds/"
+                    target="_blank"
                     className="text-black transition-colors p-2 rounded-full"
                     aria-label="Instagram"
                   >
@@ -68,16 +95,29 @@ export default function Footer() {
                       {category}
                     </h3>
                     <ul className="space-y-3">
-                      {links.map((link) => (
-                        <li key={link.name}>
-                          <a
-                            href={link.href}
-                            className="text-black hover:text-stone-400 transition-colors text-sm"
-                          >
-                            {link.name}
-                          </a>
-                        </li>
-                      ))}
+                      {links.map((link) =>
+                        link.name === "List Your Service" ? (
+                          isVendor ? (
+                            <li key={link.name}>
+                              <a
+                                href={link.href}
+                                className="text-black hover:text-stone-400 transition-colors text-sm"
+                              >
+                                {link.name}
+                              </a>
+                            </li>
+                          ) : null
+                        ) : (
+                          <li key={link.name}>
+                            <a
+                              href={link.href}
+                              className="text-black hover:text-stone-400 transition-colors text-sm"
+                            >
+                              {link.name}
+                            </a>
+                          </li>
+                        )
+                      )}
                     </ul>
                   </div>
                 ))}

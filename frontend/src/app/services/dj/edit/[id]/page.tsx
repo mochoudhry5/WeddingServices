@@ -798,7 +798,7 @@ const UpdateDJListing = () => {
                         type="checkbox"
                         checked={isRemoteBusiness}
                         onChange={(e) => setIsRemoteBusiness(e.target.checked)}
-                        className="h-4 w-4 border-gray-300 rounded"
+                        className="h-4 w-4 rounded border-gray-300 accent-black focus:ring-black focus:ring-offset-0"
                       />
                       <label className="text-sm font-medium text-gray-700">
                         This is a remote business (no physical location)
@@ -897,9 +897,7 @@ const UpdateDJListing = () => {
                             className="ml-2 p-1 flex items-center gap-1.5 text-gray-400 hover:text-gray-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                           >
                             <Plus size={16} />
-                            <span className="text-sm sm:inline">
-                              Add Genre
-                            </span>
+                            <span className="text-sm sm:inline">Add Genre</span>
                           </button>
                         </div>
                         <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
@@ -911,7 +909,7 @@ const UpdateDJListing = () => {
                               <div className="flex items-center h-5">
                                 <input
                                   type="checkbox"
-                                  className="h-4 w-4 border-gray-300 rounded"
+                                  className="h-4 w-4 rounded border-gray-300 accent-black focus:ring-black focus:ring-offset-0"
                                   checked={specialties.includes(style)}
                                   onChange={(e) => {
                                     if (e.target.checked) {
@@ -1161,6 +1159,7 @@ const UpdateDJListing = () => {
                             <div className="flex items-start space-x-4">
                               <input
                                 type="checkbox"
+                                className="h-4 w-4 rounded border-gray-300 accent-black focus:ring-black focus:ring-offset-0"
                                 checked={service.name in selectedServices}
                                 onChange={(e) => {
                                   if (e.target.checked) {
@@ -1179,7 +1178,6 @@ const UpdateDJListing = () => {
                                     setSelectedServices(newServices);
                                   }
                                 }}
-                                className="mt-1"
                               />
                               <div className="flex-1">
                                 <h3 className="font-medium">{service.name}</h3>
