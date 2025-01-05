@@ -292,7 +292,7 @@ const PhotoVideoInquiryForm = () => {
       }
 
       toast.success("Inquiry submitted successfully!");
-      router.push("/services");
+      router.push("/quickReach");
     } catch (error) {
       console.error("Error submitting inquiry:", error);
       toast.error(

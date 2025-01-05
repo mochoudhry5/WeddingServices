@@ -190,7 +190,7 @@ const WeddingPlannerCoordinatorInquiryForm = () => {
       if (!lead) throw new Error("Lead created but no data returned");
 
       toast.success("Inquiry submitted successfully!");
-      router.push("/services");
+      router.push("/quickReach");
     } catch (error) {
       console.error("Error submitting inquiry:", error);
       toast.error(
