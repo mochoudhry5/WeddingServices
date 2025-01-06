@@ -285,6 +285,21 @@ export default function VenueEditPage() {
       setIsSubmitting(false);
     }
   };
+
+  if (isLoading) {
+    return (
+      <ProtectedRoute>
+        <div className="flex flex-col min-h-screen">
+          <NavBar />
+          <div className="flex-1 flex items-center justify-center">
+            <p className="text-gray-500">Loading inquiry data...</p>
+          </div>
+          <Footer />
+        </div>
+      </ProtectedRoute>
+    );
+  }
+
   return (
     <ProtectedRoute>
       <div className="flex flex-col min-h-screen">
