@@ -375,23 +375,33 @@ export default function NavBar() {
                   Settings
                 </Link>
                 {isVendor && (
-                  <Link
-                    href="/dashboard/listings"
-                    className="flex items-center gap-2 rounded-lg px-2 py-3 text-sm font-medium hover:bg-gray-100"
-                    onClick={() => setIsMobileMenuOpen(false)}
-                  >
-                    <PersonStanding className="h-4 w-4" />
-                    My Leads
-                  </Link>
+                  <>
+                    <Link
+                      href="/dashboard/listings"
+                      className="flex items-center gap-2 rounded-lg px-2 py-3 text-sm font-medium hover:bg-gray-100"
+                      onClick={() => setIsMobileMenuOpen(false)}
+                    >
+                      <PersonStanding className="h-4 w-4" />
+                      My Leads
+                    </Link>
+                    <Link
+                      href="/dashboard/listings"
+                      className="flex items-center gap-2 rounded-lg px-2 py-3 text-sm font-medium hover:bg-gray-100"
+                      onClick={() => setIsMobileMenuOpen(false)}
+                    >
+                      <ListChecks className="h-4 w-4" />
+                      My Listings
+                    </Link>
+                  </>
                 )}
-                {isVendor && (
+                {!isVendor && (
                   <Link
-                    href="/dashboard/listings"
+                    href="/dashboard/myReach"
                     className="flex items-center gap-2 rounded-lg px-2 py-3 text-sm font-medium hover:bg-gray-100"
                     onClick={() => setIsMobileMenuOpen(false)}
                   >
                     <ListChecks className="h-4 w-4" />
-                    My Listings
+                    My Reach
                   </Link>
                 )}
                 <Link
@@ -527,6 +537,17 @@ export default function NavBar() {
                           </Link>
                         </DropdownMenuItem>
                       </>
+                    )}
+                    {!isVendor && (
+                      <DropdownMenuItem asChild>
+                        <Link
+                          href="/dashboard/myReach"
+                          className="cursor-pointer flex w-full items-center"
+                        >
+                          <PersonStanding className="mr-2 h-4 w-4" />
+                          <span>My Reach</span>
+                        </Link>
+                      </DropdownMenuItem>
                     )}
                     <DropdownMenuItem asChild>
                       <Link

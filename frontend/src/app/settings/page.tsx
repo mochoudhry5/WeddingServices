@@ -21,10 +21,6 @@ import {
 import { ProtectedRoute } from "@/components/ui/ProtectedRoute";
 import { toast } from "sonner";
 
-// Form interfaces for type safety
-interface EmailFormData {
-  email: string;
-}
 
 interface PasswordFormData {
   currentPassword: string;
