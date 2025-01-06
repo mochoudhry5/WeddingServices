@@ -19,90 +19,9 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 
-type ServiceType = keyof typeof SERVICE_CONFIGS;
-type ServiceCounts = Record<ServiceType, number>;
-
-type EntityTableMap = {
-  venue: "venue_listing";
-  "hair-makeup": "hair_makeup_listing";
-  "photo-video": "photo_video_listing";
-  dj: "dj_listing";
-  "wedding-planner": "wedding_planner_listing";
-};
-
 interface DatabaseResponse {
   [key: string]: any;
   liked_at: string;
-}
-
-// Base interfaces
-interface MediaItem {
-  file_path: string;
-  display_order: number;
-}
-
-interface BaseService {
-  id: string;
-  user_id: string;
-  description: string;
-  business_name: string;
-  city: string;
-  state: string;
-  liked_at?: string;
-}
-
-interface LikedItemResponse {
-  liked_at: string;
-  [key: string]: any;
-}
-
-interface ServiceResponse extends LikedItemResponse {
-  venue?: VenueDetails;
-  hair_makeup?: HairMakeupDetails;
-  photo_video?: PhotoVideoDetails;
-  wedding_planner?: WeddingPlannerDetails;
-  dj?: DJDetails;
-}
-
-interface VenueDetails extends BaseService {
-  base_price: number;
-  max_guests: number;
-  venue_media: MediaItem[];
-}
-
-interface HairMakeupDetails extends BaseService {
-  years_experience: number;
-  travel_range: number;
-  min_service_price: number;
-  max_service_price: number;
-  hair_makeup_media: MediaItem[];
-  service_type: "hair" | "makeup" | "both";
-}
-
-interface PhotoVideoDetails extends BaseService {
-  years_experience: number;
-  travel_range: number;
-  min_service_price: number;
-  max_service_price: number;
-  service_type: "photography" | "videography" | "both";
-  photo_video_media: MediaItem[];
-}
-
-interface DJDetails extends BaseService {
-  years_experience: number;
-  travel_range: number;
-  min_service_price: number;
-  max_service_price: number;
-  dj_media: MediaItem[];
-}
-
-interface WeddingPlannerDetails extends BaseService {
-  years_experience: number;
-  travel_range: number;
-  min_service_price: number;
-  max_service_price: number;
-  wedding_planner_media: MediaItem[];
-  service_type: "weddingPlanner" | "weddingCoordinator" | "both";
 }
 
 const SERVICE_CONFIGS = {
@@ -253,67 +172,53 @@ const SERVICE_CONFIGS = {
     `,
   },
 } as const;
+
+type ServiceType = keyof typeof SERVICE_CONFIGS;
+
+// Define a type for all liked items by service type
+type LikedItems = {
+  [K in ServiceType]: any[];
+};
+
+// Define a type for filtered items by service type
+type FilteredItems = {
+  [K in ServiceType]: any[];
+};
+
 export default function LikedServicesPage() {
   const { user } = useAuth();
-  const [likedItems, setLikedItems] = useState<any[]>([]);
-  const [filteredItems, setFilteredItems] = useState<any[]>([]);
+  const [likedItems, setLikedItems] = useState<LikedItems>({
+    venue: [],
+    "hair-makeup": [],
+    "photo-video": [],
+    dj: [],
+    "wedding-planner": [],
+  });
+  const [filteredItems, setFilteredItems] = useState<FilteredItems>({
+    venue: [],
+    "hair-makeup": [],
+    "photo-video": [],
+    dj: [],
+    "wedding-planner": [],
+  });
   const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedService, setSelectedService] = useState<ServiceType>("venue");
   const [sortBy, setSortBy] = useState<"newest" | "price-low" | "price-high">(
     "newest"
   );
-  const [serviceCounts, setServiceCounts] = useState<ServiceCounts>({
-    venue: 0,
-    "hair-makeup": 0,
-    "photo-video": 0,
-    dj: 0,
-    "wedding-planner": 0,
-  });
+
   useEffect(() => {
     if (user) {
-      loadServiceCounts();
+      loadAllLikedItems();
     }
   }, [user]);
-  useEffect(() => {
-    if (user) {
-      loadLikedItems();
-    }
-  }, [user, selectedService]);
 
   useEffect(() => {
     filterItems();
-  }, [searchTerm, sortBy, likedItems]);
+  }, [searchTerm, sortBy, likedItems, selectedService]);
 
-  const loadServiceCounts = async () => {
-    try {
-      const counts: ServiceCounts = {
-        venue: 0,
-        "hair-makeup": 0,
-        "photo-video": 0,
-        dj: 0,
-        "wedding-planner": 0,
-      };
-
-      await Promise.all(
-        Object.entries(SERVICE_CONFIGS).map(async ([service, config]) => {
-          const { count, error } = await supabase
-            .from(config.likedTable)
-            .select("*", { count: "exact", head: true })
-            .eq("user_id", user?.id);
-
-          if (!error && count !== null) {
-            counts[service as ServiceType] = count;
-          }
-        })
-      );
-
-      setServiceCounts(counts);
-    } catch (error) {
-      console.error("Error loading service counts:", error);
-    }
-  };
-  const loadLikedItems = async () => {
+  const loadAllLikedItems = async () => {
     try {
       if (!user?.id) {
         setIsLoading(false);
@@ -321,80 +226,107 @@ export default function LikedServicesPage() {
       }
 
       setIsLoading(true);
-      setLikedItems([]);
+      const allLikedItems: LikedItems = {
+        venue: [],
+        "hair-makeup": [],
+        "photo-video": [],
+        dj: [],
+        "wedding-planner": [],
+      };
 
-      const serviceConfig = SERVICE_CONFIGS[selectedService];
-      if (!serviceConfig) {
-        throw new Error("Invalid service type");
-      }
+      await Promise.all(
+        (
+          Object.entries(SERVICE_CONFIGS) as [
+            ServiceType,
+            (typeof SERVICE_CONFIGS)[ServiceType]
+          ][]
+        ).map(async ([serviceType, config]) => {
+          const { data, error } = await supabase
+            .from(config.likedTable)
+            .select(config.selectQuery)
+            .eq("user_id", user.id)
+            .order("liked_at", { ascending: false });
 
-      const { data, error } = await supabase
-        .from(serviceConfig.likedTable)
-        .select(serviceConfig.selectQuery)
-        .eq("user_id", user.id)
-        .order("liked_at", { ascending: false });
+          if (error) throw error;
 
-      if (error) throw error;
+          const transformedData = (data || [])
+            .filter((item: DatabaseResponse) => {
+              const entityTable = config.entityTable;
+              const entityData = item[entityTable];
+              return entityData && typeof entityData === "object";
+            })
+            .map((item: DatabaseResponse) => {
+              const entityTable = config.entityTable;
+              const entityData = item[entityTable];
+              return {
+                ...entityData,
+                liked_at: item.liked_at,
+              };
+            });
 
-      const transformedData = (data || [])
-        .filter((item: DatabaseResponse) => {
-          const entityTable = serviceConfig.entityTable;
-          const entityData = item[entityTable];
-          return entityData && typeof entityData === "object";
+          allLikedItems[serviceType] = transformedData;
         })
-        .map((item: DatabaseResponse) => {
-          const entityTable = serviceConfig.entityTable;
-          const entityData = item[entityTable];
-          return {
-            ...entityData,
-            liked_at: item.liked_at,
-          };
-        });
+      );
 
-      setLikedItems(transformedData);
+      setLikedItems(allLikedItems);
     } catch (error) {
       console.error("Error loading liked items:", error);
       toast.error("Failed to load liked items");
-      setLikedItems([]);
     } finally {
       setIsLoading(false);
     }
   };
 
   const filterItems = () => {
-    let filtered = [...likedItems];
+    const filtered = { ...likedItems };
+    Object.keys(filtered).forEach((serviceType) => {
+      let serviceItems = [...likedItems[serviceType as ServiceType]];
 
-    if (searchTerm) {
-      filtered = filtered.filter(
-        (item) =>
-          item.business_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          item.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          `${item.city}, ${item.state}`
-            .toLowerCase()
-            .includes(searchTerm.toLowerCase())
-      );
-    }
-
-    filtered.sort((a, b) => {
-      switch (sortBy) {
-        case "newest":
-          return (
-            new Date(b.liked_at).getTime() - new Date(a.liked_at).getTime()
-          );
-        case "price-low":
-          const aPrice = a.base_price || a.min_service_price || 0;
-          const bPrice = b.base_price || b.min_service_price || 0;
-          return aPrice - bPrice;
-        case "price-high":
-          const aHighPrice = a.base_price || a.max_service_price || 0;
-          const bHighPrice = b.base_price || b.max_service_price || 0;
-          return bHighPrice - aHighPrice;
-        default:
-          return 0;
+      if (searchTerm) {
+        serviceItems = serviceItems.filter(
+          (item) =>
+            item.business_name
+              .toLowerCase()
+              .includes(searchTerm.toLowerCase()) ||
+            item.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            `${item.city}, ${item.state}`
+              .toLowerCase()
+              .includes(searchTerm.toLowerCase())
+        );
       }
+
+      serviceItems.sort((a, b) => {
+        switch (sortBy) {
+          case "newest":
+            return (
+              new Date(b.liked_at).getTime() - new Date(a.liked_at).getTime()
+            );
+          case "price-low":
+            const aPrice = a.base_price || a.min_service_price || 0;
+            const bPrice = b.base_price || b.min_service_price || 0;
+            return aPrice - bPrice;
+          case "price-high":
+            const aHighPrice = a.base_price || a.max_service_price || 0;
+            const bHighPrice = b.base_price || b.max_service_price || 0;
+            return bHighPrice - aHighPrice;
+          default:
+            return 0;
+        }
+      });
+
+      filtered[serviceType as ServiceType] = serviceItems;
     });
 
     setFilteredItems(filtered);
+  };
+
+  const handleUnlike = (itemId: string) => {
+    setLikedItems((prev) => ({
+      ...prev,
+      [selectedService]: prev[selectedService].filter(
+        (item) => item.id !== itemId
+      ),
+    }));
   };
 
   const renderServiceNav = () => (
@@ -416,7 +348,7 @@ export default function LikedServicesPage() {
         >
           {config.displayName}
           <span className="ml-2 px-2 py-0.5 text-xs rounded-full bg-white/20">
-            {serviceCounts[key]}
+            {likedItems[key].length}
           </span>
         </button>
       ))}
@@ -451,46 +383,8 @@ export default function LikedServicesPage() {
     </div>
   );
 
-  const renderEmptyState = () => {
-    const config = SERVICE_CONFIGS[selectedService];
-    return (
-      <div className="text-center py-12 bg-white rounded-lg shadow">
-        <h3 className="text-lg font-medium text-gray-900 mb-2">
-          No liked {config.pluralName} yet
-        </h3>
-        <p className="text-gray-500 mb-6">
-          Start exploring and save your favorites
-        </p>
-        <Link
-          href="/"
-          className="inline-flex items-center px-4 py-2 bg-black hover:bg-stone-500 text-white rounded-lg transition-colors"
-        >
-          Explore {config.pluralName}
-        </Link>
-      </div>
-    );
-  };
-
-  const renderLoadingState = () => (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-      {[...Array(3)].map((_, i) => (
-        <div key={i} className="bg-white rounded-xl shadow-sm overflow-hidden">
-          <div className="animate-pulse">
-            <div className="h-48 bg-gray-200" />
-            <div className="p-4 space-y-3">
-              <div className="h-4 bg-gray-200 rounded w-3/4" />
-              <div className="h-3 bg-gray-200 rounded w-1/2" />
-              <div className="h-3 bg-gray-200 rounded w-5/6" />
-            </div>
-          </div>
-        </div>
-      ))}
-    </div>
-  );
-
   const renderCard = (item: any) => {
     const config = SERVICE_CONFIGS[selectedService];
-    // Fix the media key format
     const mediaKey = `${selectedService.replace("-", "_")}_media`;
     const media = item[mediaKey] || [];
 
@@ -504,14 +398,7 @@ export default function LikedServicesPage() {
             creatorId={item.user_id}
             service={selectedService}
             initialLiked={true}
-            onUnlike={() => {
-              setLikedItems((prev) => prev.filter((i) => i.id !== item.id));
-              // Update the count when unliking
-              setServiceCounts((prev) => ({
-                ...prev,
-                [selectedService]: Math.max(0, prev[selectedService] - 1),
-              }));
-            }}
+            onUnlike={() => handleUnlike(item.id)}
           />
         </div>
         <Link href={`/${config.routePrefix}/${item.id}`}>
@@ -571,6 +458,43 @@ export default function LikedServicesPage() {
     );
   };
 
+  const renderEmptyState = () => {
+    const config = SERVICE_CONFIGS[selectedService];
+    return (
+      <div className="text-center py-12 bg-white rounded-lg shadow">
+        <h3 className="text-lg font-medium text-gray-900 mb-2">
+          No liked {config.pluralName} yet
+        </h3>
+        <p className="text-gray-500 mb-6">
+          Start exploring and save your favorites
+        </p>
+        <Link
+          href="/"
+          className="inline-flex items-center px-4 py-2 bg-black hover:bg-stone-500 text-white rounded-lg transition-colors"
+        >
+          Explore {config.pluralName}
+        </Link>
+      </div>
+    );
+  };
+
+  const renderLoadingState = () => (
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+      {[...Array(3)].map((_, i) => (
+        <div key={i} className="bg-white rounded-xl shadow-sm overflow-hidden">
+          <div className="animate-pulse">
+            <div className="h-48 bg-gray-200" />
+            <div className="p-4 space-y-3">
+              <div className="h-4 bg-gray-200 rounded w-3/4" />
+              <div className="h-3 bg-gray-200 rounded w-1/2" />
+              <div className="h-3 bg-gray-200 rounded w-5/6" />
+            </div>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+
   return (
     <ProtectedRoute>
       <div className="flex flex-col min-h-screen bg-gray-50">
@@ -586,9 +510,9 @@ export default function LikedServicesPage() {
                 {renderServiceNav()}
                 <div className="mt-6">
                   {renderFilters()}
-                  {filteredItems.length > 0 ? (
+                  {filteredItems[selectedService].length > 0 ? (
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                      {filteredItems.map((item) => (
+                      {filteredItems[selectedService].map((item) => (
                         <div key={item.id}>{renderCard(item)}</div>
                       ))}
                     </div>

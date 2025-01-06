@@ -13,6 +13,7 @@ import {
   Mail,
   Phone,
   DollarSign,
+  SlidersHorizontal,
 } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
@@ -25,10 +26,8 @@ import {
   SheetContent,
   SheetHeader,
   SheetTitle,
-  SheetDescription,
   SheetTrigger,
 } from "@/components/ui/sheet";
-import { SlidersHorizontal } from "lucide-react";
 import Footer from "@/components/ui/Footer";
 import { Input } from "@/components/ui/input";
 import { ProtectedRoute } from "@/components/ui/ProtectedRoute";
@@ -69,6 +68,10 @@ interface Lead {
   service_type?: string;
 }
 
+type Leads = {
+  [K in ServiceType]: Lead[];
+};
+
 const SERVICE_CONFIGS = {
   venue: {
     type: "venue",
@@ -106,139 +109,126 @@ export default function LeadsPage() {
   const router = useRouter();
   const { user } = useAuth();
   const [activeTab, setActiveTab] = useState<ServiceType>("venue");
-  const [leads, setLeads] = useState<Lead[]>([]);
-  const [filteredLeads, setFilteredLeads] = useState<Lead[]>([]);
+  const [leads, setLeads] = useState<Leads>({
+    venue: [],
+    dj: [],
+    wedding_planner: [],
+    photo_video: [],
+    hair_makeup: [],
+  });
+  const [filteredLeads, setFilteredLeads] = useState<Leads>({
+    venue: [],
+    dj: [],
+    wedding_planner: [],
+    photo_video: [],
+    hair_makeup: [],
+  });
   const [isLoading, setIsLoading] = useState(true);
-  const [selectedLeadId, setSelectedLeadId] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [sortBy, setSortBy] = useState<"newest" | "price-low" | "price-high">(
     "newest"
   );
-  const [serviceCounts, setServiceCounts] = useState<
-    Record<ServiceType, number>
-  >({
-    venue: 0,
-    dj: 0,
-    wedding_planner: 0,
-    photo_video: 0,
-    hair_makeup: 0,
-  });
   const [isFilterSheetOpen, setIsFilterSheetOpen] = useState(false);
   const [budgetRange, setBudgetRange] = useState([0, 0]);
   const [errors, setErrors] = useState({ min: "", max: "" });
 
   useEffect(() => {
     if (user) {
-      loadServiceCounts();
+      loadAllLeads();
     }
   }, [user]);
 
   useEffect(() => {
-    if (user) {
-      loadLeads();
-    }
-  }, [user, activeTab]);
-
-  useEffect(() => {
     filterLeads();
-  }, [budgetRange, searchTerm, sortBy, leads]);
+  }, [budgetRange, searchTerm, sortBy, leads, activeTab]);
 
-  const loadServiceCounts = async () => {
+  const loadAllLeads = async () => {
     try {
-      const counts = { ...serviceCounts };
-      await Promise.all(
-        Object.entries(SERVICE_CONFIGS).map(async ([service, config]) => {
-          const { count, error } = await supabase
-            .from(config.table)
-            .select("*", { count: "exact", head: true })
-            .eq("user_id", user?.id);
-
-          if (!error && count !== null) {
-            counts[service as ServiceType] = count;
-          }
-        })
-      );
-      setServiceCounts(counts);
-    } catch (error) {
-      console.error("Error loading service counts:", error);
-    }
-  };
-
-  const loadLeads = async () => {
-    try {
-      if (!user?.id) {
-        setIsLoading(false);
-        return;
-      }
+      if (!user?.id) return;
 
       setIsLoading(true);
-      setLeads([]);
+      const allLeads: Leads = {
+        venue: [],
+        dj: [],
+        wedding_planner: [],
+        photo_video: [],
+        hair_makeup: [],
+      };
 
-      const serviceConfig = SERVICE_CONFIGS[activeTab];
-      if (!serviceConfig) {
-        throw new Error("Invalid service type");
-      }
+      await Promise.all(
+        (Object.keys(SERVICE_CONFIGS) as ServiceType[]).map(
+          async (serviceType) => {
+            const { data, error } = await supabase
+              .from(SERVICE_CONFIGS[serviceType].table)
+              .select("*")
+              .eq("user_id", user.id)
+              .order("created_at", { ascending: false });
 
-      const { data, error } = await supabase
-        .from(serviceConfig.table)
-        .select("*")
-        .eq("user_id", user.id)
-        .order("created_at", { ascending: false });
+            if (error) throw error;
+            allLeads[serviceType] = data || [];
+          }
+        )
+      );
 
-      if (error) throw error;
-      setLeads(data || []);
+      setLeads(allLeads);
     } catch (error) {
       console.error("Error loading leads:", error);
       toast.error("Failed to load leads");
-      setLeads([]);
     } finally {
       setIsLoading(false);
     }
   };
 
   const filterLeads = () => {
-    let filtered = [...leads];
+    const filtered = { ...leads };
+    Object.keys(filtered).forEach((serviceType) => {
+      let serviceLeads = [...leads[serviceType as ServiceType]];
 
-    if (searchTerm) {
-      const search = searchTerm.toLowerCase();
-      filtered = filtered.filter(
-        (lead) =>
-          lead.message?.toLowerCase().includes(search) ||
-          `${lead.city}, ${lead.state}`.toLowerCase().includes(search) ||
-          `${lead.first_name} ${lead.last_name}`
-            .toLowerCase()
-            .includes(search) ||
-          lead.email.toLowerCase().includes(search)
-      );
-    }
-
-    // Add budget filter
-    if (budgetRange[0] > 0 || budgetRange[1] > 0) {
-      filtered = filtered.filter((lead) => {
-        if (budgetRange[0] > 0 && budgetRange[1] > 0) {
-          return lead.budget >= budgetRange[0] && lead.budget <= budgetRange[1];
-        } else if (budgetRange[0] > 0) {
-          return lead.budget >= budgetRange[0];
-        } else if (budgetRange[1] > 0) {
-          return lead.budget <= budgetRange[1];
-        }
-        return true;
-      });
-    }
-
-    filtered.sort((a, b) => {
-      switch (sortBy) {
-        case "newest":
-          return (
-            new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
-          );
-        case "price-low":
-          return a.budget - b.budget;
-        case "price-high":
-          return b.budget - a.budget;
-        default:
-          return 0;
+      if (searchTerm) {
+        const search = searchTerm.toLowerCase();
+        serviceLeads = serviceLeads.filter(
+          (lead) =>
+            lead.message?.toLowerCase().includes(search) ||
+            `${lead.city}, ${lead.state}`.toLowerCase().includes(search) ||
+            `${lead.first_name} ${lead.last_name}`
+              .toLowerCase()
+              .includes(search) ||
+            lead.email.toLowerCase().includes(search)
+        );
       }
+
+      if (budgetRange[0] > 0 || budgetRange[1] > 0) {
+        serviceLeads = serviceLeads.filter((lead) => {
+          if (budgetRange[0] > 0 && budgetRange[1] > 0) {
+            return (
+              lead.budget >= budgetRange[0] && lead.budget <= budgetRange[1]
+            );
+          } else if (budgetRange[0] > 0) {
+            return lead.budget >= budgetRange[0];
+          } else if (budgetRange[1] > 0) {
+            return lead.budget <= budgetRange[1];
+          }
+          return true;
+        });
+      }
+
+      serviceLeads.sort((a, b) => {
+        switch (sortBy) {
+          case "newest":
+            return (
+              new Date(b.created_at).getTime() -
+              new Date(a.created_at).getTime()
+            );
+          case "price-low":
+            return a.budget - b.budget;
+          case "price-high":
+            return b.budget - a.budget;
+          default:
+            return 0;
+        }
+      });
+
+      filtered[serviceType as ServiceType] = serviceLeads;
     });
 
     setFilteredLeads(filtered);
@@ -282,30 +272,6 @@ export default function LeadsPage() {
     setIsFilterSheetOpen(false);
   };
 
-  const handleDelete = async () => {
-    if (!selectedLeadId) return;
-
-    try {
-      const { error } = await supabase
-        .from(SERVICE_CONFIGS[activeTab].table)
-        .delete()
-        .eq("id", selectedLeadId);
-
-      if (error) throw error;
-
-      toast.success("Lead deleted successfully");
-      setServiceCounts((prev) => ({
-        ...prev,
-        [activeTab]: Math.max(0, prev[activeTab] - 1),
-      }));
-      setLeads((prev) => prev.filter((lead) => lead.id !== selectedLeadId));
-      setSelectedLeadId(null);
-    } catch (error) {
-      console.error("Error deleting lead:", error);
-      toast.error("Failed to delete lead");
-    }
-  };
-
   const formatPhoneNumber = (phone: string): string => {
     const cleaned = phone.replace(/\D/g, "");
     return `(${cleaned.slice(0, 3)}) ${cleaned.slice(3, 6)}-${cleaned.slice(
@@ -316,6 +282,8 @@ export default function LeadsPage() {
   const formatDate = (dateString: string) => {
     return format(new Date(dateString), "MMM d, yyyy");
   };
+
+  // UI Component renderers
   const renderServiceNav = () => (
     <div className="flex overflow-x-auto gap-2 p-2 bg-white rounded-lg shadow-sm no-scrollbar">
       {Object.entries(SERVICE_CONFIGS).map(([key, config]) => {
@@ -334,7 +302,7 @@ export default function LeadsPage() {
             <Icon className="h-4 w-4" />
             {config.displayName}
             <span className="px-2 py-0.5 text-xs rounded-full bg-white/20">
-              {serviceCounts[serviceKey]}
+              {leads[serviceKey].length}
             </span>
           </button>
         );
@@ -376,12 +344,10 @@ export default function LeadsPage() {
               <span>Filters</span>
             </button>
           </SheetTrigger>
-
           <SheetContent side="right" className="w-full sm:max-w-md">
             <SheetHeader>
               <SheetTitle>Filters</SheetTitle>
             </SheetHeader>
-
             <div className="mt-6">
               <div className="space-y-4">
                 <div>
@@ -407,7 +373,6 @@ export default function LeadsPage() {
                         <p className="text-red-500 text-xs">{errors.min}</p>
                       )}
                     </div>
-
                     <div className="space-y-1">
                       <div className="relative">
                         <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">
@@ -430,7 +395,6 @@ export default function LeadsPage() {
                     </div>
                   </div>
                 </div>
-
                 <div className="flex gap-3 pt-6">
                   <button
                     onClick={handleFilterApply}
@@ -464,6 +428,7 @@ export default function LeadsPage() {
         router.push(`/services/leads/${activeTab}/${lead.id}`);
       }
     };
+
     return (
       <Card
         key={lead.id}
@@ -499,13 +464,18 @@ export default function LeadsPage() {
                 <a
                   href={`mailto:${lead.email}`}
                   className="hover:underline truncate"
+                  onClick={(e) => e.stopPropagation()}
                 >
                   {lead.email}
                 </a>
               </div>
               <div className="flex items-center space-x-2 text-gray-600">
                 <Phone className="h-4 w-4" />
-                <a href={`tel:${lead.phone}`} className="hover:underline">
+                <a
+                  href={`tel:${lead.phone}`}
+                  className="hover:underline"
+                  onClick={(e) => e.stopPropagation()}
+                >
                   {formatPhoneNumber(lead.phone)}
                 </a>
               </div>
@@ -529,8 +499,9 @@ export default function LeadsPage() {
         No {SERVICE_CONFIGS[activeTab].displayName} leads yet
       </h3>
       <p className="text-gray-500 mb-6">
-        Start by submitting a new lead for{" "}
-        {SERVICE_CONFIGS[activeTab].displayName.toLowerCase()}
+        When you receive new{" "}
+        {SERVICE_CONFIGS[activeTab].displayName.toLowerCase()} leads, they will
+        appear here
       </p>
     </div>
   );
@@ -566,9 +537,11 @@ export default function LeadsPage() {
                 {renderServiceNav()}
                 <div className="mt-6">
                   {renderFilters()}
-                  {filteredLeads.length > 0 ? (
+                  {filteredLeads[activeTab].length > 0 ? (
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                      {filteredLeads.map((lead) => renderLeadCard(lead))}
+                      {filteredLeads[activeTab].map((lead) => (
+                        <div key={lead.id}>{renderLeadCard(lead)}</div>
+                      ))}
                     </div>
                   ) : (
                     renderEmptyState()
