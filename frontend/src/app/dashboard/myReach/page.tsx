@@ -50,17 +50,11 @@ type ServiceType =
   | "weddingPlanner";
 
 const SERVICE_CONFIGS = {
-  dj: {
-    type: "dj",
-    displayName: "DJ",
-    icon: Music,
-    table: "dj_leads",
-  },
-  hairMakeup: {
-    type: "hairMakeup",
-    displayName: "Hair & Makeup",
-    icon: HeartHandshake,
-    table: "hair_makeup_leads",
+  venue: {
+    type: "venue",
+    displayName: "Venue",
+    icon: Building2,
+    table: "venue_leads",
   },
   photoVideo: {
     type: "photoVideo",
@@ -68,11 +62,17 @@ const SERVICE_CONFIGS = {
     icon: Camera,
     table: "photo_video_leads",
   },
-  venue: {
-    type: "venue",
-    displayName: "Venue",
-    icon: Building2,
-    table: "venue_leads",
+  hairMakeup: {
+    type: "hairMakeup",
+    displayName: "Hair & Makeup",
+    icon: HeartHandshake,
+    table: "hair_makeup_leads",
+  },
+  dj: {
+    type: "dj",
+    displayName: "DJ",
+    icon: Music,
+    table: "dj_leads",
   },
   weddingPlanner: {
     type: "weddingPlanner",
