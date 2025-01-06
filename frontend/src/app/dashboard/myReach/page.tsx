@@ -42,12 +42,33 @@ import {
   HeartHandshake,
 } from "lucide-react";
 
+// Define the base types
+interface Inquiry {
+  id: string;
+  created_at: string;
+  event_date: string;
+  budget: number;
+  city: string;
+  state: string;
+  message?: string;
+  user_id: string;
+}
+
 type ServiceType =
-  | "dj"
-  | "hairMakeup"
-  | "photoVideo"
   | "venue"
+  | "photoVideo"
+  | "hairMakeup"
+  | "dj"
   | "weddingPlanner";
+
+// Define types for state management
+type Inquiries = {
+  [K in ServiceType]: Inquiry[];
+};
+
+type FilteredInquiries = {
+  [K in ServiceType]: Inquiry[];
+};
 
 const SERVICE_CONFIGS = {
   venue: {
@@ -85,66 +106,42 @@ const SERVICE_CONFIGS = {
 export default function QuickReachesPage() {
   const router = useRouter();
   const { user } = useAuth();
-  const [inquiries, setInquiries] = useState<any[]>([]);
-  const [filteredInquiries, setFilteredInquiries] = useState<any[]>([]);
+  const [inquiries, setInquiries] = useState<Inquiries>({
+    venue: [],
+    photoVideo: [],
+    hairMakeup: [],
+    dj: [],
+    weddingPlanner: [],
+  });
+  const [filteredInquiries, setFilteredInquiries] = useState<FilteredInquiries>(
+    {
+      venue: [],
+      photoVideo: [],
+      hairMakeup: [],
+      dj: [],
+      weddingPlanner: [],
+    }
+  );
   const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedService, setSelectedService] = useState<ServiceType>("venue");
   const [sortBy, setSortBy] = useState<"newest" | "price-low" | "price-high">(
     "newest"
   );
-  const [serviceCounts, setServiceCounts] = useState<
-    Record<ServiceType, number>
-  >({
-    dj: 0,
-    hairMakeup: 0,
-    photoVideo: 0,
-    venue: 0,
-    weddingPlanner: 0,
-  });
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
-  const [inquiryToDelete, setInquiryToDelete] = useState<any>(null);
+  const [inquiryToDelete, setInquiryToDelete] = useState<Inquiry | null>(null);
 
   useEffect(() => {
     if (user) {
-      loadServiceCounts();
+      loadAllInquiries();
     }
   }, [user]);
 
   useEffect(() => {
-    if (user) {
-      loadInquiries();
-    }
-  }, [user, selectedService]);
-
-  useEffect(() => {
     filterInquiries();
-  }, [searchTerm, sortBy, inquiries]);
+  }, [searchTerm, sortBy, inquiries, selectedService]);
 
-  const loadServiceCounts = async () => {
-    try {
-      const counts = { ...serviceCounts };
-
-      await Promise.all(
-        Object.entries(SERVICE_CONFIGS).map(async ([service, config]) => {
-          const { count, error } = await supabase
-            .from(config.table)
-            .select("*", { count: "exact", head: true })
-            .eq("user_id", user?.id);
-
-          if (!error && count !== null) {
-            counts[service as ServiceType] = count;
-          }
-        })
-      );
-
-      setServiceCounts(counts);
-    } catch (error) {
-      console.error("Error loading service counts:", error);
-    }
-  };
-
-  const loadInquiries = async () => {
+  const loadAllInquiries = async () => {
     try {
       if (!user?.id) {
         setIsLoading(false);
@@ -152,32 +149,42 @@ export default function QuickReachesPage() {
       }
 
       setIsLoading(true);
-      setInquiries([]);
+      const allInquiries: Inquiries = {
+        venue: [],
+        photoVideo: [],
+        hairMakeup: [],
+        dj: [],
+        weddingPlanner: [],
+      };
 
-      const serviceConfig = SERVICE_CONFIGS[selectedService];
-      if (!serviceConfig) {
-        throw new Error("Invalid service type");
-      }
+      await Promise.all(
+        (
+          Object.entries(SERVICE_CONFIGS) as [
+            ServiceType,
+            (typeof SERVICE_CONFIGS)[ServiceType]
+          ][]
+        ).map(async ([serviceType, config]) => {
+          const { data, error } = await supabase
+            .from(config.table)
+            .select("*")
+            .eq("user_id", user.id)
+            .order("created_at", { ascending: false });
 
-      const { data, error } = await supabase
-        .from(serviceConfig.table)
-        .select("*")
-        .eq("user_id", user.id)
-        .order("created_at", { ascending: false });
+          if (error) throw error;
+          allInquiries[serviceType] = data || [];
+        })
+      );
 
-      if (error) throw error;
-
-      setInquiries(data || []);
+      setInquiries(allInquiries);
     } catch (error) {
       console.error("Error loading inquiries:", error);
       toast.error("Failed to load inquiries");
-      setInquiries([]);
     } finally {
       setIsLoading(false);
     }
   };
 
-  const handleEdit = (inquiry: any) => {
+  const handleEdit = (inquiry: Inquiry) => {
     const editRoutes = {
       dj: `/services/dj/editReach/${inquiry.id}`,
       hairMakeup: `/services/hairMakeup/editReach/${inquiry.id}`,
@@ -194,7 +201,7 @@ export default function QuickReachesPage() {
     }
   };
 
-  const handleDelete = async (inquiry: any) => {
+  const handleDelete = async (inquiry: Inquiry) => {
     try {
       const serviceConfig = SERVICE_CONFIGS[selectedService];
       const { error } = await supabase
@@ -204,13 +211,16 @@ export default function QuickReachesPage() {
 
       if (error) throw error;
 
-      toast.success("Inquiry deleted successfully");
-      setServiceCounts((prev) => ({
+      setInquiries((prev) => ({
         ...prev,
-        [selectedService]: Math.max(0, prev[selectedService] - 1),
+        [selectedService]: prev[selectedService].filter(
+          (item) => item.id !== inquiry.id
+        ),
       }));
-      setInquiries((prev) => prev.filter((item) => item.id !== inquiry.id));
+
+      toast.success("Inquiry deleted successfully");
       setShowDeleteDialog(false);
+      setInquiryToDelete(null);
     } catch (error) {
       console.error("Error deleting inquiry:", error);
       toast.error("Failed to delete inquiry");
@@ -218,31 +228,37 @@ export default function QuickReachesPage() {
   };
 
   const filterInquiries = () => {
-    let filtered = [...inquiries];
+    const filtered = { ...inquiries };
+    Object.keys(filtered).forEach((serviceType) => {
+      let serviceInquiries = [...inquiries[serviceType as ServiceType]];
 
-    if (searchTerm) {
-      filtered = filtered.filter(
-        (item) =>
-          item.message?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          `${item.city}, ${item.state}`
-            .toLowerCase()
-            .includes(searchTerm.toLowerCase())
-      );
-    }
-
-    filtered.sort((a, b) => {
-      switch (sortBy) {
-        case "newest":
-          return (
-            new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
-          );
-        case "price-low":
-          return a.budget - b.budget;
-        case "price-high":
-          return b.budget - a.budget;
-        default:
-          return 0;
+      if (searchTerm) {
+        serviceInquiries = serviceInquiries.filter(
+          (item) =>
+            item.message?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            `${item.city}, ${item.state}`
+              .toLowerCase()
+              .includes(searchTerm.toLowerCase())
+        );
       }
+
+      serviceInquiries.sort((a, b) => {
+        switch (sortBy) {
+          case "newest":
+            return (
+              new Date(b.created_at).getTime() -
+              new Date(a.created_at).getTime()
+            );
+          case "price-low":
+            return a.budget - b.budget;
+          case "price-high":
+            return b.budget - a.budget;
+          default:
+            return 0;
+        }
+      });
+
+      filtered[serviceType as ServiceType] = serviceInquiries;
     });
 
     setFilteredInquiries(filtered);
@@ -261,10 +277,11 @@ export default function QuickReachesPage() {
     <div className="flex overflow-x-auto gap-2 p-2 bg-white rounded-lg shadow-sm no-scrollbar">
       {Object.entries(SERVICE_CONFIGS).map(([key, config]) => {
         const Icon = config.icon;
+        const serviceKey = key as ServiceType;
         return (
           <button
             key={key}
-            onClick={() => setSelectedService(key as ServiceType)}
+            onClick={() => setSelectedService(serviceKey)}
             className={`px-4 py-2 rounded-lg whitespace-nowrap transition-all flex items-center gap-2 ${
               selectedService === key
                 ? "bg-black text-white"
@@ -274,7 +291,7 @@ export default function QuickReachesPage() {
             <Icon className="h-4 w-4" />
             {config.displayName}
             <span className="px-2 py-0.5 text-xs rounded-full bg-white/20">
-              {serviceCounts[key as ServiceType]}
+              {inquiries[serviceKey].length}
             </span>
           </button>
         );
@@ -310,35 +327,7 @@ export default function QuickReachesPage() {
     </div>
   );
 
-  const renderEmptyState = () => (
-    <div className="text-center py-12 bg-white rounded-lg shadow">
-      <h3 className="text-lg font-medium text-gray-900 mb-2">
-        No {SERVICE_CONFIGS[selectedService].displayName} inquiries yet
-      </h3>
-      <p className="text-gray-500 mb-6">
-        Start by submitting a quick reach for{" "}
-        {SERVICE_CONFIGS[selectedService].displayName.toLowerCase()}
-      </p>
-    </div>
-  );
-
-  const renderLoadingState = () => (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-      {[...Array(3)].map((_, i) => (
-        <div key={i} className="bg-white rounded-xl shadow-sm overflow-hidden">
-          <div className="animate-pulse">
-            <div className="p-4 space-y-3">
-              <div className="h-4 bg-gray-200 rounded w-3/4" />
-              <div className="h-3 bg-gray-200 rounded w-1/2" />
-              <div className="h-3 bg-gray-200 rounded w-5/6" />
-            </div>
-          </div>
-        </div>
-      ))}
-    </div>
-  );
-
-  const renderCard = (inquiry: any) => {
+  const renderCard = (inquiry: Inquiry) => {
     const Icon = SERVICE_CONFIGS[selectedService].icon;
     return (
       <Card key={inquiry.id} className="overflow-hidden">
@@ -436,6 +425,34 @@ export default function QuickReachesPage() {
     );
   };
 
+  const renderEmptyState = () => (
+    <div className="text-center py-12 bg-white rounded-lg shadow">
+      <h3 className="text-lg font-medium text-gray-900 mb-2">
+        No {SERVICE_CONFIGS[selectedService].displayName} inquiries yet
+      </h3>
+      <p className="text-gray-500 mb-6">
+        Start by submitting a quick reach for{" "}
+        {SERVICE_CONFIGS[selectedService].displayName.toLowerCase()}
+      </p>
+    </div>
+  );
+
+  const renderLoadingState = () => (
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+      {[...Array(3)].map((_, i) => (
+        <div key={i} className="bg-white rounded-xl shadow-sm overflow-hidden">
+          <div className="animate-pulse">
+            <div className="p-4 space-y-3">
+              <div className="h-4 bg-gray-200 rounded w-3/4" />
+              <div className="h-3 bg-gray-200 rounded w-1/2" />
+              <div className="h-3 bg-gray-200 rounded w-5/6" />
+            </div>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+
   return (
     <ProtectedRoute>
       <div className="flex flex-col min-h-screen bg-gray-50">
@@ -451,9 +468,11 @@ export default function QuickReachesPage() {
                 {renderServiceNav()}
                 <div className="mt-6">
                   {renderFilters()}
-                  {filteredInquiries.length > 0 ? (
+                  {filteredInquiries[selectedService].length > 0 ? (
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                      {filteredInquiries.map((inquiry) => renderCard(inquiry))}
+                      {filteredInquiries[selectedService].map((inquiry) => (
+                        <div key={inquiry.id}>{renderCard(inquiry)}</div>
+                      ))}
                     </div>
                   ) : (
                     renderEmptyState()
@@ -464,29 +483,29 @@ export default function QuickReachesPage() {
           </div>
         </div>
         <Footer />
-      </div>
 
-      {/* Delete Confirmation Dialog */}
-      <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Delete Inquiry</AlertDialogTitle>
-            <AlertDialogDescription>
-              Are you sure you want to delete this inquiry? This action cannot
-              be undone.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={() => inquiryToDelete && handleDelete(inquiryToDelete)}
-              className="bg-red-600 hover:bg-red-700 focus:ring-red-600"
-            >
-              Delete
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+        {/* Delete Confirmation Dialog */}
+        <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Delete Inquiry</AlertDialogTitle>
+              <AlertDialogDescription>
+                Are you sure you want to delete this inquiry? This action cannot
+                be undone.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogAction
+                onClick={() => inquiryToDelete && handleDelete(inquiryToDelete)}
+                className="bg-red-600 hover:bg-red-700 focus:ring-red-600"
+              >
+                Delete
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+      </div>
     </ProtectedRoute>
   );
 }
