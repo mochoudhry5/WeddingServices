@@ -359,7 +359,7 @@ export default function LeadDetailsPage() {
                               : lead.catering_preference === "outside"
                               ? "Outside Catering"
                               : lead.catering_preference === "both"
-                              ? "In-House & Outside"
+                              ? "In-House & Outside Catering"
                               : "No Preference"}
                           </span>
                         </div>
