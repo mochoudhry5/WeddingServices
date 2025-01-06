@@ -7,6 +7,7 @@ import Footer from "@/components/ui/Footer";
 import { supabase } from "@/lib/supabase";
 import { Search } from "lucide-react";
 import { Input } from "@/components/ui/input";
+import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { ProtectedRoute } from "@/components/ui/ProtectedRoute";
 import {
@@ -35,7 +36,6 @@ import {
 } from "@/components/ui/alert-dialog";
 import {
   Calendar,
-  DollarSign,
   Music,
   Camera,
   Building2,
@@ -83,6 +83,7 @@ const SERVICE_CONFIGS = {
 } as const;
 
 export default function QuickReachesPage() {
+  const router = useRouter();
   const { user } = useAuth();
   const [inquiries, setInquiries] = useState<any[]>([]);
   const [filteredInquiries, setFilteredInquiries] = useState<any[]>([]);
@@ -177,8 +178,20 @@ export default function QuickReachesPage() {
   };
 
   const handleEdit = (inquiry: any) => {
-    // Navigate to edit page or open edit modal
-    toast.info("Edit functionality coming soon");
+    const editRoutes = {
+      dj: `/services/dj/editReach/${inquiry.id}`,
+      hairMakeup: `/services/hairMakeup/editReach/${inquiry.id}`,
+      photoVideo: `/services/photoVideo/editReach/${inquiry.id}`,
+      venue: `/services/venue/editReach/${inquiry.id}`,
+      weddingPlanner: `/services/weddingPlanner/editReach/${inquiry.id}`,
+    };
+
+    const route = editRoutes[selectedService];
+    if (route) {
+      router.push(route);
+    } else {
+      toast.error("Invalid service type");
+    }
   };
 
   const handleDelete = async (inquiry: any) => {
