@@ -26,6 +26,17 @@ import {
 import NavBar from "@/components/ui/NavBar";
 import Footer from "@/components/ui/Footer";
 import { ProtectedRoute } from "@/components/ui/ProtectedRoute";
+import LocationInput from "@/components/ui/LocationInput";
+
+interface LocationState {
+  enteredLocation: string;
+  city: string;
+  state: string;
+  country: string;
+  placeId: string;
+  latitude: number | null;
+  longitude: number | null;
+}
 
 type ServiceType = "makeup" | "hair" | "both";
 
@@ -54,6 +65,15 @@ const HairMakeupInquiryForm = () => {
   const [customHairStyles, setCustomHairStyles] = useState<string[]>([]);
   const [eventDate, setEventDate] = useState("");
   const [message, setMessage] = useState("");
+  const [location, setLocation] = useState<LocationState>({
+    enteredLocation: "",
+    city: "",
+    state: "",
+    country: "",
+    placeId: "",
+    latitude: null,
+    longitude: null,
+  });
 
   // Form Validation
   const validateCurrentStep = () => {
@@ -92,16 +112,20 @@ const HairMakeupInquiryForm = () => {
         return true;
 
       case 2:
+        if (!eventDate) {
+          toast.error("Event Date is required");
+          return false;
+        }
+        if (!location.city || !location.state) {
+          toast.error("Event Area is required");
+          return false;
+        }
         if (!budget || budget === "0") {
           toast.error("Budget is required");
           return false;
         }
         if (parseInt(budget) <= 0) {
           toast.error("Please enter a valid budget amount");
-          return false;
-        }
-        if (!eventDate) {
-          toast.error("Event Date is required");
           return false;
         }
         if (!serviceType) {
@@ -223,6 +247,12 @@ const HairMakeupInquiryForm = () => {
           event_date: eventDate,
           service_type: serviceType,
           message: message.trim() || null,
+          city: location.city,
+          state: location.state,
+          country: location.country,
+          place_id: location.placeId,
+          latitude: location.latitude,
+          longitude: location.longitude,
         })
         .select()
         .single();
@@ -415,28 +445,74 @@ const HairMakeupInquiryForm = () => {
                     <h2 className="text-2xl font-semibold mb-6">
                       Specifications
                     </h2>
-
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Service Type*
+                        Event Date*
                       </label>
-                      <Select
-                        value={serviceType}
-                        onValueChange={(value: ServiceType) =>
-                          setServiceType(value)
-                        }
-                      >
-                        <SelectTrigger className="w-full">
-                          <SelectValue placeholder="Select service type" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="makeup">Makeup</SelectItem>
-                          <SelectItem value="hair">Hair</SelectItem>
-                          <SelectItem value="both">Hair & Makeup</SelectItem>
-                        </SelectContent>
-                      </Select>
+                      <Input
+                        type="date"
+                        value={eventDate}
+                        onChange={(e) => setEventDate(e.target.value)}
+                        className="w-full"
+                        min={new Date().toISOString().split("T")[0]}
+                        required
+                      />
                     </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Event Area (City, State)*
+                      </label>
+                      <LocationInput
+                        value={location.enteredLocation}
+                        onChange={(value) =>
+                          setLocation((prev) => ({
+                            ...prev,
+                            enteredLocation: value,
+                          }))
+                        }
+                        onPlaceSelect={(place) => {
+                          let city = "";
+                          let state = "";
+                          let country = "";
+                          let latitude: number | null = null;
+                          let longitude: number | null = null;
 
+                          if (place.geometry && place.geometry.location) {
+                            latitude = place.geometry.location.lat();
+                            longitude = place.geometry.location.lng();
+                          }
+
+                          place.address_components?.forEach((component) => {
+                            if (component.types.includes("locality")) {
+                              city = component.long_name;
+                            }
+                            if (
+                              component.types.includes(
+                                "administrative_area_level_1"
+                              )
+                            ) {
+                              state = component.long_name;
+                            }
+                            if (component.types.includes("country")) {
+                              country = component.long_name;
+                            }
+                          });
+
+                          setLocation({
+                            enteredLocation: place.formatted_address || "",
+                            city,
+                            state,
+                            country,
+                            placeId: place.place_id || "",
+                            latitude,
+                            longitude,
+                          });
+                        }}
+                        placeholder="Enter your city"
+                        className="w-full"
+                        isRemoteLocation={true}
+                      />
+                    </div>
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">
                         Budget*
@@ -468,21 +544,26 @@ const HairMakeupInquiryForm = () => {
                         />
                       </div>
                     </div>
-
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Event Date*
+                        Service Type*
                       </label>
-                      <Input
-                        type="date"
-                        value={eventDate}
-                        onChange={(e) => setEventDate(e.target.value)}
-                        className="w-full"
-                        min={new Date().toISOString().split("T")[0]}
-                        required
-                      />
+                      <Select
+                        value={serviceType}
+                        onValueChange={(value: ServiceType) =>
+                          setServiceType(value)
+                        }
+                      >
+                        <SelectTrigger className="w-full">
+                          <SelectValue placeholder="Select service type" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="makeup">Makeup</SelectItem>
+                          <SelectItem value="hair">Hair</SelectItem>
+                          <SelectItem value="both">Hair & Makeup</SelectItem>
+                        </SelectContent>
+                      </Select>
                     </div>
-
                     <div className="space-y-6">
                       {(serviceType === "makeup" || serviceType === "both") && (
                         <div className="space-y-4">

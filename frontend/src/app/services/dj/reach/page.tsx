@@ -26,6 +26,17 @@ import {
 import NavBar from "@/components/ui/NavBar";
 import Footer from "@/components/ui/Footer";
 import { ProtectedRoute } from "@/components/ui/ProtectedRoute";
+import LocationInput from "@/components/ui/LocationInput";
+
+interface LocationState {
+  enteredLocation: string;
+  city: string;
+  state: string;
+  country: string;
+  placeId: string;
+  latitude: number | null;
+  longitude: number | null;
+}
 
 const commonDJStyles = ["Spanish", "Bollywood", "American"];
 
@@ -49,6 +60,15 @@ const DJInquiryForm = () => {
   const [customDJStyles, setCustomDJStyles] = useState<string[]>([]);
   const [eventDate, setEventDate] = useState("");
   const [message, setMessage] = useState("");
+  const [location, setLocation] = useState<LocationState>({
+    enteredLocation: "",
+    city: "",
+    state: "",
+    country: "",
+    placeId: "",
+    latitude: null,
+    longitude: null,
+  });
 
   // Form Validation
   const validateCurrentStep = () => {
@@ -87,6 +107,14 @@ const DJInquiryForm = () => {
         return true;
 
       case 2:
+        if (!eventDate) {
+          toast.error("Event Date is required");
+          return false;
+        }
+        if (!location.city || !location.state) {
+          toast.error("Event Area is required");
+          return false;
+        }
         if (!budget || budget === "0") {
           toast.error("Budget is required");
           return false;
@@ -95,8 +123,8 @@ const DJInquiryForm = () => {
           toast.error("Please enter a valid budget amount");
           return false;
         }
-        if (!eventDate) {
-          toast.error("Event Date is required");
+        if (!location.city || !location.state) {
+          toast.error("Location is required");
           return false;
         }
         const hasEmptyCustomStyles = customDJStyles.some(
@@ -178,12 +206,19 @@ const DJInquiryForm = () => {
           user_id: user.id,
           first_name: firstName.trim(),
           last_name: lastName.trim(),
-          phone: phone.replace(/\D/g, ""), // Store clean phone number
+          phone: phone.replace(/\D/g, ""),
           email: email.trim().toLowerCase(),
           preferred_contact: preferredContact,
           budget: parseInt(budget),
           event_date: eventDate,
-          message: message.trim() || null, // Store null if empty
+          message: message.trim() || null,
+          // Add location data
+          city: location.city,
+          state: location.state,
+          country: location.country,
+          place_id: location.placeId,
+          latitude: location.latitude,
+          longitude: location.longitude,
         })
         .select()
         .single();
@@ -347,7 +382,74 @@ const DJInquiryForm = () => {
                     <h2 className="text-2xl font-semibold mb-6">
                       Specifications
                     </h2>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Event Date*
+                      </label>
+                      <Input
+                        type="date"
+                        value={eventDate}
+                        onChange={(e) => setEventDate(e.target.value)}
+                        className="w-full"
+                        min={new Date().toISOString().split("T")[0]}
+                        required
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Event Area (City, State)*
+                      </label>
+                      <LocationInput
+                        value={location.enteredLocation}
+                        onChange={(value) =>
+                          setLocation((prev) => ({
+                            ...prev,
+                            enteredLocation: value,
+                          }))
+                        }
+                        onPlaceSelect={(place) => {
+                          let city = "";
+                          let state = "";
+                          let country = "";
+                          let latitude: number | null = null;
+                          let longitude: number | null = null;
 
+                          if (place.geometry && place.geometry.location) {
+                            latitude = place.geometry.location.lat();
+                            longitude = place.geometry.location.lng();
+                          }
+
+                          place.address_components?.forEach((component) => {
+                            if (component.types.includes("locality")) {
+                              city = component.long_name;
+                            }
+                            if (
+                              component.types.includes(
+                                "administrative_area_level_1"
+                              )
+                            ) {
+                              state = component.long_name;
+                            }
+                            if (component.types.includes("country")) {
+                              country = component.long_name;
+                            }
+                          });
+
+                          setLocation({
+                            enteredLocation: place.formatted_address || "",
+                            city,
+                            state,
+                            country,
+                            placeId: place.place_id || "",
+                            latitude,
+                            longitude,
+                          });
+                        }}
+                        placeholder="Enter your city"
+                        className="w-full"
+                        isRemoteLocation={true}
+                      />
+                    </div>
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">
                         Budget*
@@ -379,20 +481,6 @@ const DJInquiryForm = () => {
                         />
                       </div>
                     </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Event Date*
-                      </label>
-                      <Input
-                        type="date"
-                        value={eventDate}
-                        onChange={(e) => setEventDate(e.target.value)}
-                        className="w-full"
-                        min={new Date().toISOString().split("T")[0]}
-                        required
-                      />
-                    </div>
-
                     <div className="space-y-4">
                       <div>
                         <div className="flex items-center mb-1">
