@@ -400,7 +400,7 @@ export default function NavBar() {
                     className="flex items-center gap-2 rounded-lg px-2 py-3 text-sm font-medium hover:bg-gray-100"
                     onClick={() => setIsMobileMenuOpen(false)}
                   >
-                    <ListChecks className="h-4 w-4" />
+                    <PersonStanding className="h-4 w-4" />
                     My Reach
                   </Link>
                 )}
