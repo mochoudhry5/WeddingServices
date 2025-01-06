@@ -377,7 +377,7 @@ export default function NavBar() {
                 {isVendor && (
                   <>
                     <Link
-                      href="/dashboard/listings"
+                      href="/dashboard/myLeads"
                       className="flex items-center gap-2 rounded-lg px-2 py-3 text-sm font-medium hover:bg-gray-100"
                       onClick={() => setIsMobileMenuOpen(false)}
                     >
@@ -520,7 +520,7 @@ export default function NavBar() {
                       <>
                         <DropdownMenuItem asChild>
                           <Link
-                            href="/dashboard/listings"
+                            href="/dashboard/myLeads"
                             className="cursor-pointer flex w-full items-center"
                           >
                             <PersonStanding className="mr-2 h-4 w-4" />
