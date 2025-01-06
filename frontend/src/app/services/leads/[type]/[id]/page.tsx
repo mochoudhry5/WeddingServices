@@ -94,7 +94,7 @@ export default function LeadDetailsPage() {
         <div className="max-w-5xl mx-auto px-4 py-8">
           <div className="mb-8">
             <button
-              onClick={() => router.back()}
+              onClick={() => router.push("/dashboard/myReach")}
               className="flex items-center text-gray-600 hover:text-gray-900"
             >
               <ChevronLeft className="h-5 w-5 mr-1" />
