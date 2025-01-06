@@ -17,8 +17,8 @@ const footerLinks = {
     { name: "Community Guidelines", href: "/footer/guidelines" },
   ],
   Services: [
-    { name: "List Your Service", href: "/services" },
     { name: "Search For Service", href: "/" },
+    { name: "List Your Service", href: "/services" },
     { name: "Pricing", href: "/footer/pricing" },
   ],
 };
@@ -106,7 +106,16 @@ export default function Footer() {
                                 {link.name}
                               </a>
                             </li>
-                          ) : null
+                          ) : (
+                            <li key="Quick Reach">
+                              <a
+                                href="/quickReach"
+                                className="text-black hover:text-stone-400 transition-colors text-sm"
+                              >
+                                Quick Reach
+                              </a>
+                            </li>
+                          )
                         ) : (
                           <li key={link.name}>
                             <a
