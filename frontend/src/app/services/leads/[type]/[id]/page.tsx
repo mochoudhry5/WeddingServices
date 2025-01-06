@@ -207,9 +207,9 @@ export default function LeadDetailsPage() {
           </button>
 
           {/* Main Content */}
-          <div className="space-y-8">
+          <div className="bg-white rounded-xl shadow-lg p-8">
             {/* Header Section */}
-            <div className="pb-6 border-b">
+            <div className="pb-6">
               <h1 className="text-2xl font-semibold text-gray-900">
                 {lead.first_name || ""} {lead.last_name || ""}
               </h1>
@@ -314,7 +314,7 @@ export default function LeadDetailsPage() {
 
             {/* Contact Information */}
             <section>
-              <h2 className="text-lg font-medium text-gray-900 mb-4 border-t pt-8">
+              <h2 className="text-lg font-medium text-gray-900 mb-4 pt-8">
                 Contact Information
               </h2>
               <div className="space-y-3">
@@ -340,7 +340,7 @@ export default function LeadDetailsPage() {
             </section>
 
             {/* Event Details */}
-            <section className="border-t pt-8">
+            <section className="pt-8">
               <h2 className="text-lg font-medium text-gray-900 mb-4">
                 Event Details
               </h2>
@@ -367,7 +367,7 @@ export default function LeadDetailsPage() {
             </section>
             {/* Message */}
             {lead.message && (
-              <section className="border-t pt-8">
+              <section className="pt-8">
                 <h2 className="text-lg font-medium text-gray-900 mb-4">
                   Additional Message
                 </h2>
