@@ -32,7 +32,17 @@ export default function LeadDetailsPage() {
 
   useEffect(() => {
     const fetchData = async () => {
-      if (!id || !type || !["venue", "dj", "hair_makeup", "photo_video", "wedding_planner"].includes(type)) {
+      if (
+        !id ||
+        !type ||
+        ![
+          "venue",
+          "dj",
+          "hair_makeup",
+          "photo_video",
+          "wedding_planner",
+        ].includes(type)
+      ) {
         setNotFound(true);
         setIsLoading(false);
         return;
@@ -42,11 +52,51 @@ export default function LeadDetailsPage() {
         setIsLoading(true);
         setNotFound(false);
 
-        const { data, error } = await supabase
-          .from(`${type}_leads`)
-          .select("*")
-          .eq("id", id)
-          .single();
+        let query;
+
+        if (type === "hair_makeup") {
+          query = supabase
+            .from(`${type}_leads`)
+            .select(
+              `
+              *,
+              styles:hair_makeup_lead_styles (
+                id,
+                lead_id,
+                style,
+                type,
+                is_custom
+              )
+            `
+            )
+            .eq("id", id)
+            .single();
+        } else if (type === "photo_video") {
+          query = supabase
+            .from(`${type}_leads`)
+            .select(
+              `
+              *,
+              styles:photo_video_lead_styles (
+                id,
+                lead_id,
+                style,
+                type,
+                is_custom
+              )
+            `
+            )
+            .eq("id", id)
+            .single();
+        } else {
+          query = supabase
+            .from(`${type}_leads`)
+            .select("*")
+            .eq("id", id)
+            .single();
+        }
+
+        const { data, error } = await query;
 
         if (error) {
           console.error("Supabase error:", error);
@@ -142,153 +192,193 @@ export default function LeadDetailsPage() {
   }
 
   return (
-    <div className="flex flex-col min-h-screen">
+    <div className="flex flex-col min-h-screen bg-white">
       <NavBar />
-      <div className="flex-1 bg-gray-50">
-        <div className="max-w-5xl mx-auto px-4 py-8">
-          <div className="mb-8">
-            <button
-              onClick={handleBack}
-              className="flex items-center text-gray-600 hover:text-gray-900"
-            >
-              <ChevronLeft className="h-5 w-5 mr-1" />
-              Back to Leads
-            </button>
-          </div>
 
-          <div className="bg-white rounded-xl shadow-sm overflow-hidden">
-            {/* Header */}
-            <div className="p-6 border-b">
-              <div className="flex justify-between items-start">
-                <div>
-                  <h1 className="text-2xl font-bold text-gray-900">
-                    {lead.first_name || ""} {lead.last_name || ""}
-                  </h1>
-                  {lead.created_at && (
-                    <p className="text-gray-500 mt-1">
-                      Submitted on {formatDate(lead.created_at)}
-                    </p>
-                  )}
-                </div>
-              </div>
+      <main className="flex-1 pb-20">
+        <div className="max-w-3xl mx-auto px-4 py-8">
+          {/* Back Button */}
+          <button
+            onClick={handleBack}
+            className="group mb-8 flex items-center text-gray-600 hover:text-gray-900"
+          >
+            <ChevronLeft className="h-5 w-5 mr-1" />
+            Back to Leads
+          </button>
+
+          {/* Main Content */}
+          <div className="space-y-8">
+            {/* Header Section */}
+            <div className="pb-6 border-b">
+              <h1 className="text-2xl font-semibold text-gray-900">
+                {lead.first_name || ""} {lead.last_name || ""}
+              </h1>
+              {lead.created_at && (
+                <p className="text-gray-500 mt-2 flex items-center">
+                  Submitted on {formatDate(lead.created_at)}
+                </p>
+              )}
             </div>
-
-            {/* Content Grid */}
-            <div className="p-6 grid grid-cols-1 md:grid-cols-2 gap-8">
-              {/* Basic Information */}
+            {/* Service Information */}
+            <section>
+              <h2 className="text-lg font-medium text-gray-900 mb-4">
+                Service Information
+              </h2>
               <div className="space-y-6">
-                <div>
-                  <h2 className="font-semibold text-gray-900 mb-4">
-                    Contact Information
-                  </h2>
-                  <div className="space-y-4">
-                    {lead.email && (
-                      <div className="flex items-center">
-                        <Mail className="h-5 w-5 text-gray-400 mr-3" />
-                        <a
-                          href={`mailto:${lead.email}`}
-                          className="text-blue-600 hover:underline"
-                        >
-                          {lead.email}
-                        </a>
-                      </div>
-                    )}
-                    {lead.phone && (
-                      <div className="flex items-center">
-                        <Phone className="h-5 w-5 text-gray-400 mr-3" />
-                        <a
-                          href={`tel:${lead.phone}`}
-                          className="text-blue-600 hover:underline"
-                        >
-                          {formatPhoneNumber(lead.phone)}
-                        </a>
-                      </div>
-                    )}
-                  </div>
+                {/* Service Type */}
+                <div className="flex items-center text-gray-600">
+                  <Building2 className="h-5 w-5 mr-3" />
+                  <span>
+                    {type === "venue" && "Venue"}
+                    {type === "dj" && "DJ"}
+                    {type === "wedding_planner" &&
+                      (lead.service_type === "weddingPlanner"
+                        ? "Wedding Planner"
+                        : lead.service_type === "weddingCoordinator"
+                        ? "Wedding Coordinator"
+                        : lead.service_type === "both"
+                        ? "Wedding Planning & Coordination"
+                        : "Wedding Planner")}
+                    {type === "photo_video" &&
+                      (lead.service_type === "photography"
+                        ? "Photography"
+                        : lead.service_type === "videography"
+                        ? "Videography"
+                        : lead.service_type === "both"
+                        ? "Photography & Videography"
+                        : "Photography & Videography")}
+                    {type === "hair_makeup" &&
+                      (lead.service_type === "hair"
+                        ? "Hair Styling"
+                        : lead.service_type === "makeup"
+                        ? "Makeup Services"
+                        : lead.service_type === "both"
+                        ? "Hair & Makeup Services"
+                        : "Hair & Makeup Services")}
+                  </span>
                 </div>
 
-                <div>
-                  <h2 className="font-semibold text-gray-900 mb-4">
-                    Event Details
-                  </h2>
-                  <div className="space-y-4">
-                    {lead.event_date && (
-                      <div className="flex items-center">
-                        <Calendar className="h-5 w-5 text-gray-400 mr-3" />
-                        <span>{formatDate(lead.event_date)}</span>
+                {/* Styles for Photo/Video or Hair/Makeup */}
+                {(type === "photo_video" || type === "hair_makeup") &&
+                  lead.styles?.length > 0 && (
+                    <div className="mt-4">
+                      <div className="text-sm font-medium text-gray-700 mb-3">
+                        Preferred Styles:
                       </div>
-                    )}
-                    {lead.city && lead.state && (
-                      <div className="flex items-center">
-                        <MapPin className="h-5 w-5 text-gray-400 mr-3" />
-                        <span>
-                          {lead.city}, {lead.state}
-                        </span>
+                      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+                        {lead.styles.map((style: any) => (
+                          <div
+                            key={style.id}
+                            className="p-3 rounded-lg border border-black bg-stone-100 flex items-center gap-2"
+                          >
+                            <span className="text-green-800">✓</span>
+                            <span className="text-sm text-gray-900 capitalize">
+                              {style.style.replace(/-/g, " ")}
+                            </span>
+                          </div>
+                        ))}
                       </div>
-                    )}
-                    {typeof lead.budget === "number" && (
-                      <div className="flex items-center">
-                        <DollarSign className="h-5 w-5 text-gray-400 mr-3" />
-                        <span>${lead.budget.toLocaleString()}</span>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </div>
+                    </div>
+                  )}
 
-              {/* Service Specific Information */}
-              {type === "venue" && (
-                <div>
-                  <h2 className="font-semibold text-gray-900 mb-4">
-                    Venue Requirements
-                  </h2>
-                  <div className="space-y-4">
+                {/* Venue-specific details */}
+                {type === "venue" && (
+                  <div className="space-y-3">
                     {(lead.min_guests || lead.max_guests) && (
-                      <div className="flex items-center">
-                        <Users className="h-5 w-5 text-gray-400 mr-3" />
-                        <span>
-                          {lead.min_guests ? `${lead.min_guests} - ` : ""}
-                          {lead.max_guests} guests
-                        </span>
+                      <div className="flex items-center text-gray-600">
+                        <Users className="h-5 w-5 mr-3" />
+                        {lead.min_guests ? `${lead.min_guests} - ` : ""}
+                        {lead.max_guests} guests
                       </div>
                     )}
                     {lead.venue_type && (
-                      <div className="flex items-center">
-                        <Building2 className="h-5 w-5 text-gray-400 mr-3" />
+                      <div className="flex items-center text-gray-600">
+                        <Building2 className="h-5 w-5 mr-3" />
                         <span className="capitalize">
                           {lead.venue_type.replace(/-/g, " ")}
                         </span>
                       </div>
                     )}
                     {lead.catering_preference && (
-                      <div className="flex items-center">
-                        <UtensilsCrossed className="h-5 w-5 text-gray-400 mr-3" />
+                      <div className="flex items-center text-gray-600">
+                        <UtensilsCrossed className="h-5 w-5 mr-3" />
                         <span className="capitalize">
                           {lead.catering_preference.replace(/-/g, " ")}
                         </span>
                       </div>
                     )}
                   </div>
-                </div>
-              )}
+                )}
+              </div>
+            </section>
 
-              {/* Message */}
-              {lead.message && (
-                <div className="md:col-span-2">
-                  <h2 className="font-semibold text-gray-900 mb-4">
-                    Additional Message
-                  </h2>
-                  <div className="bg-gray-50 rounded-lg p-4">
-                    <p className="whitespace-pre-wrap text-gray-600">
-                      {lead.message}
-                    </p>
+            {/* Contact Information */}
+            <section>
+              <h2 className="text-lg font-medium text-gray-900 mb-4 border-t pt-8">
+                Contact Information
+              </h2>
+              <div className="space-y-3">
+                {lead.email && (
+                  <a
+                    href={`mailto:${lead.email}`}
+                    className="flex items-center text-gray-600 hover:text-gray-900"
+                  >
+                    <Mail className="h-5 w-5 mr-3" />
+                    {lead.email}
+                  </a>
+                )}
+                {lead.phone && (
+                  <a
+                    href={`tel:${lead.phone}`}
+                    className="flex items-center text-gray-600 hover:text-gray-900"
+                  >
+                    <Phone className="h-5 w-5 mr-3" />
+                    {formatPhoneNumber(lead.phone)}
+                  </a>
+                )}
+              </div>
+            </section>
+
+            {/* Event Details */}
+            <section className="border-t pt-8">
+              <h2 className="text-lg font-medium text-gray-900 mb-4">
+                Event Details
+              </h2>
+              <div className="space-y-3">
+                {lead.event_date && (
+                  <div className="flex items-center text-gray-600">
+                    <Calendar className="h-5 w-5 mr-3" />
+                    {formatDate(lead.event_date)}
                   </div>
-                </div>
-              )}
-            </div>
+                )}
+                {lead.city && lead.state && (
+                  <div className="flex items-center text-gray-600">
+                    <MapPin className="h-5 w-5 mr-3" />
+                    {lead.city}, {lead.state}
+                  </div>
+                )}
+                {typeof lead.budget === "number" && (
+                  <div className="flex items-center text-gray-600">
+                    <DollarSign className="h-5 w-5 mr-3" />$
+                    {lead.budget.toLocaleString()}
+                  </div>
+                )}
+              </div>
+            </section>
+            {/* Message */}
+            {lead.message && (
+              <section className="border-t pt-8">
+                <h2 className="text-lg font-medium text-gray-900 mb-4">
+                  Additional Message
+                </h2>
+                <p className="text-gray-600 whitespace-pre-wrap">
+                  {lead.message}
+                </p>
+              </section>
+            )}
           </div>
         </div>
-      </div>
+      </main>
       <Footer />
     </div>
   );

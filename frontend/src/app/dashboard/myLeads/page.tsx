@@ -424,8 +424,12 @@ export default function LeadsPage() {
     const handleCardClick = (e: React.MouseEvent, lead: Lead) => {
       e.preventDefault();
       e.stopPropagation();
-      if (!(e.target as HTMLElement).closest("button")) {
-        router.push(`/services/leads/${activeTab}/${lead.id}`);
+      // Don't trigger if clicking on a button or link within the card
+      if (
+        !(e.target as HTMLElement).closest("button") &&
+        !(e.target as HTMLElement).closest("a")
+      ) {
+        window.open(`/services/leads/${activeTab}/${lead.id}`, "_blank");
       }
     };
 
