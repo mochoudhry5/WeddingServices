@@ -40,16 +40,6 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
-import {
   Card,
   CardContent,
   CardDescription,
@@ -119,7 +109,6 @@ export default function LeadsPage() {
   const [leads, setLeads] = useState<Lead[]>([]);
   const [filteredLeads, setFilteredLeads] = useState<Lead[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [selectedLeadId, setSelectedLeadId] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [sortBy, setSortBy] = useState<"newest" | "price-low" | "price-high">(
@@ -293,18 +282,6 @@ export default function LeadsPage() {
     setIsFilterSheetOpen(false);
   };
 
-  const handleEdit = (leadId: string) => {
-    const editPaths: Record<ServiceType, string> = {
-      venue: "/services/venue/editReach",
-      dj: "/services/dj/editReach",
-      wedding_planner: "/services/weddingPlanner/editReach",
-      photo_video: "/services/photoVideo/editReach",
-      hair_makeup: "/services/hairMakeup/editReach",
-    };
-
-    router.push(`${editPaths[activeTab]}/${leadId}`);
-  };
-
   const handleDelete = async () => {
     if (!selectedLeadId) return;
 
@@ -322,7 +299,6 @@ export default function LeadsPage() {
         [activeTab]: Math.max(0, prev[activeTab] - 1),
       }));
       setLeads((prev) => prev.filter((lead) => lead.id !== selectedLeadId));
-      setShowDeleteDialog(false);
       setSelectedLeadId(null);
     } catch (error) {
       console.error("Error deleting lead:", error);
@@ -481,8 +457,20 @@ export default function LeadsPage() {
 
   const renderLeadCard = (lead: Lead) => {
     const Icon = SERVICE_CONFIGS[activeTab].icon;
+
+    const handleCardClick = (e: React.MouseEvent, lead: Lead) => {
+      e.preventDefault();
+      e.stopPropagation();
+      if (!(e.target as HTMLElement).closest("button")) {
+        router.push(`/services/leads/${activeTab}/${lead.id}`);
+      }
+    };
     return (
-      <Card key={lead.id} className="overflow-hidden">
+      <Card
+        key={lead.id}
+        className="overflow-hidden cursor-pointer hover:shadow-md transition-all h-full flex flex-col"
+        onClick={(e) => handleCardClick(e, lead)}
+      >
         <CardHeader className="space-y-1">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-2">
@@ -490,56 +478,6 @@ export default function LeadsPage() {
               <CardTitle className="text-xl">
                 {lead.first_name} {lead.last_name}
               </CardTitle>
-            </div>
-            <div className="flex items-center gap-2">
-              <button
-                onClick={() => handleEdit(lead.id)}
-                className="p-2 hover:bg-gray-100 rounded-full transition-colors"
-                aria-label="Edit lead"
-              >
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  width="16"
-                  height="16"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  className="text-gray-500 hover:text-gray-700"
-                >
-                  <path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z" />
-                  <path d="m15 5 4 4" />
-                </svg>
-              </button>
-              <button
-                onClick={() => {
-                  setSelectedLeadId(lead.id);
-                  setShowDeleteDialog(true);
-                }}
-                className="p-2 hover:bg-gray-100 rounded-full transition-colors"
-                aria-label="Delete lead"
-              >
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  width="16"
-                  height="16"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  className="text-red-500 hover:text-red-800"
-                >
-                  <path d="M3 6h18" />
-                  <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" />
-                  <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" />
-                  <line x1="10" x2="10" y1="11" y2="17" />
-                  <line x1="14" x2="14" y1="11" y2="17" />
-                </svg>
-              </button>
             </div>
           </div>
           <CardDescription>
@@ -643,27 +581,6 @@ export default function LeadsPage() {
         </div>
         <Footer />
       </div>
-
-      <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Delete Lead</AlertDialogTitle>
-            <AlertDialogDescription>
-              Are you sure you want to delete this lead? This action cannot be
-              undone.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={handleDelete}
-              className="bg-red-600 hover:bg-red-700 focus:ring-red-600"
-            >
-              Delete
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
     </ProtectedRoute>
   );
 }
