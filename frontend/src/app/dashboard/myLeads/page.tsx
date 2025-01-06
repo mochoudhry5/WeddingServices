@@ -379,8 +379,7 @@ export default function LeadsPage() {
 
           <SheetContent side="right" className="w-full sm:max-w-md">
             <SheetHeader>
-              <SheetTitle>Budget Filter</SheetTitle>
-              <SheetDescription>Set your budget range</SheetDescription>
+              <SheetTitle>Filters</SheetTitle>
             </SheetHeader>
 
             <div className="mt-6">
