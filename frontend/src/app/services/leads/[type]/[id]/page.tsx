@@ -32,7 +32,7 @@ export default function LeadDetailsPage() {
 
   useEffect(() => {
     const fetchData = async () => {
-      if (!id || !type || !["venue", "vendor", "service"].includes(type)) {
+      if (!id || !type || !["venue", "dj", "hair_makeup", "photo_video", "wedding_planner"].includes(type)) {
         setNotFound(true);
         setIsLoading(false);
         return;
@@ -72,7 +72,7 @@ export default function LeadDetailsPage() {
   }, [id, type]);
 
   const handleBack = () => {
-    router.push("/services/leads");
+    router.push("/dashboard/myLeads");
   };
 
   const handleGoHome = () => {
