@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { Plus, X, DollarSign } from "lucide-react";
+import { DollarSign } from "lucide-react";
 import { toast } from "sonner";
 import { Input } from "@/components/ui/input";
 import { supabase } from "@/lib/supabase";
@@ -38,9 +38,7 @@ interface LocationState {
   longitude: number | null;
 }
 
-const commonDJStyles = ["Spanish", "Bollywood", "American"];
-
-export default function DJEditPage() {
+export default function VenueEditPage() {
   const router = useRouter();
   const params = useParams();
   const { id } = params;
@@ -59,9 +57,11 @@ export default function DJEditPage() {
 
   // Specifications State
   const [budget, setBudget] = useState<string>("");
-  const [specialties, setSpecialties] = useState<string[]>([]);
-  const [customDJStyles, setCustomDJStyles] = useState<string[]>([]);
+  const [minGuests, setMinGuests] = useState<string>("");
+  const [maxGuests, setMaxGuests] = useState<string>("");
   const [eventDate, setEventDate] = useState("");
+  const [cateringPreference, setCateringPreference] = useState("");
+  const [venueType, setVenueType] = useState("");
   const [message, setMessage] = useState("");
   const [location, setLocation] = useState<LocationState>({
     enteredLocation: "",
@@ -82,23 +82,15 @@ export default function DJEditPage() {
     try {
       setIsLoading(true);
 
-      // Load main inquiry data
+      // Load inquiry data
       const { data: inquiry, error: inquiryError } = await supabase
-        .from("dj_leads")
+        .from("venue_leads")
         .select("*")
         .eq("id", id)
         .single();
 
       if (inquiryError) throw inquiryError;
       if (!inquiry) throw new Error("Inquiry not found");
-
-      // Load genres
-      const { data: genres, error: genresError } = await supabase
-        .from("dj_lead_genres")
-        .select("*")
-        .eq("lead_id", id);
-
-      if (genresError) throw genresError;
 
       // Set form data
       setFirstName(inquiry.first_name);
@@ -107,7 +99,11 @@ export default function DJEditPage() {
       setEmail(inquiry.email);
       setPreferredContact(inquiry.preferred_contact);
       setBudget(inquiry.budget.toString());
+      setMinGuests(inquiry.min_guests?.toString() || "");
+      setMaxGuests(inquiry.max_guests.toString());
       setEventDate(inquiry.event_date);
+      setCateringPreference(inquiry.catering_preference);
+      setVenueType(inquiry.venue_type);
       setMessage(inquiry.message || "");
       setLocation({
         enteredLocation: `${inquiry.city}, ${inquiry.state}`,
@@ -118,17 +114,6 @@ export default function DJEditPage() {
         latitude: inquiry.latitude,
         longitude: inquiry.longitude,
       });
-
-      // Set genres
-      const commonStyles = genres
-        .filter((g) => !g.is_custom)
-        .map((g) => g.genre);
-      const customStyles = genres
-        .filter((g) => g.is_custom)
-        .map((g) => g.genre);
-
-      setSpecialties(commonStyles);
-      setCustomDJStyles(customStyles);
     } catch (error) {
       console.error("Error loading inquiry:", error);
       toast.error("Failed to load inquiry");
@@ -191,23 +176,26 @@ export default function DJEditPage() {
           toast.error("Please enter a valid budget amount");
           return false;
         }
-        if (!location.city || !location.state) {
-          toast.error("Location is required");
+        if (!maxGuests || parseInt(maxGuests) <= 0) {
+          toast.error("Maximum guest count is required");
           return false;
         }
-        const hasEmptyCustomStyles = customDJStyles.some(
-          (style) => style.trim() === ""
-        );
-        if (hasEmptyCustomStyles) {
-          toast.error("Please fill in all custom styles or remove empty ones");
+        if (minGuests && maxGuests) {
+          const minCount = parseInt(minGuests);
+          const maxCount = parseInt(maxGuests);
+          if (minCount >= maxCount) {
+            toast.error(
+              "Minimum guest count must be less than maximum guest count"
+            );
+            return false;
+          }
+        }
+        if (!cateringPreference) {
+          toast.error("Catering preference is required");
           return false;
         }
-        const validStyles = [
-          ...specialties,
-          ...customDJStyles.filter((style) => style.trim() !== ""),
-        ];
-        if (validStyles.length === 0) {
-          toast.error("At least one DJ style must be selected or added");
+        if (!venueType) {
+          toast.error("Venue type preference is required");
           return false;
         }
         return true;
@@ -258,7 +246,7 @@ export default function DJEditPage() {
 
       // Update the lead
       const { error: leadError } = await supabase
-        .from("dj_leads")
+        .from("venue_leads")
         .update({
           first_name: firstName.trim(),
           last_name: lastName.trim(),
@@ -266,7 +254,11 @@ export default function DJEditPage() {
           email: email.trim().toLowerCase(),
           preferred_contact: preferredContact,
           budget: parseInt(budget),
+          min_guests: minGuests ? parseInt(minGuests) : null,
+          max_guests: parseInt(maxGuests),
           event_date: eventDate,
+          catering_preference: cateringPreference,
+          venue_type: venueType,
           message: message.trim() || null,
           city: location.city,
           state: location.state,
@@ -279,42 +271,6 @@ export default function DJEditPage() {
 
       if (leadError)
         throw new Error(`Failed to update lead: ${leadError.message}`);
-
-      // Delete existing genres
-      const { error: deleteGenresError } = await supabase
-        .from("dj_lead_genres")
-        .delete()
-        .eq("lead_id", params.id);
-
-      if (deleteGenresError)
-        throw new Error(
-          `Failed to update genres: ${deleteGenresError.message}`
-        );
-
-      // Insert new genres
-      const genresData = [
-        ...specialties.map((genre) => ({
-          lead_id: params.id,
-          genre,
-          is_custom: false,
-        })),
-        ...customDJStyles
-          .filter((style) => style.trim() !== "")
-          .map((genre) => ({
-            lead_id: params.id,
-            genre: genre.trim(),
-            is_custom: true,
-          })),
-      ];
-
-      if (genresData.length > 0) {
-        const { error: genresError } = await supabase
-          .from("dj_lead_genres")
-          .insert(genresData);
-
-        if (genresError)
-          throw new Error(`Failed to create genres: ${genresError.message}`);
-      }
 
       toast.success("Inquiry updated successfully!");
       router.push("/dashboard/myReach");
@@ -329,21 +285,6 @@ export default function DJEditPage() {
       setIsSubmitting(false);
     }
   };
-
-  if (isLoading) {
-    return (
-      <ProtectedRoute>
-        <div className="flex flex-col min-h-screen">
-          <NavBar />
-          <div className="flex-1 flex items-center justify-center">
-            <p className="text-gray-500">Loading inquiry data...</p>
-          </div>
-          <Footer />
-        </div>
-      </ProtectedRoute>
-    );
-  }
-
   return (
     <ProtectedRoute>
       <div className="flex flex-col min-h-screen">
@@ -526,6 +467,7 @@ export default function DJEditPage() {
                         isRemoteLocation={true}
                       />
                     </div>
+
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">
                         Budget*
@@ -557,102 +499,111 @@ export default function DJEditPage() {
                         />
                       </div>
                     </div>
-                    <div className="space-y-4">
+
+                    <div className="grid grid-cols-2 gap-4">
                       <div>
-                        <div className="flex items-center mb-1">
-                          <label className="block text-sm font-medium text-gray-700">
-                            Preferred DJ Genres*
-                          </label>
-                          <button
-                            type="button"
-                            onClick={() => {
-                              if (customDJStyles.length === 0) {
-                                setCustomDJStyles([""]);
-                              } else {
-                                const lastStyle =
-                                  customDJStyles[customDJStyles.length - 1];
-                                if (lastStyle && lastStyle.trim() !== "") {
-                                  setCustomDJStyles([...customDJStyles, ""]);
-                                }
-                              }
-                            }}
-                            disabled={
-                              customDJStyles.length > 0 &&
-                              customDJStyles[
-                                customDJStyles.length - 1
-                              ].trim() === ""
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          Minimum Guests
+                        </label>
+                        <Input
+                          type="number"
+                          min="0"
+                          step="1"
+                          value={minGuests}
+                          onChange={(e) => {
+                            const sanitizedValue = e.target.value
+                              .replace(/[^\d]/g, "")
+                              .replace(/^0+(?=\d)/, "");
+                            setMinGuests(sanitizedValue);
+                          }}
+                          onKeyDown={(e) => {
+                            if (e.key === "-" || e.key === ".") {
+                              e.preventDefault();
                             }
-                            className="ml-2 p-1 flex items-center gap-1.5 text-gray-400 hover:text-gray-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                          >
-                            <Plus size={16} />
-                            <span className="text-sm sm:inline">Add Genre</span>
-                          </button>
-                        </div>
-                        <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                          {commonDJStyles.map((style) => (
-                            <label
-                              key={style}
-                              className="relative flex items-center h-12 px-4 rounded-lg border cursor-pointer hover:bg-gray-50"
-                            >
-                              <div className="flex items-center h-5">
-                                <input
-                                  type="checkbox"
-                                  className="h-4 w-4 rounded border-gray-300 accent-black focus:ring-black focus:ring-offset-0"
-                                  checked={specialties.includes(style)}
-                                  onChange={(e) => {
-                                    if (e.target.checked) {
-                                      setSpecialties([...specialties, style]);
-                                    } else {
-                                      setSpecialties(
-                                        specialties.filter(
-                                          (item) => item !== style
-                                        )
-                                      );
-                                    }
-                                  }}
-                                />
-                              </div>
-                              <div className="ml-3 text-sm">
-                                <span className="font-medium text-gray-900">
-                                  {style}
-                                </span>
-                              </div>
-                            </label>
-                          ))}
-                          {customDJStyles.map((style, index) => (
-                            <div
-                              key={`custom-dj-${index}`}
-                              className="flex items-center h-12 px-4 rounded-lg border"
-                            >
-                              <Input
-                                value={style}
-                                onChange={(e) => {
-                                  if (e.target.value.length <= 25) {
-                                    const newStyles = [...customDJStyles];
-                                    newStyles[index] = e.target.value;
-                                    setCustomDJStyles(newStyles);
-                                  }
-                                }}
-                                maxLength={25}
-                                placeholder="Enter Custom Genre"
-                                className="flex-1 h-full border-none focus:ring-0"
-                              />
-                              <button
-                                type="button"
-                                onClick={() =>
-                                  setCustomDJStyles(
-                                    customDJStyles.filter((_, i) => i !== index)
-                                  )
-                                }
-                                className="ml-2 text-gray-400 hover:text-gray-600 transition-colors"
-                              >
-                                <X size={16} />
-                              </button>
-                            </div>
-                          ))}
-                        </div>
+                          }}
+                          placeholder="50"
+                          className="w-full"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          Maximum Guests*
+                        </label>
+                        <Input
+                          type="number"
+                          min="0"
+                          step="1"
+                          value={maxGuests}
+                          onChange={(e) => {
+                            const sanitizedValue = e.target.value
+                              .replace(/[^\d]/g, "")
+                              .replace(/^0+(?=\d)/, "");
+                            setMaxGuests(sanitizedValue);
+                          }}
+                          onKeyDown={(e) => {
+                            if (e.key === "-" || e.key === ".") {
+                              e.preventDefault();
+                            }
+                          }}
+                          placeholder="200"
+                          className="w-full"
+                          required
+                        />
                       </div>
                     </div>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          Catering Preference*
+                        </label>
+                        <Select
+                          value={cateringPreference}
+                          onValueChange={setCateringPreference}
+                        >
+                          <SelectTrigger className="w-full">
+                            <SelectValue placeholder="Select catering preference" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="in-house">
+                              In-House Catering Only
+                            </SelectItem>
+                            <SelectItem value="outside">
+                              Outside Catering Only
+                            </SelectItem>
+                            <SelectItem value="both">
+                              Either In-House or Outside
+                            </SelectItem>
+                            <SelectItem value="no-preference">
+                              No Preference
+                            </SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          Venue Type*
+                        </label>
+                        <Select value={venueType} onValueChange={setVenueType}>
+                          <SelectTrigger className="w-full">
+                            <SelectValue placeholder="Select venue type" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="indoor">Indoor Only</SelectItem>
+                            <SelectItem value="outdoor">
+                              Outdoor Only
+                            </SelectItem>
+                            <SelectItem value="both">
+                              Indoor & Outdoor
+                            </SelectItem>
+                            <SelectItem value="no-preference">
+                              No Preference
+                            </SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">
                         Additional Message
@@ -662,12 +613,12 @@ export default function DJEditPage() {
                         value={message}
                         onChange={(e) => setMessage(e.target.value)}
                         rows={4}
-                        placeholder="Any additional details or specific requirements..."
+                        placeholder="Any additional details, requirements, or preferences..."
                         className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-transparent resize-vertical"
                       />
                       <p className="mt-1 text-sm text-gray-500">
                         Include any specific requirements or questions you have
-                        for the DJ
+                        for the venue
                       </p>
                     </div>
                   </div>
@@ -720,10 +671,12 @@ export default function DJEditPage() {
               >
                 <AlertDialogContent>
                   <AlertDialogHeader>
-                    <AlertDialogTitle>Cancel Inquiry Update</AlertDialogTitle>
+                    <AlertDialogTitle>
+                      Cancel Inquiry Submission
+                    </AlertDialogTitle>
                     <AlertDialogDescription>
-                      Are you sure you want to cancel? All your changes will be
-                      lost.
+                      Are you sure you want to cancel? All your progress will be
+                      lost and you'll need to start over.
                     </AlertDialogDescription>
                   </AlertDialogHeader>
                   <AlertDialogFooter>

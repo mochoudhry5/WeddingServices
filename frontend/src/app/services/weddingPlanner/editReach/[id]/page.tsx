@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { Plus, X, DollarSign } from "lucide-react";
+import { DollarSign } from "lucide-react";
 import { toast } from "sonner";
 import { Input } from "@/components/ui/input";
 import { supabase } from "@/lib/supabase";
@@ -38,9 +38,16 @@ interface LocationState {
   longitude: number | null;
 }
 
-const commonDJStyles = ["Spanish", "Bollywood", "American"];
+type ServiceType = "weddingPlanner" | "weddingCoordinator" | "both";
 
-export default function DJEditPage() {
+const planningProgressOptions = [
+  { value: "not-started", label: "Not Started" },
+  { value: "early-stages", label: "Early Stages" },
+  { value: "halfway", label: "About Halfway" },
+  { value: "nearly-complete", label: "Nearly Complete" },
+];
+
+export default function WeddingPlannerEditPage() {
   const router = useRouter();
   const params = useParams();
   const { id } = params;
@@ -58,9 +65,8 @@ export default function DJEditPage() {
   const [preferredContact, setPreferredContact] = useState("");
 
   // Specifications State
+  const [serviceType, setServiceType] = useState<ServiceType | "">("");
   const [budget, setBudget] = useState<string>("");
-  const [specialties, setSpecialties] = useState<string[]>([]);
-  const [customDJStyles, setCustomDJStyles] = useState<string[]>([]);
   const [eventDate, setEventDate] = useState("");
   const [message, setMessage] = useState("");
   const [location, setLocation] = useState<LocationState>({
@@ -82,23 +88,15 @@ export default function DJEditPage() {
     try {
       setIsLoading(true);
 
-      // Load main inquiry data
+      // Load inquiry data
       const { data: inquiry, error: inquiryError } = await supabase
-        .from("dj_leads")
+        .from("wedding_planner_leads")
         .select("*")
         .eq("id", id)
         .single();
 
       if (inquiryError) throw inquiryError;
       if (!inquiry) throw new Error("Inquiry not found");
-
-      // Load genres
-      const { data: genres, error: genresError } = await supabase
-        .from("dj_lead_genres")
-        .select("*")
-        .eq("lead_id", id);
-
-      if (genresError) throw genresError;
 
       // Set form data
       setFirstName(inquiry.first_name);
@@ -107,6 +105,7 @@ export default function DJEditPage() {
       setEmail(inquiry.email);
       setPreferredContact(inquiry.preferred_contact);
       setBudget(inquiry.budget.toString());
+      setServiceType(inquiry.service_type);
       setEventDate(inquiry.event_date);
       setMessage(inquiry.message || "");
       setLocation({
@@ -118,17 +117,6 @@ export default function DJEditPage() {
         latitude: inquiry.latitude,
         longitude: inquiry.longitude,
       });
-
-      // Set genres
-      const commonStyles = genres
-        .filter((g) => !g.is_custom)
-        .map((g) => g.genre);
-      const customStyles = genres
-        .filter((g) => g.is_custom)
-        .map((g) => g.genre);
-
-      setSpecialties(commonStyles);
-      setCustomDJStyles(customStyles);
     } catch (error) {
       console.error("Error loading inquiry:", error);
       toast.error("Failed to load inquiry");
@@ -191,23 +179,8 @@ export default function DJEditPage() {
           toast.error("Please enter a valid budget amount");
           return false;
         }
-        if (!location.city || !location.state) {
-          toast.error("Location is required");
-          return false;
-        }
-        const hasEmptyCustomStyles = customDJStyles.some(
-          (style) => style.trim() === ""
-        );
-        if (hasEmptyCustomStyles) {
-          toast.error("Please fill in all custom styles or remove empty ones");
-          return false;
-        }
-        const validStyles = [
-          ...specialties,
-          ...customDJStyles.filter((style) => style.trim() !== ""),
-        ];
-        if (validStyles.length === 0) {
-          toast.error("At least one DJ style must be selected or added");
+        if (!serviceType) {
+          toast.error("Service type is required");
           return false;
         }
         return true;
@@ -258,13 +231,14 @@ export default function DJEditPage() {
 
       // Update the lead
       const { error: leadError } = await supabase
-        .from("dj_leads")
+        .from("wedding_planner_leads")
         .update({
           first_name: firstName.trim(),
           last_name: lastName.trim(),
           phone: phone.replace(/\D/g, ""),
           email: email.trim().toLowerCase(),
           preferred_contact: preferredContact,
+          service_type: serviceType,
           budget: parseInt(budget),
           event_date: eventDate,
           message: message.trim() || null,
@@ -279,42 +253,6 @@ export default function DJEditPage() {
 
       if (leadError)
         throw new Error(`Failed to update lead: ${leadError.message}`);
-
-      // Delete existing genres
-      const { error: deleteGenresError } = await supabase
-        .from("dj_lead_genres")
-        .delete()
-        .eq("lead_id", params.id);
-
-      if (deleteGenresError)
-        throw new Error(
-          `Failed to update genres: ${deleteGenresError.message}`
-        );
-
-      // Insert new genres
-      const genresData = [
-        ...specialties.map((genre) => ({
-          lead_id: params.id,
-          genre,
-          is_custom: false,
-        })),
-        ...customDJStyles
-          .filter((style) => style.trim() !== "")
-          .map((genre) => ({
-            lead_id: params.id,
-            genre: genre.trim(),
-            is_custom: true,
-          })),
-      ];
-
-      if (genresData.length > 0) {
-        const { error: genresError } = await supabase
-          .from("dj_lead_genres")
-          .insert(genresData);
-
-        if (genresError)
-          throw new Error(`Failed to create genres: ${genresError.message}`);
-      }
 
       toast.success("Inquiry updated successfully!");
       router.push("/dashboard/myReach");
@@ -343,7 +281,6 @@ export default function DJEditPage() {
       </ProtectedRoute>
     );
   }
-
   return (
     <ProtectedRoute>
       <div className="flex flex-col min-h-screen">
@@ -557,100 +494,32 @@ export default function DJEditPage() {
                         />
                       </div>
                     </div>
-                    <div className="space-y-4">
+                    <div className="grid grid-cols-1 gap-4">
                       <div>
-                        <div className="flex items-center mb-1">
-                          <label className="block text-sm font-medium text-gray-700">
-                            Preferred DJ Genres*
-                          </label>
-                          <button
-                            type="button"
-                            onClick={() => {
-                              if (customDJStyles.length === 0) {
-                                setCustomDJStyles([""]);
-                              } else {
-                                const lastStyle =
-                                  customDJStyles[customDJStyles.length - 1];
-                                if (lastStyle && lastStyle.trim() !== "") {
-                                  setCustomDJStyles([...customDJStyles, ""]);
-                                }
-                              }
-                            }}
-                            disabled={
-                              customDJStyles.length > 0 &&
-                              customDJStyles[
-                                customDJStyles.length - 1
-                              ].trim() === ""
-                            }
-                            className="ml-2 p-1 flex items-center gap-1.5 text-gray-400 hover:text-gray-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                          >
-                            <Plus size={16} />
-                            <span className="text-sm sm:inline">Add Genre</span>
-                          </button>
-                        </div>
-                        <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                          {commonDJStyles.map((style) => (
-                            <label
-                              key={style}
-                              className="relative flex items-center h-12 px-4 rounded-lg border cursor-pointer hover:bg-gray-50"
-                            >
-                              <div className="flex items-center h-5">
-                                <input
-                                  type="checkbox"
-                                  className="h-4 w-4 rounded border-gray-300 accent-black focus:ring-black focus:ring-offset-0"
-                                  checked={specialties.includes(style)}
-                                  onChange={(e) => {
-                                    if (e.target.checked) {
-                                      setSpecialties([...specialties, style]);
-                                    } else {
-                                      setSpecialties(
-                                        specialties.filter(
-                                          (item) => item !== style
-                                        )
-                                      );
-                                    }
-                                  }}
-                                />
-                              </div>
-                              <div className="ml-3 text-sm">
-                                <span className="font-medium text-gray-900">
-                                  {style}
-                                </span>
-                              </div>
-                            </label>
-                          ))}
-                          {customDJStyles.map((style, index) => (
-                            <div
-                              key={`custom-dj-${index}`}
-                              className="flex items-center h-12 px-4 rounded-lg border"
-                            >
-                              <Input
-                                value={style}
-                                onChange={(e) => {
-                                  if (e.target.value.length <= 25) {
-                                    const newStyles = [...customDJStyles];
-                                    newStyles[index] = e.target.value;
-                                    setCustomDJStyles(newStyles);
-                                  }
-                                }}
-                                maxLength={25}
-                                placeholder="Enter Custom Genre"
-                                className="flex-1 h-full border-none focus:ring-0"
-                              />
-                              <button
-                                type="button"
-                                onClick={() =>
-                                  setCustomDJStyles(
-                                    customDJStyles.filter((_, i) => i !== index)
-                                  )
-                                }
-                                className="ml-2 text-gray-400 hover:text-gray-600 transition-colors"
-                              >
-                                <X size={16} />
-                              </button>
-                            </div>
-                          ))}
-                        </div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          Service Type*
+                        </label>
+                        <Select
+                          value={serviceType}
+                          onValueChange={(value: ServiceType) =>
+                            setServiceType(value)
+                          }
+                        >
+                          <SelectTrigger className="w-full">
+                            <SelectValue placeholder="Select service type" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="weddingPlanner">
+                              Wedding Planner
+                            </SelectItem>
+                            <SelectItem value="weddingCoordinator">
+                              Wedding Coordinator
+                            </SelectItem>
+                            <SelectItem value="both">
+                              Both Planning & Coordination
+                            </SelectItem>
+                          </SelectContent>
+                        </Select>
                       </div>
                     </div>
                     <div>
@@ -662,12 +531,12 @@ export default function DJEditPage() {
                         value={message}
                         onChange={(e) => setMessage(e.target.value)}
                         rows={4}
-                        placeholder="Any additional details or specific requirements..."
+                        placeholder="Any additional details, requirements, or preferences..."
                         className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-transparent resize-vertical"
                       />
                       <p className="mt-1 text-sm text-gray-500">
                         Include any specific requirements or questions you have
-                        for the DJ
+                        for the venue
                       </p>
                     </div>
                   </div>
@@ -720,10 +589,12 @@ export default function DJEditPage() {
               >
                 <AlertDialogContent>
                   <AlertDialogHeader>
-                    <AlertDialogTitle>Cancel Inquiry Update</AlertDialogTitle>
+                    <AlertDialogTitle>
+                      Cancel Inquiry Submission
+                    </AlertDialogTitle>
                     <AlertDialogDescription>
-                      Are you sure you want to cancel? All your changes will be
-                      lost.
+                      Are you sure you want to cancel? All your progress will be
+                      lost and you'll need to start over.
                     </AlertDialogDescription>
                   </AlertDialogHeader>
                   <AlertDialogFooter>

@@ -38,9 +38,12 @@ interface LocationState {
   longitude: number | null;
 }
 
-const commonDJStyles = ["Spanish", "Bollywood", "American"];
+type ServiceType = "makeup" | "hair" | "both";
 
-export default function DJEditPage() {
+const commonMakeupStyles = ["Natural", "Bridal", "Soft Glam"];
+const commonHairStyles = ["Updo", "Half-Up", "Hollywood Waves"];
+
+export default function HairMakeupEditPage() {
   const router = useRouter();
   const params = useParams();
   const { id } = params;
@@ -59,8 +62,10 @@ export default function DJEditPage() {
 
   // Specifications State
   const [budget, setBudget] = useState<string>("");
+  const [serviceType, setServiceType] = useState<ServiceType>("makeup");
   const [specialties, setSpecialties] = useState<string[]>([]);
-  const [customDJStyles, setCustomDJStyles] = useState<string[]>([]);
+  const [customMakeupStyles, setCustomMakeupStyles] = useState<string[]>([]);
+  const [customHairStyles, setCustomHairStyles] = useState<string[]>([]);
   const [eventDate, setEventDate] = useState("");
   const [message, setMessage] = useState("");
   const [location, setLocation] = useState<LocationState>({
@@ -84,7 +89,7 @@ export default function DJEditPage() {
 
       // Load main inquiry data
       const { data: inquiry, error: inquiryError } = await supabase
-        .from("dj_leads")
+        .from("hair_makeup_leads")
         .select("*")
         .eq("id", id)
         .single();
@@ -92,13 +97,13 @@ export default function DJEditPage() {
       if (inquiryError) throw inquiryError;
       if (!inquiry) throw new Error("Inquiry not found");
 
-      // Load genres
-      const { data: genres, error: genresError } = await supabase
-        .from("dj_lead_genres")
+      // Load styles
+      const { data: styles, error: stylesError } = await supabase
+        .from("hair_makeup_lead_styles")
         .select("*")
         .eq("lead_id", id);
 
-      if (genresError) throw genresError;
+      if (stylesError) throw stylesError;
 
       // Set form data
       setFirstName(inquiry.first_name);
@@ -107,6 +112,7 @@ export default function DJEditPage() {
       setEmail(inquiry.email);
       setPreferredContact(inquiry.preferred_contact);
       setBudget(inquiry.budget.toString());
+      setServiceType(inquiry.service_type);
       setEventDate(inquiry.event_date);
       setMessage(inquiry.message || "");
       setLocation({
@@ -119,16 +125,27 @@ export default function DJEditPage() {
         longitude: inquiry.longitude,
       });
 
-      // Set genres
-      const commonStyles = genres
-        .filter((g) => !g.is_custom)
-        .map((g) => g.genre);
-      const customStyles = genres
-        .filter((g) => g.is_custom)
-        .map((g) => g.genre);
+      // Set styles
+      const makeupStyles = styles.filter((s) => s.type === "makeup");
+      const hairStyles = styles.filter((s) => s.type === "hair");
 
-      setSpecialties(commonStyles);
-      setCustomDJStyles(customStyles);
+      const commonMakeupSelected = makeupStyles
+        .filter((s) => !s.is_custom)
+        .map((s) => s.style);
+      const customMakeup = makeupStyles
+        .filter((s) => s.is_custom)
+        .map((s) => s.style);
+
+      const commonHairSelected = hairStyles
+        .filter((s) => !s.is_custom)
+        .map((s) => s.style);
+      const customHair = hairStyles
+        .filter((s) => s.is_custom)
+        .map((s) => s.style);
+
+      setSpecialties([...commonMakeupSelected, ...commonHairSelected]);
+      setCustomMakeupStyles(customMakeup);
+      setCustomHairStyles(customHair);
     } catch (error) {
       console.error("Error loading inquiry:", error);
       toast.error("Failed to load inquiry");
@@ -191,25 +208,54 @@ export default function DJEditPage() {
           toast.error("Please enter a valid budget amount");
           return false;
         }
-        if (!location.city || !location.state) {
-          toast.error("Location is required");
+        if (!serviceType) {
+          toast.error("Please select the type of service you're looking for");
           return false;
         }
-        const hasEmptyCustomStyles = customDJStyles.some(
+
+        const hasEmptyCustomMakeupStyles = customMakeupStyles.some(
           (style) => style.trim() === ""
         );
-        if (hasEmptyCustomStyles) {
+        const hasEmptyCustomHairStyles = customHairStyles.some(
+          (style) => style.trim() === ""
+        );
+
+        if (hasEmptyCustomMakeupStyles || hasEmptyCustomHairStyles) {
           toast.error("Please fill in all custom styles or remove empty ones");
           return false;
         }
-        const validStyles = [
-          ...specialties,
-          ...customDJStyles.filter((style) => style.trim() !== ""),
-        ];
-        if (validStyles.length === 0) {
-          toast.error("At least one DJ style must be selected or added");
+
+        const hasRequiredStyles = (type: ServiceType): boolean => {
+          const makeupStyles = [
+            ...specialties.filter((style) =>
+              commonMakeupStyles.includes(style)
+            ),
+            ...customMakeupStyles.filter((style) => style.trim() !== ""),
+          ];
+          const hairStyles = [
+            ...specialties.filter((style) => commonHairStyles.includes(style)),
+            ...customHairStyles.filter((style) => style.trim() !== ""),
+          ];
+
+          switch (type) {
+            case "makeup":
+              return makeupStyles.length > 0;
+            case "hair":
+              return hairStyles.length > 0;
+            case "both":
+              return makeupStyles.length > 0 && hairStyles.length > 0;
+          }
+        };
+
+        if (!hasRequiredStyles(serviceType)) {
+          toast.error(
+            serviceType === "both"
+              ? "Please select at least one makeup style and one hair style"
+              : `Please select at least one ${serviceType} style`
+          );
           return false;
         }
+
         return true;
 
       default:
@@ -258,7 +304,7 @@ export default function DJEditPage() {
 
       // Update the lead
       const { error: leadError } = await supabase
-        .from("dj_leads")
+        .from("hair_makeup_leads")
         .update({
           first_name: firstName.trim(),
           last_name: lastName.trim(),
@@ -266,6 +312,7 @@ export default function DJEditPage() {
           email: email.trim().toLowerCase(),
           preferred_contact: preferredContact,
           budget: parseInt(budget),
+          service_type: serviceType,
           event_date: eventDate,
           message: message.trim() || null,
           city: location.city,
@@ -280,40 +327,70 @@ export default function DJEditPage() {
       if (leadError)
         throw new Error(`Failed to update lead: ${leadError.message}`);
 
-      // Delete existing genres
-      const { error: deleteGenresError } = await supabase
-        .from("dj_lead_genres")
+      // Delete existing styles
+      const { error: deleteStylesError } = await supabase
+        .from("hair_makeup_lead_styles")
         .delete()
         .eq("lead_id", params.id);
 
-      if (deleteGenresError)
+      if (deleteStylesError)
         throw new Error(
-          `Failed to update genres: ${deleteGenresError.message}`
+          `Failed to update styles: ${deleteStylesError.message}`
         );
 
-      // Insert new genres
-      const genresData = [
-        ...specialties.map((genre) => ({
-          lead_id: params.id,
-          genre,
-          is_custom: false,
-        })),
-        ...customDJStyles
-          .filter((style) => style.trim() !== "")
-          .map((genre) => ({
-            lead_id: params.id,
-            genre: genre.trim(),
-            is_custom: true,
-          })),
+      // Insert new styles
+      const stylesData = [
+        // Makeup styles
+        ...(serviceType === "makeup" || serviceType === "both"
+          ? [
+              ...specialties
+                .filter((style) => commonMakeupStyles.includes(style))
+                .map((style) => ({
+                  lead_id: params.id,
+                  style: style,
+                  type: "makeup",
+                  is_custom: false,
+                })),
+              ...customMakeupStyles
+                .filter((style) => style.trim() !== "")
+                .map((style) => ({
+                  lead_id: params.id,
+                  style: style.trim(),
+                  type: "makeup",
+                  is_custom: true,
+                })),
+            ]
+          : []),
+        // Hair styles
+        ...(serviceType === "hair" || serviceType === "both"
+          ? [
+              ...specialties
+                .filter((style) => commonHairStyles.includes(style))
+                .map((style) => ({
+                  lead_id: params.id,
+                  style: style,
+                  type: "hair",
+                  is_custom: false,
+                })),
+              ...customHairStyles
+                .filter((style) => style.trim() !== "")
+                .map((style) => ({
+                  lead_id: params.id,
+                  style: style.trim(),
+                  type: "hair",
+                  is_custom: true,
+                })),
+            ]
+          : []),
       ];
 
-      if (genresData.length > 0) {
-        const { error: genresError } = await supabase
-          .from("dj_lead_genres")
-          .insert(genresData);
+      if (stylesData.length > 0) {
+        const { error: stylesError } = await supabase
+          .from("hair_makeup_lead_styles")
+          .insert(stylesData);
 
-        if (genresError)
-          throw new Error(`Failed to create genres: ${genresError.message}`);
+        if (stylesError)
+          throw new Error(`Failed to create styles: ${stylesError.message}`);
       }
 
       toast.success("Inquiry updated successfully!");
@@ -557,102 +634,240 @@ export default function DJEditPage() {
                         />
                       </div>
                     </div>
-                    <div className="space-y-4">
-                      <div>
-                        <div className="flex items-center mb-1">
-                          <label className="block text-sm font-medium text-gray-700">
-                            Preferred DJ Genres*
-                          </label>
-                          <button
-                            type="button"
-                            onClick={() => {
-                              if (customDJStyles.length === 0) {
-                                setCustomDJStyles([""]);
-                              } else {
-                                const lastStyle =
-                                  customDJStyles[customDJStyles.length - 1];
-                                if (lastStyle && lastStyle.trim() !== "") {
-                                  setCustomDJStyles([...customDJStyles, ""]);
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Service Type*
+                      </label>
+                      <Select
+                        value={serviceType}
+                        onValueChange={(value: ServiceType) =>
+                          setServiceType(value)
+                        }
+                      >
+                        <SelectTrigger className="w-full">
+                          <SelectValue placeholder="Select service type" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="makeup">Makeup</SelectItem>
+                          <SelectItem value="hair">Hair</SelectItem>
+                          <SelectItem value="both">Hair & Makeup</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="space-y-6">
+                      {(serviceType === "makeup" || serviceType === "both") && (
+                        <div className="space-y-4">
+                          <div className="flex items-center mb-1">
+                            <label className="block text-sm font-medium text-gray-700">
+                              Makeup Styles*
+                            </label>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                if (customMakeupStyles.length === 0) {
+                                  setCustomMakeupStyles([""]);
+                                } else {
+                                  const lastStyle =
+                                    customMakeupStyles[
+                                      customMakeupStyles.length - 1
+                                    ];
+                                  if (lastStyle && lastStyle.trim() !== "") {
+                                    setCustomMakeupStyles([
+                                      ...customMakeupStyles,
+                                      "",
+                                    ]);
+                                  }
                                 }
+                              }}
+                              disabled={
+                                customMakeupStyles.length > 0 &&
+                                customMakeupStyles[
+                                  customMakeupStyles.length - 1
+                                ].trim() === ""
                               }
-                            }}
-                            disabled={
-                              customDJStyles.length > 0 &&
-                              customDJStyles[
-                                customDJStyles.length - 1
-                              ].trim() === ""
-                            }
-                            className="ml-2 p-1 flex items-center gap-1.5 text-gray-400 hover:text-gray-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                          >
-                            <Plus size={16} />
-                            <span className="text-sm sm:inline">Add Genre</span>
-                          </button>
-                        </div>
-                        <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                          {commonDJStyles.map((style) => (
-                            <label
-                              key={style}
-                              className="relative flex items-center h-12 px-4 rounded-lg border cursor-pointer hover:bg-gray-50"
+                              className="ml-2 p-1 flex items-center gap-1.5 text-gray-400 hover:text-gray-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                             >
-                              <div className="flex items-center h-5">
-                                <input
-                                  type="checkbox"
-                                  className="h-4 w-4 rounded border-gray-300 accent-black focus:ring-black focus:ring-offset-0"
-                                  checked={specialties.includes(style)}
+                              <Plus size={16} />
+                              <span className="text-sm sm:inline">
+                                Add Style
+                              </span>
+                            </button>
+                          </div>
+                          <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                            {commonMakeupStyles.map((style) => (
+                              <label
+                                key={style}
+                                className="relative flex items-center h-12 px-4 rounded-lg border cursor-pointer hover:bg-gray-50"
+                              >
+                                <div className="flex items-center h-5">
+                                  <input
+                                    type="checkbox"
+                                    className="h-4 w-4 rounded border-gray-300 accent-black focus:ring-black focus:ring-offset-0"
+                                    checked={specialties.includes(style)}
+                                    onChange={(e) => {
+                                      if (e.target.checked) {
+                                        setSpecialties([...specialties, style]);
+                                      } else {
+                                        setSpecialties(
+                                          specialties.filter(
+                                            (item) => item !== style
+                                          )
+                                        );
+                                      }
+                                    }}
+                                  />
+                                </div>
+                                <div className="ml-3 text-sm">
+                                  <span className="font-medium text-gray-900">
+                                    {style}
+                                  </span>
+                                </div>
+                              </label>
+                            ))}
+                            {customMakeupStyles.map((style, index) => (
+                              <div
+                                key={`custom-makeup-${index}`}
+                                className="flex items-center h-12 px-4 rounded-lg border"
+                              >
+                                <Input
+                                  value={style}
                                   onChange={(e) => {
-                                    if (e.target.checked) {
-                                      setSpecialties([...specialties, style]);
-                                    } else {
-                                      setSpecialties(
-                                        specialties.filter(
-                                          (item) => item !== style
-                                        )
-                                      );
+                                    if (e.target.value.length <= 25) {
+                                      const newStyles = [...customMakeupStyles];
+                                      newStyles[index] = e.target.value;
+                                      setCustomMakeupStyles(newStyles);
                                     }
                                   }}
+                                  maxLength={25}
+                                  placeholder="Enter Custom Style"
+                                  className="flex-1 h-full border-none focus:ring-0"
                                 />
-                              </div>
-                              <div className="ml-3 text-sm">
-                                <span className="font-medium text-gray-900">
-                                  {style}
-                                </span>
-                              </div>
-                            </label>
-                          ))}
-                          {customDJStyles.map((style, index) => (
-                            <div
-                              key={`custom-dj-${index}`}
-                              className="flex items-center h-12 px-4 rounded-lg border"
-                            >
-                              <Input
-                                value={style}
-                                onChange={(e) => {
-                                  if (e.target.value.length <= 25) {
-                                    const newStyles = [...customDJStyles];
-                                    newStyles[index] = e.target.value;
-                                    setCustomDJStyles(newStyles);
+                                <button
+                                  type="button"
+                                  onClick={() =>
+                                    setCustomMakeupStyles(
+                                      customMakeupStyles.filter(
+                                        (_, i) => i !== index
+                                      )
+                                    )
                                   }
-                                }}
-                                maxLength={25}
-                                placeholder="Enter Custom Genre"
-                                className="flex-1 h-full border-none focus:ring-0"
-                              />
-                              <button
-                                type="button"
-                                onClick={() =>
-                                  setCustomDJStyles(
-                                    customDJStyles.filter((_, i) => i !== index)
-                                  )
-                                }
-                                className="ml-2 text-gray-400 hover:text-gray-600 transition-colors"
-                              >
-                                <X size={16} />
-                              </button>
-                            </div>
-                          ))}
+                                  className="ml-2 text-gray-400 hover:text-gray-600 transition-colors"
+                                >
+                                  <X size={16} />
+                                </button>
+                              </div>
+                            ))}
+                          </div>
                         </div>
-                      </div>
+                      )}
+
+                      {(serviceType === "hair" || serviceType === "both") && (
+                        <div className="space-y-4">
+                          <div className="flex items-center mb-1">
+                            <label className="block text-sm font-medium text-gray-700">
+                              Hair Styles*
+                            </label>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                if (customHairStyles.length === 0) {
+                                  setCustomHairStyles([""]);
+                                } else {
+                                  const lastStyle =
+                                    customHairStyles[
+                                      customHairStyles.length - 1
+                                    ];
+                                  if (lastStyle && lastStyle.trim() !== "") {
+                                    setCustomHairStyles([
+                                      ...customHairStyles,
+                                      "",
+                                    ]);
+                                  }
+                                }
+                              }}
+                              disabled={
+                                customHairStyles.length > 0 &&
+                                customHairStyles[
+                                  customHairStyles.length - 1
+                                ].trim() === ""
+                              }
+                              className="ml-2 p-1 flex items-center gap-1.5 text-gray-400 hover:text-gray-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
+                              <Plus size={16} />
+                              <span className="text-sm sm:inline">
+                                Add Style
+                              </span>
+                            </button>
+                          </div>
+                          <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                            {commonHairStyles.map((style) => (
+                              <label
+                                key={style}
+                                className="relative flex items-center h-12 px-4 rounded-lg border cursor-pointer hover:bg-gray-50"
+                              >
+                                <div className="flex items-center h-5">
+                                  <input
+                                    type="checkbox"
+                                    className="h-4 w-4 rounded border-gray-300 accent-black focus:ring-black focus:ring-offset-0"
+                                    checked={specialties.includes(style)}
+                                    onChange={(e) => {
+                                      if (e.target.checked) {
+                                        setSpecialties([...specialties, style]);
+                                      } else {
+                                        setSpecialties(
+                                          specialties.filter(
+                                            (item) => item !== style
+                                          )
+                                        );
+                                      }
+                                    }}
+                                  />
+                                </div>
+                                <div className="ml-3 text-sm">
+                                  <span className="font-medium text-gray-900">
+                                    {style}
+                                  </span>
+                                </div>
+                              </label>
+                            ))}
+                            {customHairStyles.map((style, index) => (
+                              <div
+                                key={`custom-hair-${index}`}
+                                className="flex items-center h-12 px-4 rounded-lg border"
+                              >
+                                <Input
+                                  value={style}
+                                  onChange={(e) => {
+                                    if (e.target.value.length <= 25) {
+                                      const newStyles = [...customHairStyles];
+                                      newStyles[index] = e.target.value;
+                                      setCustomHairStyles(newStyles);
+                                    }
+                                  }}
+                                  maxLength={25}
+                                  placeholder="Enter Custom Style"
+                                  className="flex-1 h-full border-none focus:ring-0"
+                                />
+                                <button
+                                  type="button"
+                                  onClick={() =>
+                                    setCustomHairStyles(
+                                      customHairStyles.filter(
+                                        (_, i) => i !== index
+                                      )
+                                    )
+                                  }
+                                  className="ml-2 text-gray-400 hover:text-gray-600 transition-colors"
+                                >
+                                  <X size={16} />
+                                </button>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
                     </div>
+
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">
                         Additional Message
@@ -667,7 +882,6 @@ export default function DJEditPage() {
                       />
                       <p className="mt-1 text-sm text-gray-500">
                         Include any specific requirements or questions you have
-                        for the DJ
                       </p>
                     </div>
                   </div>
@@ -720,10 +934,12 @@ export default function DJEditPage() {
               >
                 <AlertDialogContent>
                   <AlertDialogHeader>
-                    <AlertDialogTitle>Cancel Inquiry Update</AlertDialogTitle>
+                    <AlertDialogTitle>
+                      Cancel Inquiry Submission
+                    </AlertDialogTitle>
                     <AlertDialogDescription>
-                      Are you sure you want to cancel? All your changes will be
-                      lost.
+                      Are you sure you want to cancel? All your progress will be
+                      lost and you'll need to start over.
                     </AlertDialogDescription>
                   </AlertDialogHeader>
                   <AlertDialogFooter>
