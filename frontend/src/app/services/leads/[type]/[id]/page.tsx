@@ -53,8 +53,23 @@ export default function LeadDetailsPage() {
         setNotFound(false);
 
         let query;
-
-        if (type === "hair_makeup") {
+        if (type === "dj") {
+          query = supabase
+            .from(`${type}_leads`)
+            .select(
+              `
+              *,
+              genres:dj_lead_genres (
+                id,
+                lead_id,
+                genre,
+                is_custom
+              )
+            `
+            )
+            .eq("id", id)
+            .single();
+        } else if (type === "hair_makeup") {
           query = supabase
             .from(`${type}_leads`)
             .select(
@@ -257,7 +272,26 @@ export default function LeadDetailsPage() {
                         : "Hair & Makeup Services")}
                   </span>
                 </div>
-
+                {type === "dj" && lead.genres?.length > 0 && (
+                  <div className="mt-4">
+                    <div className="text-sm font-medium text-gray-700 mb-3">
+                      Music Preferences:
+                    </div>
+                    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+                      {lead.genres.map((genre: any) => (
+                        <div
+                          key={genre.id}
+                          className="p-3 rounded-lg border border-black bg-stone-100 flex items-center gap-2"
+                        >
+                          <span className="text-green-800">✓</span>
+                          <span className="text-sm text-gray-900 capitalize">
+                            {genre.genre.replace(/-/g, " ")}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
                 {/* Styles for Photo/Video or Hair/Makeup */}
                 {(type === "photo_video" || type === "hair_makeup") &&
                   lead.styles?.length > 0 && (
@@ -283,30 +317,54 @@ export default function LeadDetailsPage() {
 
                 {/* Venue-specific details */}
                 {type === "venue" && (
-                  <div className="space-y-3">
-                    {(lead.min_guests || lead.max_guests) && (
-                      <div className="flex items-center text-gray-600">
-                        <Users className="h-5 w-5 mr-3" />
-                        {lead.min_guests ? `${lead.min_guests} - ` : ""}
-                        {lead.max_guests} guests
-                      </div>
-                    )}
-                    {lead.venue_type && (
-                      <div className="flex items-center text-gray-600">
-                        <Building2 className="h-5 w-5 mr-3" />
-                        <span className="capitalize">
-                          {lead.venue_type.replace(/-/g, " ")}
-                        </span>
-                      </div>
-                    )}
-                    {lead.catering_preference && (
-                      <div className="flex items-center text-gray-600">
-                        <UtensilsCrossed className="h-5 w-5 mr-3" />
-                        <span className="capitalize">
-                          {lead.catering_preference.replace(/-/g, " ")}
-                        </span>
-                      </div>
-                    )}
+                  <div className="mt-4">
+                    <div className="text-sm font-medium text-gray-700 mb-3">
+                      Venue Requirements:
+                    </div>
+                    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+                      {/* Guest Count */}
+                      {(lead.min_guests || lead.max_guests) && (
+                        <div className="p-3 rounded-lg border border-black bg-stone-100 flex items-center gap-2">
+                          <span className="text-green-800">✓</span>
+                          <span className="text-sm text-gray-900">
+                            {lead.min_guests ? `${lead.min_guests} - ` : ""}
+                            {lead.max_guests} Guests
+                          </span>
+                        </div>
+                      )}
+
+                      {/* Venue Type */}
+                      {lead.venue_type && (
+                        <div className="p-3 rounded-lg border border-black bg-stone-100 flex items-center gap-2">
+                          <span className="text-green-800">✓</span>
+                          <span className="text-sm text-gray-900">
+                            {lead.venue_type === "indoor"
+                              ? "Indoor Venue"
+                              : lead.venue_type === "outdoor"
+                              ? "Outdoor Venue"
+                              : lead.venue_type === "both"
+                              ? "Indoor & Outdoor"
+                              : "No Preference"}
+                          </span>
+                        </div>
+                      )}
+
+                      {/* Catering Preference */}
+                      {lead.catering_preference && (
+                        <div className="p-3 rounded-lg border border-black bg-stone-100 flex items-center gap-2">
+                          <span className="text-green-800">✓</span>
+                          <span className="text-sm text-gray-900">
+                            {lead.catering_preference === "in-house"
+                              ? "In-House Catering"
+                              : lead.catering_preference === "outside"
+                              ? "Outside Catering"
+                              : lead.catering_preference === "both"
+                              ? "In-House & Outside"
+                              : "No Preference"}
+                          </span>
+                        </div>
+                      )}
+                    </div>
                   </div>
                 )}
               </div>
