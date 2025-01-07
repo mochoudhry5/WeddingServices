@@ -188,6 +188,10 @@ export default function MyListingsPage() {
     id: string;
     type: ServiceType;
   } | null>(null);
+  const [listingToRestore, setListingToRestore] = useState<{
+    id: string;
+    type: ServiceType;
+  } | null>(null);
   const [activeService, setActiveService] = useState<ServiceType>("venue");
   const [searchTerm, setSearchTerm] = useState("");
   const [sortBy, setSortBy] = useState<SortOption>("newest");
@@ -464,8 +468,15 @@ export default function MyListingsPage() {
 
       if (updateError) throw updateError;
 
-      // Refresh listings to show the restored item
-      await loadAllListings();
+      // Update local state to reflect the restored status
+      setListings((prev) => ({
+        ...prev,
+        [serviceType]: prev[serviceType].map((listing) =>
+          listing.id === listingId
+            ? { ...listing, is_archived: false }
+            : listing
+        ),
+      }));
 
       toast.success(`${config.displayName} restored successfully`);
     } catch (error: any) {
@@ -498,7 +509,9 @@ export default function MyListingsPage() {
             {listing.is_archived ? (
               <>
                 <button
-                  onClick={() => handleRestore(listing.id, serviceType)}
+                  onClick={() =>
+                    setListingToRestore({ id: listing.id, type: serviceType })
+                  }
                   className="bg-white p-2 rounded-full shadow-lg hover:bg-green-600 transition-colors"
                   title="Restore listing"
                 >
@@ -761,6 +774,32 @@ export default function MyListingsPage() {
             </div>
           </div>
           <Footer />
+          <AlertDialog
+            open={!!listingToRestore}
+            onOpenChange={() => setListingToRestore(null)}
+          >
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Restore Listing</AlertDialogTitle>
+                <AlertDialogDescription>
+                  Are you sure you want to restore this listing? This will make
+                  it visible to the public again.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                <AlertDialogAction
+                  onClick={() =>
+                    listingToRestore &&
+                    handleRestore(listingToRestore.id, listingToRestore.type)
+                  }
+                  className="bg-black hover:bg-stone-500"
+                >
+                  Restore
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
           <AlertDialog
             open={!!listingToArchive}
             onOpenChange={() => setListingToArchive(null)}
