@@ -29,6 +29,7 @@ import {
 import { toast } from "sonner";
 import Link from "next/link";
 import { ProtectedRoute } from "@/components/ui/ProtectedRoute";
+import { VendorProtectedRoute } from "@/components/ui/VendorProtectedRoute";
 
 // Media type for images/videos
 interface ServiceMedia {
@@ -590,72 +591,74 @@ export default function MyListingsPage() {
 
   return (
     <ProtectedRoute>
-      <div className="flex flex-col min-h-screen bg-gray-50">
-        <NavBar />
-        <div className="flex-1">
-          <div className="max-w-7xl mx-auto px-4 py-8">
-            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
-              <h1 className="text-3xl font-bold">My Listings</h1>
-              <Button asChild>
-                <Link href="/services">
-                  <Plus className="w-4 h-4 mr-2" />
-                  Add New Listing
-                </Link>
-              </Button>
+      <VendorProtectedRoute>
+        <div className="flex flex-col min-h-screen bg-gray-50">
+          <NavBar />
+          <div className="flex-1">
+            <div className="max-w-7xl mx-auto px-4 py-8">
+              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
+                <h1 className="text-3xl font-bold">My Listings</h1>
+                <Button asChild>
+                  <Link href="/services">
+                    <Plus className="w-4 h-4 mr-2" />
+                    Add New Listing
+                  </Link>
+                </Button>
+              </div>
+
+              {isLoading ? (
+                renderLoadingState()
+              ) : (
+                <>
+                  {renderServiceNav()}
+                  <div className="mt-6">
+                    {renderFilters()}
+                    {filteredListings[activeService].length > 0 ? (
+                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                        {filteredListings[activeService].map((listing) => (
+                          <div key={listing.id} className="group">
+                            {renderListingCard(listing, activeService)}
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      renderEmptyState()
+                    )}
+                  </div>
+                </>
+              )}
             </div>
-
-            {isLoading ? (
-              renderLoadingState()
-            ) : (
-              <>
-                {renderServiceNav()}
-                <div className="mt-6">
-                  {renderFilters()}
-                  {filteredListings[activeService].length > 0 ? (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                      {filteredListings[activeService].map((listing) => (
-                        <div key={listing.id} className="group">
-                          {renderListingCard(listing, activeService)}
-                        </div>
-                      ))}
-                    </div>
-                  ) : (
-                    renderEmptyState()
-                  )}
-                </div>
-              </>
-            )}
           </div>
-        </div>
-        <Footer />
+          <Footer />
 
-        <AlertDialog
-          open={!!listingToDelete}
-          onOpenChange={() => setListingToDelete(null)}
-        >
-          <AlertDialogContent>
-            <AlertDialogHeader>
-              <AlertDialogTitle>Delete Listing</AlertDialogTitle>
-              <AlertDialogDescription>
-                Are you sure you want to delete this listing? This action cannot
-                be undone.
-              </AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter>
-              <AlertDialogCancel>Cancel</AlertDialogCancel>
-              <AlertDialogAction
-                onClick={() =>
-                  listingToDelete &&
-                  handleDelete(listingToDelete.id, listingToDelete.type)
-                }
-                className="bg-red-600 hover:bg-red-700"
-              >
-                Delete
-              </AlertDialogAction>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialog>
-      </div>
+          <AlertDialog
+            open={!!listingToDelete}
+            onOpenChange={() => setListingToDelete(null)}
+          >
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Delete Listing</AlertDialogTitle>
+                <AlertDialogDescription>
+                  Are you sure you want to delete this listing? This action
+                  cannot be undone.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                <AlertDialogAction
+                  onClick={() =>
+                    listingToDelete &&
+                    handleDelete(listingToDelete.id, listingToDelete.type)
+                  }
+                  className="bg-red-600 hover:bg-red-700"
+                >
+                  Delete
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+        </div>
+      </VendorProtectedRoute>
     </ProtectedRoute>
   );
 }

@@ -31,6 +31,7 @@ import {
 import Footer from "@/components/ui/Footer";
 import { Input } from "@/components/ui/input";
 import { ProtectedRoute } from "@/components/ui/ProtectedRoute";
+import { VendorProtectedRoute } from "@/components/ui/VendorProtectedRoute";
 import {
   Select,
   SelectContent,
@@ -527,35 +528,37 @@ export default function LeadsPage() {
 
   return (
     <ProtectedRoute>
-      <div className="flex flex-col min-h-screen bg-gray-50">
-        <NavBar />
-        <div className="flex-1">
-          <div className="max-w-7xl mx-auto px-4 py-8">
-            <h1 className="text-3xl font-bold mb-8">Service Leads</h1>
+      <VendorProtectedRoute>
+        <div className="flex flex-col min-h-screen bg-gray-50">
+          <NavBar />
+          <div className="flex-1">
+            <div className="max-w-7xl mx-auto px-4 py-8">
+              <h1 className="text-3xl font-bold mb-8">Service Leads</h1>
 
-            {isLoading ? (
-              renderLoadingState()
-            ) : (
-              <>
-                {renderServiceNav()}
-                <div className="mt-6">
-                  {renderFilters()}
-                  {filteredLeads[activeTab].length > 0 ? (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                      {filteredLeads[activeTab].map((lead) => (
-                        <div key={lead.id}>{renderLeadCard(lead)}</div>
-                      ))}
-                    </div>
-                  ) : (
-                    renderEmptyState()
-                  )}
-                </div>
-              </>
-            )}
+              {isLoading ? (
+                renderLoadingState()
+              ) : (
+                <>
+                  {renderServiceNav()}
+                  <div className="mt-6">
+                    {renderFilters()}
+                    {filteredLeads[activeTab].length > 0 ? (
+                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                        {filteredLeads[activeTab].map((lead) => (
+                          <div key={lead.id}>{renderLeadCard(lead)}</div>
+                        ))}
+                      </div>
+                    ) : (
+                      renderEmptyState()
+                    )}
+                  </div>
+                </>
+              )}
+            </div>
           </div>
+          <Footer />
         </div>
-        <Footer />
-      </div>
+      </VendorProtectedRoute>
     </ProtectedRoute>
   );
 }
