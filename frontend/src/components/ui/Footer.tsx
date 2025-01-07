@@ -1,8 +1,5 @@
 "use client";
 import React from "react";
-import { useState, useEffect } from "react";
-import { supabase } from "@/lib/supabase";
-import { useAuth } from "@/context/AuthContext";
 import { Facebook, Instagram, Twitter } from "lucide-react";
 
 const footerLinks = {
@@ -19,34 +16,12 @@ const footerLinks = {
   Services: [
     { name: "Search For Service", href: "/" },
     { name: "List Your Service", href: "/services" },
+    { name: "Quick Reach", href: "/quickReach" },
     { name: "Pricing", href: "/footer/pricing" },
   ],
 };
 
 export default function Footer() {
-  const [isVendor, setIsVendor] = useState<boolean | null>(null);
-  const { user } = useAuth();
-
-  useEffect(() => {
-    const checkVendorStatus = async () => {
-      if (!user?.id) return;
-      try {
-        const { data, error } = await supabase
-          .from("user_preferences")
-          .select("is_vendor")
-          .eq("id", user.id)
-          .single();
-
-        if (error) throw error;
-
-        setIsVendor(data.is_vendor);
-      } catch (error) {
-        console.error("Error fetching vendor status:", error);
-      }
-    };
-
-    checkVendorStatus();
-  }, [user]);
   return (
     <footer className="border-t border-gray-100 bg-gray-100">
       <div className="max-w-8xl mx-auto">
@@ -95,38 +70,16 @@ export default function Footer() {
                       {category}
                     </h3>
                     <ul className="space-y-3">
-                      {links.map((link) =>
-                        link.name === "List Your Service" ? (
-                          isVendor ? (
-                            <li key={link.name}>
-                              <a
-                                href={link.href}
-                                className="text-black hover:text-stone-400 transition-colors text-sm"
-                              >
-                                {link.name}
-                              </a>
-                            </li>
-                          ) : (
-                            <li key="Quick Reach">
-                              <a
-                                href="/quickReach"
-                                className="text-black hover:text-stone-400 transition-colors text-sm"
-                              >
-                                Quick Reach
-                              </a>
-                            </li>
-                          )
-                        ) : (
-                          <li key={link.name}>
-                            <a
-                              href={link.href}
-                              className="text-black hover:text-stone-400 transition-colors text-sm"
-                            >
-                              {link.name}
-                            </a>
-                          </li>
-                        )
-                      )}
+                      {links.map((link) => (
+                        <li key={link.name}>
+                          <a
+                            href={link.href}
+                            className="text-black hover:text-stone-400 transition-colors text-sm"
+                          >
+                            {link.name}
+                          </a>
+                        </li>
+                      ))}
                     </ul>
                   </div>
                 ))}

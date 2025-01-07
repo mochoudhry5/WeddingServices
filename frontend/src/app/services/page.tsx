@@ -229,7 +229,7 @@ export default function CreateServicePage() {
     const isVendor = userData?.is_vendor || false;
 
     if (!isVendor) {
-      toast.error("Vendors cannot request services. Change role in Settings.");
+      toast.error("Non-vendors cannot list services. Change role in Settings if you are a vendor.");
       return;
     }
 
