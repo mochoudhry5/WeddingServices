@@ -150,7 +150,7 @@ interface WeddingPlannerDetails {
   created_at: string;
   latitude: number;
   longitude: number;
-  service_type: "weddingPlanner" | "weddingCoordinator" | "both"
+  service_type: "weddingPlanner" | "weddingCoordinator" | "both";
 }
 
 type ServiceListingItem =
@@ -312,7 +312,10 @@ export default function ServicesSearchPage() {
         [];
 
       if (filtersToUse.serviceType === "photoVideo") {
-        let query = supabase.from("photo_video_listing").select(`
+        let query = supabase
+          .from("photo_video_listing")
+          .select(
+            `
           *,
           photo_video_media (
             file_path,
@@ -321,7 +324,9 @@ export default function ServicesSearchPage() {
           photo_video_services (
             price
           )
-        `);
+        `
+          )
+          .eq("is_archived", false);
         if (hasExactAddress) {
           // For exact address match
           query = query.eq("address", filtersToUse.searchQuery.address);
@@ -405,7 +410,10 @@ export default function ServicesSearchPage() {
           listingsWithDistance = [];
         }
       } else if (filtersToUse.serviceType === "hairMakeup") {
-        let query = supabase.from("hair_makeup_listing").select(`
+        let query = supabase
+          .from("hair_makeup_listing")
+          .select(
+            `
           *,
           hair_makeup_media (
             file_path,
@@ -414,7 +422,9 @@ export default function ServicesSearchPage() {
           hair_makeup_services (
             price
           )
-        `);
+        `
+          )
+          .eq("is_archived", false);
 
         if (hasExactAddress) {
           query = query.eq("address", filtersToUse.searchQuery.address);
@@ -495,7 +505,10 @@ export default function ServicesSearchPage() {
           listingsWithDistance = [];
         }
       } else if (filtersToUse.serviceType === "dj") {
-        let query = supabase.from("dj_listing").select(`
+        let query = supabase
+          .from("dj_listing")
+          .select(
+            `
           *,
           dj_media (
             file_path,
@@ -504,7 +517,9 @@ export default function ServicesSearchPage() {
           dj_services (
             price
           )
-        `);
+        `
+          )
+          .eq("is_archived", false);
 
         if (hasExactAddress) {
           query = query.eq("address", filtersToUse.searchQuery.address);
@@ -590,7 +605,10 @@ export default function ServicesSearchPage() {
           listingsWithDistance = [];
         }
       } else if (filtersToUse.serviceType === "weddingPlanner") {
-        let query = supabase.from("wedding_planner_listing").select(`
+        let query = supabase
+          .from("wedding_planner_listing")
+          .select(
+            `
           *,
           wedding_planner_media (
             file_path,
@@ -599,7 +617,9 @@ export default function ServicesSearchPage() {
           wedding_planner_services (
             price
           )
-        `);
+        `
+          )
+          .eq("is_archived", false);
         if (hasExactAddress) {
           query = query.eq("address", filtersToUse.searchQuery.address);
         } else if (
@@ -680,13 +700,18 @@ export default function ServicesSearchPage() {
         }
       } else {
         // Venues
-        let query = supabase.from("venue_listing").select(`
+        let query = supabase
+          .from("venue_listing")
+          .select(
+            `
           *,
           venue_media (
             file_path,
             display_order
           )
-        `);
+        `
+          )
+          .eq("is_archived", false);
         if (hasExactAddress) {
           query = query.eq("address", filtersToUse.searchQuery.address);
         }

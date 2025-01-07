@@ -6,7 +6,14 @@ import NavBar from "@/components/ui/NavBar";
 import Footer from "@/components/ui/Footer";
 import MediaCarousel from "@/components/ui/MediaCarousel";
 import { supabase } from "@/lib/supabase";
-import { Pencil, Trash2, Plus, Search } from "lucide-react";
+import {
+  Pencil,
+  Trash2,
+  Plus,
+  Search,
+  Archive,
+  ArchiveRestore,
+} from "lucide-react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -122,6 +129,7 @@ interface BaseListing {
   years_experience: number;
   min_service_price?: number;
   max_service_price?: number;
+  is_archived: boolean;
 }
 
 // Service-based listing interface (for services with price ranges)
@@ -176,6 +184,10 @@ export default function MyListingsPage() {
     id: string;
     type: ServiceType;
   } | null>(null);
+  const [listingToArchive, setListingToArchive] = useState<{
+    id: string;
+    type: ServiceType;
+  } | null>(null);
   const [activeService, setActiveService] = useState<ServiceType>("venue");
   const [searchTerm, setSearchTerm] = useState("");
   const [sortBy, setSortBy] = useState<SortOption>("newest");
@@ -218,6 +230,7 @@ export default function MyListingsPage() {
               "state",
               "description",
               "created_at",
+              "is_archived",
             ];
 
             // Add fields based on service type
@@ -398,6 +411,69 @@ export default function MyListingsPage() {
     }
   };
 
+  const handleArchive = async (listingId: string, serviceType: ServiceType) => {
+    try {
+      if (!user?.id) {
+        toast.error("You must be logged in to archive a listing");
+        return;
+      }
+
+      const config = SERVICE_CONFIGS[serviceType];
+
+      // Update the is_archived column to true
+      const { error: updateError } = await supabase
+        .from(config.tableName)
+        .update({ is_archived: true })
+        .eq("id", listingId)
+        .eq("user_id", user.id);
+
+      if (updateError) throw updateError;
+
+      // Update local state to reflect the archived status
+      setListings((prev) => ({
+        ...prev,
+        [serviceType]: prev[serviceType].map((listing) =>
+          listing.id === listingId ? { ...listing, is_archived: true } : listing
+        ),
+      }));
+
+      toast.success(`${config.displayName} archived successfully`);
+    } catch (error: any) {
+      console.error("Archive error:", error);
+      toast.error(error.message || "Failed to archive listing");
+    } finally {
+      setListingToArchive(null);
+    }
+  };
+
+  const handleRestore = async (listingId: string, serviceType: ServiceType) => {
+    try {
+      if (!user?.id) {
+        toast.error("You must be logged in to restore a listing");
+        return;
+      }
+
+      const config = SERVICE_CONFIGS[serviceType];
+
+      // Update the is_archived column to false
+      const { error: updateError } = await supabase
+        .from(config.tableName)
+        .update({ is_archived: false })
+        .eq("id", listingId)
+        .eq("user_id", user.id);
+
+      if (updateError) throw updateError;
+
+      // Refresh listings to show the restored item
+      await loadAllListings();
+
+      toast.success(`${config.displayName} restored successfully`);
+    } catch (error: any) {
+      console.error("Restore error:", error);
+      toast.error(error.message || "Failed to restore listing");
+    }
+  };
+
   const renderListingCard = (
     listing: BaseListing,
     serviceType: ServiceType
@@ -405,7 +481,18 @@ export default function MyListingsPage() {
     const config = SERVICE_CONFIGS[serviceType];
 
     return (
-      <div className="bg-white rounded-xl shadow-sm overflow-hidden hover:shadow-md transition-all duration-300 group">
+      <div className="bg-white rounded-xl shadow-sm overflow-hidden group relative">
+        {listing.is_archived && (
+          <>
+            {/* Archived tag in top left */}
+            <div className="absolute top-4 left-4 z-20 bg-black text-white px-2 py-1 rounded text-sm font-medium">
+              Archived
+            </div>
+            {/* Grey overlay */}
+            <div className="absolute inset-0 bg-white/50 z-10" />
+          </>
+        )}
+
         <div className="relative">
           <MediaCarousel
             media={listing.media}
@@ -416,90 +503,115 @@ export default function MyListingsPage() {
             service={serviceType}
             initialLiked={true}
           />
-          {/* Action buttons - moved outside of Link to prevent event bubbling */}
-          <div className="absolute top-2 right-2 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity z-10">
-            <button
-              onClick={(e) => {
-                e.preventDefault(); // Prevent triggering the parent Link
-                window.location.href = `/${config.routePrefix}/edit/${listing.id}`;
-              }}
-              className="bg-white/90 p-2 rounded-full shadow-lg hover:bg-white transition-colors"
-            >
-              <Pencil className="w-4 h-4 text-gray-600" />
-            </button>
-            <button
-              onClick={(e) => {
-                e.preventDefault(); // Prevent triggering the parent Link
-                setListingToDelete({ id: listing.id, type: serviceType });
-              }}
-              className="bg-white/90 p-2 rounded-full shadow-lg hover:bg-white transition-colors"
-            >
-              <Trash2 className="w-4 h-4 text-red-600" />
-            </button>
+
+          {/* Action buttons */}
+          <div className="absolute top-2 right-2 flex gap-2 z-20">
+            {listing.is_archived ? (
+              <>
+                <button
+                  onClick={() => handleRestore(listing.id, serviceType)}
+                  className="bg-white p-2 rounded-full shadow-lg hover:bg-green-600 transition-colors"
+                  title="Restore listing"
+                >
+                  <ArchiveRestore className="w-4 h-4 text-black" />
+                </button>
+                <button
+                  onClick={() =>
+                    setListingToDelete({ id: listing.id, type: serviceType })
+                  }
+                  className="bg-white/90 p-2 rounded-full shadow-lg hover:bg-white transition-colors"
+                >
+                  <Trash2 className="w-4 h-4 text-red-600" />
+                </button>
+              </>
+            ) : (
+              <>
+                <button
+                  onClick={() => {
+                    window.location.href = `/${config.routePrefix}/edit/${listing.id}`;
+                  }}
+                  className="bg-white/90 p-2 rounded-full shadow-lg hover:bg-white transition-colors"
+                >
+                  <Pencil className="w-4 h-4 text-gray-600" />
+                </button>
+                <button
+                  onClick={() =>
+                    setListingToArchive({ id: listing.id, type: serviceType })
+                  }
+                  className="bg-white/90 p-2 rounded-full shadow-lg hover:bg-white transition-colors"
+                >
+                  <Archive className="w-4 h-4 text-black" />
+                </button>
+                <button
+                  onClick={() =>
+                    setListingToDelete({ id: listing.id, type: serviceType })
+                  }
+                  className="bg-white/90 p-2 rounded-full shadow-lg hover:bg-white transition-colors"
+                >
+                  <Trash2 className="w-4 h-4 text-red-600" />
+                </button>
+              </>
+            )}
           </div>
         </div>
 
-        <Link href={`/${config.routePrefix}/${listing.id}`} className="block">
-          <div className="p-4">
-            <div className="flex justify-between items-start mb-2">
-              <h3 className="text-lg font-semibold group-hover:text-stone-500 transition-colors">
-                {listing.business_name}
-              </h3>
-              {isVenueListing(listing) ? (
+        <div className="p-4">
+          <div className="flex justify-between items-start mb-2">
+            <h3 className="text-lg font-semibold">{listing.business_name}</h3>
+            {isVenueListing(listing) ? (
+              <span className="text-lg font-semibold text-green-800">
+                ${listing.base_price.toLocaleString()}
+              </span>
+            ) : (
+              isServiceBasedListing(listing) && (
                 <span className="text-lg font-semibold text-green-800">
-                  ${listing.base_price.toLocaleString()}
+                  {listing.min_service_price === listing.max_service_price
+                    ? `$${listing.min_service_price.toLocaleString()}`
+                    : `$${listing.min_service_price.toLocaleString()} - $${listing.max_service_price.toLocaleString()}`}
                 </span>
-              ) : (
-                isServiceBasedListing(listing) && (
-                  <span className="text-lg font-semibold text-green-800">
-                    {listing.min_service_price === listing.max_service_price
-                      ? `$${listing.min_service_price.toLocaleString()}`
-                      : `$${listing.min_service_price.toLocaleString()} - $${listing.max_service_price.toLocaleString()}`}
-                  </span>
-                )
-              )}
-            </div>
-
-            <div className="space-y-2">
-              {isVenueListing(listing) ? (
-                <p className="text-gray-600 text-sm">
-                  Up to {listing.max_guests.toLocaleString()} guests • Venue
-                </p>
-              ) : (
-                <p className="text-gray-600 text-sm">
-                  {listing.years_experience} years experience •{" "}
-                  {serviceType === "hair-makeup" &&
-                    (listing.service_type === "both"
-                      ? "Hair & Makeup"
-                      : listing.service_type === "hair"
-                      ? "Hair"
-                      : "Makeup")}
-                  {serviceType === "photo-video" &&
-                    (listing.service_type === "both"
-                      ? "Photography & Videography"
-                      : listing.service_type === "photography"
-                      ? "Photography"
-                      : "Videography")}
-                  {serviceType === "wedding-planner" &&
-                    (listing.service_type === "both"
-                      ? "Wedding Planner & Coordinator"
-                      : listing.service_type === "weddingPlanner"
-                      ? "Wedding Planner"
-                      : "Wedding Coordinator")}
-                  {serviceType === "dj" && "DJ"}
-                </p>
-              )}
-
-              <p className="text-gray-600 text-sm line-clamp-2">
-                {listing.description}
-              </p>
-
-              <p className="text-sm text-gray-600">
-                {listing.city}, {listing.state}
-              </p>
-            </div>
+              )
+            )}
           </div>
-        </Link>
+
+          <div className="space-y-2">
+            {isVenueListing(listing) ? (
+              <p className="text-gray-600 text-sm">
+                Up to {listing.max_guests.toLocaleString()} guests • Venue
+              </p>
+            ) : (
+              <p className="text-gray-600 text-sm">
+                {listing.years_experience} years experience •{" "}
+                {serviceType === "hair-makeup" &&
+                  (listing.service_type === "both"
+                    ? "Hair & Makeup"
+                    : listing.service_type === "hair"
+                    ? "Hair"
+                    : "Makeup")}
+                {serviceType === "photo-video" &&
+                  (listing.service_type === "both"
+                    ? "Photography & Videography"
+                    : listing.service_type === "photography"
+                    ? "Photography"
+                    : "Videography")}
+                {serviceType === "wedding-planner" &&
+                  (listing.service_type === "both"
+                    ? "Wedding Planner & Coordinator"
+                    : listing.service_type === "weddingPlanner"
+                    ? "Wedding Planner"
+                    : "Wedding Coordinator")}
+                {serviceType === "dj" && "DJ"}
+              </p>
+            )}
+
+            <p className="text-gray-600 text-sm line-clamp-2">
+              {listing.description}
+            </p>
+
+            <p className="text-sm text-gray-600">
+              {listing.city}, {listing.state}
+            </p>
+          </div>
+        </div>
       </div>
     );
   };
@@ -636,7 +748,32 @@ export default function MyListingsPage() {
             </div>
           </div>
           <Footer />
-
+          <AlertDialog
+            open={!!listingToArchive}
+            onOpenChange={() => setListingToArchive(null)}
+          >
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Archive Listing</AlertDialogTitle>
+                <AlertDialogDescription>
+                  Are you sure you want to archive this listing? This will hide
+                  it from public view but you can restore it later.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                <AlertDialogAction
+                  onClick={() =>
+                    listingToArchive &&
+                    handleArchive(listingToArchive.id, listingToArchive.type)
+                  }
+                  className="bg-black hover:bg-stone-500"
+                >
+                  Archive
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
           <AlertDialog
             open={!!listingToDelete}
             onOpenChange={() => setListingToDelete(null)}
