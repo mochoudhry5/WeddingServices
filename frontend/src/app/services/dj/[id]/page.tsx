@@ -440,101 +440,109 @@ export default function MakeupDetailsPage() {
           </div>
         )}
         {/* Contact Form */}
-        <div className="mb-12">
-          <h2 className="text-xl md:text-2xl font-bold mb-6 text-center">
-            Contact {dj.business_name}
-          </h2>
-          <div className="max-w-2xl mx-auto bg-gray-50 p-4 md:p-6 rounded-lg">
-            <form onSubmit={handleInquirySubmit} className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {user?.id !== dj.user_id ? (
+          <div className="mb-12">
+            <h2 className="text-xl md:text-2xl font-bold mb-6 text-center">
+              Contact {dj.business_name}
+            </h2>
+            <div className="max-w-2xl mx-auto bg-gray-50 p-4 md:p-6 rounded-lg">
+              <form onSubmit={handleInquirySubmit} className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      First Name
+                    </label>
+                    <Input
+                      name="firstName"
+                      value={inquiryForm.firstName}
+                      onChange={handleInputChange}
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Last Name
+                    </label>
+                    <Input
+                      name="lastName"
+                      value={inquiryForm.lastName}
+                      onChange={handleInputChange}
+                      required
+                    />
+                  </div>
+                </div>
+
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    First Name
+                    Email
                   </label>
                   <Input
-                    name="firstName"
-                    value={inquiryForm.firstName}
+                    type="email"
+                    name="email"
+                    value={inquiryForm.email}
                     onChange={handleInputChange}
                     required
                   />
                 </div>
+
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Last Name
+                    Phone
                   </label>
                   <Input
-                    name="lastName"
-                    value={inquiryForm.lastName}
+                    type="tel"
+                    name="phone"
+                    value={inquiryForm.phone}
                     onChange={handleInputChange}
                     required
                   />
                 </div>
-              </div>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Email
-                </label>
-                <Input
-                  type="email"
-                  name="email"
-                  value={inquiryForm.email}
-                  onChange={handleInputChange}
-                  required
-                />
-              </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Event Date
+                  </label>
+                  <Input
+                    type="date"
+                    name="eventDate"
+                    value={inquiryForm.eventDate}
+                    onChange={handleInputChange}
+                    required
+                  />
+                </div>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Phone
-                </label>
-                <Input
-                  type="tel"
-                  name="phone"
-                  value={inquiryForm.phone}
-                  onChange={handleInputChange}
-                  required
-                />
-              </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Message
+                  </label>
+                  <textarea
+                    name="message"
+                    value={inquiryForm.message}
+                    onChange={handleInputChange}
+                    rows={4}
+                    className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-transparent text-sm sm:text-base"
+                    placeholder="Tell us about your event and requirements..."
+                    required
+                  />
+                </div>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Event Date
-                </label>
-                <Input
-                  type="date"
-                  name="eventDate"
-                  value={inquiryForm.eventDate}
-                  onChange={handleInputChange}
-                  required
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Message
-                </label>
-                <textarea
-                  name="message"
-                  value={inquiryForm.message}
-                  onChange={handleInputChange}
-                  rows={4}
-                  className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-transparent text-sm sm:text-base"
-                  placeholder="Tell us about your event and requirements..."
-                  required
-                />
-              </div>
-
-              <Button
-                type="submit"
-                disabled={isSubmitting}
-                className="w-full bg-black hover:bg-stone-500 text-sm sm:text-base py-2 sm:py-3"
-              >
-                {isSubmitting ? "Sending..." : "Send Inquiry"}
-              </Button>
-            </form>
+                <Button
+                  type="submit"
+                  disabled={isSubmitting}
+                  className="w-full bg-black hover:bg-stone-500 text-sm sm:text-base py-2 sm:py-3"
+                >
+                  {isSubmitting ? "Sending..." : "Send Inquiry"}
+                </Button>
+              </form>
+            </div>
           </div>
-        </div>
+        ) : (
+          <div className="mb-8 sm:mb-12 text-center">
+            <p className="text-gray-600">
+              Manage your listing from your dashboard.
+            </p>
+          </div>
+        )}
       </div>
       <Footer />
     </div>
