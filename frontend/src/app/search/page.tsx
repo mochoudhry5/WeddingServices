@@ -246,7 +246,7 @@ export default function ServicesSearchPage() {
   const minCapacity = parseInt(params.get("minCapacity") || "0");
   const maxCapacity = parseInt(params.get("maxCapacity") || "0");
   const sortOption = params.get("sort") || "default";
-  const cateringOption = params.get("catering") || "both";
+  const cateringOption = params.get("catering") || "";
 
   // Filter state
   const [searchFilters, setSearchFilters] = useState<SearchFilters>({
@@ -1259,7 +1259,7 @@ export default function ServicesSearchPage() {
                                   Outside Only
                                 </SelectItem>
                                 <SelectItem value="both">
-                                  Both Allowed
+                                  In-House and Outside Catering
                                 </SelectItem>
                               </SelectContent>
                             </Select>

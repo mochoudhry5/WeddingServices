@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { User, Bell, CreditCard, Shield, LogOut } from "lucide-react";
 import NavBar from "@/components/ui/NavBar";
 import Footer from "@/components/ui/Footer";
@@ -20,7 +20,6 @@ import {
 } from "@/components/ui/alert-dialog";
 import { ProtectedRoute } from "@/components/ui/ProtectedRoute";
 import { toast } from "sonner";
-
 
 interface PasswordFormData {
   currentPassword: string;
@@ -49,24 +48,50 @@ const SectionLayout = ({
 const AccountSettings = () => {
   const { user } = useAuth();
   const [email, setEmail] = useState(user?.email || "");
-  const [loading, setLoading] = useState(false);
+  const [isVendor, setIsVendor] = useState(false);
+  const [showVendorDialog, setShowVendorDialog] = useState(false);
+  const [pendingVendorState, setPendingVendorState] = useState(false);
+  const [loading, setLoading] = useState({
+    email: false,
+    vendor: false,
+  });
+
+  // Fetch vendor status on component mount
+  useEffect(() => {
+    const fetchVendorStatus = async () => {
+      if (!user?.id) return;
+
+      try {
+        const { data, error } = await supabase
+          .from("user_preferences")
+          .select("is_vendor")
+          .eq("id", user.id)
+          .single();
+
+        if (error) throw error;
+        setIsVendor(data?.is_vendor || false);
+      } catch (error) {
+        console.error("Error fetching vendor status:", error);
+        toast.error("Failed to load account settings");
+      }
+    };
+
+    fetchVendorStatus();
+  }, [user?.id]);
 
   const handleUpdateEmail = async (e: React.FormEvent) => {
     e.preventDefault();
-    setLoading(true);
+    setLoading((prev) => ({ ...prev, email: true }));
 
     try {
-      // Check if email is empty
       if (!email) {
         throw new Error("Email is required");
       }
 
-      // Check if new email is same as current email
       if (email === user?.email) {
         throw new Error("New email must be different from your current email");
       }
 
-      // Validate email format
       if (!email.match(/^[^\s@]+@[^\s@]+\.[^\s@]+$/)) {
         throw new Error("Please enter a valid email address");
       }
@@ -74,7 +99,6 @@ const AccountSettings = () => {
       const { error } = await supabase.auth.updateUser({ email });
 
       if (error) {
-        // Handle specific error cases
         if (error.message.includes("User already registered")) {
           throw new Error(
             "This email address is already in use. Please use a different email."
@@ -88,57 +112,181 @@ const AccountSettings = () => {
       toast.error(
         error instanceof Error ? error.message : "Failed to update email"
       );
-      // Reset email to current email if update failed
       setEmail(user?.email || "");
     } finally {
-      setLoading(false);
+      setLoading((prev) => ({ ...prev, email: false }));
+    }
+  };
+
+  const initiateVendorToggle = (newState: boolean) => {
+    setPendingVendorState(newState);
+    setShowVendorDialog(true);
+  };
+
+  const handleToggleVendor = async () => {
+    if (!user?.id) return;
+
+    setLoading((prev) => ({ ...prev, vendor: true }));
+    try {
+      // Call RPC with appropriate flag
+      const { error } = await supabase.rpc("delete_all_vendor_listings", {
+        vendor_id: user.id,
+        is_becoming_vendor: !isVendor, // true when switching TO vendor
+      });
+
+      if (error) {
+        console.error("Delete error:", error);
+        throw error;
+      }
+
+      // Update vendor status
+      const { error: updateError } = await supabase
+        .from("user_preferences")
+        .update({ is_vendor: !isVendor })
+        .eq("id", user.id);
+
+      if (updateError) {
+        console.error("Update error:", updateError);
+        throw updateError;
+      }
+
+      setIsVendor(!isVendor);
+      setShowVendorDialog(false);
+      toast.success(
+        isVendor
+          ? "Successfully switched to non-vendor account. All listings have been removed."
+          : "Successfully switched to vendor account. All quick reaches have been removed."
+      );
+    } catch (error: any) {
+      console.error("Error updating vendor status:", error);
+      toast.error(error.message || "Failed to update account type");
+    } finally {
+      setLoading((prev) => ({ ...prev, vendor: false }));
     }
   };
 
   return (
-    <SectionLayout
-      title="Email Settings"
-      description="Update your email address. A verification email will be sent to confirm the change."
-    >
-      <form onSubmit={handleUpdateEmail} className="space-y-4">
-        <div className="space-y-4">
-          <div>
-            <label
-              htmlFor="current-email"
-              className="block text-sm font-medium text-gray-700 mb-1"
-            >
-              Current Email
-            </label>
-            <p className="text-sm text-gray-500 mb-4">{user?.email}</p>
+    <SectionLayout title="" description="">
+      <div className="divide-y divide-gray-200">
+        {/* Account Type Section */}
+        <div className="pb-8">
+          <div className="mb-6">
+            <h4 className="text-lg font-medium text-gray-900">Account Type</h4>
+            <p className="text-sm text-gray-500 mt-1">
+              Manage your vendor status and capabilities
+            </p>
           </div>
-          <div>
-            <label
-              htmlFor="new-email"
-              className="block text-sm font-medium text-gray-700 mb-1"
-            >
-              New Email Address
-            </label>
-            <Input
-              id="new-email"
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              disabled={loading}
-              placeholder="Enter new email address"
-              aria-label="New email address"
-            />
-          </div>
-          <div className="pt-4">
-            <button
-              type="submit"
-              disabled={loading || email === user?.email}
-              className="bg-black text-white px-4 py-2 rounded-lg hover:bg-stone-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {loading ? "Updating Email..." : "Update Email"}
-            </button>
+          <div className="bg-gray-50 rounded-lg p-4">
+            <div className="flex items-center justify-between mb-4">
+              <div>
+                <p className="text-sm font-medium text-gray-700">
+                  Vendor Account
+                </p>
+                <p className="text-sm text-gray-500">
+                  Enable vendor capabilities for your account
+                </p>
+              </div>
+              <Switch
+                checked={isVendor}
+                onCheckedChange={initiateVendorToggle}
+                disabled={loading.vendor}
+              />
+            </div>
+            <p className="text-xs text-gray-500">
+              {isVendor
+                ? "Switch back to non-vendor to better find what you are looking for."
+                : "Switch to a vendor account to list your service and get bookings."}
+            </p>
           </div>
         </div>
-      </form>
+
+        {/* Email Settings Section */}
+        <div className="pt-8">
+          <div className="mb-6">
+            <h4 className="text-lg font-medium text-gray-900">
+              Email Settings
+            </h4>
+            <p className="text-sm text-gray-500 mt-1">
+              Update your email address and preferences
+            </p>
+          </div>
+          <form onSubmit={handleUpdateEmail}>
+            <div className="bg-gray-50 rounded-lg p-4 space-y-4">
+              <div>
+                <label
+                  htmlFor="current-email"
+                  className="block text-sm font-medium text-gray-700"
+                >
+                  Current Email
+                </label>
+                <p className="text-sm text-gray-500 mt-1">{user?.email}</p>
+              </div>
+              <div>
+                <label
+                  htmlFor="new-email"
+                  className="block text-sm font-medium text-gray-700"
+                >
+                  New Email Address
+                </label>
+                <Input
+                  id="new-email"
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  disabled={loading.email}
+                  placeholder="Enter new email address"
+                  aria-label="New email address"
+                  className="mt-1"
+                />
+              </div>
+              <div className="pt-2">
+                <button
+                  type="submit"
+                  disabled={loading.email || email === user?.email}
+                  className="bg-black text-white px-4 py-2 rounded-lg hover:bg-stone-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {loading.email ? "Updating Email..." : "Update Email"}
+                </button>
+              </div>
+            </div>
+          </form>
+        </div>
+      </div>
+      <AlertDialog open={showVendorDialog} onOpenChange={setShowVendorDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              {pendingVendorState
+                ? "Enable Vendor Account?"
+                : "Disable Vendor Account?"}
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              {pendingVendorState ? (
+                <span className="text-red-700">
+                  Warning: Enabling vendor status will permanently delete all
+                  your current Quick Reaches. This action cannot be undone.
+                </span>
+              ) : (
+                <span className="text-red-700">
+                  Warning: Disabling vendor status will permanently delete all
+                  your current listings. This action cannot be undone.
+                </span>
+              )}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleToggleVendor}
+              className="bg-black text-white hover:bg-stone-500"
+            >
+              {pendingVendorState
+                ? "Enable Vendor Account"
+                : "Disable & Delete Listings"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </SectionLayout>
   );
 };
