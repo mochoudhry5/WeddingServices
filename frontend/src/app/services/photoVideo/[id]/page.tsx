@@ -37,6 +37,7 @@ interface PhotoVideoDetails {
   photo_video_services: PhotoVideoService[];
   min_service_price: number;
   max_service_price: number;
+  is_archived: boolean;
 }
 
 interface PhotoVideoMedia {
@@ -150,6 +151,7 @@ export default function PhotographyDetailsPage() {
           *,
           user_id,
           user_email,
+          is_archived,
           photo_video_media (
             file_path,
             display_order
@@ -172,6 +174,11 @@ export default function PhotographyDetailsPage() {
         .single();
 
       if (error) throw error;
+
+      if (!photoVideoData || photoVideoData.is_archived) {
+        setPhotoVideo(null);
+        return;
+      }
 
       if (!photoVideoData) {
         toast.error("Photographer & Videographer not found");

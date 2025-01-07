@@ -37,6 +37,7 @@ interface HairMakeupDetails {
   hair_makeup_services: HairMakeupService[];
   min_service_price: number;
   max_service_price: number;
+  is_archived: boolean;
 }
 
 interface HairMakeupMedia {
@@ -138,11 +139,11 @@ export default function MakeupDetailsPage() {
 
   useEffect(() => {
     if (params.id) {
-      loadMakeupDetails();
+      loadHairMakeupDetails();
     }
   }, [params.id]);
 
-  const loadMakeupDetails = async () => {
+  const loadHairMakeupDetails = async () => {
     try {
       const { data: makeupData, error } = await supabase
         .from("hair_makeup_listing")
@@ -152,6 +153,7 @@ export default function MakeupDetailsPage() {
             user_id,
             user_email,
             is_remote_business,
+            is_archived,
             hair_makeup_media (
               file_path,
               display_order
@@ -173,6 +175,11 @@ export default function MakeupDetailsPage() {
         .single();
 
       if (error) throw error;
+
+      if (!makeupData || makeupData.is_archived) {
+        setHairMakeup(null);
+        return;
+      }
 
       if (!makeupData) {
         toast.error("Listing Not found");

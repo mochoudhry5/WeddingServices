@@ -480,19 +480,8 @@ export default function MyListingsPage() {
   ) => {
     const config = SERVICE_CONFIGS[serviceType];
 
-    return (
-      <div className="bg-white rounded-xl shadow-sm overflow-hidden group relative">
-        {listing.is_archived && (
-          <>
-            {/* Archived tag in top left */}
-            <div className="absolute top-4 left-4 z-20 bg-black text-white px-2 py-1 rounded text-sm font-medium">
-              Archived
-            </div>
-            {/* Grey overlay */}
-            <div className="absolute inset-0 bg-white/50 z-10" />
-          </>
-        )}
-
+    const CardContent = () => (
+      <>
         <div className="relative">
           <MediaCarousel
             media={listing.media}
@@ -527,7 +516,8 @@ export default function MyListingsPage() {
             ) : (
               <>
                 <button
-                  onClick={() => {
+                  onClick={(e) => {
+                    e.preventDefault();
                     window.location.href = `/${config.routePrefix}/edit/${listing.id}`;
                   }}
                   className="bg-white/90 p-2 rounded-full shadow-lg hover:bg-white transition-colors"
@@ -535,17 +525,19 @@ export default function MyListingsPage() {
                   <Pencil className="w-4 h-4 text-gray-600" />
                 </button>
                 <button
-                  onClick={() =>
-                    setListingToArchive({ id: listing.id, type: serviceType })
-                  }
+                  onClick={(e) => {
+                    e.preventDefault();
+                    setListingToArchive({ id: listing.id, type: serviceType });
+                  }}
                   className="bg-white/90 p-2 rounded-full shadow-lg hover:bg-white transition-colors"
                 >
                   <Archive className="w-4 h-4 text-black" />
                 </button>
                 <button
-                  onClick={() =>
-                    setListingToDelete({ id: listing.id, type: serviceType })
-                  }
+                  onClick={(e) => {
+                    e.preventDefault();
+                    setListingToDelete({ id: listing.id, type: serviceType });
+                  }}
                   className="bg-white/90 p-2 rounded-full shadow-lg hover:bg-white transition-colors"
                 >
                   <Trash2 className="w-4 h-4 text-red-600" />
@@ -612,6 +604,27 @@ export default function MyListingsPage() {
             </p>
           </div>
         </div>
+      </>
+    );
+
+    return (
+      <div className="bg-white rounded-xl shadow-sm overflow-hidden group relative">
+        {listing.is_archived && (
+          <>
+            <div className="absolute top-4 left-4 z-20 bg-black text-white px-2 py-1 rounded text-sm font-medium">
+              Archived
+            </div>
+            <div className="absolute inset-0 bg-white/50 z-10" />
+          </>
+        )}
+
+        {listing.is_archived ? (
+          <CardContent />
+        ) : (
+          <Link href={`/${config.routePrefix}/${listing.id}`} className="block">
+            <CardContent />
+          </Link>
+        )}
       </div>
     );
   };

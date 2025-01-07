@@ -37,6 +37,7 @@ interface WeddingPlannerDetails {
   wedding_planner_services: WeddingPlannerService[];
   min_service_price: number;
   max_service_price: number;
+  is_archived: boolean;
 }
 
 interface WeddingPlannerMedia {
@@ -146,6 +147,7 @@ export default function WeddingDetailsPage() {
           *,
           user_id,
           user_email,
+          is_archived,
           wedding_planner_media (
             file_path,
             display_order
@@ -166,6 +168,11 @@ export default function WeddingDetailsPage() {
         .single();
 
       if (error) throw error;
+
+      if (!weddingPlannerData || weddingPlannerData.is_archived) {
+        setWeddingPlanner(null);
+        return;
+      }
 
       if (!weddingPlannerData) {
         toast.error("Wedding Planner & Coordinator listing not found");

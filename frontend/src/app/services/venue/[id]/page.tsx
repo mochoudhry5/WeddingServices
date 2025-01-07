@@ -33,6 +33,7 @@ interface VenueDetails {
   venue_inclusions: VenueInclusion[];
   venue_media: VenueMedia[];
   venue_addons: VenueAddon[];
+  is_archived: boolean;
 }
 
 interface VenueMedia {
@@ -253,6 +254,7 @@ export default function VenueDetailsPage() {
           *,
           user_id,
           user_email,
+          is_archived,
           venue_media (
             file_path,
             display_order
@@ -275,6 +277,11 @@ export default function VenueDetailsPage() {
         .single();
 
       if (error) throw error;
+
+      if (!venueData || venueData.is_archived) {
+        setVenue(null);
+        return;
+      }
 
       if (!venueData) {
         toast.error("Listing not found");

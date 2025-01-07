@@ -22,6 +22,7 @@ interface DJDetails {
   years_experience: string;
   travel_range: number;
   is_remote_business: boolean;
+  is_archived: boolean; // Add this line
   address: string | null;
   city: string;
   state: string;
@@ -139,11 +140,11 @@ export default function MakeupDetailsPage() {
 
   useEffect(() => {
     if (params.id) {
-      loadMakeupDetails();
+      loadDJDetails();
     }
   }, [params.id]);
 
-  const loadMakeupDetails = async () => {
+  const loadDJDetails = async () => {
     try {
       const { data: djData, error } = await supabase
         .from("dj_listing")
@@ -153,6 +154,7 @@ export default function MakeupDetailsPage() {
             user_id,
             user_email,
             is_remote_business,
+            is_archived,
             dj_media (
               file_path,
               display_order
@@ -175,15 +177,17 @@ export default function MakeupDetailsPage() {
 
       if (error) throw error;
 
-      if (!djData) {
-        toast.error("Listing Not found");
+      // Return early if the listing is archived or not found
+      if (!djData || djData.is_archived) {
+        setDJ(null);
         return;
       }
 
-      console.log("Makeup data:", djData);
+      console.log("DJ data:", djData);
       setDJ(djData);
     } catch (error) {
       console.error("Error loading dj:", error);
+      setDJ(null);
     } finally {
       setIsLoading(false);
     }
