@@ -192,7 +192,7 @@ const PricingPage = () => {
             <div className="flex flex-col items-center gap-6 sm:gap-8 mb-8 sm:mb-12">
               {/* Category Selection */}
               <div className="w-full overflow-x-auto pb-2 -mb-2">
-                <div className="flex gap-2 sm:gap-4 p-1 bg-gray-100 rounded-lg min-w-max mx-auto">
+                <div className="flex gap-2 sm:gap-4 p-1 bg-gray-100 rounded-lg min-w-max max-w-fit mx-auto">
                   {Object.keys(categories).map((category) => (
                     <button
                       key={category}
