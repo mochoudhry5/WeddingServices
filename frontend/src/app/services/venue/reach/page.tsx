@@ -527,10 +527,10 @@ const VenueInquiryForm = () => {
                           </SelectTrigger>
                           <SelectContent>
                             <SelectItem value="in-house">
-                              In-House Catering Only
+                              In-House Catering
                             </SelectItem>
                             <SelectItem value="outside">
-                              Outside Catering Only
+                              Outside Catering
                             </SelectItem>
                             <SelectItem value="both">
                               In-House & Outside Catering
