@@ -161,7 +161,6 @@ export default function LeadsPage() {
             const { data, error } = await supabase
               .from(SERVICE_CONFIGS[serviceType].table)
               .select("*")
-              .eq("user_id", user.id)
               .order("created_at", { ascending: false });
 
             if (error) throw error;
