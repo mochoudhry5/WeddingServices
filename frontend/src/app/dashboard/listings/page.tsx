@@ -359,6 +359,7 @@ export default function MyListingsPage() {
         throw new Error("Listing not found");
       }
 
+      // Delete media files first if they exist
       if (listingToDelete.media?.length > 0) {
         const filePaths = listingToDelete.media.map((media) => media.file_path);
         const { error: storageError } = await supabase.storage
@@ -368,14 +369,19 @@ export default function MyListingsPage() {
         if (storageError) throw storageError;
       }
 
-      const { error: deleteError } = await supabase
-        .from(config.tableName)
-        .delete()
-        .eq("id", listingId)
-        .eq("user_id", user.id);
+      // Call the RPC function to delete the single listing
+      const { error: deleteError } = await supabase.rpc(
+        "delete_single_listing",
+        {
+          vendor_id: user.id,
+          listing_id: listingId,
+          service_type: serviceType,
+        }
+      );
 
       if (deleteError) throw deleteError;
 
+      // Update local state to remove the deleted listing
       setListings((prev) => ({
         ...prev,
         [serviceType]: prev[serviceType].filter(
@@ -650,7 +656,7 @@ export default function MyListingsPage() {
                     listingToDelete &&
                     handleDelete(listingToDelete.id, listingToDelete.type)
                   }
-                  className="bg-red-600 hover:bg-red-700"
+                  className="bg-black hover:bg-stone-500"
                 >
                   Delete
                 </AlertDialogAction>
