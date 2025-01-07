@@ -8,6 +8,7 @@ import { toast } from "sonner";
 import { useAuth } from "@/context/AuthContext";
 import OnboardingModal from "@/components/ui/OnboardingModal";
 import { Button } from "@/components/ui/button";
+import { supabase } from "@/lib/supabase";
 
 type ServiceId =
   | "venue"
@@ -206,9 +207,29 @@ export default function CreateServicePage() {
   const [showModal, setShowModal] = useState(false);
   const { user } = useAuth();
 
-  const handleContinue = () => {
+  const handleContinue = async () => {
     if (!user) {
-      toast.error("Please sign in to list your service");
+      toast.error("Please sign in to contact service providers");
+      return;
+    }
+
+    // Check if the user is a vendor
+    const { data: userData, error } = await supabase
+      .from("user_preferences")
+      .select("is_vendor")
+      .eq("id", user.id)
+      .single();
+
+    if (error) {
+      console.error("Error fetching user preferences:", error);
+      toast.error("An error occurred. Please try again later.");
+      return;
+    }
+
+    const isVendor = userData?.is_vendor || false;
+
+    if (!isVendor) {
+      toast.error("Vendors cannot request services. Change role in Settings.");
       return;
     }
 
