@@ -533,7 +533,7 @@ const VenueInquiryForm = () => {
                               Outside Catering Only
                             </SelectItem>
                             <SelectItem value="both">
-                              Either In-House or Outside
+                              In-House & Outside Catering
                             </SelectItem>
                             <SelectItem value="no-preference">
                               No Preference
