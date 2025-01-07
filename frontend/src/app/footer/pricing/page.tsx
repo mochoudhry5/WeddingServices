@@ -73,21 +73,18 @@ const PricingPage = () => {
   const commonFeatures: Record<PlanType, [string, boolean][]> = {
     basic: [
       ["Create Listing", true],
-      ["Enhanced Profile", true],
-      ["All Leads Free", true],
-      ["Basic Analytics", true],
+      ["No Lead Generation Fees", true],
+      ["Extra Leads from Quick Reach", true],
     ],
     premium: [
-      ["Advanced Analytics", true],
-      ["Premium Exposure (Top 20 in city)", true],
+      ["Premium Business Exposure in city", true],
+      ["Only 20 spots available per city", true],
       ["Priority Support", true],
-      ["Customizable Profile", true],
     ],
     elite: [
-      ["Elite Exposure (Top 3 in city)", true],
-      ["Dedicated Account Manager", true],
-      ["Custom Reporting", true],
-      ["Early Access Features", true],
+      ["Elite Exposure (Top placement in city)", true],
+      ["Only 3 spots available per city", true],
+      ["Social Media Content", true],
     ],
   };
 
