@@ -1,4 +1,5 @@
 "use client";
+
 import { useState, useEffect } from "react";
 import { Heart } from "lucide-react";
 import { supabase } from "@/lib/supabase";
@@ -9,6 +10,7 @@ import { toast } from "sonner";
 interface ServiceConfig {
   tableName: string;
   idField: string;
+  listingTable: string; // Added for the main listing table name
   entityName: string;
   pluralName: string;
 }
@@ -18,30 +20,35 @@ const SERVICE_CONFIGS: Record<string, ServiceConfig> = {
   venue: {
     tableName: "venue_liked",
     idField: "venue_id",
+    listingTable: "venue_listing", // Added main table name
     entityName: "venue",
     pluralName: "Venue",
   },
   "hair-makeup": {
     tableName: "hair_makeup_liked",
     idField: "hair_makeup_id",
+    listingTable: "hair_makeup_listing",
     entityName: "hairMakeup",
     pluralName: "Hair & Makeup",
   },
   "photo-video": {
     tableName: "photo_video_liked",
     idField: "photo_video_id",
+    listingTable: "photo_video_listing",
     entityName: "photo-video",
     pluralName: "Photgraphy & Videography",
   },
   dj: {
     tableName: "dj_liked",
     idField: "dj_id",
+    listingTable: "dj_listing",
     entityName: "dj",
     pluralName: "DJ",
   },
   "wedding-planner": {
     tableName: "wedding_planner_liked",
     idField: "wedding_planner_id",
+    listingTable: "wedding_planner_listing",
     entityName: "wedding-planner",
     pluralName: "Wedding Planner & Coordinator",
   },
@@ -106,7 +113,7 @@ export default function LikeButton({
     setIsLoading(true);
     try {
       if (isLiked) {
-        // Unlike
+        // Unlike - The trigger will handle decrementing the counter
         const { error } = await supabase
           .from(serviceConfig.tableName)
           .delete()
@@ -114,10 +121,12 @@ export default function LikeButton({
           .eq(serviceConfig.idField, itemId);
 
         if (error) throw error;
-        toast.success(`Removed  ${serviceConfig.pluralName} listing from favorites`);
+        toast.success(
+          `Removed ${serviceConfig.pluralName} listing from favorites`
+        );
         onUnlike?.();
       } else {
-        // Like
+        // Like - The trigger will handle incrementing the counter
         const { error } = await supabase.from(serviceConfig.tableName).insert({
           user_id: user.id,
           [serviceConfig.idField]: itemId,
