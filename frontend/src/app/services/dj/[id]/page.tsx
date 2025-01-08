@@ -37,6 +37,7 @@ interface DJDetails {
   dj_services: DJService[];
   min_service_price: number;
   max_service_price: number;
+  number_of_contacted: number;
 }
 
 interface DJMedia {
@@ -155,6 +156,7 @@ export default function MakeupDetailsPage() {
             user_email,
             is_remote_business,
             is_archived,
+            number_of_contacted,
             dj_media (
               file_path,
               display_order
@@ -196,8 +198,14 @@ export default function MakeupDetailsPage() {
   const handleInquirySubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
+
+    if (!dj) {
+      toast.error("DJ information not found");
+      return;
+    }
+
     try {
-      // Make API call to send inquiry
+      // First, send the inquiry
       const response = await fetch("/api/inquiry", {
         method: "POST",
         headers: {
@@ -205,15 +213,28 @@ export default function MakeupDetailsPage() {
         },
         body: JSON.stringify({
           serviceType: "dj",
-          serviceId: dj?.id,
+          serviceId: dj.id,
           formData: inquiryForm,
-          businessName: dj?.business_name,
+          businessName: dj.business_name,
         }),
       });
 
       if (!response.ok) {
         const error = await response.json();
         throw new Error(error.message || "Failed to send inquiry");
+      }
+
+      // If inquiry was successful, increment the counter
+      const { error: updateError } = await supabase
+        .from("dj_listing")
+        .update({
+          number_of_contacted: (dj.number_of_contacted || 0) + 1,
+        })
+        .eq("id", dj.id);
+
+      if (updateError) {
+        console.error("Error updating contact counter:", updateError);
+        // Don't show error to user since the inquiry was still sent successfully
       }
 
       // Clear form after successful submission
@@ -227,6 +248,9 @@ export default function MakeupDetailsPage() {
       });
 
       toast.success("Your inquiry has been sent! They will contact you soon.");
+
+      // Reload the DJ details to get updated counter
+      loadDJDetails();
     } catch (error) {
       console.error("Error sending inquiry:", error);
       toast.error("Failed to send inquiry. Please try again.");

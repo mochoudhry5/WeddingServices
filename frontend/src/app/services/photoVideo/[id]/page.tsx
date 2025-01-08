@@ -38,6 +38,7 @@ interface PhotoVideoDetails {
   min_service_price: number;
   max_service_price: number;
   is_archived: boolean;
+  number_of_contacted: number;
 }
 
 interface PhotoVideoMedia {
@@ -152,6 +153,7 @@ export default function PhotographyDetailsPage() {
           user_id,
           user_email,
           is_archived,
+          number_of_contacted,
           photo_video_media (
             file_path,
             display_order
@@ -197,8 +199,14 @@ export default function PhotographyDetailsPage() {
   const handleInquirySubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
+
+    if (!photoVideo) {
+      toast.error("Photographer & Videographer information not found");
+      return;
+    }
+
     try {
-      // Make API call to send inquiry
+      // First, send the inquiry
       const response = await fetch("/api/inquiry", {
         method: "POST",
         headers: {
@@ -206,15 +214,28 @@ export default function PhotographyDetailsPage() {
         },
         body: JSON.stringify({
           serviceType: "photo-video",
-          serviceId: photoVideo?.id,
+          serviceId: photoVideo.id,
           formData: inquiryForm,
-          businessName: photoVideo?.business_name,
+          businessName: photoVideo.business_name,
         }),
       });
 
       if (!response.ok) {
         const error = await response.json();
         throw new Error(error.message || "Failed to send inquiry");
+      }
+
+      // If inquiry was successful, increment the counter
+      const { error: updateError } = await supabase
+        .from("photo_video_listing")
+        .update({
+          number_of_contacted: (photoVideo.number_of_contacted || 0) + 1,
+        })
+        .eq("id", photoVideo.id);
+
+      if (updateError) {
+        console.error("Error updating contact counter:", updateError);
+        // Don't show error to user since the inquiry was still sent successfully
       }
 
       // Clear form after successful submission
@@ -228,6 +249,9 @@ export default function PhotographyDetailsPage() {
       });
 
       toast.success("Your inquiry has been sent! They will contact you soon.");
+
+      // Reload the photographer details to get updated counter
+      loadPhotographerDetails();
     } catch (error) {
       console.error("Error sending inquiry:", error);
       toast.error("Failed to send inquiry. Please try again.");

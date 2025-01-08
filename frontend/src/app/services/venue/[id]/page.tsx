@@ -34,6 +34,7 @@ interface VenueDetails {
   venue_media: VenueMedia[];
   venue_addons: VenueAddon[];
   is_archived: boolean;
+  number_of_contacted: number;
 }
 
 interface VenueMedia {
@@ -255,6 +256,7 @@ export default function VenueDetailsPage() {
           user_id,
           user_email,
           is_archived,
+          number_of_contacted,
           venue_media (
             file_path,
             display_order
@@ -318,6 +320,7 @@ export default function VenueDetailsPage() {
     setIsSubmitting(true);
 
     try {
+      // First, send the inquiry
       const response = await fetch("/api/venue", {
         method: "POST",
         headers: {
@@ -337,8 +340,22 @@ export default function VenueDetailsPage() {
         throw new Error(data.error || "Failed to send inquiry");
       }
 
+      // If inquiry was successful, increment the counter
+      const { error: updateError } = await supabase
+        .from("venue_listing")
+        .update({
+          number_of_contacted: (venue.number_of_contacted || 0) + 1,
+        })
+        .eq("id", venue.id);
+
+      if (updateError) {
+        console.error("Error updating contact counter:", updateError);
+        // Don't show error to user since the inquiry was still sent successfully
+      }
+
       toast.success("Your inquiry has been sent! They will contact you soon.");
 
+      // Reset form
       setInquiryForm({
         firstName: "",
         lastName: "",
