@@ -235,7 +235,7 @@ const VenueInquiryForm = () => {
       if (!lead) throw new Error("Lead created but no data returned");
 
       toast.success("Inquiry submitted successfully!");
-      router.push("/quickReach");
+      router.push("/dashboard/myReach");
     } catch (error) {
       console.error("Error submitting inquiry:", error);
       toast.error(
