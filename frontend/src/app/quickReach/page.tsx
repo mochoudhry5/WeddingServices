@@ -78,14 +78,14 @@ export default function FindServicePage() {
     }
 
     // Check if the user is a vendor
-    const { data: userData, error } = await supabase
+    const { data: userData, error: userError } = await supabase
       .from("user_preferences")
       .select("is_vendor")
       .eq("id", user.id)
       .single();
 
-    if (error) {
-      console.error("Error fetching user preferences:", error);
+    if (userError) {
+      console.error("Error fetching user preferences:", userError);
       toast.error("An error occurred. Please try again later.");
       return;
     }
@@ -93,7 +93,66 @@ export default function FindServicePage() {
     const isVendor = userData?.is_vendor || false;
 
     if (isVendor) {
-      toast.error("Vendors cannot request services. Change role in Settings if you are not a vendor.");
+      toast.error(
+        "Vendors cannot request services. Change role in Settings if you are not a vendor."
+      );
+      return;
+    }
+
+    // Check for existing leads based on selected service
+    let existingLead = null;
+    let error = null;
+
+    switch (selected) {
+      case "dj":
+        ({ data: existingLead, error } = await supabase
+          .from("dj_leads")
+          .select("id")
+          .eq("user_id", user.id)
+          .single());
+        break;
+      case "photoVideo":
+        ({ data: existingLead, error } = await supabase
+          .from("photo_video_leads")
+          .select("id")
+          .eq("user_id", user.id)
+          .single());
+        break;
+      case "weddingPlanner":
+        ({ data: existingLead, error } = await supabase
+          .from("wedding_planner_leads")
+          .select("id")
+          .eq("user_id", user.id)
+          .single());
+        break;
+      case "venue":
+        ({ data: existingLead, error } = await supabase
+          .from("venue_leads")
+          .select("id")
+          .eq("user_id", user.id)
+          .single());
+        break;
+      case "hairMakeup":
+        ({ data: existingLead, error } = await supabase
+          .from("hair_makeup_leads")
+          .select("id")
+          .eq("user_id", user.id)
+          .single());
+        break;
+    }
+
+    // If there's an error that's not "no rows found", handle it
+    if (error && error.code !== "PGRST116") {
+      console.error("Error checking for existing leads:", error);
+      toast.error("An error occurred. Please try again later.");
+      return;
+    }
+
+    // If a lead already exists, prevent creation of a new one
+    if (existingLead) {
+      toast.error(
+        "You already have an active request for this service. Please check My Reach."
+      );
       return;
     }
 
