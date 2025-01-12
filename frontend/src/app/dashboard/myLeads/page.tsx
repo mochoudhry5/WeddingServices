@@ -14,6 +14,7 @@ import {
   Phone,
   DollarSign,
   SlidersHorizontal,
+  MapPin,
 } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
@@ -462,27 +463,11 @@ export default function LeadsPage() {
               <DollarSign className="h-4 w-4" />
               <span>Budget: ${lead.budget.toLocaleString()}</span>
             </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-              <div className="flex items-center space-x-2 text-gray-600">
-                <Mail className="h-4 w-4" />
-                <a
-                  href={`mailto:${lead.email}`}
-                  className="hover:underline truncate"
-                  onClick={(e) => e.stopPropagation()}
-                >
-                  {lead.email}
-                </a>
-              </div>
-              <div className="flex items-center space-x-2 text-gray-600">
-                <Phone className="h-4 w-4" />
-                <a
-                  href={`tel:${lead.phone}`}
-                  className="hover:underline"
-                  onClick={(e) => e.stopPropagation()}
-                >
-                  {formatPhoneNumber(lead.phone)}
-                </a>
-              </div>
+            <div className="flex items-center space-x-2 text-gray-600">
+              <MapPin className="h-4 w-4" />
+              <span>
+                Location: {lead.city}, {lead.state}
+              </span>
             </div>
             {lead.message && (
               <div className="mt-4">

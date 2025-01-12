@@ -5,7 +5,7 @@ import { useAuth } from "@/context/AuthContext";
 import NavBar from "@/components/ui/NavBar";
 import Footer from "@/components/ui/Footer";
 import { supabase } from "@/lib/supabase";
-import { Search } from "lucide-react";
+import { DollarSign, MapPin, Search } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
@@ -406,12 +406,14 @@ export default function QuickReachesPage() {
               <span>Event Date: {formatDate(inquiry.event_date)}</span>
             </div>
             <div className="flex items-center space-x-2 text-gray-600">
+              <DollarSign className="h-4 w-4" />
               <span>Budget: ${inquiry.budget.toLocaleString()}</span>
             </div>
-            <div className="text-gray-600">
-              <p>
+            <div className="flex items-center space-x-2 text-gray-600">
+              <MapPin className="h-4 w-4" />
+              <span>
                 Location: {inquiry.city}, {inquiry.state}
-              </p>
+              </span>
             </div>
             {inquiry.message && (
               <div className="mt-4">
