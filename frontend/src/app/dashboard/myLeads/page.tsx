@@ -110,7 +110,8 @@ const SERVICE_CONFIGS = {
 export default function LeadsPage() {
   const router = useRouter();
   const { user } = useAuth();
-  const [activeTab, setActiveTab] = useState<ServiceType>("venue");
+  const [activeTab, setActiveTab] = useState<ServiceType | null>(null);
+  const [userListings, setUserListings] = useState<ServiceType[]>([]);
   const [leads, setLeads] = useState<Leads>({
     venue: [],
     dj: [],
@@ -143,6 +144,87 @@ export default function LeadsPage() {
   useEffect(() => {
     filterLeads();
   }, [budgetRange, searchTerm, sortBy, leads, activeTab]);
+
+  useEffect(() => {
+    if (user) {
+      checkUserListings();
+    }
+  }, [user]);
+
+  const checkUserListings = async () => {
+    if (!user?.id) return;
+
+    try {
+      setIsLoading(true);
+      const foundListings: ServiceType[] = [];
+
+      // Check each service table for user listings
+      await Promise.all(
+        Object.entries(SERVICE_CONFIGS).map(async ([serviceType, config]) => {
+          const { data, error } = await supabase
+            .from(`${config.type}_listing`)
+            .select("id")
+            .eq("user_id", user.id)
+            .single();
+
+          if (data && !error) {
+            foundListings.push(serviceType as ServiceType);
+          }
+        })
+      );
+
+      // Sort foundListings to match the order in SERVICE_CONFIGS
+      const orderedListings = Object.keys(SERVICE_CONFIGS).filter(
+        (serviceType) => foundListings.includes(serviceType as ServiceType)
+      ) as ServiceType[];
+
+      setUserListings(orderedListings);
+
+      // Set initial active tab to the first service the user has a listing for
+      if (orderedListings.length > 0 && !activeTab) {
+        setActiveTab(orderedListings[0]);
+      }
+
+      // After finding listings, load leads only for those services
+      if (orderedListings.length > 0) {
+        loadLeadsForServices(orderedListings);
+      }
+    } catch (error) {
+      console.error("Error checking user listings:", error);
+      toast.error("Failed to load your listings");
+    }
+  };
+
+  const loadLeadsForServices = async (services: ServiceType[]) => {
+    try {
+      const allLeads: Leads = {
+        venue: [],
+        dj: [],
+        wedding_planner: [],
+        photo_video: [],
+        hair_makeup: [],
+      };
+
+      await Promise.all(
+        services.map(async (serviceType) => {
+          const { data, error } = await supabase
+            .from(SERVICE_CONFIGS[serviceType].table)
+            .select("*")
+            .order("created_at", { ascending: false });
+
+          if (error) throw error;
+          allLeads[serviceType] = data || [];
+        })
+      );
+
+      setLeads(allLeads);
+    } catch (error) {
+      console.error("Error loading leads:", error);
+      toast.error("Failed to load leads");
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const loadAllLeads = async () => {
     try {
@@ -287,15 +369,15 @@ export default function LeadsPage() {
   // UI Component renderers
   const renderServiceNav = () => (
     <div className="flex overflow-x-auto gap-2 p-2 bg-white rounded-lg shadow-sm no-scrollbar">
-      {Object.entries(SERVICE_CONFIGS).map(([key, config]) => {
+      {userListings.map((serviceType) => {
+        const config = SERVICE_CONFIGS[serviceType];
         const Icon = config.icon;
-        const serviceKey = key as ServiceType;
         return (
           <button
-            key={key}
-            onClick={() => setActiveTab(serviceKey)}
+            key={serviceType}
+            onClick={() => setActiveTab(serviceType)}
             className={`px-4 py-2 rounded-lg whitespace-nowrap transition-all flex items-center gap-2 ${
-              activeTab === key
+              activeTab === serviceType
                 ? "bg-black text-white"
                 : "bg-gray-100 hover:bg-gray-200 text-gray-700"
             }`}
@@ -303,7 +385,7 @@ export default function LeadsPage() {
             <Icon className="h-4 w-4" />
             {config.displayName}
             <span className="px-2 py-0.5 text-xs rounded-full bg-white/20">
-              {leads[serviceKey].length}
+              {leads[serviceType].length}
             </span>
           </button>
         );
@@ -420,6 +502,9 @@ export default function LeadsPage() {
   );
 
   const renderLeadCard = (lead: Lead) => {
+    // Early return if activeTab is null (shouldn't happen in practice)
+    if (!activeTab) return null;
+
     const Icon = SERVICE_CONFIGS[activeTab].icon;
 
     const handleCardClick = (e: React.MouseEvent, lead: Lead) => {
@@ -484,14 +569,27 @@ export default function LeadsPage() {
 
   const renderEmptyState = () => (
     <div className="text-center py-12 bg-white rounded-lg shadow">
-      <h3 className="text-lg font-medium text-gray-900 mb-2">
-        No {SERVICE_CONFIGS[activeTab].displayName} leads yet
-      </h3>
-      <p className="text-gray-500 mb-6">
-        When you receive new{" "}
-        {SERVICE_CONFIGS[activeTab].displayName.toLowerCase()} leads, they will
-        appear here
-      </p>
+      {userListings.length === 0 ? (
+        <>
+          <h3 className="text-lg font-medium text-gray-900 mb-2">
+            No Active Listings Found
+          </h3>
+          <p className="text-gray-500 mb-6">
+            You need to create a service listing before you can view leads
+          </p>
+        </>
+      ) : (
+        <>
+          <h3 className="text-lg font-medium text-gray-900 mb-2">
+            No {activeTab && SERVICE_CONFIGS[activeTab].displayName} leads yet
+          </h3>
+          <p className="text-gray-500 mb-6">
+            When you receive new{" "}
+            {activeTab && SERVICE_CONFIGS[activeTab].displayName.toLowerCase()}{" "}
+            leads, they will appear here
+          </p>
+        </>
+      )}
     </div>
   );
 
@@ -524,19 +622,27 @@ export default function LeadsPage() {
                 renderLoadingState()
               ) : (
                 <>
-                  {renderServiceNav()}
-                  <div className="mt-6">
-                    {renderFilters()}
-                    {filteredLeads[activeTab].length > 0 ? (
-                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                        {filteredLeads[activeTab].map((lead) => (
-                          <div key={lead.id}>{renderLeadCard(lead)}</div>
-                        ))}
-                      </div>
-                    ) : (
-                      renderEmptyState()
-                    )}
-                  </div>
+                  {userListings.length > 0 ? (
+                    <>
+                      {renderServiceNav()}
+                      {activeTab && (
+                        <div className="mt-6">
+                          {renderFilters()}
+                          {filteredLeads[activeTab].length > 0 ? (
+                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                              {filteredLeads[activeTab].map((lead) => (
+                                <div key={lead.id}>{renderLeadCard(lead)}</div>
+                              ))}
+                            </div>
+                          ) : (
+                            renderEmptyState()
+                          )}
+                        </div>
+                      )}
+                    </>
+                  ) : (
+                    renderEmptyState()
+                  )}
                 </>
               )}
             </div>
