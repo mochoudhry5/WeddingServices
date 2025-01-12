@@ -51,9 +51,9 @@ import {
 type ServiceType =
   | "venue"
   | "dj"
-  | "wedding_planner"
-  | "photo_video"
-  | "hair_makeup";
+  | "weddingPlanner"
+  | "photoVideo"
+  | "hairMakeup";
 
 interface Lead {
   id: string;
@@ -76,6 +76,7 @@ type Leads = {
 
 const SERVICE_CONFIGS = {
   venue: {
+    listingTable: "venue_listing",
     type: "venue",
     displayName: "Venue",
     icon: Building2,
@@ -83,24 +84,28 @@ const SERVICE_CONFIGS = {
   },
   dj: {
     type: "dj",
+    listingTable: "dj_listing",
     displayName: "DJ",
     icon: Music,
     table: "dj_leads",
   },
-  wedding_planner: {
-    type: "wedding_planner",
+  weddingPlanner: {
+    type: "weddingPlanner",
+    listingTable: "wedding_planner_listing",
     displayName: "Wedding Planner",
     icon: Calendar,
     table: "wedding_planner_leads",
   },
-  photo_video: {
-    type: "photo_video",
+  photoVideo: {
+    type: "photoVideo",
+    listingTable: "photo_video_listing",
     displayName: "Photo & Video",
     icon: Camera,
     table: "photo_video_leads",
   },
-  hair_makeup: {
-    type: "hair_makeup",
+  hairMakeup: {
+    type: "hairMakeup",
+    listingTable: "hair_makeup_listing",
     displayName: "Hair & Makeup",
     icon: HeartHandshake,
     table: "hair_makeup_leads",
@@ -115,16 +120,16 @@ export default function LeadsPage() {
   const [leads, setLeads] = useState<Leads>({
     venue: [],
     dj: [],
-    wedding_planner: [],
-    photo_video: [],
-    hair_makeup: [],
+    weddingPlanner: [],
+    photoVideo: [],
+    hairMakeup: [],
   });
   const [filteredLeads, setFilteredLeads] = useState<Leads>({
     venue: [],
     dj: [],
-    wedding_planner: [],
-    photo_video: [],
-    hair_makeup: [],
+    weddingPlanner: [],
+    photoVideo: [],
+    hairMakeup: [],
   });
   const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
@@ -162,7 +167,7 @@ export default function LeadsPage() {
       await Promise.all(
         Object.entries(SERVICE_CONFIGS).map(async ([serviceType, config]) => {
           const { data, error } = await supabase
-            .from(`${config.type}_listing`)
+            .from(`${config.listingTable}`)
             .select("id")
             .eq("user_id", user.id)
             .single();
@@ -200,9 +205,9 @@ export default function LeadsPage() {
       const allLeads: Leads = {
         venue: [],
         dj: [],
-        wedding_planner: [],
-        photo_video: [],
-        hair_makeup: [],
+        weddingPlanner: [],
+        photoVideo: [],
+        hairMakeup: [],
       };
 
       await Promise.all(
@@ -234,9 +239,9 @@ export default function LeadsPage() {
       const allLeads: Leads = {
         venue: [],
         dj: [],
-        wedding_planner: [],
-        photo_video: [],
-        hair_makeup: [],
+        weddingPlanner: [],
+        photoVideo: [],
+        hairMakeup: [],
       };
 
       await Promise.all(
