@@ -91,117 +91,6 @@ const services: Service[] = [
   },
 ];
 
-const ListingStep = ({
-  number,
-  title,
-  description,
-  delay = 0,
-}: ListingStepProps) => {
-  const [isVisible, setIsVisible] = useState(false);
-  const ref = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (entry.isIntersecting) {
-          setIsVisible(true);
-        }
-      },
-      { threshold: 0.1 }
-    );
-
-    if (ref.current) {
-      observer.observe(ref.current);
-    }
-
-    return () => {
-      if (ref.current) {
-        observer.unobserve(ref.current);
-      }
-    };
-  }, []);
-
-  return (
-    <div
-      ref={ref}
-      className={`transform transition-all duration-1000 ease-out ${
-        isVisible ? "translate-y-0 opacity-100" : "translate-y-10 opacity-0"
-      }`}
-      style={{ transitionDelay: `${delay}ms` }}
-    >
-      <div className="relative flex gap-6 items-start">
-        <div className="w-12 h-12 rounded-full bg-rose-100 flex items-center justify-center flex-shrink-0">
-          <span className="text-xl font-semibold text-rose-600">{number}</span>
-        </div>
-        <div>
-          <h3 className="text-lg font-semibold text-gray-900 mb-2">{title}</h3>
-          <p className="text-gray-600">{description}</p>
-        </div>
-      </div>
-    </div>
-  );
-};
-
-const FaqItem = ({ question, answer, delay = 0 }: FaqItemProps) => {
-  const [isOpen, setIsOpen] = useState(false);
-  const [isVisible, setIsVisible] = useState(false);
-  const ref = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (entry.isIntersecting) {
-          setIsVisible(true);
-        }
-      },
-      { threshold: 0.1 }
-    );
-
-    if (ref.current) {
-      observer.observe(ref.current);
-    }
-
-    return () => {
-      if (ref.current) {
-        observer.unobserve(ref.current);
-      }
-    };
-  }, []);
-
-  return (
-    <div
-      ref={ref}
-      className={`transform transition-all duration-1000 ease-out ${
-        isVisible ? "translate-y-0 opacity-100" : "translate-y-10 opacity-0"
-      }`}
-      style={{ transitionDelay: `${delay}ms` }}
-    >
-      <button
-        onClick={() => setIsOpen(!isOpen)}
-        className="w-full text-left py-4 focus:outline-none"
-      >
-        <div className="flex justify-between items-center">
-          <h3 className="text-lg font-medium text-gray-900">{question}</h3>
-          <span
-            className={`ml-6 flex-shrink-0 transition-transform duration-200 ${
-              isOpen ? "rotate-180" : "rotate-0"
-            }`}
-          >
-            ▼
-          </span>
-        </div>
-        <div
-          className={`mt-2 transition-all duration-200 overflow-hidden ${
-            isOpen ? "max-h-48 opacity-100" : "max-h-0 opacity-0"
-          }`}
-        >
-          <p className="text-gray-600">{answer}</p>
-        </div>
-      </button>
-    </div>
-  );
-};
-
 export default function CreateServicePage() {
   const [selected, setSelected] = useState<ServiceId | null>(null);
   const [showModal, setShowModal] = useState(false);
@@ -229,7 +118,9 @@ export default function CreateServicePage() {
     const isVendor = userData?.is_vendor || false;
 
     if (!isVendor) {
-      toast.error("Non-vendors cannot list services. Change role in Settings if you are a vendor.");
+      toast.error(
+        "Non-vendors cannot list services. Change role in Settings if you are a vendor."
+      );
       return;
     }
 

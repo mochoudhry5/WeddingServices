@@ -7,6 +7,8 @@ import Footer from "@/components/ui/Footer";
 import { toast } from "sonner";
 import { useAuth } from "@/context/AuthContext";
 import { supabase } from "@/lib/supabase";
+import QuickReachModal from "@/components/ui/QuickReachModal";
+import { Button } from "@/components/ui/button";
 
 type ServiceId =
   | "venue"
@@ -67,16 +69,18 @@ const services: Service[] = [
   },
 ];
 
-export default function FindServicePage() {
+export default function QuickReachPage() {
   const [selected, setSelected] = useState<ServiceId | null>(null);
   const { user } = useAuth();
+  const [showModal, setShowModal] = useState(false);
 
   const handleContinue = async () => {
     if (!user) {
       toast.error("Please sign in to contact service providers");
       return;
     }
-
+    if (!selected) return;
+    setShowModal(true);
     // Check if the user is a vendor
     const { data: userData, error: userError } = await supabase
       .from("user_preferences")
@@ -165,6 +169,10 @@ export default function FindServicePage() {
   return (
     <div className="flex flex-col min-h-screen">
       <NavBar />
+      <QuickReachModal
+        externalOpen={showModal}
+        onExternalOpenChange={setShowModal}
+      />
       <div className="flex-1 flex flex-col">
         <div className="min-h-screen bg-gray-50 py-8 sm:py-4">
           <div className="max-w-4xl mx-auto px-4">
@@ -174,10 +182,13 @@ export default function FindServicePage() {
                   What type of wedding service are you looking for?
                 </p>
               </div>
-              <p className="text-sm text-gray-600 mt-2">
-                Select a service to share your requirements and connect with
-                providers
-              </p>
+              <Button
+                variant="ghost"
+                className="text-stone-500 hover:text-stone-500"
+                onClick={() => setShowModal(true)}
+              >
+                Learn More
+              </Button>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 mb-8">
