@@ -13,6 +13,7 @@ import { useAuth } from "@/context/AuthContext";
 import LikeButton from "@/components/ui/LikeButton";
 import { ServiceInfoGrid } from "@/components/ui/CardInfoGrid";
 import { SearchX } from "lucide-react";
+import { AuthModals } from "@/components/ui/AuthModal";
 
 interface DJDetails {
   user_id: string;
@@ -128,6 +129,22 @@ export default function MakeupDetailsPage() {
   const [dj, setDJ] = useState<DJDetails | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [contactHistory, setContactHistory] = useState<{
+    contacted_at: string;
+  } | null>(null);
+  const [isLoginOpen, setIsLoginOpen] = useState(false);
+  const [isSignUpOpen, setIsSignUpOpen] = useState(false);
+
+  const handleLoginClose = () => setIsLoginOpen(false);
+  const handleSignUpClose = () => setIsSignUpOpen(false);
+  const handleSwitchToSignUp = () => {
+    setIsLoginOpen(false);
+    setIsSignUpOpen(true);
+  };
+  const handleSwitchToLogin = () => {
+    setIsSignUpOpen(false);
+    setIsLoginOpen(true);
+  };
 
   const [inquiryForm, setInquiryForm] = useState<InquiryForm>({
     firstName: "",
@@ -144,6 +161,31 @@ export default function MakeupDetailsPage() {
       loadDJDetails();
     }
   }, [params.id]);
+
+  useEffect(() => {
+    const loadContactHistory = async () => {
+      if (!user?.id || !params.id) return;
+
+      const { data, error } = await supabase
+        .from("contact_history")
+        .select("contacted_at")
+        .eq("user_id", user.id)
+        .eq("listing_id", params.id)
+        .eq("service_type", "dj")
+        .order("contacted_at", { ascending: false })
+        .limit(1)
+        .single();
+
+      if (error && error.code !== "PGRST116") {
+        console.error("Error:", error);
+        return;
+      }
+
+      setContactHistory(data);
+    };
+
+    loadContactHistory();
+  }, [user?.id, params.id]);
 
   const loadDJDetails = async () => {
     try {
@@ -199,18 +241,19 @@ export default function MakeupDetailsPage() {
     e.preventDefault();
     setIsSubmitting(true);
 
+    if (!user?.id) {
+      toast.error("Please login to send an inquiry");
+      return;
+    }
     if (!dj) {
       toast.error("DJ information not found");
       return;
     }
 
     try {
-      // First, send the inquiry
       const response = await fetch("/api/inquiry", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           serviceType: "dj",
           serviceId: dj.id,
@@ -224,20 +267,48 @@ export default function MakeupDetailsPage() {
         throw new Error(error.message || "Failed to send inquiry");
       }
 
-      // If inquiry was successful, increment the counter
-      const { error: updateError } = await supabase
-        .from("dj_listing")
-        .update({
-          number_of_contacted: (dj.number_of_contacted || 0) + 1,
-        })
-        .eq("id", dj.id);
+      // First check if contact history exists
+      const { data: existingContact } = await supabase
+        .from("contact_history")
+        .select("id")
+        .eq("user_id", user.id)
+        .eq("listing_id", dj.id)
+        .eq("service_type", "dj")
+        .single();
 
-      if (updateError) {
-        console.error("Error updating contact counter:", updateError);
-        // Don't show error to user since the inquiry was still sent successfully
+      if (existingContact) {
+        // Update existing contact history
+        const { error: updateError } = await supabase
+          .from("contact_history")
+          .update({ contacted_at: new Date().toISOString() })
+          .eq("id", existingContact.id);
+
+        if (updateError) throw updateError;
+      } else {
+        // Create new contact history
+        const { error: insertError } = await supabase
+          .from("contact_history")
+          .insert({
+            user_id: user.id,
+            listing_id: dj.id,
+            service_type: "dj",
+          });
+
+        if (insertError) throw insertError;
       }
 
-      // Clear form after successful submission
+      // Update state with new contact time
+      setContactHistory({
+        contacted_at: new Date().toISOString(),
+      });
+
+      // Update listing contact counter
+      await supabase
+        .from("dj_listing")
+        .update({ number_of_contacted: (dj.number_of_contacted || 0) + 1 })
+        .eq("id", dj.id);
+
+      // Clear form
       setInquiryForm({
         firstName: "",
         lastName: "",
@@ -248,11 +319,8 @@ export default function MakeupDetailsPage() {
       });
 
       toast.success("Your inquiry has been sent! They will contact you soon.");
-
-      // Reload the DJ details to get updated counter
-      loadDJDetails();
     } catch (error) {
-      console.error("Error sending inquiry:", error);
+      console.error("Error:", error);
       toast.error("Failed to send inquiry. Please try again.");
     } finally {
       setIsSubmitting(false);
@@ -470,98 +538,135 @@ export default function MakeupDetailsPage() {
         {/* Contact Form */}
         {user?.id !== dj.user_id ? (
           <div className="mb-12">
-            <h2 className="text-xl md:text-2xl font-bold mb-6 text-center">
-              Contact {dj.business_name}
-            </h2>
-            <div className="max-w-2xl mx-auto bg-gray-50 p-4 md:p-6 rounded-lg">
-              <form onSubmit={handleInquirySubmit} className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      First Name
-                    </label>
-                    <Input
-                      name="firstName"
-                      value={inquiryForm.firstName}
-                      onChange={handleInputChange}
-                      required
-                    />
+            <div className="text-center">
+              <h2 className="text-xl md:text-2xl font-bold mb-2">
+                Contact {dj.business_name}
+              </h2>
+              {contactHistory && (
+                <p className="text-sm text-gray-600 mb-6">
+                  Last contacted{" "}
+                  {new Date(contactHistory.contacted_at).toLocaleDateString()}{" "}
+                  at{" "}
+                  {new Date(contactHistory.contacted_at).toLocaleTimeString()}
+                </p>
+              )}
+            </div>
+            <div className="max-w-2xl mx-auto">
+              {user ? (
+                <div className="bg-gray-50 p-4 md:p-6 rounded-lg">
+                  <form onSubmit={handleInquirySubmit} className="space-y-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          First Name
+                        </label>
+                        <Input
+                          name="firstName"
+                          value={inquiryForm.firstName}
+                          onChange={handleInputChange}
+                          required
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          Last Name
+                        </label>
+                        <Input
+                          name="lastName"
+                          value={inquiryForm.lastName}
+                          onChange={handleInputChange}
+                          required
+                        />
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Email
+                      </label>
+                      <Input
+                        type="email"
+                        name="email"
+                        value={inquiryForm.email}
+                        onChange={handleInputChange}
+                        required
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Phone
+                      </label>
+                      <Input
+                        type="tel"
+                        name="phone"
+                        value={inquiryForm.phone}
+                        onChange={handleInputChange}
+                        required
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Event Date
+                      </label>
+                      <Input
+                        type="date"
+                        name="eventDate"
+                        value={inquiryForm.eventDate}
+                        onChange={handleInputChange}
+                        required
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Message
+                      </label>
+                      <textarea
+                        name="message"
+                        value={inquiryForm.message}
+                        onChange={handleInputChange}
+                        rows={4}
+                        className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-transparent text-sm sm:text-base"
+                        placeholder="Tell us about your event and requirements..."
+                        required
+                      />
+                    </div>
+
+                    <Button
+                      type="submit"
+                      disabled={isSubmitting}
+                      className="w-full bg-black hover:bg-stone-800 text-sm sm:text-base py-2 sm:py-3"
+                    >
+                      {isSubmitting ? "Sending..." : "Send Inquiry"}
+                    </Button>
+                  </form>
+                </div>
+              ) : (
+                <div className="bg-gray-50 p-8 rounded-lg text-center">
+                  <div className="max-w-md mx-auto">
+                    <h3 className="text-xl font-semibold mb-3">
+                      Ready to connect?
+                    </h3>
+                    <p className="text-gray-600 mb-6">
+                      Sign in to contact {dj.business_name} and manage all your
+                      wedding vendor communications in one place. It's
+                      absolutely free!
+                    </p>
+                    <Button
+                      onClick={() => setIsLoginOpen(true)}
+                      className="w-full bg-black hover:bg-stone-800 text-sm sm:text-base py-3"
+                    >
+                      Sign in to Contact
+                    </Button>
+                    <p className="text-sm text-gray-500 mt-4">
+                      New to our platform? Creating an account takes less than a
+                      minute
+                    </p>
                   </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Last Name
-                    </label>
-                    <Input
-                      name="lastName"
-                      value={inquiryForm.lastName}
-                      onChange={handleInputChange}
-                      required
-                    />
-                  </div>
                 </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Email
-                  </label>
-                  <Input
-                    type="email"
-                    name="email"
-                    value={inquiryForm.email}
-                    onChange={handleInputChange}
-                    required
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Phone
-                  </label>
-                  <Input
-                    type="tel"
-                    name="phone"
-                    value={inquiryForm.phone}
-                    onChange={handleInputChange}
-                    required
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Event Date
-                  </label>
-                  <Input
-                    type="date"
-                    name="eventDate"
-                    value={inquiryForm.eventDate}
-                    onChange={handleInputChange}
-                    required
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Message
-                  </label>
-                  <textarea
-                    name="message"
-                    value={inquiryForm.message}
-                    onChange={handleInputChange}
-                    rows={4}
-                    className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-transparent text-sm sm:text-base"
-                    placeholder="Tell us about your event and requirements..."
-                    required
-                  />
-                </div>
-
-                <Button
-                  type="submit"
-                  disabled={isSubmitting}
-                  className="w-full bg-black hover:bg-stone-500 text-sm sm:text-base py-2 sm:py-3"
-                >
-                  {isSubmitting ? "Sending..." : "Send Inquiry"}
-                </Button>
-              </form>
+              )}
             </div>
           </div>
         ) : (
@@ -571,6 +676,16 @@ export default function MakeupDetailsPage() {
             </p>
           </div>
         )}
+
+        {/* Auth Modals */}
+        <AuthModals
+          isLoginOpen={isLoginOpen}
+          isSignUpOpen={isSignUpOpen}
+          onLoginClose={handleLoginClose}
+          onSignUpClose={handleSignUpClose}
+          onSwitchToSignUp={handleSwitchToSignUp}
+          onSwitchToLogin={handleSwitchToLogin}
+        />
       </div>
       <Footer />
     </div>

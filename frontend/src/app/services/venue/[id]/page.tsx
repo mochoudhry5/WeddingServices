@@ -13,6 +13,7 @@ import { useAuth } from "@/context/AuthContext";
 import LikeButton from "@/components/ui/LikeButton";
 import { VenueInfoGrid } from "@/components/ui/CardInfoGrid";
 import { SearchX } from "lucide-react";
+import { AuthModals } from "@/components/ui/AuthModal";
 
 interface VenueDetails {
   user_id: string;
@@ -221,12 +222,7 @@ export default function VenueDetailsPage() {
   const [currentSlide, setCurrentSlide] = useState(0);
   const [venue, setVenue] = useState<VenueDetails | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [openIndex, setOpenIndex] = useState<number | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
-
-  const toggleAccordion = (index: number) => {
-    setOpenIndex(openIndex === index ? null : index);
-  };
 
   const [inquiryForm, setInquiryForm] = useState<InquiryForm>({
     firstName: "",
@@ -239,12 +235,53 @@ export default function VenueDetailsPage() {
   });
   const minSwipeDistance = 50;
   const params = useParams();
+  const [contactHistory, setContactHistory] = useState<{
+    contacted_at: string;
+  } | null>(null);
+  const [isLoginOpen, setIsLoginOpen] = useState(false);
+  const [isSignUpOpen, setIsSignUpOpen] = useState(false);
+
+  const handleLoginClose = () => setIsLoginOpen(false);
+  const handleSignUpClose = () => setIsSignUpOpen(false);
+  const handleSwitchToSignUp = () => {
+    setIsLoginOpen(false);
+    setIsSignUpOpen(true);
+  };
+  const handleSwitchToLogin = () => {
+    setIsSignUpOpen(false);
+    setIsLoginOpen(true);
+  };
 
   useEffect(() => {
     if (params.id) {
       loadVenueDetails();
     }
   }, [params.id]);
+
+  useEffect(() => {
+    const loadContactHistory = async () => {
+      if (!user?.id || !params.id) return;
+
+      const { data, error } = await supabase
+        .from("contact_history")
+        .select("contacted_at")
+        .eq("user_id", user.id)
+        .eq("listing_id", params.id)
+        .eq("service_type", "venue")
+        .order("contacted_at", { ascending: false })
+        .limit(1)
+        .single();
+
+      if (error && error.code !== "PGRST116") {
+        console.error("Error:", error);
+        return;
+      }
+
+      setContactHistory(data);
+    };
+
+    loadContactHistory();
+  }, [user?.id, params.id]);
 
   const loadVenueDetails = async () => {
     try {
@@ -312,6 +349,10 @@ export default function VenueDetailsPage() {
   const handleInquirySubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
+    if (!user?.id) {
+      toast.error("Please login to send an inquiry");
+      return;
+    }
     if (!venue) {
       toast.error("Venue information not found");
       return;
@@ -340,6 +381,40 @@ export default function VenueDetailsPage() {
         throw new Error(data.error || "Failed to send inquiry");
       }
 
+      const { data: existingContact } = await supabase
+        .from("contact_history")
+        .select("id")
+        .eq("user_id", user.id)
+        .eq("listing_id", venue.id)
+        .eq("service_type", "venue")
+        .single();
+
+      if (existingContact) {
+        // Update existing contact history
+        const { error: updateError } = await supabase
+          .from("contact_history")
+          .update({ contacted_at: new Date().toISOString() })
+          .eq("id", existingContact.id);
+
+        if (updateError) throw updateError;
+      } else {
+        // Create new contact history
+        const { error: insertError } = await supabase
+          .from("contact_history")
+          .insert({
+            user_id: user.id,
+            listing_id: venue.id,
+            service_type: "venue",
+          });
+
+        if (insertError) throw insertError;
+      }
+
+      // Update state with new contact time
+      setContactHistory({
+        contacted_at: new Date().toISOString(),
+      });
+
       // If inquiry was successful, increment the counter
       const { error: updateError } = await supabase
         .from("venue_listing")
@@ -353,8 +428,6 @@ export default function VenueDetailsPage() {
         // Don't show error to user since the inquiry was still sent successfully
       }
 
-      toast.success("Your inquiry has been sent! They will contact you soon.");
-
       // Reset form
       setInquiryForm({
         firstName: "",
@@ -365,6 +438,8 @@ export default function VenueDetailsPage() {
         guestCount: "",
         message: "",
       });
+
+      toast.success("Your inquiry has been sent! They will contact you soon.");
     } catch (error) {
       console.error("Inquiry submission error:", error);
       toast.error(
@@ -599,120 +674,157 @@ export default function VenueDetailsPage() {
 
         {/* Contact Form */}
         {user?.id !== venue.user_id ? (
-          <div className="mb-8 sm:mb-12">
-            <h2 className="text-lg sm:text-xl md:text-2xl font-bold mb-4 sm:mb-6 text-center">
-              Contact {venue.business_name}
-            </h2>
-            <div className="max-w-2xl mx-auto bg-gray-50 p-4 sm:p-6 rounded-lg">
-              <form onSubmit={handleInquirySubmit} className="space-y-4">
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      First Name
-                    </label>
-                    <Input
-                      name="firstName"
-                      value={inquiryForm.firstName}
-                      onChange={handleInputChange}
-                      required
-                      className="text-sm sm:text-base"
-                    />
+          <div className="mb-12">
+            <div className="text-center">
+              <h2 className="text-xl md:text-2xl font-bold mb-2">
+                Contact {venue.business_name}
+              </h2>
+              {contactHistory && (
+                <p className="text-sm text-gray-600 mb-6">
+                  Last contacted{" "}
+                  {new Date(contactHistory.contacted_at).toLocaleDateString()}{" "}
+                  at{" "}
+                  {new Date(contactHistory.contacted_at).toLocaleTimeString()}
+                </p>
+              )}
+            </div>
+            <div className="max-w-2xl mx-auto">
+              {user ? (
+                <div className="bg-gray-50 p-4 sm:p-6 rounded-lg">
+                  <form onSubmit={handleInquirySubmit} className="space-y-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          First Name
+                        </label>
+                        <Input
+                          name="firstName"
+                          value={inquiryForm.firstName}
+                          onChange={handleInputChange}
+                          required
+                          className="text-sm sm:text-base"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          Last Name
+                        </label>
+                        <Input
+                          name="lastName"
+                          value={inquiryForm.lastName}
+                          onChange={handleInputChange}
+                          required
+                          className="text-sm sm:text-base"
+                        />
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Email
+                      </label>
+                      <Input
+                        type="email"
+                        name="email"
+                        value={inquiryForm.email}
+                        onChange={handleInputChange}
+                        required
+                        className="text-sm sm:text-base"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Phone
+                      </label>
+                      <Input
+                        type="tel"
+                        name="phone"
+                        value={inquiryForm.phone}
+                        onChange={handleInputChange}
+                        required
+                        className="text-sm sm:text-base"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Event Date
+                      </label>
+                      <Input
+                        type="date"
+                        name="eventDate"
+                        value={inquiryForm.eventDate}
+                        onChange={handleInputChange}
+                        required
+                        className="text-sm sm:text-base"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Estimated Guest Count
+                      </label>
+                      <Input
+                        type="number"
+                        name="guestCount"
+                        value={inquiryForm.guestCount}
+                        onChange={handleInputChange}
+                        min={venue.min_guests || 1}
+                        max={venue.max_guests}
+                        required
+                        className="text-sm sm:text-base"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Message
+                      </label>
+                      <textarea
+                        name="message"
+                        value={inquiryForm.message}
+                        onChange={handleInputChange}
+                        rows={4}
+                        className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-transparent text-sm sm:text-base"
+                        placeholder="Tell us about your event..."
+                        required
+                      />
+                    </div>
+
+                    <Button
+                      type="submit"
+                      disabled={isSubmitting}
+                      className="w-full bg-black hover:bg-stone-800 text-sm sm:text-base py-2 sm:py-3"
+                    >
+                      {isSubmitting ? "Sending..." : "Send Inquiry"}
+                    </Button>
+                  </form>
+                </div>
+              ) : (
+                <div className="bg-gray-50 p-8 rounded-lg text-center">
+                  <div className="max-w-md mx-auto">
+                    <h3 className="text-xl font-semibold mb-3">
+                      Ready to connect?
+                    </h3>
+                    <p className="text-gray-600 mb-6">
+                      Sign in to contact {venue.business_name} and manage all
+                      your wedding venue communications in one place. It's
+                      absolutely free!
+                    </p>
+                    <Button
+                      onClick={() => setIsLoginOpen(true)}
+                      className="w-full bg-black hover:bg-stone-800 text-sm sm:text-base py-3"
+                    >
+                      Sign in to Contact
+                    </Button>
+                    <p className="text-sm text-gray-500 mt-4">
+                      New to our platform? Creating an account takes less than a
+                      minute
+                    </p>
                   </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Last Name
-                    </label>
-                    <Input
-                      name="lastName"
-                      value={inquiryForm.lastName}
-                      onChange={handleInputChange}
-                      required
-                      className="text-sm sm:text-base"
-                    />
-                  </div>
                 </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Email
-                  </label>
-                  <Input
-                    type="email"
-                    name="email"
-                    value={inquiryForm.email}
-                    onChange={handleInputChange}
-                    required
-                    className="text-sm sm:text-base"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Phone
-                  </label>
-                  <Input
-                    type="tel"
-                    name="phone"
-                    value={inquiryForm.phone}
-                    onChange={handleInputChange}
-                    required
-                    className="text-sm sm:text-base"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Event Date
-                  </label>
-                  <Input
-                    type="date"
-                    name="eventDate"
-                    value={inquiryForm.eventDate}
-                    onChange={handleInputChange}
-                    required
-                    className="text-sm sm:text-base"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Estimated Guest Count
-                  </label>
-                  <Input
-                    type="number"
-                    name="guestCount"
-                    value={inquiryForm.guestCount}
-                    onChange={handleInputChange}
-                    min={venue.min_guests || 1}
-                    max={venue.max_guests}
-                    required
-                    className="text-sm sm:text-base"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Message
-                  </label>
-                  <textarea
-                    name="message"
-                    value={inquiryForm.message}
-                    onChange={handleInputChange}
-                    rows={4}
-                    className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-transparent text-sm sm:text-base"
-                    placeholder="Tell us about your event..."
-                    required
-                  />
-                </div>
-
-                <Button
-                  type="submit"
-                  disabled={isSubmitting}
-                  className="w-full bg-black hover:bg-stone-500 text-sm sm:text-base py-2 sm:py-3"
-                >
-                  {isSubmitting ? "Sending..." : "Send Inquiry"}
-                </Button>
-              </form>
+              )}
             </div>
           </div>
         ) : (
@@ -722,6 +834,16 @@ export default function VenueDetailsPage() {
             </p>
           </div>
         )}
+
+        {/* Auth Modals */}
+        <AuthModals
+          isLoginOpen={isLoginOpen}
+          isSignUpOpen={isSignUpOpen}
+          onLoginClose={handleLoginClose}
+          onSignUpClose={handleSignUpClose}
+          onSwitchToSignUp={handleSwitchToSignUp}
+          onSwitchToLogin={handleSwitchToLogin}
+        />
       </div>
       <Footer />
     </div>
