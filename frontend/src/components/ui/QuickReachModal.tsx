@@ -17,7 +17,7 @@ interface OnboardingModalProps {
   onExternalOpenChange?: (open: boolean) => void;
 }
 
-const OnboardingModal = ({
+const QuickReachModal = ({
   externalOpen,
   onExternalOpenChange,
 }: OnboardingModalProps) => {
@@ -40,7 +40,7 @@ const OnboardingModal = ({
       if (user) {
         const { data, error } = await supabase
           .from("user_preferences")
-          .select("show_onboarding_listing")
+          .select("show_quick_reach")
           .eq("id", user.id)
           .single();
 
@@ -51,8 +51,8 @@ const OnboardingModal = ({
           return;
         }
 
-        setAutoOpen(data.show_onboarding_listing);
-        setShowOnboarding(data.show_onboarding_listing);
+        setAutoOpen(data.show_quick_reach);
+        setShowOnboarding(data.show_quick_reach);
       } else {
         setAutoOpen(true);
         setShowOnboarding(true);
@@ -75,14 +75,13 @@ const OnboardingModal = ({
         const { error } = await supabase
           .from("user_preferences")
           .update({
-            show_onboarding_listing: false,
+            show_quick_reach: false,
             updated_at: new Date().toISOString(),
           })
           .eq("id", user.id);
 
         if (error) throw error;
 
-        // Close the modal immediately when preference is saved
         handleClose();
       } catch (error) {
         console.error("Error saving preference:", error);
@@ -104,11 +103,11 @@ const OnboardingModal = ({
               </div>
               <div className="flex-1 min-w-0">
                 <h3 className="text-base font-semibold text-gray-900 mb-1 transition-colors">
-                  Create Your Listing
+                  Select the needed service
                 </h3>
                 <p className="text-sm text-gray-600">
-                  Fill out your service details, upload photos, and set your
-                  pricing and availability.
+                  Provide your information along with the specific requirements
+                  you are seeking in the service.
                 </p>
               </div>
             </div>
@@ -123,8 +122,8 @@ const OnboardingModal = ({
                   Get Discovered
                 </h3>
                 <p className="text-sm text-gray-600">
-                  Your service will be visible to couples actively planning
-                  their wedding in your area.
+                  Your request will be shared with multiple potential vendors
+                  who can fulfill your needs.
                 </p>
               </div>
             </div>
@@ -136,11 +135,10 @@ const OnboardingModal = ({
               </div>
               <div className="flex-1 min-w-0">
                 <h3 className="text-base font-semibold text-gray-900 mb-1 transition-colors">
-                  Bookings
+                  Get in Contact
                 </h3>
                 <p className="text-sm text-gray-600">
-                  Receive inquiries, communicate with couples, and manage your
-                  bookings the way you always have been doing.
+                  Vendors will contact you directly, saving you valuable time.
                 </p>
               </div>
             </div>
@@ -156,31 +154,30 @@ const OnboardingModal = ({
             {/* FAQ Items */}
             <div className="p-4 rounded-lg bg-white shadow-sm border border-gray-100 transition-all duration-200">
               <h3 className="text-base font-semibold text-gray-900 mb-1">
-                How much does it cost to list my service?
+                How much does it cost to list my reach?
               </h3>
               <p className="text-sm text-gray-600">
-                Listing your service on AnyWeds involves a simple flat fee of
-                $15 a month. Cancel anytime.
+                Absolutely free. We are here to help!
               </p>
             </div>
 
             <div className="p-4 rounded-lg bg-white shadow-sm border border-gray-100 transition-all duration-200">
               <h3 className="text-base font-semibold text-gray-900 mb-1">
-                Can I list multiple services?
+                Can I create quick reaches for all services?
               </h3>
               <p className="text-sm text-gray-600">
-                Yes, you can create multiple listings for different services you
-                offer. Each service can have its own unique profile and pricing.
+                Yes, you can create a quick reach for each service. (Max. of 1
+                for each service)
               </p>
             </div>
 
             <div className="p-4 rounded-lg bg-white shadow-sm border border-gray-100 transition-all duration-200">
               <h3 className="text-base font-semibold text-gray-900 mb-1">
-                Can I edit my listing after publishing?
+                Can I edit my quick reach after publishing?
               </h3>
               <p className="text-sm text-gray-600">
-                Yes, you can update your listing details, photos, and pricing at
-                any time through your dashboard.
+                Yes, you can update your quick reach details any time through
+                your dashboard.
               </p>
             </div>
           </div>
@@ -280,4 +277,4 @@ const OnboardingModal = ({
   );
 };
 
-export default OnboardingModal;
+export default QuickReachModal;

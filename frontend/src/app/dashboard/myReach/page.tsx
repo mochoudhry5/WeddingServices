@@ -5,11 +5,12 @@ import { useAuth } from "@/context/AuthContext";
 import NavBar from "@/components/ui/NavBar";
 import Footer from "@/components/ui/Footer";
 import { supabase } from "@/lib/supabase";
-import { Search } from "lucide-react";
+import { DollarSign, MapPin, Search } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { ProtectedRoute } from "@/components/ui/ProtectedRoute";
+import { NonVendorProtectedRoute } from "@/components/ui/NonVendorProtectedRoute";
 import {
   Select,
   SelectContent,
@@ -405,12 +406,14 @@ export default function QuickReachesPage() {
               <span>Event Date: {formatDate(inquiry.event_date)}</span>
             </div>
             <div className="flex items-center space-x-2 text-gray-600">
+              <DollarSign className="h-4 w-4" />
               <span>Budget: ${inquiry.budget.toLocaleString()}</span>
             </div>
-            <div className="text-gray-600">
-              <p>
+            <div className="flex items-center space-x-2 text-gray-600">
+              <MapPin className="h-4 w-4" />
+              <span>
                 Location: {inquiry.city}, {inquiry.state}
-              </p>
+              </span>
             </div>
             {inquiry.message && (
               <div className="mt-4">
@@ -455,57 +458,64 @@ export default function QuickReachesPage() {
 
   return (
     <ProtectedRoute>
-      <div className="flex flex-col min-h-screen bg-gray-50">
-        <NavBar />
-        <div className="flex-1">
-          <div className="max-w-7xl mx-auto px-4 py-8">
-            <h1 className="text-3xl font-bold mb-8">Quick Reaches</h1>
+      <NonVendorProtectedRoute>
+        <div className="flex flex-col min-h-screen bg-gray-50">
+          <NavBar />
+          <div className="flex-1">
+            <div className="max-w-7xl mx-auto px-4 py-8">
+              <h1 className="text-3xl font-bold mb-8">Quick Reaches</h1>
 
-            {isLoading ? (
-              renderLoadingState()
-            ) : (
-              <>
-                {renderServiceNav()}
-                <div className="mt-6">
-                  {renderFilters()}
-                  {filteredInquiries[selectedService].length > 0 ? (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                      {filteredInquiries[selectedService].map((inquiry) => (
-                        <div key={inquiry.id}>{renderCard(inquiry)}</div>
-                      ))}
-                    </div>
-                  ) : (
-                    renderEmptyState()
-                  )}
-                </div>
-              </>
-            )}
+              {isLoading ? (
+                renderLoadingState()
+              ) : (
+                <>
+                  {renderServiceNav()}
+                  <div className="mt-6">
+                    {renderFilters()}
+                    {filteredInquiries[selectedService].length > 0 ? (
+                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                        {filteredInquiries[selectedService].map((inquiry) => (
+                          <div key={inquiry.id}>{renderCard(inquiry)}</div>
+                        ))}
+                      </div>
+                    ) : (
+                      renderEmptyState()
+                    )}
+                  </div>
+                </>
+              )}
+            </div>
           </div>
-        </div>
-        <Footer />
+          <Footer />
 
-        {/* Delete Confirmation Dialog */}
-        <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
-          <AlertDialogContent>
-            <AlertDialogHeader>
-              <AlertDialogTitle>Delete Inquiry</AlertDialogTitle>
-              <AlertDialogDescription>
-                Are you sure you want to delete this inquiry? This action cannot
-                be undone.
-              </AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter>
-              <AlertDialogCancel>Cancel</AlertDialogCancel>
-              <AlertDialogAction
-                onClick={() => inquiryToDelete && handleDelete(inquiryToDelete)}
-                className="bg-red-600 hover:bg-red-700 focus:ring-red-600"
-              >
-                Delete
-              </AlertDialogAction>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialog>
-      </div>
+          {/* Delete Confirmation Dialog */}
+          <AlertDialog
+            open={showDeleteDialog}
+            onOpenChange={setShowDeleteDialog}
+          >
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Delete Inquiry</AlertDialogTitle>
+                <AlertDialogDescription>
+                  Are you sure you want to delete this inquiry? This action
+                  cannot be undone.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                <AlertDialogAction
+                  onClick={() =>
+                    inquiryToDelete && handleDelete(inquiryToDelete)
+                  }
+                  className="bg-red-600 hover:bg-red-700 focus:ring-red-600"
+                >
+                  Delete
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+        </div>
+      </NonVendorProtectedRoute>
     </ProtectedRoute>
   );
 }

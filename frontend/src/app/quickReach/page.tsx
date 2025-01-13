@@ -7,6 +7,8 @@ import Footer from "@/components/ui/Footer";
 import { toast } from "sonner";
 import { useAuth } from "@/context/AuthContext";
 import { supabase } from "@/lib/supabase";
+import QuickReachModal from "@/components/ui/QuickReachModal";
+import { Button } from "@/components/ui/button";
 
 type ServiceId =
   | "venue"
@@ -67,25 +69,27 @@ const services: Service[] = [
   },
 ];
 
-export default function FindServicePage() {
+export default function QuickReachPage() {
   const [selected, setSelected] = useState<ServiceId | null>(null);
   const { user } = useAuth();
+  const [showModal, setShowModal] = useState(false);
 
   const handleContinue = async () => {
     if (!user) {
       toast.error("Please sign in to contact service providers");
       return;
     }
-
+    if (!selected) return;
+    setShowModal(true);
     // Check if the user is a vendor
-    const { data: userData, error } = await supabase
+    const { data: userData, error: userError } = await supabase
       .from("user_preferences")
       .select("is_vendor")
       .eq("id", user.id)
       .single();
 
-    if (error) {
-      console.error("Error fetching user preferences:", error);
+    if (userError) {
+      console.error("Error fetching user preferences:", userError);
       toast.error("An error occurred. Please try again later.");
       return;
     }
@@ -93,7 +97,66 @@ export default function FindServicePage() {
     const isVendor = userData?.is_vendor || false;
 
     if (isVendor) {
-      toast.error("Vendors cannot request services. Change role in Settings if you are not a vendor.");
+      toast.error(
+        "Vendors cannot request services. Change role in Settings if you are not a vendor."
+      );
+      return;
+    }
+
+    // Check for existing leads based on selected service
+    let existingLead = null;
+    let error = null;
+
+    switch (selected) {
+      case "dj":
+        ({ data: existingLead, error } = await supabase
+          .from("dj_leads")
+          .select("id")
+          .eq("user_id", user.id)
+          .single());
+        break;
+      case "photoVideo":
+        ({ data: existingLead, error } = await supabase
+          .from("photo_video_leads")
+          .select("id")
+          .eq("user_id", user.id)
+          .single());
+        break;
+      case "weddingPlanner":
+        ({ data: existingLead, error } = await supabase
+          .from("wedding_planner_leads")
+          .select("id")
+          .eq("user_id", user.id)
+          .single());
+        break;
+      case "venue":
+        ({ data: existingLead, error } = await supabase
+          .from("venue_leads")
+          .select("id")
+          .eq("user_id", user.id)
+          .single());
+        break;
+      case "hairMakeup":
+        ({ data: existingLead, error } = await supabase
+          .from("hair_makeup_leads")
+          .select("id")
+          .eq("user_id", user.id)
+          .single());
+        break;
+    }
+
+    // If there's an error that's not "no rows found", handle it
+    if (error && error.code !== "PGRST116") {
+      console.error("Error checking for existing leads:", error);
+      toast.error("An error occurred. Please try again later.");
+      return;
+    }
+
+    // If a lead already exists, prevent creation of a new one
+    if (existingLead) {
+      toast.error(
+        "You already have an active request for this service. Please check My Reach."
+      );
       return;
     }
 
@@ -106,6 +169,10 @@ export default function FindServicePage() {
   return (
     <div className="flex flex-col min-h-screen">
       <NavBar />
+      <QuickReachModal
+        externalOpen={showModal}
+        onExternalOpenChange={setShowModal}
+      />
       <div className="flex-1 flex flex-col">
         <div className="min-h-screen bg-gray-50 py-8 sm:py-4">
           <div className="max-w-4xl mx-auto px-4">
@@ -115,10 +182,13 @@ export default function FindServicePage() {
                   What type of wedding service are you looking for?
                 </p>
               </div>
-              <p className="text-sm text-gray-600 mt-2">
-                Select a service to share your requirements and connect with
-                providers
-              </p>
+              <Button
+                variant="ghost"
+                className="text-stone-500 hover:text-stone-500"
+                onClick={() => setShowModal(true)}
+              >
+                Learn More
+              </Button>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 mb-8">

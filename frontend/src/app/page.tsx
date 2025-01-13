@@ -11,8 +11,7 @@ import {
 import NavBar from "@/components/ui/NavBar";
 import Footer from "@/components/ui/Footer";
 import LocationInput from "@/components/ui/LocationInput";
-import { Heart, Gem, Ban, DollarSign } from "lucide-react";
-import UserType from "@/components/ui/UserType";
+import { Gem, Ban, DollarSign } from "lucide-react";
 
 const WhyChooseSection = () => {
   const [activeFeature, setActiveFeature] = useState(0);

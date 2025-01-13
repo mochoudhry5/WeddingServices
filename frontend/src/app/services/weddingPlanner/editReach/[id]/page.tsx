@@ -27,6 +27,7 @@ import NavBar from "@/components/ui/NavBar";
 import Footer from "@/components/ui/Footer";
 import { ProtectedRoute } from "@/components/ui/ProtectedRoute";
 import { NonVendorProtectedRoute } from "@/components/ui/NonVendorProtectedRoute";
+import { ReachOwnerProtectedRoute } from "@/components/ui/ReachOwnerProtectedRoute";
 import LocationInput from "@/components/ui/LocationInput";
 
 interface LocationState {
@@ -272,13 +273,17 @@ export default function WeddingPlannerEditPage() {
   if (isLoading) {
     return (
       <ProtectedRoute>
-        <div className="flex flex-col min-h-screen">
-          <NavBar />
-          <div className="flex-1 flex items-center justify-center">
-            <p className="text-gray-500">Loading inquiry data...</p>
-          </div>
-          <Footer />
-        </div>
+        <ReachOwnerProtectedRoute tableName="wedding_planner_leads">
+          <NonVendorProtectedRoute>
+            <div className="flex flex-col min-h-screen">
+              <NavBar />
+              <div className="flex-1 flex items-center justify-center">
+                <p className="text-gray-500">Loading inquiry data...</p>
+              </div>
+              <Footer />
+            </div>
+          </NonVendorProtectedRoute>
+        </ReachOwnerProtectedRoute>
       </ProtectedRoute>
     );
   }

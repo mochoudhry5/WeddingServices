@@ -14,6 +14,7 @@ import {
   Phone,
   DollarSign,
   SlidersHorizontal,
+  MapPin,
 } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
@@ -50,9 +51,9 @@ import {
 type ServiceType =
   | "venue"
   | "dj"
-  | "wedding_planner"
-  | "photo_video"
-  | "hair_makeup";
+  | "weddingPlanner"
+  | "photoVideo"
+  | "hairMakeup";
 
 interface Lead {
   id: string;
@@ -75,6 +76,7 @@ type Leads = {
 
 const SERVICE_CONFIGS = {
   venue: {
+    listingTable: "venue_listing",
     type: "venue",
     displayName: "Venue",
     icon: Building2,
@@ -82,24 +84,28 @@ const SERVICE_CONFIGS = {
   },
   dj: {
     type: "dj",
+    listingTable: "dj_listing",
     displayName: "DJ",
     icon: Music,
     table: "dj_leads",
   },
-  wedding_planner: {
-    type: "wedding_planner",
+  weddingPlanner: {
+    type: "weddingPlanner",
+    listingTable: "wedding_planner_listing",
     displayName: "Wedding Planner",
     icon: Calendar,
     table: "wedding_planner_leads",
   },
-  photo_video: {
-    type: "photo_video",
+  photoVideo: {
+    type: "photoVideo",
+    listingTable: "photo_video_listing",
     displayName: "Photo & Video",
     icon: Camera,
     table: "photo_video_leads",
   },
-  hair_makeup: {
-    type: "hair_makeup",
+  hairMakeup: {
+    type: "hairMakeup",
+    listingTable: "hair_makeup_listing",
     displayName: "Hair & Makeup",
     icon: HeartHandshake,
     table: "hair_makeup_leads",
@@ -109,20 +115,21 @@ const SERVICE_CONFIGS = {
 export default function LeadsPage() {
   const router = useRouter();
   const { user } = useAuth();
-  const [activeTab, setActiveTab] = useState<ServiceType>("venue");
+  const [activeTab, setActiveTab] = useState<ServiceType | null>(null);
+  const [userListings, setUserListings] = useState<ServiceType[]>([]);
   const [leads, setLeads] = useState<Leads>({
     venue: [],
     dj: [],
-    wedding_planner: [],
-    photo_video: [],
-    hair_makeup: [],
+    weddingPlanner: [],
+    photoVideo: [],
+    hairMakeup: [],
   });
   const [filteredLeads, setFilteredLeads] = useState<Leads>({
     venue: [],
     dj: [],
-    wedding_planner: [],
-    photo_video: [],
-    hair_makeup: [],
+    weddingPlanner: [],
+    photoVideo: [],
+    hairMakeup: [],
   });
   const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
@@ -143,6 +150,87 @@ export default function LeadsPage() {
     filterLeads();
   }, [budgetRange, searchTerm, sortBy, leads, activeTab]);
 
+  useEffect(() => {
+    if (user) {
+      checkUserListings();
+    }
+  }, [user]);
+
+  const checkUserListings = async () => {
+    if (!user?.id) return;
+
+    try {
+      setIsLoading(true);
+      const foundListings: ServiceType[] = [];
+
+      // Check each service table for user listings
+      await Promise.all(
+        Object.entries(SERVICE_CONFIGS).map(async ([serviceType, config]) => {
+          const { data, error } = await supabase
+            .from(`${config.listingTable}`)
+            .select("id")
+            .eq("user_id", user.id)
+            .single();
+
+          if (data && !error) {
+            foundListings.push(serviceType as ServiceType);
+          }
+        })
+      );
+
+      // Sort foundListings to match the order in SERVICE_CONFIGS
+      const orderedListings = Object.keys(SERVICE_CONFIGS).filter(
+        (serviceType) => foundListings.includes(serviceType as ServiceType)
+      ) as ServiceType[];
+
+      setUserListings(orderedListings);
+
+      // Set initial active tab to the first service the user has a listing for
+      if (orderedListings.length > 0 && !activeTab) {
+        setActiveTab(orderedListings[0]);
+      }
+
+      // After finding listings, load leads only for those services
+      if (orderedListings.length > 0) {
+        loadLeadsForServices(orderedListings);
+      }
+    } catch (error) {
+      console.error("Error checking user listings:", error);
+      toast.error("Failed to load your listings");
+    }
+  };
+
+  const loadLeadsForServices = async (services: ServiceType[]) => {
+    try {
+      const allLeads: Leads = {
+        venue: [],
+        dj: [],
+        weddingPlanner: [],
+        photoVideo: [],
+        hairMakeup: [],
+      };
+
+      await Promise.all(
+        services.map(async (serviceType) => {
+          const { data, error } = await supabase
+            .from(SERVICE_CONFIGS[serviceType].table)
+            .select("*")
+            .order("created_at", { ascending: false });
+
+          if (error) throw error;
+          allLeads[serviceType] = data || [];
+        })
+      );
+
+      setLeads(allLeads);
+    } catch (error) {
+      console.error("Error loading leads:", error);
+      toast.error("Failed to load leads");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const loadAllLeads = async () => {
     try {
       if (!user?.id) return;
@@ -151,9 +239,9 @@ export default function LeadsPage() {
       const allLeads: Leads = {
         venue: [],
         dj: [],
-        wedding_planner: [],
-        photo_video: [],
-        hair_makeup: [],
+        weddingPlanner: [],
+        photoVideo: [],
+        hairMakeup: [],
       };
 
       await Promise.all(
@@ -286,15 +374,15 @@ export default function LeadsPage() {
   // UI Component renderers
   const renderServiceNav = () => (
     <div className="flex overflow-x-auto gap-2 p-2 bg-white rounded-lg shadow-sm no-scrollbar">
-      {Object.entries(SERVICE_CONFIGS).map(([key, config]) => {
+      {userListings.map((serviceType) => {
+        const config = SERVICE_CONFIGS[serviceType];
         const Icon = config.icon;
-        const serviceKey = key as ServiceType;
         return (
           <button
-            key={key}
-            onClick={() => setActiveTab(serviceKey)}
+            key={serviceType}
+            onClick={() => setActiveTab(serviceType)}
             className={`px-4 py-2 rounded-lg whitespace-nowrap transition-all flex items-center gap-2 ${
-              activeTab === key
+              activeTab === serviceType
                 ? "bg-black text-white"
                 : "bg-gray-100 hover:bg-gray-200 text-gray-700"
             }`}
@@ -302,7 +390,7 @@ export default function LeadsPage() {
             <Icon className="h-4 w-4" />
             {config.displayName}
             <span className="px-2 py-0.5 text-xs rounded-full bg-white/20">
-              {leads[serviceKey].length}
+              {leads[serviceType].length}
             </span>
           </button>
         );
@@ -419,6 +507,9 @@ export default function LeadsPage() {
   );
 
   const renderLeadCard = (lead: Lead) => {
+    // Early return if activeTab is null (shouldn't happen in practice)
+    if (!activeTab) return null;
+
     const Icon = SERVICE_CONFIGS[activeTab].icon;
 
     const handleCardClick = (e: React.MouseEvent, lead: Lead) => {
@@ -462,27 +553,11 @@ export default function LeadsPage() {
               <DollarSign className="h-4 w-4" />
               <span>Budget: ${lead.budget.toLocaleString()}</span>
             </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-              <div className="flex items-center space-x-2 text-gray-600">
-                <Mail className="h-4 w-4" />
-                <a
-                  href={`mailto:${lead.email}`}
-                  className="hover:underline truncate"
-                  onClick={(e) => e.stopPropagation()}
-                >
-                  {lead.email}
-                </a>
-              </div>
-              <div className="flex items-center space-x-2 text-gray-600">
-                <Phone className="h-4 w-4" />
-                <a
-                  href={`tel:${lead.phone}`}
-                  className="hover:underline"
-                  onClick={(e) => e.stopPropagation()}
-                >
-                  {formatPhoneNumber(lead.phone)}
-                </a>
-              </div>
+            <div className="flex items-center space-x-2 text-gray-600">
+              <MapPin className="h-4 w-4" />
+              <span>
+                Location: {lead.city}, {lead.state}
+              </span>
             </div>
             {lead.message && (
               <div className="mt-4">
@@ -499,14 +574,27 @@ export default function LeadsPage() {
 
   const renderEmptyState = () => (
     <div className="text-center py-12 bg-white rounded-lg shadow">
-      <h3 className="text-lg font-medium text-gray-900 mb-2">
-        No {SERVICE_CONFIGS[activeTab].displayName} leads yet
-      </h3>
-      <p className="text-gray-500 mb-6">
-        When you receive new{" "}
-        {SERVICE_CONFIGS[activeTab].displayName.toLowerCase()} leads, they will
-        appear here
-      </p>
+      {userListings.length === 0 ? (
+        <>
+          <h3 className="text-lg font-medium text-gray-900 mb-2">
+            No Active Listings Found
+          </h3>
+          <p className="text-gray-500 mb-6">
+            You need to create a service listing before you can view leads
+          </p>
+        </>
+      ) : (
+        <>
+          <h3 className="text-lg font-medium text-gray-900 mb-2">
+            No {activeTab && SERVICE_CONFIGS[activeTab].displayName} leads yet
+          </h3>
+          <p className="text-gray-500 mb-6">
+            When you receive new{" "}
+            {activeTab && SERVICE_CONFIGS[activeTab].displayName.toLowerCase()}{" "}
+            leads, they will appear here
+          </p>
+        </>
+      )}
     </div>
   );
 
@@ -539,19 +627,27 @@ export default function LeadsPage() {
                 renderLoadingState()
               ) : (
                 <>
-                  {renderServiceNav()}
-                  <div className="mt-6">
-                    {renderFilters()}
-                    {filteredLeads[activeTab].length > 0 ? (
-                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                        {filteredLeads[activeTab].map((lead) => (
-                          <div key={lead.id}>{renderLeadCard(lead)}</div>
-                        ))}
-                      </div>
-                    ) : (
-                      renderEmptyState()
-                    )}
-                  </div>
+                  {userListings.length > 0 ? (
+                    <>
+                      {renderServiceNav()}
+                      {activeTab && (
+                        <div className="mt-6">
+                          {renderFilters()}
+                          {filteredLeads[activeTab].length > 0 ? (
+                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                              {filteredLeads[activeTab].map((lead) => (
+                                <div key={lead.id}>{renderLeadCard(lead)}</div>
+                              ))}
+                            </div>
+                          ) : (
+                            renderEmptyState()
+                          )}
+                        </div>
+                      )}
+                    </>
+                  ) : (
+                    renderEmptyState()
+                  )}
                 </>
               )}
             </div>
