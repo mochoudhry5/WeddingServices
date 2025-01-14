@@ -97,14 +97,18 @@ const ServiceCard = ({ service }: { service: HairMakeupService }) => {
         onClick={() => hasOverflow && setIsOpen(!isOpen)}
       >
         <div className="flex-1">
-          <div className="flex justify-between items-start mb-2">
-            <h3 className="text-lg font-semibold text-left">{service.name}</h3>
-            <div className="text-right">
-              <p className="text-green-800 font-semibold whitespace-nowrap">
-                <span className="text-sm text-gray-500">Starting at </span>$
-                {service.price.toLocaleString()}
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 mb-2">
+            <h3 className="text-base sm:text-lg font-semibold">
+              {service.name}
+            </h3>
+            <div className="text-left sm:text-right">
+              <p className="text-green-800 font-semibold whitespace-nowrap text-sm sm:text-base">
+                <span className="text-xs sm:text-sm text-gray-500">
+                  Starting at{" "}
+                </span>
+                ${service.price.toLocaleString()}
               </p>
-              <p className="text-sm text-gray-500">
+              <p className="text-xs sm:text-sm text-gray-500">
                 Duration {service.duration} minutes
               </p>
             </div>

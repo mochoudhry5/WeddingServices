@@ -1180,7 +1180,7 @@ const CreateDJListing = () => {
                                     <Input
                                       value={service.name}
                                       onChange={(e) => {
-                                        if (e.target.value.length <= 45) {
+                                        if (e.target.value.length <= 40) {
                                           const newServices = [
                                             ...customServices,
                                           ];

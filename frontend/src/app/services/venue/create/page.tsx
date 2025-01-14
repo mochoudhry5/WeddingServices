@@ -1376,7 +1376,7 @@ export default function CreateVenueListing() {
                                     <Input
                                       value={addon.name}
                                       onChange={(e) => {
-                                        if (e.target.value.length <= 45) {
+                                        if (e.target.value.length <= 40) {
                                           const newAddOns = [...customAddOns];
                                           newAddOns[index] = {
                                             ...addon,
