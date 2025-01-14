@@ -866,7 +866,7 @@ const CreateMakeupListing = () => {
                                     value={style}
                                     onChange={(e) => {
                                       // Limit input to 25 characters
-                                      if (e.target.value.length <= 25) {
+                                      if (e.target.value.length <= 20) {
                                         const newStyles = [...customHairStyles];
                                         newStyles[index] = e.target.value;
                                         setCustomMakeupStyles(newStyles);
@@ -975,7 +975,7 @@ const CreateMakeupListing = () => {
                                     value={style}
                                     onChange={(e) => {
                                       // Limit input to 25 characters
-                                      if (e.target.value.length <= 25) {
+                                      if (e.target.value.length <= 20) {
                                         const newStyles = [...customHairStyles];
                                         newStyles[index] = e.target.value;
                                         setCustomHairStyles(newStyles);

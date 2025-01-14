@@ -660,7 +660,7 @@ const HairMakeupInquiryForm = () => {
                                     <Input
                                       value={style}
                                       onChange={(e) => {
-                                        if (e.target.value.length <= 25) {
+                                        if (e.target.value.length <= 20) {
                                           const newStyles = [
                                             ...customMakeupStyles,
                                           ];
@@ -775,7 +775,7 @@ const HairMakeupInquiryForm = () => {
                                     <Input
                                       value={style}
                                       onChange={(e) => {
-                                        if (e.target.value.length <= 25) {
+                                        if (e.target.value.length <= 20) {
                                           const newStyles = [
                                             ...customHairStyles,
                                           ];

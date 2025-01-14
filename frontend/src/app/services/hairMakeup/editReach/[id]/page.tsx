@@ -754,7 +754,7 @@ export default function HairMakeupEditPage() {
                                     <Input
                                       value={style}
                                       onChange={(e) => {
-                                        if (e.target.value.length <= 25) {
+                                        if (e.target.value.length <= 20) {
                                           const newStyles = [
                                             ...customMakeupStyles,
                                           ];
@@ -869,7 +869,7 @@ export default function HairMakeupEditPage() {
                                     <Input
                                       value={style}
                                       onChange={(e) => {
-                                        if (e.target.value.length <= 25) {
+                                        if (e.target.value.length <= 20) {
                                           const newStyles = [
                                             ...customHairStyles,
                                           ];

@@ -1191,7 +1191,7 @@ export default function CreateVenueListing() {
                                 value={inclusion}
                                 onChange={(e) => {
                                   // Limit input to 25 characters
-                                  if (e.target.value.length <= 25) {
+                                  if (e.target.value.length <= 20) {
                                     const newStyles = [...customInclusions];
                                     newStyles[index] = e.target.value;
                                     setCustomInclusions(newStyles);

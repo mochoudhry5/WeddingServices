@@ -568,7 +568,7 @@ const DJInquiryForm = () => {
                                   <Input
                                     value={style}
                                     onChange={(e) => {
-                                      if (e.target.value.length <= 25) {
+                                      if (e.target.value.length <= 20) {
                                         const newStyles = [...customDJStyles];
                                         newStyles[index] = e.target.value;
                                         setCustomDJStyles(newStyles);
