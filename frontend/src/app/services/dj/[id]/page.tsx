@@ -445,37 +445,27 @@ export default function MakeupDetailsPage() {
         )}
 
         {/* Artist Header */}
-        <div className="flex flex-col md:flex-row md:justify-between md:items-start gap-4 mb-8">
-          <div>
-            <div className="flex items-center gap-3 mb-2">
-              <h1 className="text-2xl md:text-3xl font-bold text-gray-900">
-                {dj.business_name}
-              </h1>
-            </div>
-            {dj.is_remote_business ? (
-              <p className="text-gray-600">
-                {dj.city}, {dj.state} (Remote)
-              </p>
-            ) : (
-              <p className="text-gray-600">
-                {dj.address}, {dj.city}, {dj.state}
-              </p>
-            )}
+        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-3 sm:gap-4 mb-6 sm:mb-8">
+          <div className="flex-grow min-w-0">
+            <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-gray-900 break-words">
+              {dj.business_name}
+            </h1>
+            <p className="text-sm sm:text-base text-gray-600 break-words mt-2">
+              {dj.is_remote_business
+                ? `${dj.city}, ${dj.state} (Remote)`
+                : `${dj.address}, ${dj.city}, ${dj.state}`}
+            </p>
           </div>
-
-          {/* Price Range */}
-          {dj.min_service_price && (
-            <div className="flex flex-col items-end">
-              <div className="text-2xl sm:text-3xl font-semibold text-green-800">
-                {dj.min_service_price === dj.max_service_price
-                  ? `$${dj.max_service_price.toLocaleString()}`
-                  : `$${dj.min_service_price.toLocaleString()} - $${dj.max_service_price.toLocaleString()}`}
-              </div>
-              <p className="text-xs sm:text-sm text-gray-500">
-                (See Services & Pricing)
-              </p>
+          <div className="flex flex-col items-end flex-shrink-0 text-right">
+            <div className="text-2xl sm:text-3xl font-semibold text-green-800">
+              {dj.min_service_price === dj.max_service_price
+                ? `$${dj.max_service_price.toLocaleString()}`
+                : `$${dj.min_service_price.toLocaleString()} - $${dj.max_service_price.toLocaleString()}`}
             </div>
-          )}
+            <p className="text-xs sm:text-sm text-gray-500">
+              (See Services & Pricing)
+            </p>
+          </div>
         </div>
         {/* Info Grid - Modern card layout for all screen sizes */}
         <div className="pb-10">

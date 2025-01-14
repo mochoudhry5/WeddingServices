@@ -798,7 +798,11 @@ const UpdateDJListing = () => {
                           </label>
                           <Input
                             value={businessName}
-                            onChange={(e) => setBusinessName(e.target.value)}
+                            onChange={(e) => {
+                              if (e.target.value.length <= 255) {
+                                setBusinessName(e.target.value);
+                              }
+                            }}
                             placeholder="Enter your name or business name"
                             className="w-full"
                             required
@@ -1224,15 +1228,17 @@ const UpdateDJListing = () => {
                                               .description
                                           }
                                           onChange={(e) => {
-                                            setSelectedServices({
-                                              ...selectedServices,
-                                              [service.name]: {
-                                                ...selectedServices[
-                                                  service.name
-                                                ],
-                                                description: e.target.value,
-                                              },
-                                            });
+                                            if (e.target.value.length <= 1000) {
+                                              setSelectedServices({
+                                                ...selectedServices,
+                                                [service.name]: {
+                                                  ...selectedServices[
+                                                    service.name
+                                                  ],
+                                                  description: e.target.value,
+                                                },
+                                              });
+                                            }
                                           }}
                                           placeholder="Describe the service..."
                                           rows={2}
@@ -1271,20 +1277,25 @@ const UpdateDJListing = () => {
                                               onChange={(e) => {
                                                 const sanitizedValue =
                                                   e.target.value;
-                                                setSelectedServices({
-                                                  ...selectedServices,
-                                                  [service.name]: {
-                                                    ...selectedServices[
-                                                      service.name
-                                                    ],
-                                                    price:
-                                                      sanitizedValue === ""
-                                                        ? 0
-                                                        : parseInt(
-                                                            sanitizedValue
-                                                          ),
-                                                  },
-                                                });
+                                                // Limit to 6 digits
+                                                if (
+                                                  sanitizedValue.length <= 6
+                                                ) {
+                                                  setSelectedServices({
+                                                    ...selectedServices,
+                                                    [service.name]: {
+                                                      ...selectedServices[
+                                                        service.name
+                                                      ],
+                                                      price:
+                                                        sanitizedValue === ""
+                                                          ? 0
+                                                          : parseInt(
+                                                              sanitizedValue
+                                                            ),
+                                                    },
+                                                  });
+                                                }
                                               }}
                                               onKeyDown={(e) => {
                                                 if (
@@ -1323,11 +1334,15 @@ const UpdateDJListing = () => {
                                               onChange={(e) => {
                                                 const sanitizedValue =
                                                   e.target.value;
-                                                // Allow any numeric input temporarily during typing
+                                                // Stricter validation: only allow up to 2 digits before decimal
                                                 if (
-                                                  /^\d*\.?\d{0,1}$/.test(
+                                                  /^([0-9]{1,2})?\.?[0-5]?$/.test(
                                                     sanitizedValue
-                                                  )
+                                                  ) &&
+                                                  (!sanitizedValue ||
+                                                    parseFloat(
+                                                      sanitizedValue
+                                                    ) <= 99.5)
                                                 ) {
                                                   setSelectedServices({
                                                     ...selectedServices,
@@ -1455,14 +1470,16 @@ const UpdateDJListing = () => {
                                       <textarea
                                         value={service.description}
                                         onChange={(e) => {
-                                          const newServices = [
-                                            ...customServices,
-                                          ];
-                                          newServices[index] = {
-                                            ...service,
-                                            description: e.target.value,
-                                          };
-                                          setCustomServices(newServices);
+                                          if (e.target.value.length <= 1000) {
+                                            const newServices = [
+                                              ...customServices,
+                                            ];
+                                            newServices[index] = {
+                                              ...service,
+                                              description: e.target.value,
+                                            };
+                                            setCustomServices(newServices);
+                                          }
                                         }}
                                         rows={2}
                                         className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-transparent resize-vertical text-sm"
@@ -1493,17 +1510,22 @@ const UpdateDJListing = () => {
                                             onChange={(e) => {
                                               const sanitizedValue =
                                                 e.target.value;
-                                              const newServices = [
-                                                ...customServices,
-                                              ];
-                                              newServices[index] = {
-                                                ...service,
-                                                price:
-                                                  sanitizedValue === ""
-                                                    ? 0
-                                                    : parseInt(sanitizedValue),
-                                              };
-                                              setCustomServices(newServices);
+                                              // Limit to 6 digits
+                                              if (sanitizedValue.length <= 6) {
+                                                const newServices = [
+                                                  ...customServices,
+                                                ];
+                                                newServices[index] = {
+                                                  ...service,
+                                                  price:
+                                                    sanitizedValue === ""
+                                                      ? 0
+                                                      : parseInt(
+                                                          sanitizedValue
+                                                        ),
+                                                };
+                                                setCustomServices(newServices);
+                                              }
                                             }}
                                             onKeyDown={(e) => {
                                               if (
@@ -1540,11 +1562,14 @@ const UpdateDJListing = () => {
                                             onChange={(e) => {
                                               const sanitizedValue =
                                                 e.target.value;
-                                              // Allow any numeric input temporarily during typing
+                                              // Stricter validation: only allow up to 2 digits before decimal
                                               if (
-                                                /^\d*\.?\d{0,1}$/.test(
+                                                /^([0-9]{1,2})?\.?[0-5]?$/.test(
                                                   sanitizedValue
-                                                )
+                                                ) &&
+                                                (!sanitizedValue ||
+                                                  parseFloat(sanitizedValue) <=
+                                                    99.5)
                                               ) {
                                                 const newServices = [
                                                   ...customServices,

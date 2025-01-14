@@ -666,7 +666,11 @@ const CreateMakeupListing = () => {
                         </label>
                         <Input
                           value={businessName}
-                          onChange={(e) => setBusinessName(e.target.value)}
+                          onChange={(e) => {
+                            if (e.target.value.length <= 255) {
+                              setBusinessName(e.target.value);
+                            }
+                          }}
                           placeholder="Enter your name or business name"
                           className="w-full"
                           required
@@ -1238,15 +1242,17 @@ const CreateMakeupListing = () => {
                                               .description
                                           }
                                           onChange={(e) => {
-                                            setSelectedServices({
-                                              ...selectedServices,
-                                              [service.name]: {
-                                                ...selectedServices[
-                                                  service.name
-                                                ],
-                                                description: e.target.value,
-                                              },
-                                            });
+                                            if (e.target.value.length <= 1000) {
+                                              setSelectedServices({
+                                                ...selectedServices,
+                                                [service.name]: {
+                                                  ...selectedServices[
+                                                    service.name
+                                                  ],
+                                                  description: e.target.value,
+                                                },
+                                              });
+                                            }
                                           }}
                                           placeholder="Describe the service..."
                                           rows={2}
@@ -1284,19 +1290,24 @@ const CreateMakeupListing = () => {
                                               }
                                               onChange={(e) => {
                                                 const sanitizedValue =
-                                                  handleNumericInput(
-                                                    e.target.value
+                                                  e.target.value.replace(
+                                                    /[^\d]/g,
+                                                    ""
                                                   );
-                                                setSelectedServices({
-                                                  ...selectedServices,
-                                                  [service.name]: {
-                                                    ...selectedServices[
-                                                      service.name
-                                                    ],
-                                                    price:
-                                                      Number(sanitizedValue),
-                                                  },
-                                                });
+                                                if (
+                                                  sanitizedValue.length <= 6
+                                                ) {
+                                                  setSelectedServices({
+                                                    ...selectedServices,
+                                                    [service.name]: {
+                                                      ...selectedServices[
+                                                        service.name
+                                                      ],
+                                                      price:
+                                                        Number(sanitizedValue),
+                                                    },
+                                                  });
+                                                }
                                               }}
                                               onKeyDown={(e) => {
                                                 // Prevent decimal point and negative sign
@@ -1420,15 +1431,17 @@ const CreateMakeupListing = () => {
                                               .description
                                           }
                                           onChange={(e) => {
-                                            setSelectedServices({
-                                              ...selectedServices,
-                                              [service.name]: {
-                                                ...selectedServices[
-                                                  service.name
-                                                ],
-                                                description: e.target.value,
-                                              },
-                                            });
+                                            if (e.target.value.length <= 1000) {
+                                              setSelectedServices({
+                                                ...selectedServices,
+                                                [service.name]: {
+                                                  ...selectedServices[
+                                                    service.name
+                                                  ],
+                                                  description: e.target.value,
+                                                },
+                                              });
+                                            }
                                           }}
                                           placeholder="Describe the service..."
                                           rows={2}
@@ -1466,19 +1479,24 @@ const CreateMakeupListing = () => {
                                               }
                                               onChange={(e) => {
                                                 const sanitizedValue =
-                                                  handleNumericInput(
-                                                    e.target.value
+                                                  e.target.value.replace(
+                                                    /[^\d]/g,
+                                                    ""
                                                   );
-                                                setSelectedServices({
-                                                  ...selectedServices,
-                                                  [service.name]: {
-                                                    ...selectedServices[
-                                                      service.name
-                                                    ],
-                                                    price:
-                                                      Number(sanitizedValue),
-                                                  },
-                                                });
+                                                if (
+                                                  sanitizedValue.length <= 6
+                                                ) {
+                                                  setSelectedServices({
+                                                    ...selectedServices,
+                                                    [service.name]: {
+                                                      ...selectedServices[
+                                                        service.name
+                                                      ],
+                                                      price:
+                                                        Number(sanitizedValue),
+                                                    },
+                                                  });
+                                                }
                                               }}
                                               onKeyDown={(e) => {
                                                 // Prevent decimal point and negative sign
@@ -1618,12 +1636,16 @@ const CreateMakeupListing = () => {
                                     <textarea
                                       value={service.description}
                                       onChange={(e) => {
-                                        const newServices = [...customServices];
-                                        newServices[index] = {
-                                          ...service,
-                                          description: e.target.value,
-                                        };
-                                        setCustomServices(newServices);
+                                        if (e.target.value.length <= 1000) {
+                                          const newServices = [
+                                            ...customServices,
+                                          ];
+                                          newServices[index] = {
+                                            ...service,
+                                            description: e.target.value,
+                                          };
+                                          setCustomServices(newServices);
+                                        }
                                       }}
                                       rows={2}
                                       className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-transparent resize-vertical text-sm"
@@ -1653,17 +1675,20 @@ const CreateMakeupListing = () => {
                                           }
                                           onChange={(e) => {
                                             const sanitizedValue =
-                                              handleNumericInput(
-                                                e.target.value
+                                              e.target.value.replace(
+                                                /[^\d]/g,
+                                                ""
                                               );
-                                            const newServices = [
-                                              ...customServices,
-                                            ];
-                                            newServices[index] = {
-                                              ...service,
-                                              price: Number(sanitizedValue),
-                                            };
-                                            setCustomServices(newServices);
+                                            if (sanitizedValue.length <= 6) {
+                                              const newServices = [
+                                                ...customServices,
+                                              ];
+                                              newServices[index] = {
+                                                ...service,
+                                                price: Number(sanitizedValue),
+                                              };
+                                              setCustomServices(newServices);
+                                            }
                                           }}
                                           onKeyDown={(e) => {
                                             // Prevent decimal point and negative sign

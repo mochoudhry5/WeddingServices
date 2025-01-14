@@ -462,40 +462,34 @@ export default function MakeupDetailsPage() {
         )}
 
         {/* Artist Header - Improved mobile layout */}
-        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-4 mb-8">
-          <div className="flex-1">
-            <div className="flex flex-wrap items-center gap-2 sm:gap-3 mb-2">
-              <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-gray-900">
-                {hairMakeup.business_name}
-              </h1>
-              <div className="inline-flex items-center px-3 py-1 rounded-full bg-white border border-gray-200 text-sm font-medium">
+        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-3 sm:gap-4 mb-6 sm:mb-8">
+          <div className="flex-grow min-w-0">
+            <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-gray-900 break-words">
+              {hairMakeup.business_name}
+              <div className="inline-flex items-center px-3 py-1 rounded-full bg-white border border-gray-200 text-sm font-medium whitespace-normal">
                 {hairMakeup.service_type === "both"
                   ? "Hair & Makeup"
-                  : hairMakeup.service_type === "makeup"
-                  ? "Makeup"
-                  : "Hair"}
+                  : hairMakeup.service_type === "hair"
+                  ? "Hair"
+                  : "Makeup"}
               </div>
-            </div>
-            <p className="text-sm sm:text-base text-gray-600">
+            </h1>
+            <p className="text-sm sm:text-base text-gray-600 break-words mt-2">
               {hairMakeup.is_remote_business
                 ? `${hairMakeup.city}, ${hairMakeup.state} (Remote)`
                 : `${hairMakeup.address}, ${hairMakeup.city}, ${hairMakeup.state}`}
             </p>
           </div>
-
-          {/* Price Range - Right aligned */}
-          {hairMakeup.min_service_price && (
-            <div className="flex flex-col items-end">
-              <div className="text-2xl sm:text-3xl font-semibold text-green-800">
-                {hairMakeup.min_service_price === hairMakeup.max_service_price
-                  ? `$${hairMakeup.max_service_price.toLocaleString()}`
-                  : `$${hairMakeup.min_service_price.toLocaleString()} - $${hairMakeup.max_service_price.toLocaleString()}`}
-              </div>
-              <p className="text-xs sm:text-sm text-gray-500">
-                (See Services & Pricing)
-              </p>
+          <div className="flex flex-col items-end flex-shrink-0 text-right">
+            <div className="text-2xl sm:text-3xl font-semibold text-green-800">
+              {hairMakeup.min_service_price === hairMakeup.max_service_price
+                ? `$${hairMakeup.max_service_price.toLocaleString()}`
+                : `$${hairMakeup.min_service_price.toLocaleString()} - $${hairMakeup.max_service_price.toLocaleString()}`}
             </div>
-          )}
+            <p className="text-xs sm:text-sm text-gray-500">
+              (See Services & Pricing)
+            </p>
+          </div>
         </div>
 
         {/* Info Grid - Modern card layout for all screen sizes */}

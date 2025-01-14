@@ -834,7 +834,11 @@ const UpdateweddingPlannerListing = () => {
                           </label>
                           <Input
                             value={businessName}
-                            onChange={(e) => setBusinessName(e.target.value)}
+                            onChange={(e) => {
+                              if (e.target.value.length <= 255) {
+                                setBusinessName(e.target.value);
+                              }
+                            }}
                             placeholder="Enter your name or business name"
                             className="w-full"
                             required
@@ -1302,15 +1306,19 @@ const UpdateweddingPlannerListing = () => {
                                                 .description
                                             }
                                             onChange={(e) => {
-                                              setSelectedServices({
-                                                ...selectedServices,
-                                                [service.name]: {
-                                                  ...selectedServices[
-                                                    service.name
-                                                  ],
-                                                  description: e.target.value,
-                                                },
-                                              });
+                                              if (
+                                                e.target.value.length <= 1000
+                                              ) {
+                                                setSelectedServices({
+                                                  ...selectedServices,
+                                                  [service.name]: {
+                                                    ...selectedServices[
+                                                      service.name
+                                                    ],
+                                                    description: e.target.value,
+                                                  },
+                                                });
+                                              }
                                             }}
                                             placeholder="Describe the service..."
                                             rows={2}
@@ -1348,21 +1356,29 @@ const UpdateweddingPlannerListing = () => {
                                                 }
                                                 onChange={(e) => {
                                                   const sanitizedValue =
-                                                    e.target.value;
-                                                  setSelectedServices({
-                                                    ...selectedServices,
-                                                    [service.name]: {
-                                                      ...selectedServices[
-                                                        service.name
-                                                      ],
-                                                      price:
-                                                        sanitizedValue === ""
-                                                          ? 0
-                                                          : parseInt(
-                                                              sanitizedValue
-                                                            ),
-                                                    },
-                                                  });
+                                                    e.target.value.replace(
+                                                      /[^\d]/g,
+                                                      ""
+                                                    );
+                                                  // Limit to 6 digits and convert to number
+                                                  if (
+                                                    sanitizedValue.length <= 6
+                                                  ) {
+                                                    setSelectedServices({
+                                                      ...selectedServices,
+                                                      [service.name]: {
+                                                        ...selectedServices[
+                                                          service.name
+                                                        ],
+                                                        price:
+                                                          sanitizedValue === ""
+                                                            ? 0
+                                                            : parseInt(
+                                                                sanitizedValue
+                                                              ),
+                                                      },
+                                                    });
+                                                  }
                                                 }}
                                                 onKeyDown={(e) => {
                                                   if (
@@ -1438,15 +1454,20 @@ const UpdateweddingPlannerListing = () => {
                                                   .description
                                               }
                                               onChange={(e) => {
-                                                setSelectedServices({
-                                                  ...selectedServices,
-                                                  [service.name]: {
-                                                    ...selectedServices[
-                                                      service.name
-                                                    ],
-                                                    description: e.target.value,
-                                                  },
-                                                });
+                                                if (
+                                                  e.target.value.length <= 1000
+                                                ) {
+                                                  setSelectedServices({
+                                                    ...selectedServices,
+                                                    [service.name]: {
+                                                      ...selectedServices[
+                                                        service.name
+                                                      ],
+                                                      description:
+                                                        e.target.value,
+                                                    },
+                                                  });
+                                                }
                                               }}
                                               placeholder="Describe the service..."
                                               rows={2}
@@ -1485,21 +1506,30 @@ const UpdateweddingPlannerListing = () => {
                                                   }
                                                   onChange={(e) => {
                                                     const sanitizedValue =
-                                                      e.target.value;
-                                                    setSelectedServices({
-                                                      ...selectedServices,
-                                                      [service.name]: {
-                                                        ...selectedServices[
-                                                          service.name
-                                                        ],
-                                                        price:
-                                                          sanitizedValue === ""
-                                                            ? 0
-                                                            : parseInt(
-                                                                sanitizedValue
-                                                              ),
-                                                      },
-                                                    });
+                                                      e.target.value.replace(
+                                                        /[^\d]/g,
+                                                        ""
+                                                      );
+                                                    // Limit to 6 digits and convert to number
+                                                    if (
+                                                      sanitizedValue.length <= 6
+                                                    ) {
+                                                      setSelectedServices({
+                                                        ...selectedServices,
+                                                        [service.name]: {
+                                                          ...selectedServices[
+                                                            service.name
+                                                          ],
+                                                          price:
+                                                            sanitizedValue ===
+                                                            ""
+                                                              ? 0
+                                                              : parseInt(
+                                                                  sanitizedValue
+                                                                ),
+                                                        },
+                                                      });
+                                                    }
                                                   }}
                                                   onKeyDown={(e) => {
                                                     if (
@@ -1587,14 +1617,16 @@ const UpdateweddingPlannerListing = () => {
                                       <textarea
                                         value={service.description}
                                         onChange={(e) => {
-                                          const newServices = [
-                                            ...customServices,
-                                          ];
-                                          newServices[index] = {
-                                            ...service,
-                                            description: e.target.value,
-                                          };
-                                          setCustomServices(newServices);
+                                          if (e.target.value.length <= 1000) {
+                                            const newServices = [
+                                              ...customServices,
+                                            ];
+                                            newServices[index] = {
+                                              ...service,
+                                              description: e.target.value,
+                                            };
+                                            setCustomServices(newServices);
+                                          }
                                         }}
                                         rows={2}
                                         className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-transparent resize-vertical text-sm"
@@ -1602,7 +1634,7 @@ const UpdateweddingPlannerListing = () => {
                                         required
                                       />
                                     </div>
-                                    <div className="grid grid-cols-2 gap-4">
+                                    <div className="grid grid-cols-1 gap-4">
                                       <div>
                                         <label className="block text-sm font-medium text-gray-700 mb-1">
                                           Starting Price ($)*
@@ -1624,18 +1656,26 @@ const UpdateweddingPlannerListing = () => {
                                             }
                                             onChange={(e) => {
                                               const sanitizedValue =
-                                                e.target.value;
-                                              const newServices = [
-                                                ...customServices,
-                                              ];
-                                              newServices[index] = {
-                                                ...service,
-                                                price:
-                                                  sanitizedValue === ""
-                                                    ? 0
-                                                    : parseInt(sanitizedValue),
-                                              };
-                                              setCustomServices(newServices);
+                                                e.target.value.replace(
+                                                  /[^\d]/g,
+                                                  ""
+                                                );
+                                              // Limit to 6 digits and convert to number
+                                              if (sanitizedValue.length <= 6) {
+                                                const newServices = [
+                                                  ...customServices,
+                                                ];
+                                                newServices[index] = {
+                                                  ...service,
+                                                  price:
+                                                    sanitizedValue === ""
+                                                      ? 0
+                                                      : parseInt(
+                                                          sanitizedValue
+                                                        ),
+                                                };
+                                                setCustomServices(newServices);
+                                              }
                                             }}
                                             onKeyDown={(e) => {
                                               if (

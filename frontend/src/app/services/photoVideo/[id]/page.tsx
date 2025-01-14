@@ -467,39 +467,34 @@ export default function PhotographyDetailsPage() {
         )}
 
         {/* Artist Header */}
-        <div className="flex flex-col md:flex-row md:justify-between md:items-start gap-4 mb-8">
-          <div>
-            <div className="flex flex-row flex-wrap items-center gap-2 mb-2">
-              <h1 className="text-2xl md:text-3xl font-bold text-gray-900">
-                {photoVideo.business_name}
-              </h1>
-              <div className="inline-flex items-center px-2 py-0.5 rounded-full bg-white border border-gray-200 text-xs md:text-sm font-medium whitespace-nowrap">
+        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-3 sm:gap-4 mb-6 sm:mb-8">
+          <div className="flex-grow min-w-0">
+            <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-gray-900 break-words">
+              {photoVideo.business_name}
+              <div className="inline-flex items-center px-3 py-1 rounded-full bg-white border border-gray-200 text-sm font-medium whitespace-normal">
                 {photoVideo.service_type === "both"
                   ? "Photography & Videography"
                   : photoVideo.service_type === "photography"
                   ? "Photography"
-                  : "Videography"}
+                  : "VIdeography"}
               </div>
-            </div>
-            <p className="text-gray-600">
+            </h1>
+            <p className="text-sm sm:text-base text-gray-600 break-words mt-2">
               {photoVideo.is_remote_business
                 ? `${photoVideo.city}, ${photoVideo.state} (Remote)`
                 : `${photoVideo.address}, ${photoVideo.city}, ${photoVideo.state}`}
             </p>
           </div>
-          {/* Price Range - Right aligned */}
-          {photoVideo.min_service_price && (
-            <div className="flex flex-col items-end">
-              <div className="text-2xl sm:text-3xl font-semibold text-green-800">
-                {photoVideo.min_service_price === photoVideo.max_service_price
-                  ? `$${photoVideo.max_service_price.toLocaleString()}`
-                  : `$${photoVideo.min_service_price.toLocaleString()} - $${photoVideo.max_service_price.toLocaleString()}`}
-              </div>
-              <p className="text-xs sm:text-sm text-gray-500">
-                (See Services & Pricing)
-              </p>
+          <div className="flex flex-col items-end flex-shrink-0 text-right">
+            <div className="text-2xl sm:text-3xl font-semibold text-green-800">
+              {photoVideo.min_service_price === photoVideo.max_service_price
+                ? `$${photoVideo.max_service_price.toLocaleString()}`
+                : `$${photoVideo.min_service_price.toLocaleString()} - $${photoVideo.max_service_price.toLocaleString()}`}
             </div>
-          )}
+            <p className="text-xs sm:text-sm text-gray-500">
+              (See Services & Pricing)
+            </p>
+          </div>
         </div>
 
         {/* Info Grid */}

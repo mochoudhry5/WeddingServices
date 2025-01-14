@@ -418,7 +418,7 @@ export default function WeddingDetailsPage() {
   );
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-white overflow-hidden">
       <NavBar />
 
       {/* Hero/Media Section */}
@@ -435,19 +435,20 @@ export default function WeddingDetailsPage() {
 
       {/* Content */}
       <div className="max-w-7xl mx-auto px-4 py-6">
+        {/* Like Button Section */}
         {user?.id !== weddingPlanner.user_id && (
-          <div className="max-w-7xl mx-auto px-4 pb-5">
+          <div className="w-full px-4 pb-5">
             <div className="bg-stone-100 border-black py-2">
               <div className="max-w-3xl mx-auto px-4 flex flex-col items-center justify-center">
                 <div className="flex items-center gap-2">
-                  <span className="text-black text-lg font-semibold">
+                  <span className="text-black text-lg font-semibold break-words">
                     Don't forget this listing!
                   </span>
                   <LikeButton
                     itemId={weddingPlanner.id}
                     service="wedding-planner"
                     initialLiked={false}
-                    className="text-rose-600 hover:text-rose-700"
+                    className="text-rose-600 hover:text-rose-700 flex-shrink-0"
                   />
                 </div>
               </div>
@@ -455,58 +456,57 @@ export default function WeddingDetailsPage() {
           </div>
         )}
 
-        {/* Artist Header */}
-        <div className="flex flex-col md:flex-row md:justify-between md:items-start gap-4 mb-8">
-          <div>
-            <div className="flex flex-row flex-wrap items-center gap-2 mb-2">
-              <h1 className="text-2xl md:text-3xl font-bold text-gray-900">
-                {weddingPlanner.business_name}
-              </h1>
-              <div className="inline-flex items-center px-2 py-0.5 rounded-full bg-white border border-gray-200 text-xs md:text-sm font-medium whitespace-nowrap">
+        {/* Planner Header */}
+        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-3 sm:gap-4 mb-6 sm:mb-8">
+          <div className="flex-grow min-w-0">
+            <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-gray-900 break-words">
+              {weddingPlanner.business_name}
+              <div className="inline-flex items-center px-3 py-1 rounded-full bg-white border border-gray-200 text-sm font-medium whitespace-normal">
                 {weddingPlanner.service_type === "both"
                   ? "Wedding Planner & Coordinator"
                   : weddingPlanner.service_type === "weddingPlanner"
                   ? "Wedding Planner"
                   : "Wedding Coordinator"}
               </div>
-            </div>
-            <p className="text-gray-600">
+            </h1>
+            <p className="text-sm sm:text-base text-gray-600 break-words mt-2">
               {weddingPlanner.is_remote_business
                 ? `${weddingPlanner.city}, ${weddingPlanner.state} (Remote)`
                 : `${weddingPlanner.address}, ${weddingPlanner.city}, ${weddingPlanner.state}`}
             </p>
           </div>
-          {/* Price Range - Right aligned */}
-          {weddingPlanner.min_service_price && (
-            <div className="flex flex-col items-end">
-              <div className="text-2xl sm:text-3xl font-semibold text-green-800">
-                {weddingPlanner.min_service_price ===
-                weddingPlanner.max_service_price
-                  ? `$${weddingPlanner.max_service_price.toLocaleString()}`
-                  : `$${weddingPlanner.min_service_price.toLocaleString()} - $${weddingPlanner.max_service_price.toLocaleString()}`}
-              </div>
-              <p className="text-xs sm:text-sm text-gray-500">
-                (See Services & Pricing)
-              </p>
+          <div className="flex flex-col items-end flex-shrink-0 text-right">
+            <div className="text-2xl sm:text-3xl font-semibold text-green-800">
+              {weddingPlanner.min_service_price ===
+              weddingPlanner.max_service_price
+                ? `$${weddingPlanner.max_service_price.toLocaleString()}`
+                : `$${weddingPlanner.min_service_price.toLocaleString()} - $${weddingPlanner.max_service_price.toLocaleString()}`}
             </div>
-          )}
+            <p className="text-xs sm:text-sm text-gray-500">
+              (See Services & Pricing)
+            </p>
+          </div>
         </div>
+
         {/* Info Grid */}
         <div className="pb-10">
           <ServiceInfoGrid service={weddingPlanner} />
         </div>
+
+        {/* About Section */}
         <div className="px-2 sm:px-0 mb-8 sm:mb-12">
-          <h2 className="text-lg sm:text-xl md:text-2xl font-bold mb-3 sm:mb-4">
+          <h2 className="text-lg sm:text-xl md:text-2xl font-bold mb-3 sm:mb-4 break-words">
             About the Business
           </h2>
           <p className="text-sm sm:text-base text-gray-600 leading-relaxed break-words whitespace-normal">
             {weddingPlanner.description}
           </p>
         </div>
+
         {/* Specialties */}
         {weddingPlannerStyles.length > 0 && (
           <div className="mb-8 sm:mb-12">
-            <h2 className="text-lg sm:text-xl md:text-2xl font-bold mb-4 sm:mb-6">
+            <h2 className="text-lg sm:text-xl md:text-2xl font-bold mb-4 sm:mb-6 break-words">
               {weddingPlanner.service_type === "weddingPlanner"
                 ? "Wedding Planner Expertise"
                 : weddingPlanner.service_type === "weddingCoordinator"
@@ -517,11 +517,11 @@ export default function WeddingDetailsPage() {
               {weddingPlannerStyles.map((style, index) => (
                 <div
                   key={`wedding-planner-${index}`}
-                  className="p-3 sm:p-4 rounded-lg border border-black bg-stone-100"
+                  className="p-3 sm:p-4 rounded-lg border border-black bg-stone-100 w-full"
                 >
-                  <div className="flex items-center gap-2">
-                    <span className="text-green-800">✓</span>
-                    <span className="text-sm sm:text-base text-gray-900">
+                  <div className="flex items-center gap-2 min-w-0">
+                    <span className="text-green-800 flex-shrink-0">✓</span>
+                    <span className="text-sm sm:text-base text-gray-900 break-words">
                       {style}
                     </span>
                   </div>
@@ -534,21 +534,20 @@ export default function WeddingDetailsPage() {
         {/* Services */}
         {weddingPlanner.wedding_planner_services?.length > 0 && (
           <div className="mb-8 sm:mb-12">
-            <h2 className="text-lg sm:text-xl md:text-2xl font-bold mb-4 sm:mb-6">
+            <h2 className="text-lg sm:text-xl md:text-2xl font-bold mb-4 sm:mb-6 break-words">
               Services & Pricing
             </h2>
             <div className="flex flex-col lg:flex-row gap-4">
               {/* First Column */}
-              <div className="flex-1 flex flex-col gap-4">
+              <div className="flex-1 flex flex-col gap-4 min-w-0">
                 {weddingPlanner.wedding_planner_services
                   .filter((_, index) => index % 2 === 0)
                   .map((service, index) => (
                     <ServiceCard key={index * 2} service={service} />
                   ))}
               </div>
-
               {/* Second Column */}
-              <div className="flex-1 flex flex-col gap-4">
+              <div className="flex-1 flex flex-col gap-4 min-w-0">
                 {weddingPlanner.wedding_planner_services
                   .filter((_, index) => index % 2 === 1)
                   .map((service, index) => (
