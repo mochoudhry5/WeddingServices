@@ -498,7 +498,7 @@ const WeddingPlannerCoordinatorInquiryForm = () => {
                           />
                           <p className="mt-1 text-sm text-gray-500">
                             Include any specific requirements or questions you
-                            have for the venue
+                            have for the Wedding Planner/Coordinator.
                           </p>
                         </div>
                       </div>

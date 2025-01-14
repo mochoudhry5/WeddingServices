@@ -653,7 +653,7 @@ export default function VenueEditPage() {
                           />
                           <p className="mt-1 text-sm text-gray-500">
                             Include any specific requirements or questions you
-                            have for the venue
+                            have for the Venue
                           </p>
                         </div>
                       </div>

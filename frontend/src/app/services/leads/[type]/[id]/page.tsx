@@ -351,36 +351,34 @@ export default function LeadDetailsPage() {
                             )}
 
                             {/* Venue Type */}
-                            {lead.venue_type && (
-                              <div className="p-3 rounded-lg border border-black bg-stone-100 flex items-center gap-2">
-                                <span className="text-green-800">✓</span>
-                                <span className="text-sm text-gray-900">
-                                  {lead.venue_type === "indoor"
-                                    ? "Indoor Venue"
-                                    : lead.venue_type === "outdoor"
-                                    ? "Outdoor Venue"
-                                    : lead.venue_type === "both"
-                                    ? "Indoor & Outdoor"
-                                    : "No Preference"}
-                                </span>
-                              </div>
-                            )}
+                            {lead.venue_type &&
+                              lead.venue_type !== "no-preference" && (
+                                <div className="p-3 rounded-lg border border-black bg-stone-100 flex items-center gap-2">
+                                  <span className="text-green-800">✓</span>
+                                  <span className="text-sm text-gray-900">
+                                    {lead.venue_type === "indoor"
+                                      ? "Indoor Venue"
+                                      : lead.venue_type === "outdoor"
+                                      ? "Outdoor Venue"
+                                      : "Indoor & Outdoor"}
+                                  </span>
+                                </div>
+                              )}
 
                             {/* Catering Preference */}
-                            {lead.catering_preference && (
-                              <div className="p-3 rounded-lg border border-black bg-stone-100 flex items-center gap-2">
-                                <span className="text-green-800">✓</span>
-                                <span className="text-sm text-gray-900">
-                                  {lead.catering_preference === "in-house"
-                                    ? "In-House Catering"
-                                    : lead.catering_preference === "outside"
-                                    ? "Outside Catering"
-                                    : lead.catering_preference === "both"
-                                    ? "In-House & Outside Catering"
-                                    : "No Preference"}
-                                </span>
-                              </div>
-                            )}
+                            {lead.catering_preference &&
+                              lead.catering_preference !== "no-preference" && (
+                                <div className="p-3 rounded-lg border border-black bg-stone-100 flex items-center gap-2">
+                                  <span className="text-green-800">✓</span>
+                                  <span className="text-sm text-gray-900">
+                                    {lead.catering_preference === "in-house"
+                                      ? "In-House Catering"
+                                      : lead.catering_preference === "outside"
+                                      ? "Outside Catering"
+                                      : "In-House & Outside Catering"}
+                                  </span>
+                                </div>
+                              )}
                           </div>
                         </div>
                       )}

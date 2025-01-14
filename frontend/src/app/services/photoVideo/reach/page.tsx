@@ -830,7 +830,7 @@ const PhotoVideoInquiryForm = () => {
                           />
                           <p className="mt-1 text-sm text-gray-500">
                             Include any specific requirements or questions you
-                            have for the photographer/videographer
+                            have for the Photographer/Videographer
                           </p>
                         </div>
                       </div>

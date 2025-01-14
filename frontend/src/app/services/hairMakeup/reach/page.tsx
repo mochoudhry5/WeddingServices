@@ -823,7 +823,7 @@ const HairMakeupInquiryForm = () => {
                           />
                           <p className="mt-1 text-sm text-gray-500">
                             Include any specific requirements or questions you
-                            have
+                            have for the Hair/Makeup Artist.
                           </p>
                         </div>
                       </div>
