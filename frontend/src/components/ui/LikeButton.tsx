@@ -36,7 +36,7 @@ const SERVICE_CONFIGS: Record<string, ServiceConfig> = {
     idField: "photo_video_id",
     listingTable: "photo_video_listing",
     entityName: "photo-video",
-    pluralName: "Photgraphy & Videography",
+    pluralName: "Photography & Videography",
   },
   dj: {
     tableName: "dj_liked",
