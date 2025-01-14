@@ -1662,12 +1662,14 @@ export default function UpdateVenueListing() {
                                       <Input
                                         value={addon.name}
                                         onChange={(e) => {
-                                          const newAddOns = [...customAddOns];
-                                          newAddOns[index] = {
-                                            ...addon,
-                                            name: e.target.value,
-                                          };
-                                          setCustomAddOns(newAddOns);
+                                          if (e.target.value.length <= 45) {
+                                            const newAddOns = [...customAddOns];
+                                            newAddOns[index] = {
+                                              ...addon,
+                                              name: e.target.value,
+                                            };
+                                            setCustomAddOns(newAddOns);
+                                          }
                                         }}
                                         placeholder="Enter service name"
                                         className="w-full"

@@ -1274,12 +1274,16 @@ const CreateWeddingPlannerListing = () => {
                                     <Input
                                       value={service.name}
                                       onChange={(e) => {
-                                        const newServices = [...customServices];
-                                        newServices[index] = {
-                                          ...service,
-                                          name: e.target.value,
-                                        };
-                                        setCustomServices(newServices);
+                                        if (e.target.value.length <= 45) {
+                                          const newServices = [
+                                            ...customServices,
+                                          ];
+                                          newServices[index] = {
+                                            ...service,
+                                            name: e.target.value,
+                                          };
+                                          setCustomServices(newServices);
+                                        }
                                       }}
                                       placeholder="Enter service name"
                                       required
