@@ -32,10 +32,12 @@ const TravelSection: React.FC<TravelSectionProps> = ({
             value={displayValue}
             onChange={(e) => {
               const sanitizedValue = e.target.value
-                .replace(/^0+/, "")
-                .replace(/-/g, "")
-                .replace(/\./g, "");
-              setTravelRange(sanitizedValue === "" ? "" : sanitizedValue);
+                .replace(/[^\d]/g, "") // Remove non-digits
+                .replace(/^0+/, ""); // Remove leading zeros
+              // Only update if the value is 5 digits or less
+              if (sanitizedValue.length <= 5) {
+                setTravelRange(sanitizedValue === "" ? "" : sanitizedValue);
+              }
             }}
             onKeyDown={(e) => {
               if (e.key === "-" || e.key === ".") {
