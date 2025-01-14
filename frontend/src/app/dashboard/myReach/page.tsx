@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { useAuth } from "@/context/AuthContext";
 import NavBar from "@/components/ui/NavBar";
 import Footer from "@/components/ui/Footer";
@@ -43,7 +43,7 @@ import {
   HeartHandshake,
 } from "lucide-react";
 
-// Define the base types
+// Types remain the same
 interface Inquiry {
   id: string;
   created_at: string;
@@ -62,12 +62,7 @@ type ServiceType =
   | "dj"
   | "weddingPlanner";
 
-// Define types for state management
 type Inquiries = {
-  [K in ServiceType]: Inquiry[];
-};
-
-type FilteredInquiries = {
   [K in ServiceType]: Inquiry[];
 };
 
@@ -107,6 +102,10 @@ const SERVICE_CONFIGS = {
 export default function QuickReachesPage() {
   const router = useRouter();
   const { user } = useAuth();
+  const [selectedService, setSelectedService] = useState<ServiceType | null>(
+    null
+  );
+  const [activeServices, setActiveServices] = useState<ServiceType[]>([]);
   const [inquiries, setInquiries] = useState<Inquiries>({
     venue: [],
     photoVideo: [],
@@ -114,18 +113,15 @@ export default function QuickReachesPage() {
     dj: [],
     weddingPlanner: [],
   });
-  const [filteredInquiries, setFilteredInquiries] = useState<FilteredInquiries>(
-    {
-      venue: [],
-      photoVideo: [],
-      hairMakeup: [],
-      dj: [],
-      weddingPlanner: [],
-    }
-  );
+  const [filteredInquiries, setFilteredInquiries] = useState<Inquiries>({
+    venue: [],
+    photoVideo: [],
+    hairMakeup: [],
+    dj: [],
+    weddingPlanner: [],
+  });
   const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
-  const [selectedService, setSelectedService] = useState<ServiceType>("venue");
   const [sortBy, setSortBy] = useState<"newest" | "price-low" | "price-high">(
     "newest"
   );
@@ -176,6 +172,18 @@ export default function QuickReachesPage() {
         })
       );
 
+      // Determine which services have inquiries
+      const servicesWithInquiries = Object.entries(allInquiries)
+        .filter(([_, inquiries]) => inquiries.length > 0)
+        .map(([serviceType]) => serviceType as ServiceType);
+
+      setActiveServices(servicesWithInquiries);
+
+      // Set initial selected service if there are any active services
+      if (servicesWithInquiries.length > 0 && !selectedService) {
+        setSelectedService(servicesWithInquiries[0]);
+      }
+
       setInquiries(allInquiries);
     } catch (error) {
       console.error("Error loading inquiries:", error);
@@ -185,7 +193,10 @@ export default function QuickReachesPage() {
     }
   };
 
+  // Rest of the component logic remains the same
   const handleEdit = (inquiry: Inquiry) => {
+    if (!selectedService) return;
+
     const editRoutes = {
       dj: `/services/dj/editReach/${inquiry.id}`,
       hairMakeup: `/services/hairMakeup/editReach/${inquiry.id}`,
@@ -204,6 +215,8 @@ export default function QuickReachesPage() {
 
   const handleDelete = async (inquiry: Inquiry) => {
     try {
+      if (!selectedService) return;
+
       const serviceConfig = SERVICE_CONFIGS[selectedService];
       const { error } = await supabase
         .from(serviceConfig.table)
@@ -218,6 +231,25 @@ export default function QuickReachesPage() {
           (item) => item.id !== inquiry.id
         ),
       }));
+
+      // After deleting, check if this was the last inquiry for this service type
+      const updatedInquiries = inquiries[selectedService].filter(
+        (item) => item.id !== inquiry.id
+      );
+
+      if (updatedInquiries.length === 0) {
+        const newActiveServices = activeServices.filter(
+          (s) => s !== selectedService
+        );
+        setActiveServices(newActiveServices);
+
+        // If there are other active services, switch to the first one
+        if (newActiveServices.length > 0) {
+          setSelectedService(newActiveServices[0]);
+        } else {
+          setSelectedService(null);
+        }
+      }
 
       toast.success("Inquiry deleted successfully");
       setShowDeleteDialog(false);
@@ -276,23 +308,22 @@ export default function QuickReachesPage() {
 
   const renderServiceNav = () => (
     <div className="flex overflow-x-auto gap-2 p-2 bg-white rounded-lg shadow-sm no-scrollbar">
-      {Object.entries(SERVICE_CONFIGS).map(([key, config]) => {
-        const Icon = config.icon;
-        const serviceKey = key as ServiceType;
+      {activeServices.map((serviceType) => {
+        const Icon = SERVICE_CONFIGS[serviceType].icon;
         return (
           <button
-            key={key}
-            onClick={() => setSelectedService(serviceKey)}
+            key={serviceType}
+            onClick={() => setSelectedService(serviceType)}
             className={`px-4 py-2 rounded-lg whitespace-nowrap transition-all flex items-center gap-2 ${
-              selectedService === key
+              selectedService === serviceType
                 ? "bg-black text-white"
                 : "bg-gray-100 hover:bg-gray-200 text-gray-700"
             }`}
           >
             <Icon className="h-4 w-4" />
-            {config.displayName}
+            {SERVICE_CONFIGS[serviceType].displayName}
             <span className="px-2 py-0.5 text-xs rounded-full bg-white/20">
-              {inquiries[serviceKey].length}
+              {inquiries[serviceType].length}
             </span>
           </button>
         );
@@ -300,6 +331,7 @@ export default function QuickReachesPage() {
     </div>
   );
 
+  // Rest of the rendering logic remains the same
   const renderFilters = () => (
     <div className="flex flex-col sm:flex-row gap-4 mb-6">
       <div className="relative flex-grow">
@@ -329,7 +361,9 @@ export default function QuickReachesPage() {
   );
 
   const renderCard = (inquiry: Inquiry) => {
+    if (!selectedService) return null;
     const Icon = SERVICE_CONFIGS[selectedService].icon;
+
     return (
       <Card key={inquiry.id} className="overflow-hidden">
         <CardHeader className="space-y-1">
@@ -431,12 +465,17 @@ export default function QuickReachesPage() {
   const renderEmptyState = () => (
     <div className="text-center py-12 bg-white rounded-lg shadow">
       <h3 className="text-lg font-medium text-gray-900 mb-2">
-        No {SERVICE_CONFIGS[selectedService].displayName} inquiries yet
+        No quick reaches yet
       </h3>
       <p className="text-gray-500 mb-6">
-        Start by submitting a quick reach for{" "}
-        {SERVICE_CONFIGS[selectedService].displayName.toLowerCase()}
+        Get started by submitting your first quick reach
       </p>
+      <button
+        onClick={() => router.push("/quickReach")}
+        className="inline-flex items-center px-4 py-2 bg-black text-white rounded-lg hover:bg-black/90 transition-colors"
+      >
+        <span>Create Quick Reach</span>
+      </button>
     </div>
   );
 
@@ -469,19 +508,31 @@ export default function QuickReachesPage() {
                 renderLoadingState()
               ) : (
                 <>
-                  {renderServiceNav()}
-                  <div className="mt-6">
-                    {renderFilters()}
-                    {filteredInquiries[selectedService].length > 0 ? (
-                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                        {filteredInquiries[selectedService].map((inquiry) => (
-                          <div key={inquiry.id}>{renderCard(inquiry)}</div>
-                        ))}
-                      </div>
-                    ) : (
-                      renderEmptyState()
-                    )}
-                  </div>
+                  {activeServices.length > 0 ? (
+                    <>
+                      {renderServiceNav()}
+                      {selectedService && (
+                        <div className="mt-6">
+                          {renderFilters()}
+                          {filteredInquiries[selectedService].length > 0 ? (
+                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                              {filteredInquiries[selectedService].map(
+                                (inquiry) => (
+                                  <div key={inquiry.id}>
+                                    {renderCard(inquiry)}
+                                  </div>
+                                )
+                              )}
+                            </div>
+                          ) : (
+                            renderEmptyState()
+                          )}
+                        </div>
+                      )}
+                    </>
+                  ) : (
+                    renderEmptyState()
+                  )}
                 </>
               )}
             </div>
@@ -495,9 +546,9 @@ export default function QuickReachesPage() {
           >
             <AlertDialogContent>
               <AlertDialogHeader>
-                <AlertDialogTitle>Delete Inquiry</AlertDialogTitle>
+                <AlertDialogTitle>Delete Quick Reach</AlertDialogTitle>
                 <AlertDialogDescription>
-                  Are you sure you want to delete this inquiry? This action
+                  Are you sure you want to delete this quick reach? This action
                   cannot be undone.
                 </AlertDialogDescription>
               </AlertDialogHeader>
