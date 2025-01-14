@@ -80,7 +80,6 @@ export default function QuickReachPage() {
       return;
     }
     if (!selected) return;
-    setShowModal(true);
     // Check if the user is a vendor
     const { data: userData, error: userError } = await supabase
       .from("user_preferences")
