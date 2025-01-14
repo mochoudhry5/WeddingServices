@@ -116,9 +116,14 @@ const ServiceCard = ({ service }: { service: HairMakeupService }) => {
 
           <div
             ref={descriptionRef}
-            className={`text-gray-600 text-sm text-left transition-all duration-200 ${
-              isOpen ? "" : "line-clamp-1"
-            }`}
+            className={isOpen ? "" : "line-clamp-1"}
+            style={{
+              wordBreak: "break-word",
+              overflowWrap: "break-word",
+              whiteSpace: "pre-wrap",
+              color: "#4B5563", // text-gray-600
+              fontSize: "0.875rem", // text-sm
+            }}
           >
             {service.description}
           </div>

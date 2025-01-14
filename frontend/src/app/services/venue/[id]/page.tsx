@@ -202,9 +202,14 @@ const ServiceCard = ({ service }: { service: VenueAddon }) => {
           </div>
           <div
             ref={descriptionRef}
-            className={`text-gray-600 text-xs sm:text-sm transition-all duration-200 ${
-              isOpen ? "" : "line-clamp-2 sm:line-clamp-1"
-            }`}
+            className={isOpen ? "" : "line-clamp-1"}
+            style={{
+              wordBreak: "break-word",
+              overflowWrap: "break-word",
+              whiteSpace: "pre-wrap",
+              color: "#4B5563", // text-gray-600
+              fontSize: "0.875rem", // text-sm
+            }}
           >
             {service.description}
           </div>
