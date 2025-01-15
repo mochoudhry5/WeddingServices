@@ -13,6 +13,7 @@ import {
   Search,
   Archive,
   ArchiveRestore,
+  MapPin,
 } from "lucide-react";
 import {
   AlertDialog,
@@ -560,9 +561,57 @@ export default function MyListingsPage() {
           </div>
         </div>
 
-        <div className="p-4">
-          <div className="flex justify-between items-start mb-2">
-            <h3 className="text-lg font-semibold">{listing.business_name}</h3>
+        <div className="p-4 space-y-3">
+          {/* Business Name */}
+          <h3 className="text-xl font-medium min-w-0 truncate">
+            <span className="block truncate">{listing.business_name}</span>
+          </h3>
+
+          {/* Service Type & Details */}
+          {isVenueListing(listing) ? (
+            <p className="text-gray-600 text-sm">
+              Up to {listing.max_guests.toLocaleString()} guests • Venue
+            </p>
+          ) : (
+            <p className="text-gray-600 text-sm">
+              {listing.years_experience} years experience •{" "}
+              {serviceType === "hair-makeup" &&
+                (listing.service_type === "both"
+                  ? "Hair & Makeup"
+                  : listing.service_type === "hair"
+                  ? "Hair"
+                  : "Makeup")}
+              {serviceType === "photo-video" &&
+                (listing.service_type === "both"
+                  ? "Photography & Videography"
+                  : listing.service_type === "photography"
+                  ? "Photography"
+                  : "Videography")}
+              {serviceType === "wedding-planner" &&
+                (listing.service_type === "both"
+                  ? "Wedding Planner & Coordinator"
+                  : listing.service_type === "weddingPlanner"
+                  ? "Wedding Planner"
+                  : "Wedding Coordinator")}
+              {serviceType === "dj" && "DJ"}
+            </p>
+          )}
+
+          {/* Description */}
+          <p className="text-gray-600 text-sm line-clamp-2">
+            {listing.description}
+          </p>
+
+          {/* Location and Price Footer */}
+          <div className="flex justify-between items-center pt-2">
+            <div className="flex items-center text-gray-600">
+              <MapPin className="w-4 h-4 mr-1" />
+              <span className="text-sm">
+                {listing.city}, {listing.state}
+              </span>
+            </div>
+
+            {/* Price */}
             {isVenueListing(listing) ? (
               <span className="text-lg font-semibold text-green-800">
                 ${listing.base_price.toLocaleString()}
@@ -576,45 +625,6 @@ export default function MyListingsPage() {
                 </span>
               )
             )}
-          </div>
-
-          <div className="space-y-2">
-            {isVenueListing(listing) ? (
-              <p className="text-gray-600 text-sm">
-                Up to {listing.max_guests.toLocaleString()} guests • Venue
-              </p>
-            ) : (
-              <p className="text-gray-600 text-sm">
-                {listing.years_experience} years experience •{" "}
-                {serviceType === "hair-makeup" &&
-                  (listing.service_type === "both"
-                    ? "Hair & Makeup"
-                    : listing.service_type === "hair"
-                    ? "Hair"
-                    : "Makeup")}
-                {serviceType === "photo-video" &&
-                  (listing.service_type === "both"
-                    ? "Photography & Videography"
-                    : listing.service_type === "photography"
-                    ? "Photography"
-                    : "Videography")}
-                {serviceType === "wedding-planner" &&
-                  (listing.service_type === "both"
-                    ? "Wedding Planner & Coordinator"
-                    : listing.service_type === "weddingPlanner"
-                    ? "Wedding Planner"
-                    : "Wedding Coordinator")}
-                {serviceType === "dj" && "DJ"}
-              </p>
-            )}
-
-            <p className="text-gray-600 text-sm line-clamp-2">
-              {listing.description}
-            </p>
-
-            <p className="text-sm text-gray-600">
-              {listing.city}, {listing.state}
-            </p>
           </div>
         </div>
       </>

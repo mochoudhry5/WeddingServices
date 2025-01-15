@@ -11,6 +11,7 @@ import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import Link from "next/link";
 import { ProtectedRoute } from "@/components/ui/ProtectedRoute";
+import { MapPin } from "lucide-react";
 import {
   Select,
   SelectContent,
@@ -402,11 +403,54 @@ export default function LikedServicesPage() {
           />
         </div>
         <Link href={`/${config.routePrefix}/${item.id}`}>
-          <div className="p-4">
-            <div className="flex justify-between items-start mb-2">
-              <h3 className="text-lg font-semibold group-hover:text-stone-500 transition-colors">
-                {item.business_name}
-              </h3>
+          <div className="p-4 space-y-3">
+            {/* Business Name */}
+            <h3 className="text-xl font-medium min-w-0 truncate">
+              <span className="block truncate">{item.business_name}</span>
+            </h3>
+
+            {/* Service Type & Details */}
+            <p className="text-gray-600 text-sm">
+              {"max_guests" in item
+                ? `Up to ${item.max_guests?.toLocaleString()} guests • Venue`
+                : `${item.years_experience} years experience • ${
+                    selectedService === "hair-makeup"
+                      ? item.service_type === "both"
+                        ? "Hair & Makeup"
+                        : item.service_type === "hair"
+                        ? "Hair"
+                        : "Makeup"
+                      : selectedService === "photo-video"
+                      ? item.service_type === "both"
+                        ? "Photography & Videography"
+                        : item.service_type === "photography"
+                        ? "Photography"
+                        : "Videography"
+                      : selectedService === "wedding-planner"
+                      ? item.service_type === "both"
+                        ? "Wedding Planner & Coordinator"
+                        : item.service_type === "weddingPlanner"
+                        ? "Wedding Planner"
+                        : "Wedding Coordinator"
+                      : config.displayName
+                  }`}
+            </p>
+
+            {/* Description */}
+            <p className="text-gray-600 text-sm line-clamp-2">
+              {item.description}
+            </p>
+
+            {/* Location and Price Footer */}
+            <div className="flex justify-between items-center pt-2">
+              <div className="flex items-center text-gray-600">
+                <MapPin className="w-4 h-4 mr-1" />
+                <span className="text-sm">
+                  {item.city}, {item.state}
+                </span>
+              </div>
+
+              {/* Price */}
               {"base_price" in item ? (
                 <span className="text-lg font-semibold text-green-800">
                   ${item.base_price.toLocaleString()}
@@ -418,39 +462,6 @@ export default function LikedServicesPage() {
                     : `$${item.min_service_price?.toLocaleString()} - $${item.max_service_price?.toLocaleString()}`}
                 </span>
               )}
-            </div>
-            <div className="space-y-2">
-              <p className="text-gray-600 text-sm">
-                {"max_guests" in item
-                  ? `Up to ${item.max_guests?.toLocaleString()} guests • Venue`
-                  : `${item.years_experience} years experience • ${
-                      selectedService === "hair-makeup"
-                        ? item.service_type === "both"
-                          ? "Hair & Makeup"
-                          : item.service_type === "hair"
-                          ? "Hair"
-                          : "Makeup"
-                        : selectedService === "photo-video"
-                        ? item.service_type === "both"
-                          ? "Photography & Videography"
-                          : item.service_type === "photography"
-                          ? "Photography"
-                          : "Videography"
-                        : selectedService === "wedding-planner"
-                        ? item.service_type === "both"
-                          ? "Wedding Planner & Coordinator"
-                          : item.service_type === "weddingPlanner"
-                          ? "Wedding Planner"
-                          : "Wedding Coordinator"
-                        : config.displayName
-                    }`}
-              </p>
-              <p className="text-gray-600 text-sm line-clamp-2">
-                {item.description}
-              </p>
-              <p className="text-sm text-gray-600">
-                {item.city}, {item.state}
-              </p>
             </div>
           </div>
         </Link>

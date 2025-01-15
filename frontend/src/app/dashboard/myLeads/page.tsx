@@ -563,7 +563,7 @@ export default function LeadsPage() {
             </div>
             {lead.message && (
               <div className="mt-4">
-                <p className="text-sm text-gray-600 line-clamp-2">
+                <p className="text-sm text-gray-600 line-clamp-1">
                   {lead.message}
                 </p>
               </div>

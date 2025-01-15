@@ -1417,8 +1417,10 @@ export default function ServicesSearchPage() {
                       target="_blank"
                     >
                       <div className="p-4">
-                        <h3 className="text-base sm:text-lg font-semibold mb-1 line-clamp-1 group-hover:text-gray-600 transition-colors">
-                          {listing.business_name}
+                        <h3 className="text-lg font-semibold min-w-0 truncate">
+                          <span className="block truncate">
+                            {listing.business_name}
+                          </span>
                         </h3>
 
                         {"venue_media" in listing ? (
