@@ -274,7 +274,11 @@ const AccountSettings = () => {
                 id="new-email"
                 type="email"
                 value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                onChange={(e) => {
+                  if (e.target.value.length <= 320) {
+                    setEmail(e.target.value);
+                  }
+                }}
                 disabled={loading.email}
                 placeholder="Enter new email address"
                 aria-label="New email address"

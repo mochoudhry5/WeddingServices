@@ -380,7 +380,11 @@ const HairMakeupInquiryForm = () => {
                             </label>
                             <Input
                               value={firstName}
-                              onChange={(e) => setFirstName(e.target.value)}
+                              onChange={(e) => {
+                                if (e.target.value.length <= 25) {
+                                  setFirstName(e.target.value);
+                                }
+                              }}
                               placeholder="Enter your first name"
                               className="w-full"
                               required
@@ -392,7 +396,11 @@ const HairMakeupInquiryForm = () => {
                             </label>
                             <Input
                               value={lastName}
-                              onChange={(e) => setLastName(e.target.value)}
+                              onChange={(e) => {
+                                if (e.target.value.length <= 25) {
+                                  setLastName(e.target.value);
+                                }
+                              }}
                               placeholder="Enter your last name"
                               className="w-full"
                               required
@@ -420,7 +428,11 @@ const HairMakeupInquiryForm = () => {
                             <Input
                               type="email"
                               value={email}
-                              onChange={(e) => setEmail(e.target.value)}
+                              onChange={(e) => {
+                                if (e.target.value.length <= 320) {
+                                  setEmail(e.target.value);
+                                }
+                              }}
                               placeholder="your@email.com"
                               className="w-full"
                               required

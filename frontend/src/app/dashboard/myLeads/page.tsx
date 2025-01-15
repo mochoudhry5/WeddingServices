@@ -531,11 +531,13 @@ export default function LeadsPage() {
         onClick={(e) => handleCardClick(e, lead)}
       >
         <CardHeader className="space-y-1">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-2">
-              <Icon className="h-6 w-6" />
-              <CardTitle className="text-xl">
-                {lead.first_name} {lead.last_name}
+          <div className="flex items-start justify-between">
+            <div className="flex items-start space-x-2 min-w-0">
+              <Icon className="h-6 w-6 flex-shrink-0 mt-1" />
+              <CardTitle className="text-xl truncate">
+                <span className="block truncate">
+                  {lead.first_name} {lead.last_name}
+                </span>
               </CardTitle>
             </div>
           </div>
