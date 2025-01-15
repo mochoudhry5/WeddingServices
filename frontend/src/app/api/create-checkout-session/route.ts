@@ -3,6 +3,14 @@ import { NextResponse } from "next/server";
 import Stripe from "stripe";
 import { createClient } from "@supabase/supabase-js";
 
+const mapping = {
+  venue: "venue",
+  hair_makeup: "hairMakeup",
+  wedding_planner: "weddingPlanner",
+  photo_video: "photoVideo",
+  dj: "dj",
+} as const;
+
 // Validate environment variables
 if (!process.env.STRIPE_SECRET_KEY) {
   throw new Error("Missing STRIPE_SECRET_KEY");
@@ -27,7 +35,8 @@ export async function POST(request: Request) {
     // Parse request body
     const body = await request.json();
 
-    const { priceId, userId, serviceType, tierType, isAnnual } = body;
+    const { priceId, userId, serviceType, tierType, isAnnual, listing_id } =
+      body;
 
     // Validate request data
     if (!priceId || !userId || !serviceType || !tierType) {
@@ -48,6 +57,8 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "User not found" }, { status: 404 });
     }
 
+    const key: keyof typeof mapping = serviceType;
+
     // Create Stripe checkout session
     const session = await stripe.checkout.sessions.create({
       mode: "subscription",
@@ -58,13 +69,14 @@ export async function POST(request: Request) {
           quantity: 1,
         },
       ],
-      success_url: `${process.env.NEXT_PUBLIC_BASE_URL}/services/${serviceType}/create?session_id={CHECKOUT_SESSION_ID}`,
+      success_url: `${process.env.NEXT_PUBLIC_BASE_URL}/services/${mapping[key]}/${listing_id}`,
       cancel_url: `${process.env.NEXT_PUBLIC_BASE_URL}/services/`,
       metadata: {
         userId,
         serviceType,
         tierType,
         isAnnual: isAnnual.toString(),
+        listing_id,
       },
     });
 

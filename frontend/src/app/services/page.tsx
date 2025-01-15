@@ -189,10 +189,19 @@ export default function CreateServicePage() {
       return;
     }
 
-    const service = services.find((s) => s.id === selectedService);
-    if (service?.available && service.path) {
-      window.location.href = service.path;
-    }
+    // const service = services.find((s) => s.id === selectedService);
+    // if (service?.available && service.path) {
+    //   window.location.href = service.path;
+    // }
+  };
+
+  const handleContinue = () => {
+    const params = new URLSearchParams({
+      tier: selectedTier ? selectedTier.toString() : "EMPTY",
+      annual: isAnnual ? "TRUE" : "FALSE",
+    });
+
+    window.location.href = `/services/${selectedService}/create?${params.toString()}`;
   };
 
   return (
@@ -233,14 +242,14 @@ export default function CreateServicePage() {
 
             <div className="text-center mt-8">
               <button
-                onClick={handleProceedToPayment}
+                onClick={handleContinue}
                 disabled={!selectedTier}
                 className="px-8 py-3 bg-black text-white rounded-lg font-medium 
                   disabled:opacity-50 disabled:cursor-not-allowed
                   hover:bg-stone-500 transition-colors
                   text-base"
               >
-                Continue to Payment
+                Create Listing
               </button>
             </div>
           </div>

@@ -1,7 +1,7 @@
 "use client";
 
-import React, { useState } from "react";
-import { useRouter } from "next/navigation";
+import React, { useEffect, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Upload, Plus, X, DollarSign, Clock } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/lib/supabase";
@@ -29,6 +29,8 @@ import Footer from "@/components/ui/Footer";
 import LocationInput from "@/components/ui/LocationInput";
 import { ProtectedRoute } from "@/components/ui/ProtectedRoute";
 import { VendorProtectedRoute } from "@/components/ui/VendorProtectedRoute";
+import { BillingPeriod, stripePriceIds, TierType } from "@/lib/stripe";
+import { loadStripe } from "@stripe/stripe-js";
 
 // Types
 interface MediaFile {
@@ -150,6 +152,26 @@ const CreateMakeupListing = () => {
   const [availability, setAvailability] = useState({
     deposit: "", // Will store percentage as string
   });
+  const searchParams = useSearchParams();
+  const [selectedTier, setSelectedTier] = useState<TierType>("basic");
+  const [isAnnual, setIsAnnual] = useState<boolean>();
+
+  useEffect(() => {
+    const tier: TierType = searchParams.get("tier") as TierType;
+    const annual = searchParams.get("annual");
+    console.log(tier);
+    if (
+      !annual ||
+      !tier ||
+      (annual !== "TRUE" && annual !== "FALSE") ||
+      (tier !== "basic" && tier !== "premium" && tier !== "elite")
+    ) {
+      window.history.back();
+    }
+
+    setIsAnnual(annual === "TRUE" ? true : false);
+    setSelectedTier(tier);
+  }, [searchParams]);
 
   // File Upload Handlers
   const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -603,6 +625,61 @@ const CreateMakeupListing = () => {
             `Failed to create services: ${servicesError.message}`
           );
         }
+      }
+
+      try {
+        const billingPeriod: BillingPeriod = isAnnual ? "annual" : "monthly";
+
+        const priceId =
+          stripePriceIds["hairMakeup"][selectedTier][billingPeriod];
+
+        const requestBody = {
+          priceId,
+          userId: user.id,
+          serviceType: "hair_makeup",
+          tierType: selectedTier,
+          isAnnual,
+          listing_id: hairMakeup?.id,
+        };
+
+        const response = await fetch("/api/create-checkout-session", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(requestBody),
+        });
+
+        if (!response.ok) {
+          const errorData = await response.json().catch(() => null);
+          throw new Error(
+            errorData?.error || `HTTP error! status: ${response.status}`
+          );
+        }
+
+        const data = await response.json();
+
+        const stripe = await loadStripe(
+          process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!
+        );
+        if (!stripe) {
+          throw new Error("Failed to load Stripe");
+        }
+
+        const { error: stripeError } = await stripe.redirectToCheckout({
+          sessionId: data.sessionId,
+        });
+
+        if (stripeError) {
+          throw stripeError;
+        }
+      } catch (error) {
+        console.error("Error initiating checkout:", error);
+        toast.error(
+          error instanceof Error
+            ? error.message
+            : "Failed to initiate checkout. Please try again."
+        );
       }
 
       toast.success("Hair & Makeup listing created successfully!");
@@ -1872,7 +1949,7 @@ const CreateMakeupListing = () => {
                       {isSubmitting
                         ? "Creating..."
                         : currentStep === totalSteps
-                        ? "Create Listing"
+                        ? "Checkout"
                         : "Next"}
                     </button>
                   </div>

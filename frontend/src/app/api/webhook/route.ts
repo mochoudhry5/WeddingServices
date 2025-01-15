@@ -55,6 +55,23 @@ export async function POST(req: Request) {
         { status: 500 }
       );
     }
+
+    const { data: updatedData, error: updateError } = await supabase
+      .from(`${session.metadata?.serviceType}_listing`)
+      .update({
+        is_draft: false,
+      })
+      .eq("id", session.metadata?.listing_id);
+
+    if (updateError) {
+      console.error("Error updating listing:", error);
+      return NextResponse.json(
+        { error: "Error updating listing" },
+        { status: 500 }
+      );
+    } else {
+      console.log("Updated listing data:", updatedData);
+    }
   }
 
   return NextResponse.json({ received: true });
