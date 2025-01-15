@@ -1429,7 +1429,7 @@ export default function ServicesSearchPage() {
                             <p className="text-xs sm:text-sm text-gray-600 mb-2">
                               Up to {listing.max_guests} guests • Venue
                             </p>
-                            <p className="text-xs sm:text-sm text-gray-600 mb-3 line-clamp-2">
+                            <p className="text-xs sm:text-sm text-gray-600 mb-3 line-clamp-1">
                               {listing.description}
                             </p>
                             <div className="pt-3 flex justify-between items-center border-t">
@@ -1452,7 +1452,7 @@ export default function ServicesSearchPage() {
                                 ? "Makeup"
                                 : "Hair"}
                             </p>
-                            <p className="text-xs sm:text-sm text-gray-600 mb-3 line-clamp-2">
+                            <p className="text-xs sm:text-sm text-gray-600 mb-3 line-clamp-1">
                               {listing.description}
                             </p>
                             <div className="pt-3 flex justify-between items-center border-t">
@@ -1478,7 +1478,7 @@ export default function ServicesSearchPage() {
                                 ? "Photography"
                                 : "Videography"}
                             </p>
-                            <p className="text-xs sm:text-sm text-gray-600 mb-3 line-clamp-2">
+                            <p className="text-xs sm:text-sm text-gray-600 mb-3 line-clamp-1">
                               {listing.description}
                             </p>
                             <div className="pt-3 flex justify-between items-center border-t">
@@ -1500,7 +1500,7 @@ export default function ServicesSearchPage() {
                               {listing.years_experience} years experience •
                               {" DJ"}
                             </p>
-                            <p className="text-xs sm:text-sm text-gray-600 mb-3 line-clamp-2">
+                            <p className="text-xs sm:text-sm text-gray-600 mb-3 line-clamp-1">
                               {listing.description}
                             </p>
                             <div className="pt-3 flex justify-between items-center border-t">
@@ -1525,7 +1525,7 @@ export default function ServicesSearchPage() {
                                 ? "Wedding Planner"
                                 : "Wedding Coordinator"}
                             </p>
-                            <p className="text-xs sm:text-sm text-gray-600 mb-3 line-clamp-2">
+                            <p className="text-xs sm:text-sm text-gray-600 mb-3 line-clamp-1">
                               {listing.description}
                             </p>
                             <div className="pt-3 flex justify-between items-center border-t">

@@ -437,7 +437,7 @@ export default function LikedServicesPage() {
             </p>
 
             {/* Description */}
-            <p className="text-gray-600 text-sm line-clamp-2">
+            <p className="text-gray-600 text-sm line-clamp-1">
               {item.description}
             </p>
 

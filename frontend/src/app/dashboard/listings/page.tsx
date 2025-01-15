@@ -598,7 +598,7 @@ export default function MyListingsPage() {
           )}
 
           {/* Description */}
-          <p className="text-gray-600 text-sm line-clamp-2">
+          <p className="text-gray-600 text-sm line-clamp-1">
             {listing.description}
           </p>
 
