@@ -143,6 +143,7 @@ const commonAddOns = [
 ];
 
 // Pricing Input Component
+// PricingInput Component with 6-digit limit
 const PricingInput = ({
   addon,
   value,
@@ -159,7 +160,7 @@ const PricingInput = ({
         onChange({
           ...value,
           pricingType: newType,
-          guestIncrement: newType === "per-guest" ? 100 : undefined,
+          guestIncrement: newType === "per-guest" ? 1 : undefined,
         });
       }}
     >
@@ -187,10 +188,13 @@ const PricingInput = ({
             const sanitizedValue = e.target.value
               .replace(/[^\d]/g, "")
               .replace(/^0+(?=\d)/, "");
-            onChange({
-              ...value,
-              price: sanitizedValue === "" ? 0 : parseInt(sanitizedValue),
-            });
+            // Only update if the value is 6 digits or less
+            if (sanitizedValue.length <= 6) {
+              onChange({
+                ...value,
+                price: sanitizedValue === "" ? 0 : parseInt(sanitizedValue),
+              });
+            }
           }}
           onKeyDown={(e) => {
             if (e.key === "-" || e.key === ".") {
@@ -822,11 +826,14 @@ export default function UpdateVenueListing() {
   const nextStep = () => {
     if (validateCurrentStep()) {
       setCurrentStep((prev) => Math.min(prev + 1, totalSteps));
+      // Scroll to top of the page smoothly
+      window.scrollTo({ top: 0, behavior: "smooth" });
     }
   };
 
   const prevStep = () => {
     setCurrentStep((prev) => Math.max(prev - 1, 1));
+    window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
   const handleCancel = () => {
@@ -998,7 +1005,11 @@ export default function UpdateVenueListing() {
                           <Input
                             type="text"
                             value={businessName}
-                            onChange={(e) => setBusinessName(e.target.value)}
+                            onChange={(e) => {
+                              if (e.target.value.length <= 255) {
+                                setBusinessName(e.target.value);
+                              }
+                            }}
                             placeholder="Enter your venue name"
                             className="w-full"
                           />
@@ -1079,9 +1090,12 @@ export default function UpdateVenueListing() {
                                 const sanitizedValue = e.target.value
                                   .replace(/[^\d]/g, "")
                                   .replace(/^0+(?=\d)/, "");
-                                setBasePrice(
-                                  sanitizedValue === "" ? "" : sanitizedValue
-                                );
+                                // Only update if the value is 6 digits or less
+                                if (sanitizedValue.length <= 6) {
+                                  setBasePrice(
+                                    sanitizedValue === "" ? "" : sanitizedValue
+                                  );
+                                }
                               }}
                               onKeyDown={(e) => {
                                 // Prevent decimal point and negative sign
@@ -1110,9 +1124,12 @@ export default function UpdateVenueListing() {
                                 const sanitizedValue = e.target.value
                                   .replace(/[^\d]/g, "")
                                   .replace(/^0+(?=\d)/, "");
-                                setMinGuests(
-                                  sanitizedValue === "" ? "" : sanitizedValue
-                                );
+                                // Only update if the value is 5 digits or less
+                                if (sanitizedValue.length <= 5) {
+                                  setMinGuests(
+                                    sanitizedValue === "" ? "" : sanitizedValue
+                                  );
+                                }
                               }}
                               onKeyDown={(e) => {
                                 if (e.key === "-" || e.key === ".") {
@@ -1136,9 +1153,12 @@ export default function UpdateVenueListing() {
                                 const sanitizedValue = e.target.value
                                   .replace(/[^\d]/g, "")
                                   .replace(/^0+(?=\d)/, "");
-                                setMaxGuests(
-                                  sanitizedValue === "" ? "" : sanitizedValue
-                                );
+                                // Only update if the value is 5 digits or less
+                                if (sanitizedValue.length <= 5) {
+                                  setMaxGuests(
+                                    sanitizedValue === "" ? "" : sanitizedValue
+                                  );
+                                }
                               }}
                               onKeyDown={(e) => {
                                 if (e.key === "-" || e.key === ".") {
@@ -1473,7 +1493,7 @@ export default function UpdateVenueListing() {
                                   value={inclusion}
                                   onChange={(e) => {
                                     // Limit input to 25 characters
-                                    if (e.target.value.length <= 25) {
+                                    if (e.target.value.length <= 20) {
                                       const newStyles = [...customInclusions];
                                       newStyles[index] = e.target.value;
                                       setCustomInclusions(newStyles);
@@ -1571,13 +1591,19 @@ export default function UpdateVenueListing() {
                                                 .description
                                             }
                                             onChange={(e) => {
-                                              setSelectedAddOns({
-                                                ...selectedAddOns,
-                                                [addon.name]: {
-                                                  ...selectedAddOns[addon.name],
-                                                  description: e.target.value,
-                                                },
-                                              });
+                                              if (
+                                                e.target.value.length <= 1000
+                                              ) {
+                                                setSelectedAddOns({
+                                                  ...selectedAddOns,
+                                                  [addon.name]: {
+                                                    ...selectedAddOns[
+                                                      addon.name
+                                                    ],
+                                                    description: e.target.value,
+                                                  },
+                                                });
+                                              }
                                             }}
                                             placeholder="Describe the service..."
                                             rows={2}
@@ -1659,12 +1685,14 @@ export default function UpdateVenueListing() {
                                       <Input
                                         value={addon.name}
                                         onChange={(e) => {
-                                          const newAddOns = [...customAddOns];
-                                          newAddOns[index] = {
-                                            ...addon,
-                                            name: e.target.value,
-                                          };
-                                          setCustomAddOns(newAddOns);
+                                          if (e.target.value.length <= 40) {
+                                            const newAddOns = [...customAddOns];
+                                            newAddOns[index] = {
+                                              ...addon,
+                                              name: e.target.value,
+                                            };
+                                            setCustomAddOns(newAddOns);
+                                          }
                                         }}
                                         placeholder="Enter service name"
                                         className="w-full"
@@ -1692,12 +1720,14 @@ export default function UpdateVenueListing() {
                                     <textarea
                                       value={addon.description}
                                       onChange={(e) => {
-                                        const newAddOns = [...customAddOns];
-                                        newAddOns[index] = {
-                                          ...addon,
-                                          description: e.target.value,
-                                        };
-                                        setCustomAddOns(newAddOns);
+                                        if (e.target.value.length <= 1000) {
+                                          const newAddOns = [...customAddOns];
+                                          newAddOns[index] = {
+                                            ...addon,
+                                            description: e.target.value,
+                                          };
+                                          setCustomAddOns(newAddOns);
+                                        }
                                       }}
                                       placeholder="Describe the service..."
                                       rows={2}

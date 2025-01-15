@@ -13,6 +13,7 @@ import { useAuth } from "@/context/AuthContext";
 import LikeButton from "@/components/ui/LikeButton";
 import { ServiceInfoGrid } from "@/components/ui/CardInfoGrid";
 import { SearchX } from "lucide-react";
+import { AuthModals } from "@/components/ui/AuthModal";
 
 interface HairMakeupDetails {
   user_id: string;
@@ -96,14 +97,18 @@ const ServiceCard = ({ service }: { service: HairMakeupService }) => {
         onClick={() => hasOverflow && setIsOpen(!isOpen)}
       >
         <div className="flex-1">
-          <div className="flex justify-between items-start mb-2">
-            <h3 className="text-lg font-semibold text-left">{service.name}</h3>
-            <div className="text-right">
-              <p className="text-green-800 font-semibold whitespace-nowrap">
-                <span className="text-sm text-gray-500">Starting at </span>$
-                {service.price.toLocaleString()}
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 mb-2">
+            <h3 className="text-base sm:text-lg font-semibold">
+              {service.name}
+            </h3>
+            <div className="text-left sm:text-right">
+              <p className="text-green-800 font-semibold whitespace-nowrap text-sm sm:text-base">
+                <span className="text-xs sm:text-sm text-gray-500">
+                  Starting at{" "}
+                </span>
+                ${service.price.toLocaleString()}
               </p>
-              <p className="text-sm text-gray-500">
+              <p className="text-xs sm:text-sm text-gray-500">
                 Duration {service.duration} minutes
               </p>
             </div>
@@ -111,9 +116,14 @@ const ServiceCard = ({ service }: { service: HairMakeupService }) => {
 
           <div
             ref={descriptionRef}
-            className={`text-gray-600 text-sm text-left transition-all duration-200 ${
-              isOpen ? "" : "line-clamp-1"
-            }`}
+            className={isOpen ? "" : "line-clamp-1"}
+            style={{
+              wordBreak: "break-word",
+              overflowWrap: "break-word",
+              whiteSpace: "pre-wrap",
+              color: "#4B5563", // text-gray-600
+              fontSize: "0.875rem", // text-sm
+            }}
           >
             {service.description}
           </div>
@@ -137,12 +147,53 @@ export default function MakeupDetailsPage() {
     message: "",
   });
   const params = useParams();
+  const [contactHistory, setContactHistory] = useState<{
+    contacted_at: string;
+  } | null>(null);
+  const [isLoginOpen, setIsLoginOpen] = useState(false);
+  const [isSignUpOpen, setIsSignUpOpen] = useState(false);
+
+  const handleLoginClose = () => setIsLoginOpen(false);
+  const handleSignUpClose = () => setIsSignUpOpen(false);
+  const handleSwitchToSignUp = () => {
+    setIsLoginOpen(false);
+    setIsSignUpOpen(true);
+  };
+  const handleSwitchToLogin = () => {
+    setIsSignUpOpen(false);
+    setIsLoginOpen(true);
+  };
 
   useEffect(() => {
     if (params.id) {
       loadHairMakeupDetails();
     }
   }, [params.id]);
+
+  useEffect(() => {
+    const loadContactHistory = async () => {
+      if (!user?.id || !params.id) return;
+
+      const { data, error } = await supabase
+        .from("contact_history")
+        .select("contacted_at")
+        .eq("user_id", user.id)
+        .eq("listing_id", params.id)
+        .eq("service_type", "hairMakeup")
+        .order("contacted_at", { ascending: false })
+        .limit(1)
+        .single();
+
+      if (error && error.code !== "PGRST116") {
+        console.error("Error:", error);
+        return;
+      }
+
+      setContactHistory(data);
+    };
+
+    loadContactHistory();
+  }, [user?.id, params.id]);
 
   const loadHairMakeupDetails = async () => {
     try {
@@ -201,8 +252,12 @@ export default function MakeupDetailsPage() {
     e.preventDefault();
     setIsSubmitting(true);
 
+    if (!user?.id) {
+      toast.error("Please login to send an inquiry");
+      return;
+    }
     if (!hairMakeup) {
-      toast.error("Hair & Makeup Artist information not found");
+      toast.error("Hair & Makeup information not found");
       return;
     }
 
@@ -225,6 +280,41 @@ export default function MakeupDetailsPage() {
         const error = await response.json();
         throw new Error(error.message || "Failed to send inquiry");
       }
+
+      // First check if contact history exists
+      const { data: existingContact } = await supabase
+        .from("contact_history")
+        .select("id")
+        .eq("user_id", user.id)
+        .eq("listing_id", hairMakeup.id)
+        .eq("service_type", "hairMakeup")
+        .single();
+
+      if (existingContact) {
+        // Update existing contact history
+        const { error: updateError } = await supabase
+          .from("contact_history")
+          .update({ contacted_at: new Date().toISOString() })
+          .eq("id", existingContact.id);
+
+        if (updateError) throw updateError;
+      } else {
+        // Create new contact history
+        const { error: insertError } = await supabase
+          .from("contact_history")
+          .insert({
+            user_id: user.id,
+            listing_id: hairMakeup.id,
+            service_type: "hairMakeup",
+          });
+
+        if (insertError) throw insertError;
+      }
+
+      // Update state with new contact time
+      setContactHistory({
+        contacted_at: new Date().toISOString(),
+      });
 
       // If inquiry was successful, increment the counter
       const { error: updateError } = await supabase
@@ -372,40 +462,34 @@ export default function MakeupDetailsPage() {
         )}
 
         {/* Artist Header - Improved mobile layout */}
-        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-4 mb-8">
-          <div className="flex-1">
-            <div className="flex flex-wrap items-center gap-2 sm:gap-3 mb-2">
-              <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-gray-900">
-                {hairMakeup.business_name}
-              </h1>
-              <div className="inline-flex items-center px-3 py-1 rounded-full bg-white border border-gray-200 text-sm font-medium">
+        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-3 sm:gap-4 mb-6 sm:mb-8">
+          <div className="flex-grow min-w-0">
+            <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-gray-900 break-words">
+              {hairMakeup.business_name}
+              <div className="inline-flex items-center px-3 py-1 rounded-full bg-white border border-gray-200 text-sm font-medium whitespace-normal">
                 {hairMakeup.service_type === "both"
                   ? "Hair & Makeup"
-                  : hairMakeup.service_type === "makeup"
-                  ? "Makeup"
-                  : "Hair"}
+                  : hairMakeup.service_type === "hair"
+                  ? "Hair"
+                  : "Makeup"}
               </div>
-            </div>
-            <p className="text-sm sm:text-base text-gray-600">
+            </h1>
+            <p className="text-sm sm:text-base text-gray-600 break-words mt-2">
               {hairMakeup.is_remote_business
                 ? `${hairMakeup.city}, ${hairMakeup.state} (Remote)`
                 : `${hairMakeup.address}, ${hairMakeup.city}, ${hairMakeup.state}`}
             </p>
           </div>
-
-          {/* Price Range - Right aligned */}
-          {hairMakeup.min_service_price && (
-            <div className="flex flex-col items-end">
-              <div className="text-2xl sm:text-3xl font-semibold text-green-800">
-                {hairMakeup.min_service_price === hairMakeup.max_service_price
-                  ? `$${hairMakeup.max_service_price.toLocaleString()}`
-                  : `$${hairMakeup.min_service_price.toLocaleString()} - $${hairMakeup.max_service_price.toLocaleString()}`}
-              </div>
-              <p className="text-xs sm:text-sm text-gray-500">
-                (See Services & Pricing)
-              </p>
+          <div className="flex flex-col items-end flex-shrink-0 text-right">
+            <div className="text-2xl sm:text-3xl font-semibold text-green-800">
+              {hairMakeup.min_service_price === hairMakeup.max_service_price
+                ? `$${hairMakeup.max_service_price.toLocaleString()}`
+                : `$${hairMakeup.min_service_price.toLocaleString()} - $${hairMakeup.max_service_price.toLocaleString()}`}
             </div>
-          )}
+            <p className="text-xs sm:text-sm text-gray-500">
+              (See Services & Pricing)
+            </p>
+          </div>
         </div>
 
         {/* Info Grid - Modern card layout for all screen sizes */}
@@ -480,101 +564,136 @@ export default function MakeupDetailsPage() {
 
         {/* Contact Form - More compact on mobile */}
         {user?.id !== hairMakeup.user_id ? (
-          <div className="mb-8 sm:mb-12">
-            <h2 className="text-lg sm:text-xl md:text-2xl font-bold mb-4 sm:mb-6 text-center">
-              Contact {hairMakeup.business_name}
-            </h2>
-            <div className="max-w-2xl mx-auto bg-gray-50 p-4 sm:p-6 rounded-lg">
-              <form onSubmit={handleInquirySubmit} className="space-y-4">
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      First Name
-                    </label>
-                    <Input
-                      name="firstName"
-                      value={inquiryForm.firstName}
-                      onChange={handleInputChange}
-                      required
-                      className="text-sm sm:text-base"
-                    />
+          <div className="mb-12">
+            <div className="text-center">
+              <h2 className="text-xl md:text-2xl font-bold mb-2">
+                Contact {hairMakeup.business_name}
+              </h2>
+              {contactHistory && (
+                <p className="text-sm text-gray-600 mb-6">
+                  Last contacted{" "}
+                  {new Date(contactHistory.contacted_at).toLocaleDateString()}{" "}
+                  at{" "}
+                  {new Date(contactHistory.contacted_at).toLocaleTimeString()}
+                </p>
+              )}
+            </div>
+            <div className="max-w-2xl mx-auto">
+              {user ? (
+                <div className="bg-gray-50 p-4 md:p-6 rounded-lg">
+                  <form onSubmit={handleInquirySubmit} className="space-y-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          First Name
+                        </label>
+                        <Input
+                          name="firstName"
+                          value={inquiryForm.firstName}
+                          onChange={handleInputChange}
+                          required
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          Last Name
+                        </label>
+                        <Input
+                          name="lastName"
+                          value={inquiryForm.lastName}
+                          onChange={handleInputChange}
+                          required
+                        />
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Email
+                      </label>
+                      <Input
+                        type="email"
+                        name="email"
+                        value={inquiryForm.email}
+                        onChange={handleInputChange}
+                        required
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Phone
+                      </label>
+                      <Input
+                        type="tel"
+                        name="phone"
+                        value={inquiryForm.phone}
+                        onChange={handleInputChange}
+                        required
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Event Date
+                      </label>
+                      <Input
+                        type="date"
+                        name="eventDate"
+                        value={inquiryForm.eventDate}
+                        onChange={handleInputChange}
+                        required
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Message
+                      </label>
+                      <textarea
+                        name="message"
+                        value={inquiryForm.message}
+                        onChange={handleInputChange}
+                        rows={4}
+                        className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-transparent text-sm sm:text-base"
+                        placeholder="Tell us about your event and requirements..."
+                        required
+                      />
+                    </div>
+
+                    <Button
+                      type="submit"
+                      disabled={isSubmitting}
+                      className="w-full bg-black hover:bg-stone-800 text-sm sm:text-base py-2 sm:py-3"
+                    >
+                      {isSubmitting ? "Sending..." : "Send Inquiry"}
+                    </Button>
+                  </form>
+                </div>
+              ) : (
+                <div className="bg-gray-50 p-8 rounded-lg text-center">
+                  <div className="max-w-md mx-auto">
+                    <h3 className="text-xl font-semibold mb-3">
+                      Ready to connect?
+                    </h3>
+                    <p className="text-gray-600 mb-6">
+                      Sign in to contact {hairMakeup.business_name} and manage
+                      all your wedding vendor communications in one place. It's
+                      absolutely free!
+                    </p>
+                    <Button
+                      onClick={() => setIsLoginOpen(true)}
+                      className="w-full bg-black hover:bg-stone-800 text-sm sm:text-base py-3"
+                    >
+                      Sign in to Contact
+                    </Button>
+                    <p className="text-sm text-gray-500 mt-4">
+                      New to our platform? Creating an account takes less than a
+                      minute
+                    </p>
                   </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Last Name
-                    </label>
-                    <Input
-                      name="lastName"
-                      value={inquiryForm.lastName}
-                      onChange={handleInputChange}
-                      required
-                      className="text-sm sm:text-base"
-                    />
-                  </div>
                 </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Email
-                  </label>
-                  <Input
-                    type="email"
-                    name="email"
-                    value={inquiryForm.email}
-                    onChange={handleInputChange}
-                    required
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Phone
-                  </label>
-                  <Input
-                    type="tel"
-                    name="phone"
-                    value={inquiryForm.phone}
-                    onChange={handleInputChange}
-                    required
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Event Date
-                  </label>
-                  <Input
-                    type="date"
-                    name="eventDate"
-                    value={inquiryForm.eventDate}
-                    onChange={handleInputChange}
-                    required
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Message
-                  </label>
-                  <textarea
-                    name="message"
-                    value={inquiryForm.message}
-                    onChange={handleInputChange}
-                    rows={4}
-                    className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-transparent text-sm sm:text-base"
-                    placeholder="Tell us about your event and requirements..."
-                    required
-                  />
-                </div>
-
-                <Button
-                  type="submit"
-                  disabled={isSubmitting}
-                  className="w-full bg-black hover:bg-stone-500 text-sm sm:text-base py-2 sm:py-3"
-                >
-                  {isSubmitting ? "Sending..." : "Send Inquiry"}
-                </Button>
-              </form>
+              )}
             </div>
           </div>
         ) : (
@@ -584,6 +703,16 @@ export default function MakeupDetailsPage() {
             </p>
           </div>
         )}
+
+        {/* Auth Modals */}
+        <AuthModals
+          isLoginOpen={isLoginOpen}
+          isSignUpOpen={isSignUpOpen}
+          onLoginClose={handleLoginClose}
+          onSignUpClose={handleSignUpClose}
+          onSwitchToSignUp={handleSwitchToSignUp}
+          onSwitchToLogin={handleSwitchToLogin}
+        />
       </div>
       <Footer />
     </div>

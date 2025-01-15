@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { User, Bell, CreditCard, Shield, LogOut } from "lucide-react";
+import { User, Bell, CreditCard, Shield, LogOut, Trash2 } from "lucide-react";
 import NavBar from "@/components/ui/NavBar";
 import Footer from "@/components/ui/Footer";
 import { Input } from "@/components/ui/input";
@@ -46,14 +46,16 @@ const SectionLayout = ({
 );
 
 const AccountSettings = () => {
-  const { user } = useAuth();
+  const { user, signOut } = useAuth();
   const [email, setEmail] = useState(user?.email || "");
   const [isVendor, setIsVendor] = useState(false);
   const [showVendorDialog, setShowVendorDialog] = useState(false);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [pendingVendorState, setPendingVendorState] = useState(false);
   const [loading, setLoading] = useState({
     email: false,
     vendor: false,
+    delete: false,
   });
 
   // Fetch vendor status on component mount
@@ -128,34 +130,26 @@ const AccountSettings = () => {
 
     setLoading((prev) => ({ ...prev, vendor: true }));
     try {
-      // Call RPC with appropriate flag
       const { error } = await supabase.rpc("delete_all_vendor_listings", {
         vendor_id: user.id,
-        is_becoming_vendor: !isVendor, // true when switching TO vendor
+        is_becoming_vendor: !isVendor,
       });
 
-      if (error) {
-        console.error("Delete error:", error);
-        throw error;
-      }
+      if (error) throw error;
 
-      // Update vendor status
       const { error: updateError } = await supabase
         .from("user_preferences")
         .update({ is_vendor: !isVendor })
         .eq("id", user.id);
 
-      if (updateError) {
-        console.error("Update error:", updateError);
-        throw updateError;
-      }
+      if (updateError) throw updateError;
 
       setIsVendor(!isVendor);
       setShowVendorDialog(false);
       toast.success(
         isVendor
-          ? "Successfully switched to non-vendor account. All listings have been removed."
-          : "Successfully switched to vendor account. All quick reaches have been removed."
+          ? "Successfully switched to non-vendor account"
+          : "Successfully switched to vendor account"
       );
     } catch (error: any) {
       console.error("Error updating vendor status:", error);
@@ -165,93 +159,170 @@ const AccountSettings = () => {
     }
   };
 
-  return (
-    <SectionLayout title="" description="">
-      <div className="divide-y divide-gray-200">
-        {/* Account Type Section */}
-        <div className="pb-8">
-          <div className="mb-6">
-            <h4 className="text-lg font-medium text-gray-900">Account Type</h4>
-            <p className="text-sm text-gray-500 mt-1">
-              Manage your vendor status and capabilities
-            </p>
-          </div>
-          <div className="bg-gray-50 rounded-lg p-4">
-            <div className="flex items-center justify-between mb-4">
-              <div>
-                <p className="text-sm font-medium text-gray-700">
-                  Vendor Account
-                </p>
-                <p className="text-sm text-gray-500">
-                  Enable vendor capabilities for your account
-                </p>
-              </div>
-              <Switch
-                checked={isVendor}
-                onCheckedChange={initiateVendorToggle}
-                disabled={loading.vendor}
-              />
-            </div>
-            <p className="text-xs text-gray-500">
-              {isVendor
-                ? "Switch back to non-vendor to better find what you are looking for."
-                : "Switch to a vendor account to list your service and get bookings."}
-            </p>
-          </div>
-        </div>
+  const handleDeleteAccount = async () => {
+    if (!user?.id) return;
+    setLoading((prev) => ({ ...prev, delete: true }));
 
-        {/* Email Settings Section */}
-        <div className="pt-8">
-          <div className="mb-6">
-            <h4 className="text-lg font-medium text-gray-900">
-              Email Settings
-            </h4>
-            <p className="text-sm text-gray-500 mt-1">
-              Update your email address and preferences
-            </p>
-          </div>
-          <form onSubmit={handleUpdateEmail}>
-            <div className="bg-gray-50 rounded-lg p-4 space-y-4">
-              <div>
-                <label
-                  htmlFor="current-email"
-                  className="block text-sm font-medium text-gray-700"
-                >
-                  Current Email
-                </label>
-                <p className="text-sm text-gray-500 mt-1">{user?.email}</p>
-              </div>
-              <div>
-                <label
-                  htmlFor="new-email"
-                  className="block text-sm font-medium text-gray-700"
-                >
-                  New Email Address
-                </label>
-                <Input
-                  id="new-email"
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  disabled={loading.email}
-                  placeholder="Enter new email address"
-                  aria-label="New email address"
-                  className="mt-1"
-                />
-              </div>
-              <div className="pt-2">
-                <button
-                  type="submit"
-                  disabled={loading.email || email === user?.email}
-                  className="bg-black text-white px-4 py-2 rounded-lg hover:bg-stone-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  {loading.email ? "Updating Email..." : "Update Email"}
-                </button>
-              </div>
+    try {
+      // Delete all user data including auth user using the RPC function
+      const { data: deletionResult, error: deleteError } = await supabase.rpc(
+        "delete_user_data",
+        {
+          uid: user.id,
+          is_vendor: isVendor,
+        }
+      );
+
+      if (deleteError) throw deleteError;
+
+      if (!deletionResult.success) {
+        throw new Error(deletionResult.error || "Failed to delete account");
+      }
+
+      // Show success message
+      toast.success("Your account has been successfully deleted");
+
+      // Sign out from all devices
+      const { error: signOutError } = await supabase.auth.signOut({
+        scope: "global",
+      });
+
+      if (signOutError) {
+        console.error("Error signing out:", signOutError);
+      }
+
+      // Clear any local auth state
+      window.localStorage.removeItem("supabase.auth.token");
+
+      // Force reload the page to clear all state and redirect to home
+      window.location.href = "/";
+      window.location.reload();
+    } catch (error) {
+      console.error("Error during account deletion:", error);
+      const errorMessage =
+        error instanceof Error
+          ? error.message
+          : "Failed to delete account. Please try again later.";
+      toast.error(errorMessage);
+    } finally {
+      setLoading((prev) => ({ ...prev, delete: false }));
+      setShowDeleteDialog(false);
+    }
+  };
+
+  return (
+    <div className="divide-y divide-gray-200">
+      {/* Account Type Section */}
+      <div className="pb-8">
+        <div className="mb-6">
+          <h4 className="text-lg font-medium text-gray-900">Account Type</h4>
+          <p className="text-sm text-gray-500 mt-1">
+            Manage your vendor status and capabilities
+          </p>
+        </div>
+        <div className="bg-gray-50 rounded-lg p-4">
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <p className="text-sm font-medium text-gray-700">
+                Vendor Account
+              </p>
+              <p className="text-sm text-gray-500">
+                Enable vendor capabilities for your account
+              </p>
             </div>
-          </form>
+            <Switch
+              checked={isVendor}
+              onCheckedChange={initiateVendorToggle}
+              disabled={loading.vendor}
+            />
+          </div>
+          <p className="text-xs text-gray-500">
+            {isVendor
+              ? "Switch back to non-vendor to better find what you are looking for."
+              : "Switch to a vendor account to list your service and get bookings."}
+          </p>
         </div>
       </div>
+
+      {/* Email Settings Section */}
+      <div className="py-8">
+        <div className="mb-6">
+          <h4 className="text-lg font-medium text-gray-900">Email Settings</h4>
+          <p className="text-sm text-gray-500 mt-1">
+            Update your email address and preferences
+          </p>
+        </div>
+        <form onSubmit={handleUpdateEmail}>
+          <div className="bg-gray-50 rounded-lg p-4 space-y-4">
+            <div>
+              <label
+                htmlFor="current-email"
+                className="block text-sm font-medium text-gray-700"
+              >
+                Current Email
+              </label>
+              <p className="text-sm text-gray-500 mt-1">{user?.email}</p>
+            </div>
+            <div>
+              <label
+                htmlFor="new-email"
+                className="block text-sm font-medium text-gray-700"
+              >
+                New Email Address
+              </label>
+              <Input
+                id="new-email"
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                disabled={loading.email}
+                placeholder="Enter new email address"
+                aria-label="New email address"
+                className="mt-1"
+              />
+            </div>
+            <div className="pt-2">
+              <button
+                type="submit"
+                disabled={loading.email || email === user?.email}
+                className="bg-black text-white px-4 py-2 rounded-lg hover:bg-stone-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {loading.email ? "Updating Email..." : "Update Email"}
+              </button>
+            </div>
+          </div>
+        </form>
+      </div>
+
+      {/* Deactivate Account Section */}
+      <div className="pt-8">
+        <div className="mb-6">
+          <h4 className="text-lg font-medium text-gray-900">
+            Deactivate Account
+          </h4>
+          <p className="text-sm text-gray-500 mt-1">
+            Permanently delete your account and all associated data
+          </p>
+        </div>
+        <div className="bg-red-50 rounded-lg p-4">
+          <p className="text-sm text-red-600 mb-4">
+            Once you delete your account, there is no going back. This action is
+            permanent and will remove all your data.
+          </p>
+          <button
+            onClick={() => setShowDeleteDialog(true)}
+            disabled={loading.delete}
+            className="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-2"
+          >
+            <Trash2 size={16} />
+            <span>
+              {loading.delete ? "Deleting Account..." : "Delete Account"}
+            </span>
+          </button>
+        </div>
+      </div>
+
+      {/* Dialogs */}
       <AlertDialog open={showVendorDialog} onOpenChange={setShowVendorDialog}>
         <AlertDialogContent>
           <AlertDialogHeader>
@@ -260,18 +331,10 @@ const AccountSettings = () => {
                 ? "Enable Vendor Account?"
                 : "Disable Vendor Account?"}
             </AlertDialogTitle>
-            <AlertDialogDescription>
-              {pendingVendorState ? (
-                <span className="text-red-700">
-                  Warning: Enabling vendor status will permanently delete all
-                  your current Quick Reaches. This action cannot be undone.
-                </span>
-              ) : (
-                <span className="text-red-700">
-                  Warning: Disabling vendor status will permanently delete all
-                  your current listings. This action cannot be undone.
-                </span>
-              )}
+            <AlertDialogDescription className="text-red-700">
+              {pendingVendorState
+                ? "Warning: Enabling vendor status will permanently delete all your current Quick Reaches. This action cannot be undone."
+                : "Warning: Disabling vendor status will permanently delete all your current listings. This action cannot be undone."}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -287,7 +350,34 @@ const AccountSettings = () => {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-    </SectionLayout>
+
+      {/* Delete Account Dialog */}
+      <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Account</AlertDialogTitle>
+            <div className="space-y-2">
+              <AlertDialogDescription className="text-red-600 font-medium">
+                Warning: This action cannot be undone.
+              </AlertDialogDescription>
+              <AlertDialogDescription>
+                This will permanently delete your account and remove all your
+                data from our systems. Are you sure you want to continue?
+              </AlertDialogDescription>
+            </div>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDeleteAccount}
+              className="bg-red-600 text-white hover:bg-red-700"
+            >
+              Delete Account
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </div>
   );
 };
 
@@ -508,6 +598,7 @@ function SettingsPage() {
   const menuItems = [
     { id: "account", label: "Account", icon: User },
     { id: "security", label: "Security", icon: Shield },
+
     // { id: "notifications", label: "Notifications", icon: Bell },
     // { id: "payments", label: "Payments", icon: CreditCard },
   ];
@@ -555,7 +646,7 @@ function SettingsPage() {
 
                     <button
                       onClick={() => setShowLogoutDialog(true)}
-                      className="w-full flex items-center space-x-3 px-4 py-3 text-sm  text-red-600 hover:bg-red-50 transition-colors"
+                      className="w-full flex items-center space-x-3 px-4 py-3 text-sm text-red-600 hover:bg-red-50 transition-colors"
                     >
                       <LogOut size={20} />
                       <span>Logout</span>

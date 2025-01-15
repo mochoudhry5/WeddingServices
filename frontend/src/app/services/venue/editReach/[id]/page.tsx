@@ -211,11 +211,14 @@ export default function VenueEditPage() {
   const nextStep = () => {
     if (validateCurrentStep()) {
       setCurrentStep((prev) => Math.min(prev + 1, totalSteps));
+      // Scroll to top of the page smoothly
+      window.scrollTo({ top: 0, behavior: "smooth" });
     }
   };
 
   const prevStep = () => {
     setCurrentStep((prev) => Math.max(prev - 1, 1));
+    window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
   const handleCancel = () => {
@@ -650,7 +653,7 @@ export default function VenueEditPage() {
                           />
                           <p className="mt-1 text-sm text-gray-500">
                             Include any specific requirements or questions you
-                            have for the venue
+                            have for the Venue
                           </p>
                         </div>
                       </div>

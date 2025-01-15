@@ -240,7 +240,7 @@ export default function LeadDetailsPage() {
                 <div className="bg-white rounded-xl shadow-lg p-8">
                   {/* Header Section */}
                   <div className="pb-6">
-                    <h1 className="text-2xl font-semibold text-gray-900">
+                    <h1 className="text-2xl font-semibold text-gray-900 break-words">
                       {lead.first_name || ""} {lead.last_name || ""}
                     </h1>
                     {lead.created_at && (
@@ -249,6 +249,7 @@ export default function LeadDetailsPage() {
                       </p>
                     )}
                   </div>
+
                   {/* Service Information */}
                   <section>
                     <h2 className="text-lg font-medium text-gray-900 mb-4">
@@ -257,8 +258,8 @@ export default function LeadDetailsPage() {
                     <div className="space-y-6">
                       {/* Service Type */}
                       <div className="flex items-center text-gray-600">
-                        <Building2 className="h-5 w-5 mr-3" />
-                        <span>
+                        <Building2 className="h-5 w-5 mr-3 flex-shrink-0" />
+                        <span className="break-words">
                           {type === "venue" && "Venue"}
                           {type === "dj" && "DJ"}
                           {type === "weddingPlanner" &&
@@ -287,19 +288,23 @@ export default function LeadDetailsPage() {
                               : "Hair & Makeup")}
                         </span>
                       </div>
+
+                      {/* DJ Genres */}
                       {type === "dj" && lead.genres?.length > 0 && (
                         <div className="mt-4">
                           <div className="text-sm font-medium text-gray-700 mb-3">
                             Music Preferences:
                           </div>
-                          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+                          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                             {lead.genres.map((genre: any) => (
                               <div
                                 key={genre.id}
-                                className="p-3 rounded-lg border border-black bg-stone-100 flex items-center gap-2"
+                                className="p-3 rounded-lg border border-black bg-stone-100 flex items-center gap-2 break-words"
                               >
-                                <span className="text-green-800">✓</span>
-                                <span className="text-sm text-gray-900 capitalize">
+                                <span className="text-green-800 flex-shrink-0">
+                                  ✓
+                                </span>
+                                <span className="text-sm text-gray-900 capitalize break-words">
                                   {genre.genre.replace(/-/g, " ")}
                                 </span>
                               </div>
@@ -307,6 +312,7 @@ export default function LeadDetailsPage() {
                           </div>
                         </div>
                       )}
+
                       {/* Styles for Photo/Video or Hair/Makeup */}
                       {(type === "photoVideo" || type === "hairMakeup") &&
                         lead.styles?.length > 0 && (
@@ -314,14 +320,16 @@ export default function LeadDetailsPage() {
                             <div className="text-sm font-medium text-gray-700 mb-3">
                               Preferred Styles:
                             </div>
-                            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                               {lead.styles.map((style: any) => (
                                 <div
                                   key={style.id}
-                                  className="p-3 rounded-lg border border-black bg-stone-100 flex items-center gap-2"
+                                  className="p-3 rounded-lg border border-black bg-stone-100 flex items-center gap-2 break-words"
                                 >
-                                  <span className="text-green-800">✓</span>
-                                  <span className="text-sm text-gray-900 capitalize">
+                                  <span className="text-green-800 flex-shrink-0">
+                                    ✓
+                                  </span>
+                                  <span className="text-sm text-gray-900 capitalize break-words">
                                     {style.style.replace(/-/g, " ")}
                                   </span>
                                 </div>
@@ -336,12 +344,14 @@ export default function LeadDetailsPage() {
                           <div className="text-sm font-medium text-gray-700 mb-3">
                             Venue Requirements:
                           </div>
-                          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+                          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                             {/* Guest Count */}
                             {(lead.min_guests || lead.max_guests) && (
                               <div className="p-3 rounded-lg border border-black bg-stone-100 flex items-center gap-2">
-                                <span className="text-green-800">✓</span>
-                                <span className="text-sm text-gray-900">
+                                <span className="text-green-800 flex-shrink-0">
+                                  ✓
+                                </span>
+                                <span className="text-sm text-gray-900 break-words">
                                   {lead.min_guests
                                     ? `${lead.min_guests} - `
                                     : ""}
@@ -351,36 +361,38 @@ export default function LeadDetailsPage() {
                             )}
 
                             {/* Venue Type */}
-                            {lead.venue_type && (
-                              <div className="p-3 rounded-lg border border-black bg-stone-100 flex items-center gap-2">
-                                <span className="text-green-800">✓</span>
-                                <span className="text-sm text-gray-900">
-                                  {lead.venue_type === "indoor"
-                                    ? "Indoor Venue"
-                                    : lead.venue_type === "outdoor"
-                                    ? "Outdoor Venue"
-                                    : lead.venue_type === "both"
-                                    ? "Indoor & Outdoor"
-                                    : "No Preference"}
-                                </span>
-                              </div>
-                            )}
+                            {lead.venue_type &&
+                              lead.venue_type !== "no-preference" && (
+                                <div className="p-3 rounded-lg border border-black bg-stone-100 flex items-center gap-2">
+                                  <span className="text-green-800 flex-shrink-0">
+                                    ✓
+                                  </span>
+                                  <span className="text-sm text-gray-900 break-words">
+                                    {lead.venue_type === "indoor"
+                                      ? "Indoor Venue"
+                                      : lead.venue_type === "outdoor"
+                                      ? "Outdoor Venue"
+                                      : "Indoor & Outdoor"}
+                                  </span>
+                                </div>
+                              )}
 
                             {/* Catering Preference */}
-                            {lead.catering_preference && (
-                              <div className="p-3 rounded-lg border border-black bg-stone-100 flex items-center gap-2">
-                                <span className="text-green-800">✓</span>
-                                <span className="text-sm text-gray-900">
-                                  {lead.catering_preference === "in-house"
-                                    ? "In-House Catering"
-                                    : lead.catering_preference === "outside"
-                                    ? "Outside Catering"
-                                    : lead.catering_preference === "both"
-                                    ? "In-House & Outside Catering"
-                                    : "No Preference"}
-                                </span>
-                              </div>
-                            )}
+                            {lead.catering_preference &&
+                              lead.catering_preference !== "no-preference" && (
+                                <div className="p-3 rounded-lg border border-black bg-stone-100 flex items-center gap-2">
+                                  <span className="text-green-800 flex-shrink-0">
+                                    ✓
+                                  </span>
+                                  <span className="text-sm text-gray-900 break-words">
+                                    {lead.catering_preference === "in-house"
+                                      ? "In-House Catering"
+                                      : lead.catering_preference === "outside"
+                                      ? "Outside Catering"
+                                      : "In-House & Outside Catering"}
+                                  </span>
+                                </div>
+                              )}
                           </div>
                         </div>
                       )}
@@ -394,22 +406,26 @@ export default function LeadDetailsPage() {
                     </h2>
                     <div className="space-y-3">
                       {lead.email && (
-                        <a
-                          href={`mailto:${lead.email}`}
-                          className="flex items-center text-gray-600 hover:text-gray-900"
-                        >
-                          <Mail className="h-5 w-5 mr-3" />
-                          {lead.email}
-                        </a>
+                        <div className="break-all">
+                          <a
+                            href={`mailto:${lead.email}`}
+                            className="flex items-center gap-3 text-gray-600 hover:text-gray-900"
+                          >
+                            <Mail className="h-5 w-5 flex-shrink-0" />
+                            <span className="break-all">{lead.email}</span>
+                          </a>
+                        </div>
                       )}
                       {lead.phone && (
-                        <a
-                          href={`tel:${lead.phone}`}
-                          className="flex items-center text-gray-600 hover:text-gray-900"
-                        >
-                          <Phone className="h-5 w-5 mr-3" />
-                          {formatPhoneNumber(lead.phone)}
-                        </a>
+                        <div className="break-all">
+                          <a
+                            href={`tel:${lead.phone}`}
+                            className="flex items-center gap-3 text-gray-600 hover:text-gray-900"
+                          >
+                            <Phone className="h-5 w-5 flex-shrink-0" />
+                            <span>{formatPhoneNumber(lead.phone)}</span>
+                          </a>
+                        </div>
                       )}
                     </div>
                   </section>
@@ -422,33 +438,40 @@ export default function LeadDetailsPage() {
                     <div className="space-y-3">
                       {lead.event_date && (
                         <div className="flex items-center text-gray-600">
-                          <Calendar className="h-5 w-5 mr-3" />
-                          {formatDate(lead.event_date)}
+                          <Calendar className="h-5 w-5 mr-3 flex-shrink-0" />
+                          <span className="break-words">
+                            {formatDate(lead.event_date)}
+                          </span>
                         </div>
                       )}
                       {lead.city && lead.state && (
                         <div className="flex items-center text-gray-600">
-                          <MapPin className="h-5 w-5 mr-3" />
-                          {lead.city}, {lead.state}
+                          <MapPin className="h-5 w-5 mr-3 flex-shrink-0" />
+                          <span className="break-words">
+                            {lead.city}, {lead.state}
+                          </span>
                         </div>
                       )}
                       {typeof lead.budget === "number" && (
                         <div className="flex items-center text-gray-600">
-                          <DollarSign className="h-5 w-5 mr-3" />$
-                          {lead.budget.toLocaleString()}
+                          <DollarSign className="h-5 w-5 mr-3 flex-shrink-0" />
+                          <span>${lead.budget.toLocaleString()}</span>
                         </div>
                       )}
                     </div>
                   </section>
+
                   {/* Message */}
                   {lead.message && (
                     <section className="pt-8">
                       <h2 className="text-lg font-medium text-gray-900 mb-4">
                         Additional Message
                       </h2>
-                      <p className="text-gray-600 whitespace-pre-wrap">
-                        {lead.message}
-                      </p>
+                      <div className="bg-white rounded-lg">
+                        <p className="text-gray-600 whitespace-pre-wrap break-words">
+                          {lead.message}
+                        </p>
+                      </div>
                     </section>
                   )}
                 </div>

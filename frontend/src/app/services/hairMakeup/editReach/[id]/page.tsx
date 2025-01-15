@@ -269,11 +269,14 @@ export default function HairMakeupEditPage() {
   const nextStep = () => {
     if (validateCurrentStep()) {
       setCurrentStep((prev) => Math.min(prev + 1, totalSteps));
+      // Scroll to top of the page smoothly
+      window.scrollTo({ top: 0, behavior: "smooth" });
     }
   };
 
   const prevStep = () => {
     setCurrentStep((prev) => Math.max(prev - 1, 1));
+    window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
   const handleCancel = () => {
@@ -751,7 +754,7 @@ export default function HairMakeupEditPage() {
                                     <Input
                                       value={style}
                                       onChange={(e) => {
-                                        if (e.target.value.length <= 25) {
+                                        if (e.target.value.length <= 20) {
                                           const newStyles = [
                                             ...customMakeupStyles,
                                           ];
@@ -866,7 +869,7 @@ export default function HairMakeupEditPage() {
                                     <Input
                                       value={style}
                                       onChange={(e) => {
-                                        if (e.target.value.length <= 25) {
+                                        if (e.target.value.length <= 20) {
                                           const newStyles = [
                                             ...customHairStyles,
                                           ];
@@ -914,7 +917,7 @@ export default function HairMakeupEditPage() {
                           />
                           <p className="mt-1 text-sm text-gray-500">
                             Include any specific requirements or questions you
-                            have
+                            have for the Hair/Makeup Artist.
                           </p>
                         </div>
                       </div>

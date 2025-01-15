@@ -189,11 +189,14 @@ const HairMakeupInquiryForm = () => {
   const nextStep = () => {
     if (validateCurrentStep()) {
       setCurrentStep((prev) => Math.min(prev + 1, totalSteps));
+      // Scroll to top of the page smoothly
+      window.scrollTo({ top: 0, behavior: "smooth" });
     }
   };
 
   const prevStep = () => {
     setCurrentStep((prev) => Math.max(prev - 1, 1));
+    window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
   const handleCancel = () => {
@@ -657,7 +660,7 @@ const HairMakeupInquiryForm = () => {
                                     <Input
                                       value={style}
                                       onChange={(e) => {
-                                        if (e.target.value.length <= 25) {
+                                        if (e.target.value.length <= 20) {
                                           const newStyles = [
                                             ...customMakeupStyles,
                                           ];
@@ -772,7 +775,7 @@ const HairMakeupInquiryForm = () => {
                                     <Input
                                       value={style}
                                       onChange={(e) => {
-                                        if (e.target.value.length <= 25) {
+                                        if (e.target.value.length <= 20) {
                                           const newStyles = [
                                             ...customHairStyles,
                                           ];
@@ -820,7 +823,7 @@ const HairMakeupInquiryForm = () => {
                           />
                           <p className="mt-1 text-sm text-gray-500">
                             Include any specific requirements or questions you
-                            have
+                            have for the Hair/Makeup Artist.
                           </p>
                         </div>
                       </div>

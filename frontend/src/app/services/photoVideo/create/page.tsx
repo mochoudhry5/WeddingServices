@@ -403,11 +403,14 @@ const CreatePhotographyListing = () => {
   const nextStep = () => {
     if (validateCurrentStep()) {
       setCurrentStep((prev) => Math.min(prev + 1, totalSteps));
+      // Scroll to top of the page smoothly
+      window.scrollTo({ top: 0, behavior: "smooth" });
     }
   };
 
   const prevStep = () => {
     setCurrentStep((prev) => Math.max(prev - 1, 1));
+    window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
   const handleCancel = () => {
@@ -722,7 +725,11 @@ const CreatePhotographyListing = () => {
                         </label>
                         <Input
                           value={businessName}
-                          onChange={(e) => setBusinessName(e.target.value)}
+                          onChange={(e) => {
+                            if (e.target.value.length <= 255) {
+                              setBusinessName(e.target.value);
+                            }
+                          }}
                           placeholder="Enter your name or business name"
                           className="w-full"
                           required
@@ -831,7 +838,7 @@ const CreatePhotographyListing = () => {
                           </SelectTrigger>
                           <SelectContent>
                             <SelectItem value="photography">
-                              Photgraphy
+                              Photography
                             </SelectItem>
                             <SelectItem value="videography">
                               Videography
@@ -927,7 +934,7 @@ const CreatePhotographyListing = () => {
                                     value={style}
                                     onChange={(e) => {
                                       // Limit input to 25 characters
-                                      if (e.target.value.length <= 25) {
+                                      if (e.target.value.length <= 20) {
                                         const newStyles = [
                                           ...customPhotoStyles,
                                         ];
@@ -1039,7 +1046,7 @@ const CreatePhotographyListing = () => {
                                     value={style}
                                     onChange={(e) => {
                                       // Limit input to 25 characters
-                                      if (e.target.value.length <= 25) {
+                                      if (e.target.value.length <= 20) {
                                         const newStyles = [
                                           ...customVideoStyles,
                                         ];
@@ -1304,15 +1311,17 @@ const CreatePhotographyListing = () => {
                                               .description
                                           }
                                           onChange={(e) => {
-                                            setSelectedServices({
-                                              ...selectedServices,
-                                              [service.name]: {
-                                                ...selectedServices[
-                                                  service.name
-                                                ],
-                                                description: e.target.value,
-                                              },
-                                            });
+                                            if (e.target.value.length <= 1000) {
+                                              setSelectedServices({
+                                                ...selectedServices,
+                                                [service.name]: {
+                                                  ...selectedServices[
+                                                    service.name
+                                                  ],
+                                                  description: e.target.value,
+                                                },
+                                              });
+                                            }
                                           }}
                                           placeholder="Describe the service..."
                                           rows={2}
@@ -1350,21 +1359,28 @@ const CreatePhotographyListing = () => {
                                               }
                                               onChange={(e) => {
                                                 const sanitizedValue =
-                                                  e.target.value;
-                                                setSelectedServices({
-                                                  ...selectedServices,
-                                                  [service.name]: {
-                                                    ...selectedServices[
-                                                      service.name
-                                                    ],
-                                                    price:
-                                                      sanitizedValue === ""
-                                                        ? 0
-                                                        : parseInt(
-                                                            sanitizedValue
-                                                          ),
-                                                  },
-                                                });
+                                                  e.target.value.replace(
+                                                    /[^\d]/g,
+                                                    ""
+                                                  );
+                                                if (
+                                                  sanitizedValue.length <= 6
+                                                ) {
+                                                  setSelectedServices({
+                                                    ...selectedServices,
+                                                    [service.name]: {
+                                                      ...selectedServices[
+                                                        service.name
+                                                      ],
+                                                      price:
+                                                        sanitizedValue === ""
+                                                          ? 0
+                                                          : parseInt(
+                                                              sanitizedValue
+                                                            ),
+                                                    },
+                                                  });
+                                                }
                                               }}
                                               onKeyDown={(e) => {
                                                 if (
@@ -1403,11 +1419,15 @@ const CreatePhotographyListing = () => {
                                               onChange={(e) => {
                                                 const sanitizedValue =
                                                   e.target.value;
-                                                // Allow any numeric input temporarily during typing
+                                                // Stricter validation: only allow up to 2 digits before decimal
                                                 if (
-                                                  /^\d*\.?\d{0,1}$/.test(
+                                                  /^([0-9]{1,2})?\.?[0-5]?$/.test(
                                                     sanitizedValue
-                                                  )
+                                                  ) &&
+                                                  (!sanitizedValue ||
+                                                    parseFloat(
+                                                      sanitizedValue
+                                                    ) <= 99.5)
                                                 ) {
                                                   setSelectedServices({
                                                     ...selectedServices,
@@ -1521,15 +1541,17 @@ const CreatePhotographyListing = () => {
                                               .description
                                           }
                                           onChange={(e) => {
-                                            setSelectedServices({
-                                              ...selectedServices,
-                                              [service.name]: {
-                                                ...selectedServices[
-                                                  service.name
-                                                ],
-                                                description: e.target.value,
-                                              },
-                                            });
+                                            if (e.target.value.length <= 1000) {
+                                              setSelectedServices({
+                                                ...selectedServices,
+                                                [service.name]: {
+                                                  ...selectedServices[
+                                                    service.name
+                                                  ],
+                                                  description: e.target.value,
+                                                },
+                                              });
+                                            }
                                           }}
                                           placeholder="Describe the service..."
                                           rows={2}
@@ -1567,21 +1589,28 @@ const CreatePhotographyListing = () => {
                                               }
                                               onChange={(e) => {
                                                 const sanitizedValue =
-                                                  e.target.value;
-                                                setSelectedServices({
-                                                  ...selectedServices,
-                                                  [service.name]: {
-                                                    ...selectedServices[
-                                                      service.name
-                                                    ],
-                                                    price:
-                                                      sanitizedValue === ""
-                                                        ? 0
-                                                        : parseInt(
-                                                            sanitizedValue
-                                                          ),
-                                                  },
-                                                });
+                                                  e.target.value.replace(
+                                                    /[^\d]/g,
+                                                    ""
+                                                  );
+                                                if (
+                                                  sanitizedValue.length <= 6
+                                                ) {
+                                                  setSelectedServices({
+                                                    ...selectedServices,
+                                                    [service.name]: {
+                                                      ...selectedServices[
+                                                        service.name
+                                                      ],
+                                                      price:
+                                                        sanitizedValue === ""
+                                                          ? 0
+                                                          : parseInt(
+                                                              sanitizedValue
+                                                            ),
+                                                    },
+                                                  });
+                                                }
                                               }}
                                               onKeyDown={(e) => {
                                                 if (
@@ -1620,11 +1649,15 @@ const CreatePhotographyListing = () => {
                                               onChange={(e) => {
                                                 const sanitizedValue =
                                                   e.target.value;
-                                                // Allow any numeric input temporarily during typing
+                                                // Stricter validation: only allow up to 2 digits before decimal
                                                 if (
-                                                  /^\d*\.?\d{0,1}$/.test(
+                                                  /^([0-9]{1,2})?\.?[0-5]?$/.test(
                                                     sanitizedValue
-                                                  )
+                                                  ) &&
+                                                  (!sanitizedValue ||
+                                                    parseFloat(
+                                                      sanitizedValue
+                                                    ) <= 99.5)
                                                 ) {
                                                   setSelectedServices({
                                                     ...selectedServices,
@@ -1731,12 +1764,16 @@ const CreatePhotographyListing = () => {
                                     <Input
                                       value={service.name}
                                       onChange={(e) => {
-                                        const newServices = [...customServices];
-                                        newServices[index] = {
-                                          ...service,
-                                          name: e.target.value,
-                                        };
-                                        setCustomServices(newServices);
+                                        if (e.target.value.length <= 40) {
+                                          const newServices = [
+                                            ...customServices,
+                                          ];
+                                          newServices[index] = {
+                                            ...service,
+                                            name: e.target.value,
+                                          };
+                                          setCustomServices(newServices);
+                                        }
                                       }}
                                       placeholder="Enter service name"
                                       required
@@ -1749,12 +1786,16 @@ const CreatePhotographyListing = () => {
                                     <textarea
                                       value={service.description}
                                       onChange={(e) => {
-                                        const newServices = [...customServices];
-                                        newServices[index] = {
-                                          ...service,
-                                          description: e.target.value,
-                                        };
-                                        setCustomServices(newServices);
+                                        if (e.target.value.length <= 1000) {
+                                          const newServices = [
+                                            ...customServices,
+                                          ];
+                                          newServices[index] = {
+                                            ...service,
+                                            description: e.target.value,
+                                          };
+                                          setCustomServices(newServices);
+                                        }
                                       }}
                                       rows={2}
                                       className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-transparent resize-vertical text-sm"
@@ -1784,18 +1825,23 @@ const CreatePhotographyListing = () => {
                                           }
                                           onChange={(e) => {
                                             const sanitizedValue =
-                                              e.target.value;
-                                            const newServices = [
-                                              ...customServices,
-                                            ];
-                                            newServices[index] = {
-                                              ...service,
-                                              price:
-                                                sanitizedValue === ""
-                                                  ? 0
-                                                  : parseInt(sanitizedValue),
-                                            };
-                                            setCustomServices(newServices);
+                                              e.target.value.replace(
+                                                /[^\d]/g,
+                                                ""
+                                              );
+                                            if (sanitizedValue.length <= 6) {
+                                              const newServices = [
+                                                ...customServices,
+                                              ];
+                                              newServices[index] = {
+                                                ...service,
+                                                price:
+                                                  sanitizedValue === ""
+                                                    ? 0
+                                                    : parseInt(sanitizedValue),
+                                              };
+                                              setCustomServices(newServices);
+                                            }
                                           }}
                                           onKeyDown={(e) => {
                                             if (
@@ -1832,11 +1878,14 @@ const CreatePhotographyListing = () => {
                                           onChange={(e) => {
                                             const sanitizedValue =
                                               e.target.value;
-                                            // Allow any numeric input temporarily during typing
+                                            // Stricter validation: only allow up to 2 digits before decimal
                                             if (
-                                              /^\d*\.?\d{0,1}$/.test(
+                                              /^([0-9]{1,2})?\.?[0-5]?$/.test(
                                                 sanitizedValue
-                                              )
+                                              ) &&
+                                              (!sanitizedValue ||
+                                                parseFloat(sanitizedValue) <=
+                                                  99.5)
                                             ) {
                                               const newServices = [
                                                 ...customServices,

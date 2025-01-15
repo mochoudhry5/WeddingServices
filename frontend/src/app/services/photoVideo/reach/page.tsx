@@ -192,11 +192,14 @@ const PhotoVideoInquiryForm = () => {
   const nextStep = () => {
     if (validateCurrentStep()) {
       setCurrentStep((prev) => Math.min(prev + 1, totalSteps));
+      // Scroll to top of the page smoothly
+      window.scrollTo({ top: 0, behavior: "smooth" });
     }
   };
 
   const prevStep = () => {
     setCurrentStep((prev) => Math.max(prev - 1, 1));
+    window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
   const handleCancel = () => {
@@ -664,7 +667,7 @@ const PhotoVideoInquiryForm = () => {
                                     <Input
                                       value={style}
                                       onChange={(e) => {
-                                        if (e.target.value.length <= 25) {
+                                        if (e.target.value.length <= 20) {
                                           const newStyles = [
                                             ...customPhotoStyles,
                                           ];
@@ -779,7 +782,7 @@ const PhotoVideoInquiryForm = () => {
                                     <Input
                                       value={style}
                                       onChange={(e) => {
-                                        if (e.target.value.length <= 25) {
+                                        if (e.target.value.length <= 20) {
                                           const newStyles = [
                                             ...customVideoStyles,
                                           ];
@@ -827,7 +830,7 @@ const PhotoVideoInquiryForm = () => {
                           />
                           <p className="mt-1 text-sm text-gray-500">
                             Include any specific requirements or questions you
-                            have for the photographer/videographer
+                            have for the Photographer/Videographer
                           </p>
                         </div>
                       </div>

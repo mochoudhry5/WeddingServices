@@ -180,6 +180,15 @@ const UpdateHairMakeupListing = () => {
     setDraggedItem(index);
   };
 
+  const handleNumericInput = (value: string): string => {
+    // Remove leading zeros, prevent negative numbers, and remove decimals
+    let sanitized = value
+      .replace(/^0+/, "")
+      .replace(/-/g, "")
+      .replace(/\./g, "");
+    return sanitized === "" ? "0" : sanitized;
+  };
+
   const handleDragEnd = () => {
     setDraggedItem(null);
   };
@@ -522,11 +531,14 @@ const UpdateHairMakeupListing = () => {
   const nextStep = () => {
     if (validateCurrentStep()) {
       setCurrentStep((prev) => Math.min(prev + 1, totalSteps));
+      // Scroll to top of the page smoothly
+      window.scrollTo({ top: 0, behavior: "smooth" });
     }
   };
 
   const prevStep = () => {
     setCurrentStep((prev) => Math.max(prev - 1, 1));
+    window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
   const handleCancel = () => {
@@ -936,7 +948,11 @@ const UpdateHairMakeupListing = () => {
                           </label>
                           <Input
                             value={businessName}
-                            onChange={(e) => setBusinessName(e.target.value)}
+                            onChange={(e) => {
+                              if (e.target.value.length <= 255) {
+                                setBusinessName(e.target.value);
+                              }
+                            }}
                             placeholder="Enter your name or business name"
                             className="w-full"
                             required
@@ -1129,7 +1145,7 @@ const UpdateHairMakeupListing = () => {
                                       value={style}
                                       onChange={(e) => {
                                         // Limit input to 25 characters
-                                        if (e.target.value.length <= 25) {
+                                        if (e.target.value.length <= 20) {
                                           const newStyles = [
                                             ...customHairStyles,
                                           ];
@@ -1244,7 +1260,7 @@ const UpdateHairMakeupListing = () => {
                                       value={style}
                                       onChange={(e) => {
                                         // Limit input to 25 characters
-                                        if (e.target.value.length <= 25) {
+                                        if (e.target.value.length <= 20) {
                                           const newStyles = [
                                             ...customMakeupStyles,
                                           ];
@@ -1513,15 +1529,19 @@ const UpdateHairMakeupListing = () => {
                                                 .description
                                             }
                                             onChange={(e) => {
-                                              setSelectedServices({
-                                                ...selectedServices,
-                                                [service.name]: {
-                                                  ...selectedServices[
-                                                    service.name
-                                                  ],
-                                                  description: e.target.value,
-                                                },
-                                              });
+                                              if (
+                                                e.target.value.length <= 1000
+                                              ) {
+                                                setSelectedServices({
+                                                  ...selectedServices,
+                                                  [service.name]: {
+                                                    ...selectedServices[
+                                                      service.name
+                                                    ],
+                                                    description: e.target.value,
+                                                  },
+                                                });
+                                              }
                                             }}
                                             placeholder="Describe the service..."
                                             rows={2}
@@ -1559,21 +1579,28 @@ const UpdateHairMakeupListing = () => {
                                                 }
                                                 onChange={(e) => {
                                                   const sanitizedValue =
-                                                    e.target.value;
-                                                  setSelectedServices({
-                                                    ...selectedServices,
-                                                    [service.name]: {
-                                                      ...selectedServices[
-                                                        service.name
-                                                      ],
-                                                      price:
-                                                        sanitizedValue === ""
-                                                          ? 0
-                                                          : parseInt(
-                                                              sanitizedValue
-                                                            ),
-                                                    },
-                                                  });
+                                                    e.target.value.replace(
+                                                      /[^\d]/g,
+                                                      ""
+                                                    );
+                                                  if (
+                                                    sanitizedValue.length <= 6
+                                                  ) {
+                                                    setSelectedServices({
+                                                      ...selectedServices,
+                                                      [service.name]: {
+                                                        ...selectedServices[
+                                                          service.name
+                                                        ],
+                                                        price:
+                                                          sanitizedValue === ""
+                                                            ? 0
+                                                            : parseInt(
+                                                                sanitizedValue
+                                                              ),
+                                                      },
+                                                    });
+                                                  }
                                                 }}
                                                 onKeyDown={(e) => {
                                                   if (
@@ -1589,7 +1616,7 @@ const UpdateHairMakeupListing = () => {
                                           </div>
                                           <div>
                                             <label className="block text-sm font-medium mb-1">
-                                              Duration (hours)*
+                                              Duration (minutes)*
                                             </label>
                                             <div className="relative">
                                               <Clock
@@ -1598,8 +1625,8 @@ const UpdateHairMakeupListing = () => {
                                               />
                                               <Input
                                                 type="number"
-                                                step="0.5"
                                                 min="0"
+                                                step="1" // Force whole numbers
                                                 placeholder="0"
                                                 value={
                                                   selectedServices[service.name]
@@ -1611,12 +1638,12 @@ const UpdateHairMakeupListing = () => {
                                                 }
                                                 onChange={(e) => {
                                                   const sanitizedValue =
-                                                    e.target.value;
-                                                  // Allow any numeric input temporarily during typing
+                                                    e.target.value.replace(
+                                                      /[^\d]/g,
+                                                      ""
+                                                    );
                                                   if (
-                                                    /^\d*\.?\d{0,1}$/.test(
-                                                      sanitizedValue
-                                                    )
+                                                    sanitizedValue.length <= 3
                                                   ) {
                                                     setSelectedServices({
                                                       ...selectedServices,
@@ -1625,46 +1652,20 @@ const UpdateHairMakeupListing = () => {
                                                           service.name
                                                         ],
                                                         duration:
-                                                          sanitizedValue === ""
-                                                            ? 0
-                                                            : parseFloat(
-                                                                sanitizedValue
-                                                              ),
+                                                          Number(
+                                                            sanitizedValue
+                                                          ),
                                                       },
                                                     });
                                                   }
                                                 }}
-                                                onBlur={(e) => {
-                                                  const value = e.target.value;
-                                                  // On blur, format to proper decimal
+                                                onKeyDown={(e) => {
+                                                  // Prevent decimal point and negative sign
                                                   if (
-                                                    value === "" ||
-                                                    isNaN(parseFloat(value))
+                                                    e.key === "-" ||
+                                                    e.key === "."
                                                   ) {
-                                                    setSelectedServices({
-                                                      ...selectedServices,
-                                                      [service.name]: {
-                                                        ...selectedServices[
-                                                          service.name
-                                                        ],
-                                                        duration: 0,
-                                                      },
-                                                    });
-                                                  } else {
-                                                    // Round to nearest 0.5
-                                                    const roundedValue =
-                                                      Math.round(
-                                                        parseFloat(value) * 2
-                                                      ) / 2;
-                                                    setSelectedServices({
-                                                      ...selectedServices,
-                                                      [service.name]: {
-                                                        ...selectedServices[
-                                                          service.name
-                                                        ],
-                                                        duration: roundedValue,
-                                                      },
-                                                    });
+                                                    e.preventDefault();
                                                   }
                                                 }}
                                                 className="pl-8"
@@ -1731,15 +1732,19 @@ const UpdateHairMakeupListing = () => {
                                                 .description
                                             }
                                             onChange={(e) => {
-                                              setSelectedServices({
-                                                ...selectedServices,
-                                                [service.name]: {
-                                                  ...selectedServices[
-                                                    service.name
-                                                  ],
-                                                  description: e.target.value,
-                                                },
-                                              });
+                                              if (
+                                                e.target.value.length <= 1000
+                                              ) {
+                                                setSelectedServices({
+                                                  ...selectedServices,
+                                                  [service.name]: {
+                                                    ...selectedServices[
+                                                      service.name
+                                                    ],
+                                                    description: e.target.value,
+                                                  },
+                                                });
+                                              }
                                             }}
                                             placeholder="Describe the service..."
                                             rows={2}
@@ -1777,21 +1782,28 @@ const UpdateHairMakeupListing = () => {
                                                 }
                                                 onChange={(e) => {
                                                   const sanitizedValue =
-                                                    e.target.value;
-                                                  setSelectedServices({
-                                                    ...selectedServices,
-                                                    [service.name]: {
-                                                      ...selectedServices[
-                                                        service.name
-                                                      ],
-                                                      price:
-                                                        sanitizedValue === ""
-                                                          ? 0
-                                                          : parseInt(
-                                                              sanitizedValue
-                                                            ),
-                                                    },
-                                                  });
+                                                    e.target.value.replace(
+                                                      /[^\d]/g,
+                                                      ""
+                                                    );
+                                                  if (
+                                                    sanitizedValue.length <= 6
+                                                  ) {
+                                                    setSelectedServices({
+                                                      ...selectedServices,
+                                                      [service.name]: {
+                                                        ...selectedServices[
+                                                          service.name
+                                                        ],
+                                                        price:
+                                                          sanitizedValue === ""
+                                                            ? 0
+                                                            : parseInt(
+                                                                sanitizedValue
+                                                              ),
+                                                      },
+                                                    });
+                                                  }
                                                 }}
                                                 onKeyDown={(e) => {
                                                   if (
@@ -1807,7 +1819,7 @@ const UpdateHairMakeupListing = () => {
                                           </div>
                                           <div>
                                             <label className="block text-sm font-medium mb-1">
-                                              Duration (hours)*
+                                              Duration (minutes)*
                                             </label>
                                             <div className="relative">
                                               <Clock
@@ -1816,8 +1828,8 @@ const UpdateHairMakeupListing = () => {
                                               />
                                               <Input
                                                 type="number"
-                                                step="0.5"
                                                 min="0"
+                                                step="1" // Force whole numbers
                                                 placeholder="0"
                                                 value={
                                                   selectedServices[service.name]
@@ -1829,12 +1841,12 @@ const UpdateHairMakeupListing = () => {
                                                 }
                                                 onChange={(e) => {
                                                   const sanitizedValue =
-                                                    e.target.value;
-                                                  // Allow any numeric input temporarily during typing
+                                                    e.target.value.replace(
+                                                      /[^\d]/g,
+                                                      ""
+                                                    );
                                                   if (
-                                                    /^\d*\.?\d{0,1}$/.test(
-                                                      sanitizedValue
-                                                    )
+                                                    sanitizedValue.length <= 3
                                                   ) {
                                                     setSelectedServices({
                                                       ...selectedServices,
@@ -1843,46 +1855,20 @@ const UpdateHairMakeupListing = () => {
                                                           service.name
                                                         ],
                                                         duration:
-                                                          sanitizedValue === ""
-                                                            ? 0
-                                                            : parseFloat(
-                                                                sanitizedValue
-                                                              ),
+                                                          Number(
+                                                            sanitizedValue
+                                                          ),
                                                       },
                                                     });
                                                   }
                                                 }}
-                                                onBlur={(e) => {
-                                                  const value = e.target.value;
-                                                  // On blur, format to proper decimal
+                                                onKeyDown={(e) => {
+                                                  // Prevent decimal point and negative sign
                                                   if (
-                                                    value === "" ||
-                                                    isNaN(parseFloat(value))
+                                                    e.key === "-" ||
+                                                    e.key === "."
                                                   ) {
-                                                    setSelectedServices({
-                                                      ...selectedServices,
-                                                      [service.name]: {
-                                                        ...selectedServices[
-                                                          service.name
-                                                        ],
-                                                        duration: 0,
-                                                      },
-                                                    });
-                                                  } else {
-                                                    // Round to nearest 0.5
-                                                    const roundedValue =
-                                                      Math.round(
-                                                        parseFloat(value) * 2
-                                                      ) / 2;
-                                                    setSelectedServices({
-                                                      ...selectedServices,
-                                                      [service.name]: {
-                                                        ...selectedServices[
-                                                          service.name
-                                                        ],
-                                                        duration: roundedValue,
-                                                      },
-                                                    });
+                                                    e.preventDefault();
                                                   }
                                                 }}
                                                 className="pl-8"
@@ -1941,14 +1927,16 @@ const UpdateHairMakeupListing = () => {
                                       <Input
                                         value={service.name}
                                         onChange={(e) => {
-                                          const newServices = [
-                                            ...customServices,
-                                          ];
-                                          newServices[index] = {
-                                            ...service,
-                                            name: e.target.value,
-                                          };
-                                          setCustomServices(newServices);
+                                          if (e.target.value.length <= 40) {
+                                            const newServices = [
+                                              ...customServices,
+                                            ];
+                                            newServices[index] = {
+                                              ...service,
+                                              name: e.target.value,
+                                            };
+                                            setCustomServices(newServices);
+                                          }
                                         }}
                                         placeholder="Enter service name"
                                         required
@@ -1961,14 +1949,16 @@ const UpdateHairMakeupListing = () => {
                                       <textarea
                                         value={service.description}
                                         onChange={(e) => {
-                                          const newServices = [
-                                            ...customServices,
-                                          ];
-                                          newServices[index] = {
-                                            ...service,
-                                            description: e.target.value,
-                                          };
-                                          setCustomServices(newServices);
+                                          if (e.target.value.length <= 1000) {
+                                            const newServices = [
+                                              ...customServices,
+                                            ];
+                                            newServices[index] = {
+                                              ...service,
+                                              description: e.target.value,
+                                            };
+                                            setCustomServices(newServices);
+                                          }
                                         }}
                                         rows={2}
                                         className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-transparent resize-vertical text-sm"
@@ -1998,18 +1988,25 @@ const UpdateHairMakeupListing = () => {
                                             }
                                             onChange={(e) => {
                                               const sanitizedValue =
-                                                e.target.value;
-                                              const newServices = [
-                                                ...customServices,
-                                              ];
-                                              newServices[index] = {
-                                                ...service,
-                                                price:
-                                                  sanitizedValue === ""
-                                                    ? 0
-                                                    : parseInt(sanitizedValue),
-                                              };
-                                              setCustomServices(newServices);
+                                                e.target.value.replace(
+                                                  /[^\d]/g,
+                                                  ""
+                                                );
+                                              if (sanitizedValue.length <= 6) {
+                                                const newServices = [
+                                                  ...customServices,
+                                                ];
+                                                newServices[index] = {
+                                                  ...service,
+                                                  price:
+                                                    sanitizedValue === ""
+                                                      ? 0
+                                                      : parseInt(
+                                                          sanitizedValue
+                                                        ),
+                                                };
+                                                setCustomServices(newServices);
+                                              }
                                             }}
                                             onKeyDown={(e) => {
                                               if (
@@ -2026,7 +2023,7 @@ const UpdateHairMakeupListing = () => {
                                       </div>
                                       <div>
                                         <label className="block text-sm font-medium text-gray-700 mb-1">
-                                          Duration (hours)*
+                                          Duration (minutes)*
                                         </label>
                                         <div className="relative">
                                           <Clock
@@ -2035,9 +2032,9 @@ const UpdateHairMakeupListing = () => {
                                           />
                                           <Input
                                             type="number"
-                                            step="0.5"
-                                            min="0"
                                             placeholder="0"
+                                            min="0"
+                                            step="1" // Force whole numbers
                                             value={
                                               service.duration === 0
                                                 ? ""
@@ -2045,57 +2042,29 @@ const UpdateHairMakeupListing = () => {
                                             }
                                             onChange={(e) => {
                                               const sanitizedValue =
-                                                e.target.value;
-                                              // Allow any numeric input temporarily during typing
-                                              if (
-                                                /^\d*\.?\d{0,1}$/.test(
-                                                  sanitizedValue
-                                                )
-                                              ) {
+                                                e.target.value.replace(
+                                                  /[^\d]/g,
+                                                  ""
+                                                );
+                                              if (sanitizedValue.length <= 3) {
                                                 const newServices = [
                                                   ...customServices,
                                                 ];
                                                 newServices[index] = {
                                                   ...service,
                                                   duration:
-                                                    sanitizedValue === ""
-                                                      ? 0
-                                                      : parseFloat(
-                                                          sanitizedValue
-                                                        ),
+                                                    Number(sanitizedValue),
                                                 };
                                                 setCustomServices(newServices);
                                               }
                                             }}
-                                            onBlur={(e) => {
-                                              const value = e.target.value;
-                                              // On blur, format to proper decimal
+                                            onKeyDown={(e) => {
+                                              // Prevent decimal point and negative sign
                                               if (
-                                                value === "" ||
-                                                isNaN(parseFloat(value))
+                                                e.key === "-" ||
+                                                e.key === "."
                                               ) {
-                                                const newServices = [
-                                                  ...customServices,
-                                                ];
-                                                newServices[index] = {
-                                                  ...service,
-                                                  duration: 0,
-                                                };
-                                                setCustomServices(newServices);
-                                              } else {
-                                                // Round to nearest 0.5
-                                                const roundedValue =
-                                                  Math.round(
-                                                    parseFloat(value) * 2
-                                                  ) / 2;
-                                                const newServices = [
-                                                  ...customServices,
-                                                ];
-                                                newServices[index] = {
-                                                  ...service,
-                                                  duration: roundedValue,
-                                                };
-                                                setCustomServices(newServices);
+                                                e.preventDefault();
                                               }
                                             }}
                                             className="pl-8"

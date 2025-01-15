@@ -90,31 +90,6 @@ export default function NavBar() {
     checkVendorStatus();
   }, [user]);
 
-  const handleTypeSubmit = async () => {
-    if (!user?.id || selectedType === null) {
-      toast.error("Please make a selection");
-      return;
-    }
-
-    try {
-      const { error } = await supabase
-        .from("user_preferences")
-        .update({
-          is_vendor: selectedType === "vendor",
-          updated_at: new Date().toISOString(),
-        })
-        .eq("id", user.id);
-
-      if (error) throw error;
-      setIsVendor(selectedType === "vendor");
-      setShowTypeModal(false);
-      toast.success("Preferences updated successfully!");
-    } catch (error) {
-      console.error("Error updating user type:", error);
-      toast.error("Failed to update preferences");
-    }
-  };
-
   const handleLogout = async () => {
     try {
       await signOut();
