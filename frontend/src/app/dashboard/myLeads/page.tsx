@@ -169,11 +169,11 @@ export default function LeadsPage() {
           const { data, error } = await supabase
             .from(`${config.listingTable}`)
             .select("id")
-            .eq("user_id", user.id)
-            .single();
+            .eq("user_id", user.id);
 
           if (data && !error) {
             foundListings.push(serviceType as ServiceType);
+            console.log(serviceType as ServiceType);
           }
         })
       );
