@@ -344,7 +344,7 @@ const Billing = () => {
             No listings or billing information available
           </p>
           <p className="text-sm text-gray-400 mt-2">
-            Create a listing to start managing your revenue
+            Create a listing to start managing your billing
           </p>
         </div>
       </div>
