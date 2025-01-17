@@ -1,8 +1,18 @@
 import React, { useState, useEffect } from "react";
-import { CreditCard, ChevronDown, ChevronUp } from "lucide-react";
+import { CreditCard, ChevronDown, ChevronUp, XCircle } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { supabase } from "@/lib/supabase";
 import { toast } from "sonner";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 // Updated interface to match your database schema
 interface StripeSubscription {
@@ -110,8 +120,10 @@ const CategoryCard = ({
 
 const SubscriptionList = ({
   subscriptions,
+  onCancelSubscription,
 }: {
   subscriptions: StripeSubscription[];
+  onCancelSubscription: (subscription: StripeSubscription) => void;
 }) => (
   <div className="mt-4 border rounded-lg overflow-hidden">
     <table className="w-full">
@@ -128,6 +140,9 @@ const SubscriptionList = ({
           </th>
           <th className="px-4 py-2 text-left text-xs font-medium text-gray-500">
             Status
+          </th>
+          <th className="px-4 py-2 text-left text-xs font-medium text-gray-500">
+            Actions
           </th>
         </tr>
       </thead>
@@ -161,6 +176,17 @@ const SubscriptionList = ({
                   subscription.status.slice(1)}
               </span>
             </td>
+            <td className="px-4 py-3">
+              {subscription.status === "active" && (
+                <button
+                  onClick={() => onCancelSubscription(subscription)}
+                  className="text-red-600 hover:text-red-800 flex items-center space-x-1"
+                >
+                  <XCircle size={16} />
+                  <span>Cancel</span>
+                </button>
+              )}
+            </td>
           </tr>
         ))}
       </tbody>
@@ -180,6 +206,8 @@ const Billing = () => {
   const [subscriptions, setSubscriptions] = useState<StripeSubscription[]>([]);
   const [loading, setLoading] = useState(true);
   const [expandedCategories, setExpandedCategories] = useState<string[]>([]);
+  const [subscriptionToCancel, setSubscriptionToCancel] =
+    useState<StripeSubscription | null>(null);
 
   useEffect(() => {
     const fetchBillingData = async () => {
@@ -243,6 +271,36 @@ const Billing = () => {
     fetchBillingData();
   }, [user?.id]);
 
+  const handleCancelSubscription = async () => {
+    if (!subscriptionToCancel) return;
+
+    try {
+      const { error } = await supabase.functions.invoke("cancel-subscription", {
+        body: {
+          subscriptionId: subscriptionToCancel.stripe_subscription_id,
+        },
+      });
+
+      if (error) throw error;
+
+      // Refresh the subscriptions list
+      const { data: updatedData, error: fetchError } = await supabase
+        .from("subscriptions")
+        .select("*")
+        .eq("user_id", user?.id);
+
+      if (fetchError) throw fetchError;
+
+      setSubscriptions(updatedData || []);
+      toast.success("Subscription cancelled successfully");
+    } catch (error) {
+      console.error("Error cancelling subscription:", error);
+      toast.error("Failed to cancel subscription");
+    } finally {
+      setSubscriptionToCancel(null);
+    }
+  };
+
   const calculateCategoryStats = (categoryId: string): CategoryStats => {
     const categoryListings = listings[categoryId as keyof ListingsByCategory];
     const categorySubscriptions = subscriptions.filter(
@@ -296,9 +354,9 @@ const Billing = () => {
   return (
     <div className="min-h-[390px] flex flex-col">
       <div className="mb-6">
-        <h3 className="text-lg font-medium">Billing & Revenue</h3>
+        <h3 className="text-lg font-medium">Billing</h3>
         <p className="text-sm text-gray-500">
-          Manage your listing revenue and view subscription history
+          Manage and view your subscription history
         </p>
       </div>
 
@@ -321,12 +379,38 @@ const Billing = () => {
                   subscriptions={subscriptions.filter(
                     (s) => s.service_type === category.id
                   )}
+                  onCancelSubscription={setSubscriptionToCancel}
                 />
               )}
             </div>
           );
         })}
       </div>
+
+      {/* Cancel Subscription Dialog */}
+      <AlertDialog
+        open={!!subscriptionToCancel}
+        onOpenChange={() => setSubscriptionToCancel(null)}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Cancel Subscription</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to cancel this subscription? Your service
+              will continue until the end of the current billing period.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Keep Subscription</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleCancelSubscription}
+              className="bg-red-600 text-white hover:bg-red-700"
+            >
+              Cancel Subscription
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
