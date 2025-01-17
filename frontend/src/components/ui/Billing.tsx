@@ -1,18 +1,20 @@
 import React, { useState, useEffect } from "react";
-import { CreditCard, ChevronDown, ChevronUp, Download } from "lucide-react";
+import { CreditCard, ChevronDown, ChevronUp } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { supabase } from "@/lib/supabase";
 import { toast } from "sonner";
 
+// Updated interface to match your database schema
 interface StripeSubscription {
   id: string;
+  user_id: string;
   stripe_subscription_id: string;
   stripe_customer_id: string;
   status: string;
+  service_type: string;
+  tier_type: string;
+  is_annual: boolean;
   current_period_end: string;
-  amount: number;
-  listing_id: string;
-  listing_type: string;
   created_at: string;
 }
 
@@ -33,7 +35,6 @@ interface ListingsByCategory {
 interface CategoryStats {
   listings: number;
   activeSubscriptions: number;
-  totalRevenue: number;
 }
 
 interface ServiceCategory {
@@ -101,12 +102,6 @@ const CategoryCard = ({
         </p>
       </div>
       <div className="flex items-center space-x-4">
-        <div className="text-right">
-          <p className="text-lg font-semibold">
-            ${stats.totalRevenue.toLocaleString()}
-          </p>
-          <p className="text-sm text-gray-500">Total Revenue</p>
-        </div>
         {expanded ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
       </div>
     </div>
@@ -123,13 +118,13 @@ const SubscriptionList = ({
       <thead className="bg-gray-50">
         <tr>
           <th className="px-4 py-2 text-left text-xs font-medium text-gray-500">
-            Date
+            Start Date
           </th>
           <th className="px-4 py-2 text-left text-xs font-medium text-gray-500">
-            Period
+            Next Payment
           </th>
           <th className="px-4 py-2 text-left text-xs font-medium text-gray-500">
-            Amount
+            Plan Type
           </th>
           <th className="px-4 py-2 text-left text-xs font-medium text-gray-500">
             Status
@@ -146,7 +141,9 @@ const SubscriptionList = ({
               {new Date(subscription.current_period_end).toLocaleDateString()}
             </td>
             <td className="px-4 py-3 text-sm">
-              ${(subscription.amount / 100).toLocaleString()}
+              {subscription.tier_type.charAt(0).toUpperCase() +
+                subscription.tier_type.slice(1)}{" "}
+              ({subscription.is_annual ? "Annual" : "Monthly"})
             </td>
             <td className="px-4 py-3">
               <span
@@ -161,7 +158,7 @@ const SubscriptionList = ({
                 }`}
               >
                 {subscription.status.charAt(0).toUpperCase() +
-                  subscription.status.slice(1).replace("_", " ")}
+                  subscription.status.slice(1)}
               </span>
             </td>
           </tr>
@@ -211,15 +208,29 @@ const Billing = () => {
 
         setListings(newListings);
 
-        // Fetch all stripe subscriptions
+        // Fetch all stripe subscriptions with the correct fields
         const { data: subscriptionData, error: subscriptionError } =
           await supabase
             .from("subscriptions")
-            .select("*")
+            .select(
+              `
+              id,
+              user_id,
+              stripe_subscription_id,
+              stripe_customer_id,
+              status,
+              service_type,
+              tier_type,
+              is_annual,
+              current_period_end,
+              created_at
+            `
+            )
             .eq("user_id", user.id)
             .order("created_at", { ascending: false });
 
         if (subscriptionError) throw subscriptionError;
+        console.log("Subscriptions fetched:", subscriptionData);
         setSubscriptions(subscriptionData || []);
       } catch (error) {
         console.error("Error fetching billing data:", error);
@@ -235,7 +246,7 @@ const Billing = () => {
   const calculateCategoryStats = (categoryId: string): CategoryStats => {
     const categoryListings = listings[categoryId as keyof ListingsByCategory];
     const categorySubscriptions = subscriptions.filter(
-      (s) => s.listing_type === categoryId
+      (s) => s.service_type === categoryId // Changed from listing_type to service_type
     );
 
     return {
@@ -243,10 +254,6 @@ const Billing = () => {
       activeSubscriptions: categorySubscriptions.filter(
         (s) => s.status === "active"
       ).length,
-      totalRevenue: categorySubscriptions.reduce(
-        (sum, s) => sum + (s.status === "active" ? s.amount / 100 : 0),
-        0
-      ),
     };
   };
 
@@ -286,10 +293,6 @@ const Billing = () => {
     );
   }
 
-  const totalRevenue = subscriptions
-    .filter((s) => s.status === "active")
-    .reduce((sum, s) => sum + s.amount / 100, 0);
-
   return (
     <div className="min-h-[390px] flex flex-col">
       <div className="mb-6">
@@ -297,22 +300,6 @@ const Billing = () => {
         <p className="text-sm text-gray-500">
           Manage your listing revenue and view subscription history
         </p>
-      </div>
-
-      {/* Overall Revenue */}
-      <div className="bg-gray-50 rounded-lg p-6 mb-6">
-        <div className="flex justify-between items-center">
-          <div>
-            <h4 className="text-sm font-medium text-gray-700">Total Revenue</h4>
-            <p className="text-2xl font-semibold mt-1">
-              ${totalRevenue.toLocaleString()}
-            </p>
-          </div>
-          <button className="flex items-center space-x-2 text-sm text-gray-600 hover:text-black">
-            <Download size={16} />
-            <span>Export</span>
-          </button>
-        </div>
       </div>
 
       {/* Category Cards */}
@@ -332,7 +319,7 @@ const Billing = () => {
               {expandedCategories.includes(category.id) && (
                 <SubscriptionList
                   subscriptions={subscriptions.filter(
-                    (s) => s.listing_type === category.id
+                    (s) => s.service_type === category.id
                   )}
                 />
               )}
