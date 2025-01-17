@@ -4,10 +4,21 @@ import { useAuth } from "@/context/AuthContext";
 import { supabase } from "@/lib/supabase";
 import { toast } from "sonner";
 
+interface StripeSubscription {
+  id: string;
+  stripe_subscription_id: string;
+  stripe_customer_id: string;
+  status: string;
+  current_period_end: string;
+  amount: number;
+  listing_id: string;
+  listing_type: string;
+  created_at: string;
+}
+
 interface BaseListing {
   id: string;
-  title: string;
-  price: number;
+  business_name: string;
   created_at: string;
 }
 
@@ -16,20 +27,13 @@ interface ListingsByCategory {
   photoVideo: BaseListing[];
   hairMakeup: BaseListing[];
   venue: BaseListing[];
-}
-
-interface Transaction {
-  id: string;
-  amount: number;
-  status: string;
-  created_at: string;
-  listing_id: string;
-  listing_type: string;
-  listing_title: string;
+  weddingPlanner: BaseListing[];
 }
 
 interface CategoryStats {
   listings: number;
+  activeSubscriptions: number;
+  totalRevenue: number;
 }
 
 interface ServiceCategory {
@@ -68,7 +72,7 @@ const serviceCategories: ServiceCategory[] = [
     id: "weddingPlanner",
     name: "Wedding Planner & Coordinator",
     table: "wedding_planner_listing",
-    color: "bg-green-100 text-green-800",
+    color: "bg-yellow-100 text-yellow-800",
   },
 ];
 
@@ -92,13 +96,28 @@ const CategoryCard = ({
         <h3 className="text-lg font-medium">{category.name}</h3>
         <p className="text-sm text-gray-500">
           {stats.listings} listing{stats.listings !== 1 ? "s" : ""} ·{" "}
+          {stats.activeSubscriptions} active subscription
+          {stats.activeSubscriptions !== 1 ? "s" : ""}
         </p>
+      </div>
+      <div className="flex items-center space-x-4">
+        <div className="text-right">
+          <p className="text-lg font-semibold">
+            ${stats.totalRevenue.toLocaleString()}
+          </p>
+          <p className="text-sm text-gray-500">Total Revenue</p>
+        </div>
+        {expanded ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
       </div>
     </div>
   </div>
 );
 
-const TransactionList = ({ transactions }: { transactions: Transaction[] }) => (
+const SubscriptionList = ({
+  subscriptions,
+}: {
+  subscriptions: StripeSubscription[];
+}) => (
   <div className="mt-4 border rounded-lg overflow-hidden">
     <table className="w-full">
       <thead className="bg-gray-50">
@@ -107,7 +126,7 @@ const TransactionList = ({ transactions }: { transactions: Transaction[] }) => (
             Date
           </th>
           <th className="px-4 py-2 text-left text-xs font-medium text-gray-500">
-            Listing
+            Period
           </th>
           <th className="px-4 py-2 text-left text-xs font-medium text-gray-500">
             Amount
@@ -118,40 +137,31 @@ const TransactionList = ({ transactions }: { transactions: Transaction[] }) => (
         </tr>
       </thead>
       <tbody className="divide-y divide-gray-200">
-        {transactions.map((transaction) => (
-          <tr key={transaction.id}>
+        {subscriptions.map((subscription) => (
+          <tr key={subscription.id}>
             <td className="px-4 py-3 text-sm">
-              {new Date(transaction.created_at).toLocaleDateString()}
-            </td>
-            <td className="px-4 py-3 text-sm">{transaction.listing_title}</td>
-            <td className="px-4 py-3 text-sm">
-              <span
-                className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
-                  serviceCategories.find(
-                    (cat) => cat.id === transaction.listing_type
-                  )?.color || "bg-gray-100 text-gray-800"
-                }`}
-              >
-                {serviceCategories.find(
-                  (cat) => cat.id === transaction.listing_type
-                )?.name || "Other"}
-              </span>
+              {new Date(subscription.created_at).toLocaleDateString()}
             </td>
             <td className="px-4 py-3 text-sm">
-              ${transaction.amount.toLocaleString()}
+              {new Date(subscription.current_period_end).toLocaleDateString()}
+            </td>
+            <td className="px-4 py-3 text-sm">
+              ${(subscription.amount / 100).toLocaleString()}
             </td>
             <td className="px-4 py-3">
               <span
                 className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
-                  transaction.status === "completed"
+                  subscription.status === "active"
                     ? "bg-green-100 text-green-800"
-                    : transaction.status === "pending"
+                    : subscription.status === "past_due"
                     ? "bg-yellow-100 text-yellow-800"
-                    : "bg-red-100 text-red-800"
+                    : subscription.status === "canceled"
+                    ? "bg-red-100 text-red-800"
+                    : "bg-gray-100 text-gray-800"
                 }`}
               >
-                {transaction.status.charAt(0).toUpperCase() +
-                  transaction.status.slice(1)}
+                {subscription.status.charAt(0).toUpperCase() +
+                  subscription.status.slice(1).replace("_", " ")}
               </span>
             </td>
           </tr>
@@ -168,8 +178,9 @@ const Billing = () => {
     photoVideo: [],
     hairMakeup: [],
     venue: [],
+    weddingPlanner: [],
   });
-  const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [subscriptions, setSubscriptions] = useState<StripeSubscription[]>([]);
   const [loading, setLoading] = useState(true);
   const [expandedCategories, setExpandedCategories] = useState<string[]>([]);
 
@@ -182,7 +193,7 @@ const Billing = () => {
         const listingPromises = serviceCategories.map(async (category) => {
           const { data, error } = await supabase
             .from(category.table)
-            .select("business_name")
+            .select("id, business_name, created_at")
             .eq("user_id", user.id);
 
           if (error) throw error;
@@ -200,22 +211,16 @@ const Billing = () => {
 
         setListings(newListings);
 
-        // Fetch transactions for all listings
-        const allListingIds = Object.values(newListings)
-          .flat()
-          .map((listing) => listing.id);
+        // Fetch all stripe subscriptions
+        const { data: subscriptionData, error: subscriptionError } =
+          await supabase
+            .from("subscriptions")
+            .select("*")
+            .eq("user_id", user.id)
+            .order("created_at", { ascending: false });
 
-        if (allListingIds.length > 0) {
-          const { data: transactionData, error: transactionError } =
-            await supabase
-              .from("subscriptions")
-              .select("*")
-              .in("listing_id", allListingIds)
-              .order("created_at", { ascending: false });
-
-          if (transactionError) throw transactionError;
-          setTransactions(transactionData || []);
-        }
+        if (subscriptionError) throw subscriptionError;
+        setSubscriptions(subscriptionData || []);
       } catch (error) {
         console.error("Error fetching billing data:", error);
         toast.error("Failed to load billing information");
@@ -229,12 +234,19 @@ const Billing = () => {
 
   const calculateCategoryStats = (categoryId: string): CategoryStats => {
     const categoryListings = listings[categoryId as keyof ListingsByCategory];
-    const categoryTransactions = transactions.filter((t) =>
-      categoryListings.some((listing) => listing.id === t.listing_id)
+    const categorySubscriptions = subscriptions.filter(
+      (s) => s.listing_type === categoryId
     );
 
     return {
       listings: categoryListings.length,
+      activeSubscriptions: categorySubscriptions.filter(
+        (s) => s.status === "active"
+      ).length,
+      totalRevenue: categorySubscriptions.reduce(
+        (sum, s) => sum + (s.status === "active" ? s.amount / 100 : 0),
+        0
+      ),
     };
   };
 
@@ -274,13 +286,33 @@ const Billing = () => {
     );
   }
 
+  const totalRevenue = subscriptions
+    .filter((s) => s.status === "active")
+    .reduce((sum, s) => sum + s.amount / 100, 0);
+
   return (
     <div className="min-h-[390px] flex flex-col">
       <div className="mb-6">
         <h3 className="text-lg font-medium">Billing & Revenue</h3>
         <p className="text-sm text-gray-500">
-          Manage your listing revenue and view transaction history
+          Manage your listing revenue and view subscription history
         </p>
+      </div>
+
+      {/* Overall Revenue */}
+      <div className="bg-gray-50 rounded-lg p-6 mb-6">
+        <div className="flex justify-between items-center">
+          <div>
+            <h4 className="text-sm font-medium text-gray-700">Total Revenue</h4>
+            <p className="text-2xl font-semibold mt-1">
+              ${totalRevenue.toLocaleString()}
+            </p>
+          </div>
+          <button className="flex items-center space-x-2 text-sm text-gray-600 hover:text-black">
+            <Download size={16} />
+            <span>Export</span>
+          </button>
+        </div>
       </div>
 
       {/* Category Cards */}
@@ -298,11 +330,9 @@ const Billing = () => {
                 onToggle={() => toggleCategory(category.id)}
               />
               {expandedCategories.includes(category.id) && (
-                <TransactionList
-                  transactions={transactions.filter((t) =>
-                    listings[category.id as keyof ListingsByCategory].some(
-                      (listing) => listing.id === t.listing_id
-                    )
+                <SubscriptionList
+                  subscriptions={subscriptions.filter(
+                    (s) => s.listing_type === category.id
                   )}
                 />
               )}
