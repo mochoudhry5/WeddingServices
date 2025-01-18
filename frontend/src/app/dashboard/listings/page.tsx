@@ -1,7 +1,8 @@
 "use client";
 
-import React, { useState, useEffect, act } from "react";
+import React, { useState, useEffect } from "react";
 import { useAuth } from "@/context/AuthContext";
+import { useRouter } from "next/navigation";
 import NavBar from "@/components/ui/NavBar";
 import Footer from "@/components/ui/Footer";
 import MediaCarousel from "@/components/ui/MediaCarousel";
@@ -38,7 +39,6 @@ import { toast } from "sonner";
 import Link from "next/link";
 import { ProtectedRoute } from "@/components/ui/ProtectedRoute";
 import { VendorProtectedRoute } from "@/components/ui/VendorProtectedRoute";
-import router from "next/router";
 
 // Media type for images/videos
 interface ServiceMedia {
@@ -166,6 +166,7 @@ const isVenueListing = (listing: BaseListing): listing is VenueListing => {
   return "max_guests" in listing && "base_price" in listing;
 };
 export default function MyListingsPage() {
+  const router = useRouter();
   const { user } = useAuth();
   const [listings, setListings] = useState<Listings>({
     venue: [],

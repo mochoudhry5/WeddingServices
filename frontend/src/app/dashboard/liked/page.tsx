@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useAuth } from "@/context/AuthContext";
+import { useRouter } from "next/navigation";
 import NavBar from "@/components/ui/NavBar";
 import Footer from "@/components/ui/Footer";
 import MediaCarousel from "@/components/ui/MediaCarousel";
@@ -19,7 +20,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import router from "next/router";
 import { Button } from "@/components/ui/button";
 
 interface DatabaseResponse {
@@ -189,6 +189,7 @@ type FilteredItems = {
 };
 
 export default function LikedServicesPage() {
+  const router = useRouter();
   const { user } = useAuth();
   const [likedItems, setLikedItems] = useState<LikedItems>({
     venue: [],

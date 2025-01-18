@@ -10,12 +10,9 @@ import {
   Building2,
   HeartHandshake,
   Search,
-  Mail,
-  Phone,
   DollarSign,
   SlidersHorizontal,
   MapPin,
-  Link,
 } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
