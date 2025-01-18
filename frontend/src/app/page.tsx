@@ -344,23 +344,14 @@ export default function HomePage() {
     }
   }, []);
 
-  const handleSearch = async (e: React.FormEvent<HTMLFormElement>) => {
+  const handleSearch = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setError(null);
     setIsLoading(true);
 
-    if (!searchParams.enteredLocation) {
-      setError({
-        message: "Please enter a location",
-        code: "MISSING_LOCATION",
-      });
-      setIsLoading(false);
-      return;
-    }
-
     try {
       const params = new URLSearchParams(searchParams as any);
-      router.push(`/search?${params.toString()}`);
+      window.location.href = `/search?${params.toString()}`;
     } catch (err) {
       console.error("Search error:", err);
       setError({
