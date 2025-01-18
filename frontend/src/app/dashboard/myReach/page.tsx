@@ -42,6 +42,7 @@ import {
   Building2,
   HeartHandshake,
 } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 // Types remain the same
 interface Inquiry {
@@ -465,17 +466,17 @@ export default function QuickReachesPage() {
   const renderEmptyState = () => (
     <div className="text-center py-12 bg-white rounded-lg shadow">
       <h3 className="text-lg font-medium text-gray-900 mb-2">
-        No quick reaches yet
+        No Quick Reaches Yet
       </h3>
       <p className="text-gray-500 mb-6">
         Get started by submitting your first quick reach
       </p>
-      <button
+      <Button
         onClick={() => router.push("/quickReach")}
-        className="inline-flex items-center px-4 py-2 bg-black text-white rounded-lg hover:bg-black/90 transition-colors"
+        className="bg-black hover:bg-stone-500"
       >
-        <span>Create Quick Reach</span>
-      </button>
+        Create Quick Reach
+      </Button>
     </div>
   );
 
