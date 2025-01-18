@@ -15,6 +15,7 @@ import NavBar from "@/components/ui/NavBar";
 import Footer from "@/components/ui/Footer";
 import LocationInput from "@/components/ui/LocationInput";
 import { Gem, Ban, DollarSign, Loader2 } from "lucide-react";
+import ErrorBoundary from "@/components/ui/ErrorBoundary";
 
 // Types
 interface GooglePlace {
@@ -79,41 +80,6 @@ const Alert: React.FC<{
 const AlertDescription: React.FC<{
   children: React.ReactNode;
 }> = ({ children }) => <div className="text-sm">{children}</div>;
-
-// Error Boundary Component
-class ErrorBoundary extends React.Component<
-  { children: React.ReactNode },
-  { hasError: boolean }
-> {
-  constructor(props: { children: React.ReactNode }) {
-    super(props);
-    this.state = { hasError: false };
-  }
-
-  static getDerivedStateFromError(_: Error) {
-    return { hasError: true };
-  }
-
-  componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
-    console.error("Error caught by boundary:", error, errorInfo);
-  }
-
-  render() {
-    if (this.state.hasError) {
-      return (
-        <div className="min-h-screen flex items-center justify-center">
-          <Alert variant="destructive">
-            <AlertDescription>
-              Something went wrong. Please refresh the page or try again later.
-            </AlertDescription>
-          </Alert>
-        </div>
-      );
-    }
-
-    return this.props.children;
-  }
-}
 
 // Constants
 const CAROUSEL_IMAGES = [
