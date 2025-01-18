@@ -19,6 +19,7 @@ import {
   AlertDialogAction,
 } from "@/components/ui/alert-dialog";
 import { ProtectedRoute } from "@/components/ui/ProtectedRoute";
+import Billing from "@/components/ui/Billing";
 import { toast } from "sonner";
 import { useVendorStatus } from "@/hooks/useVendorStatus";
 
@@ -231,7 +232,11 @@ const AccountSettings = () => {
                 id="new-email"
                 type="email"
                 value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                onChange={(e) => {
+                  if (e.target.value.length <= 320) {
+                    setEmail(e.target.value);
+                  }
+                }}
                 disabled={loading.email}
                 placeholder="Enter new email address"
                 aria-label="New email address"
@@ -558,9 +563,7 @@ function SettingsPage() {
   const menuItems = [
     { id: "account", label: "Account", icon: User },
     { id: "security", label: "Security", icon: Shield },
-
-    // { id: "notifications", label: "Notifications", icon: Bell },
-    // { id: "payments", label: "Payments", icon: CreditCard },
+    { id: "billing", label: "Billing", icon: CreditCard },
   ];
 
   const renderContent = () => {
@@ -569,10 +572,8 @@ function SettingsPage() {
         return <AccountSettings />;
       case "security":
         return <SecuritySettings />;
-      // case "notifications":
-      //   return <NotificationSettings />;
-      // case "payments":
-      //   return <PaymentSettings />;
+      case "billing":
+        return <Billing />;
       default:
         return null;
     }

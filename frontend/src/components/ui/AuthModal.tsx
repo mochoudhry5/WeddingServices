@@ -162,7 +162,11 @@ export function AuthModals({
                     id="reset-email"
                     type="email"
                     value={email}
-                    onChange={(e) => setEmail(e.target.value)}
+                    onChange={(e) => {
+                      if (e.target.value.length <= 320) {
+                        setEmail(e.target.value);
+                      }
+                    }}
                     placeholder="hello@example.com"
                     className="h-11"
                     disabled={isLoading}
@@ -220,7 +224,11 @@ export function AuthModals({
                     id="email"
                     type="email"
                     value={email}
-                    onChange={(e) => setEmail(e.target.value)}
+                    onChange={(e) => {
+                      if (e.target.value.length <= 320) {
+                        setEmail(e.target.value);
+                      }
+                    }}
                     placeholder="hello@example.com"
                     className="h-11"
                     disabled={isLoading}
@@ -331,7 +339,11 @@ export function AuthModals({
                   id="signup-email"
                   type="email"
                   value={email}
-                  onChange={(e) => setEmail(e.target.value)}
+                  onChange={(e) => {
+                    if (e.target.value.length <= 320) {
+                      setEmail(e.target.value);
+                    }
+                  }}
                   placeholder="hello@example.com"
                   className="h-11"
                   disabled={isLoading}

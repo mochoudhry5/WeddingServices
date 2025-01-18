@@ -85,28 +85,30 @@ const SubscriptionTiers: React.FC<SubscriptionTiersProps> = ({
 
   return (
     <div className="w-full">
-      {/* Service Selection */}
-      <div className="flex justify-center mb-8">
-        <div className="inline-flex gap-2 p-1 bg-gray-100 rounded-lg">
-          {services.map((service) => (
-            <button
-              key={service.id}
-              onClick={() => onServiceSelect(service.id)}
-              className={`px-4 py-2 rounded-md text-sm font-medium whitespace-nowrap transition-all
-                ${
-                  selectedService === service.id
-                    ? "bg-white text-black shadow"
-                    : "text-gray-600 hover:text-gray-900"
-                }`}
-            >
-              {service.name}
-            </button>
-          ))}
+      {/* Service Selection - Mobile Optimized */}
+      <div className="overflow-x-auto pb-4 mb-4 sm:mb-8 -mx-4 sm:mx-0">
+        <div className="flex justify-start sm:justify-center min-w-full px-4 sm:px-0">
+          <div className="inline-flex gap-2 p-1 bg-gray-100 rounded-lg">
+            {services.map((service) => (
+              <button
+                key={service.id}
+                onClick={() => onServiceSelect(service.id)}
+                className={`px-3 sm:px-4 py-2 rounded-md text-xs sm:text-sm font-medium whitespace-nowrap transition-all
+                  ${
+                    selectedService === service.id
+                      ? "bg-white text-black shadow"
+                      : "text-gray-600 hover:text-gray-900"
+                  }`}
+              >
+                {service.name}
+              </button>
+            ))}
+          </div>
         </div>
       </div>
 
       {/* Annual/Monthly Toggle */}
-      <div className="flex justify-center items-center gap-3 mb-8">
+      <div className="flex justify-center items-center gap-3 mb-6 sm:mb-8">
         <span className={`text-sm ${!isAnnual ? "font-medium" : ""}`}>
           Monthly
         </span>
@@ -128,7 +130,7 @@ const SubscriptionTiers: React.FC<SubscriptionTiersProps> = ({
       </div>
 
       {/* Pricing Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6 px-4 sm:px-0">
         {(["basic", "premium", "elite"] as const).map((tier) => {
           const Icon = planIcons[tier];
           const isPopular = tier === "premium";
@@ -138,7 +140,7 @@ const SubscriptionTiers: React.FC<SubscriptionTiersProps> = ({
             <div
               key={tier}
               onClick={() => onSelect(tier)}
-              className={`relative p-6 rounded-xl border-2 transition-all cursor-pointer
+              className={`relative p-4 sm:p-6 rounded-xl border-2 transition-all cursor-pointer
                 ${
                   selectedTier === tier
                     ? "border-black bg-gray-50"
@@ -148,39 +150,41 @@ const SubscriptionTiers: React.FC<SubscriptionTiersProps> = ({
             >
               {isPopular && (
                 <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
-                  <span className="bg-black text-white text-xs font-bold px-4 py-1 rounded-full">
+                  <span className="bg-black text-white text-xs font-bold px-3 sm:px-4 py-1 rounded-full whitespace-nowrap">
                     MOST POPULAR
                   </span>
                 </div>
               )}
 
-              <div className="text-center mb-6">
-                <div className="flex justify-center mb-4">
-                  <Icon className="h-8 w-8 text-black" />
+              <div className="text-center mb-4 sm:mb-6">
+                <div className="flex justify-center mb-3 sm:mb-4">
+                  <Icon className="h-6 w-6 sm:h-8 sm:w-8 text-black" />
                 </div>
-                <h3 className="text-xl font-bold mb-2 capitalize">
+                <h3 className="text-lg sm:text-xl font-bold mb-2 capitalize">
                   {tier} Plan
                 </h3>
-                <div className="text-3xl font-bold">
+                <div className="text-2xl sm:text-3xl font-bold">
                   ${getPrice(price)}
-                  <span className="text-base text-gray-500">
+                  <span className="text-sm sm:text-base text-gray-500">
                     /{isAnnual ? "year" : "month"}
                   </span>
                 </div>
               </div>
 
-              <ul className="space-y-4">
+              <ul className="space-y-3 sm:space-y-4">
                 {planFeatures[tier].map((feature) => (
                   <li key={feature} className="flex items-start gap-2">
-                    <Check className="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5" />
-                    <span className="text-gray-600">{feature}</span>
+                    <Check className="w-4 h-4 sm:w-5 sm:h-5 text-green-500 flex-shrink-0 mt-0.5" />
+                    <span className="text-sm sm:text-base text-gray-600">
+                      {feature}
+                    </span>
                   </li>
                 ))}
               </ul>
 
               <button
                 onClick={() => onSelect(tier)}
-                className={`w-full mt-6 py-3 rounded-lg font-medium transition-colors
+                className={`w-full mt-4 sm:mt-6 py-2.5 sm:py-3 rounded-lg font-medium transition-colors text-sm sm:text-base
                   ${
                     selectedTier === tier
                       ? "bg-black text-white"

@@ -48,8 +48,7 @@ export function LeadProtectedRoute({
         const { data, error } = await supabase
           .from(listingTable)
           .select("id")
-          .eq("user_id", user.id)
-          .single();
+          .eq("user_id", user.id);
 
         if (error && error.code !== "PGRST116") {
           console.error("Error checking listing:", error);
