@@ -15,6 +15,7 @@ import {
   DollarSign,
   SlidersHorizontal,
   MapPin,
+  Link,
 } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
@@ -47,6 +48,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 
 type ServiceType =
   | "venue"
@@ -584,6 +586,12 @@ export default function LeadsPage() {
           <p className="text-gray-500 mb-6">
             You need to create a service listing before you can view leads
           </p>
+          <Button
+            onClick={() => router.push("/services")}
+            className="bg-black hover:bg-stone-500"
+          >
+            Create Listing
+          </Button>
         </>
       ) : (
         <>

@@ -38,6 +38,7 @@ import { toast } from "sonner";
 import Link from "next/link";
 import { ProtectedRoute } from "@/components/ui/ProtectedRoute";
 import { VendorProtectedRoute } from "@/components/ui/VendorProtectedRoute";
+import router from "next/router";
 
 // Media type for images/videos
 interface ServiceMedia {
@@ -713,22 +714,16 @@ export default function MyListingsPage() {
   );
 
   const renderEmptyState = () => (
-    <div className="text-center py-12 bg-white rounded-lg shadow-sm">
-      <div className="mb-4">
-        <Plus className="mx-auto h-12 w-12 text-gray-400" />
-      </div>
-      <h3 className="text-lg font-medium text-gray-900 mb-2">
-        No {activeService && SERVICE_CONFIGS[activeService].displayName}{" "}
-        Listings
-      </h3>
+    <div className="text-center py-12 bg-white rounded-lg shadow">
+      <h3 className="text-lg font-medium text-gray-900 mb-2">No Listings</h3>
       <p className="text-gray-500 mb-6">
-        Create your first{" "}
-        {activeService &&
-          SERVICE_CONFIGS[activeService].displayName.toLowerCase()}{" "}
-        listing
+        Start today and create your first listing on AnyWeds!
       </p>
-      <Button asChild>
-        <Link href="/services">Create Listing</Link>
+      <Button
+        onClick={() => router.push("/services")}
+        className="bg-black hover:bg-stone-500"
+      >
+        Create Listing
       </Button>
     </div>
   );
@@ -765,7 +760,7 @@ export default function MyListingsPage() {
             <div className="max-w-7xl mx-auto px-4 py-8">
               <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
                 <h1 className="text-3xl font-bold">My Listings</h1>
-                <Button asChild>
+                <Button className="bg-black hover:bg-stone-500" asChild>
                   <Link href="/services">
                     <Plus className="w-4 h-4 mr-2" />
                     Add New Listing
@@ -777,22 +772,32 @@ export default function MyListingsPage() {
                 renderLoadingState()
               ) : (
                 <>
-                  {renderServiceNav()}
-                  {activeService && (
-                    <div className="mt-6">
-                      {renderFilters()}
-                      {filteredListings[activeService].length > 0 ? (
-                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                          {filteredListings[activeService].map((listing) => (
-                            <div key={listing.id} className="group">
-                              {renderListingCard(listing, activeService)}
+                  {Object.values(listings).some(
+                    (serviceListing) => serviceListing.length > 0
+                  ) ? (
+                    <>
+                      {renderServiceNav()}
+                      {activeService && (
+                        <div className="mt-6">
+                          {renderFilters()}
+                          {filteredListings[activeService].length > 0 ? (
+                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                              {filteredListings[activeService].map(
+                                (listing) => (
+                                  <div key={listing.id} className="group">
+                                    {renderListingCard(listing, activeService)}
+                                  </div>
+                                )
+                              )}
                             </div>
-                          ))}
+                          ) : (
+                            renderEmptyState()
+                          )}
                         </div>
-                      ) : (
-                        renderEmptyState()
                       )}
-                    </div>
+                    </>
+                  ) : (
+                    renderEmptyState()
                   )}
                 </>
               )}
