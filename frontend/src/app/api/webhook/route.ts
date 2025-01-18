@@ -37,6 +37,7 @@ export async function POST(req: Request) {
     // Update the user's subscription status in Supabase
     const { error } = await supabase.from("subscriptions").upsert({
       user_id: session.metadata?.userId,
+      listing_id: session.metadata?.listing_id,
       stripe_subscription_id: subscription.id,
       stripe_customer_id: subscription.customer as string,
       status: subscription.status,

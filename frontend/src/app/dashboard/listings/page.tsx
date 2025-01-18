@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, act } from "react";
 import { useAuth } from "@/context/AuthContext";
 import NavBar from "@/components/ui/NavBar";
 import Footer from "@/components/ui/Footer";
@@ -193,7 +193,7 @@ export default function MyListingsPage() {
     id: string;
     type: ServiceType;
   } | null>(null);
-  const [activeService, setActiveService] = useState<ServiceType>("venue");
+  const [activeService, setActiveService] = useState<ServiceType | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [sortBy, setSortBy] = useState<SortOption>("newest");
 
@@ -290,6 +290,14 @@ export default function MyListingsPage() {
           }
         )
       );
+
+      const firstValidService = (
+        Object.keys(SERVICE_CONFIGS) as ServiceType[]
+      ).find((serviceType) => allListings[serviceType].length > 0);
+
+      if (firstValidService) {
+        setActiveService(firstValidService);
+      }
 
       setListings(allListings);
     } catch (error: any) {
@@ -655,22 +663,24 @@ export default function MyListingsPage() {
   // UI Component renderers
   const renderServiceNav = () => (
     <div className="flex overflow-x-auto gap-2 p-2 bg-white rounded-lg shadow-sm no-scrollbar">
-      {(Object.keys(SERVICE_CONFIGS) as ServiceType[]).map((serviceType) => (
-        <button
-          key={serviceType}
-          onClick={() => setActiveService(serviceType)}
-          className={`px-4 py-2 rounded-lg whitespace-nowrap transition-all ${
-            activeService === serviceType
-              ? "bg-black text-white"
-              : "bg-gray-100 hover:bg-gray-200 text-gray-700"
-          } ${listings[serviceType].length === 0 ? "opacity-50" : ""}`}
-        >
-          {SERVICE_CONFIGS[serviceType].displayName}
-          <span className="ml-2 px-2 py-0.5 text-xs rounded-full bg-white/20">
-            {listings[serviceType].length}
-          </span>
-        </button>
-      ))}
+      {(Object.keys(SERVICE_CONFIGS) as ServiceType[]).map((serviceType) =>
+        listings[serviceType].length > 0 ? (
+          <button
+            key={serviceType}
+            onClick={() => setActiveService(serviceType)}
+            className={`px-4 py-2 rounded-lg whitespace-nowrap transition-all ${
+              activeService === serviceType
+                ? "bg-black text-white"
+                : "bg-gray-100 hover:bg-gray-200 text-gray-700"
+            } ${listings[serviceType].length === 0 ? "opacity-50" : ""}`}
+          >
+            {SERVICE_CONFIGS[serviceType].displayName}
+            <span className="ml-2 px-2 py-0.5 text-xs rounded-full bg-white/20">
+              {listings[serviceType].length}
+            </span>
+          </button>
+        ) : null
+      )}
     </div>
   );
 
@@ -708,11 +718,14 @@ export default function MyListingsPage() {
         <Plus className="mx-auto h-12 w-12 text-gray-400" />
       </div>
       <h3 className="text-lg font-medium text-gray-900 mb-2">
-        No {SERVICE_CONFIGS[activeService].displayName} Listings
+        No {activeService && SERVICE_CONFIGS[activeService].displayName}{" "}
+        Listings
       </h3>
       <p className="text-gray-500 mb-6">
         Create your first{" "}
-        {SERVICE_CONFIGS[activeService].displayName.toLowerCase()} listing
+        {activeService &&
+          SERVICE_CONFIGS[activeService].displayName.toLowerCase()}{" "}
+        listing
       </p>
       <Button asChild>
         <Link href="/services">Create Listing</Link>
@@ -765,20 +778,22 @@ export default function MyListingsPage() {
               ) : (
                 <>
                   {renderServiceNav()}
-                  <div className="mt-6">
-                    {renderFilters()}
-                    {filteredListings[activeService].length > 0 ? (
-                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                        {filteredListings[activeService].map((listing) => (
-                          <div key={listing.id} className="group">
-                            {renderListingCard(listing, activeService)}
-                          </div>
-                        ))}
-                      </div>
-                    ) : (
-                      renderEmptyState()
-                    )}
-                  </div>
+                  {activeService && (
+                    <div className="mt-6">
+                      {renderFilters()}
+                      {filteredListings[activeService].length > 0 ? (
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                          {filteredListings[activeService].map((listing) => (
+                            <div key={listing.id} className="group">
+                              {renderListingCard(listing, activeService)}
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        renderEmptyState()
+                      )}
+                    </div>
+                  )}
                 </>
               )}
             </div>

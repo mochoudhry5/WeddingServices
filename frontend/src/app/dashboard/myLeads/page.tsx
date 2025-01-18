@@ -171,7 +171,7 @@ export default function LeadsPage() {
             .select("id")
             .eq("user_id", user.id);
 
-          if (data && !error) {
+          if (data && !error && data.length > 0) {
             foundListings.push(serviceType as ServiceType);
             console.log(serviceType as ServiceType);
           }
