@@ -53,42 +53,33 @@ import { useAuth } from "@/context/AuthContext";
 import { supabase } from "@/lib/supabase";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { useVendorStatus } from "@/hooks/useVendorStatus";
 
 export default function NavBar() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isLoginOpen, setIsLoginOpen] = useState(false);
   const [isSignUpOpen, setIsSignUpOpen] = useState(false);
   const [showLogoutDialog, setShowLogoutDialog] = useState(false);
-  const [isVendor, setIsVendor] = useState<boolean | null>(null);
   const [showTypeModal, setShowTypeModal] = useState(false);
   const [selectedType, setSelectedType] = useState<"vendor" | "couple" | null>(
     null
   );
-  const { user, signOut, loading } = useAuth();
+  const { user, signOut, loading: authLoading } = useAuth();
+  const { isVendor, isLoading: vendorLoading } = useVendorStatus(user?.id);
 
-  useEffect(() => {
-    const checkVendorStatus = async () => {
-      if (!user?.id) return;
-      try {
-        const { data, error } = await supabase
-          .from("user_preferences")
-          .select("is_vendor")
-          .eq("id", user.id)
-          .single();
-
-        if (error) throw error;
-
-        if (data.is_vendor === null) {
-          setShowTypeModal(true);
-        }
-        setIsVendor(data.is_vendor);
-      } catch (error) {
-        console.error("Error fetching vendor status:", error);
-      }
-    };
-
-    checkVendorStatus();
-  }, [user]);
+  if (authLoading || vendorLoading) {
+    return (
+      <header className="sticky top-0 z-50 w-full bg-white shadow-md">
+        <div className="max-w-8xl mx-auto flex h-16 items-center justify-between px-4">
+          <div className="flex items-center gap-8">
+            <Link href="/" className="flex items-center gap-2">
+              <span className="text-3xl font-bold text-black">AnyWeds</span>
+            </Link>
+          </div>
+        </div>
+      </header>
+    );
+  }
 
   const handleLogout = async () => {
     try {
@@ -146,6 +137,7 @@ export default function NavBar() {
   };
 
   const UserTypeModal = () => {
+    const { updateVendorStatus } = useVendorStatus(user?.id);
     const [currentSelection, setCurrentSelection] = useState<
       "vendor" | "couple" | null
     >(selectedType);
@@ -172,21 +164,11 @@ export default function NavBar() {
       }
 
       try {
-        const { error } = await supabase
-          .from("user_preferences")
-          .update({
-            is_vendor: currentSelection === "vendor",
-            updated_at: new Date().toISOString(),
-          })
-          .eq("id", user.id);
-
-        if (error) throw error;
-        setIsVendor(currentSelection === "vendor");
+        await updateVendorStatus(currentSelection === "vendor");
         setShowTypeModal(false);
-        toast.success("Preferences updated successfully!");
       } catch (error) {
         console.error("Error updating user type:", error);
-        toast.error("Failed to update preferences");
+        // Error handling is done in the mutation
       }
     };
 

@@ -1,7 +1,6 @@
+// app/layout.tsx
 import "./globals.css";
-import { Toaster } from "sonner";
-import { AuthProvider } from "@/context/AuthContext";
-import { Analytics } from "@vercel/analytics/react";
+import Providers from "./providers";
 
 export default function RootLayout({
   children,
@@ -11,11 +10,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body>
-        <AuthProvider>
-          {children}
-          <Analytics />
-          <Toaster />
-        </AuthProvider>
+        <Providers>{children}</Providers>
       </body>
     </html>
   );

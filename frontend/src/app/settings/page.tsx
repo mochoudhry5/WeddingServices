@@ -20,6 +20,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { ProtectedRoute } from "@/components/ui/ProtectedRoute";
 import { toast } from "sonner";
+import { useVendorStatus } from "@/hooks/useVendorStatus";
 
 interface PasswordFormData {
   currentPassword: string;
@@ -48,7 +49,6 @@ const SectionLayout = ({
 const AccountSettings = () => {
   const { user, signOut } = useAuth();
   const [email, setEmail] = useState(user?.email || "");
-  const [isVendor, setIsVendor] = useState(false);
   const [showVendorDialog, setShowVendorDialog] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [pendingVendorState, setPendingVendorState] = useState(false);
@@ -57,29 +57,8 @@ const AccountSettings = () => {
     vendor: false,
     delete: false,
   });
-
-  // Fetch vendor status on component mount
-  useEffect(() => {
-    const fetchVendorStatus = async () => {
-      if (!user?.id) return;
-
-      try {
-        const { data, error } = await supabase
-          .from("user_preferences")
-          .select("is_vendor")
-          .eq("id", user.id)
-          .single();
-
-        if (error) throw error;
-        setIsVendor(data?.is_vendor || false);
-      } catch (error) {
-        console.error("Error fetching vendor status:", error);
-        toast.error("Failed to load account settings");
-      }
-    };
-
-    fetchVendorStatus();
-  }, [user?.id]);
+  const { isVendor, isLoading, isUpdating, updateVendorStatus } =
+    useVendorStatus(user?.id);
 
   const handleUpdateEmail = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -128,34 +107,12 @@ const AccountSettings = () => {
   const handleToggleVendor = async () => {
     if (!user?.id) return;
 
-    setLoading((prev) => ({ ...prev, vendor: true }));
     try {
-      const { error } = await supabase.rpc("delete_all_vendor_listings", {
-        vendor_id: user.id,
-        is_becoming_vendor: !isVendor,
-      });
-
-      if (error) throw error;
-
-      const { error: updateError } = await supabase
-        .from("user_preferences")
-        .update({ is_vendor: !isVendor })
-        .eq("id", user.id);
-
-      if (updateError) throw updateError;
-
-      setIsVendor(!isVendor);
+      await updateVendorStatus(pendingVendorState);
       setShowVendorDialog(false);
-      toast.success(
-        isVendor
-          ? "Successfully switched to non-vendor account"
-          : "Successfully switched to vendor account"
-      );
-    } catch (error: any) {
+    } catch (error) {
+      // Error handling is done in the hook
       console.error("Error updating vendor status:", error);
-      toast.error(error.message || "Failed to update account type");
-    } finally {
-      setLoading((prev) => ({ ...prev, vendor: false }));
     }
   };
 
@@ -231,9 +188,9 @@ const AccountSettings = () => {
               </p>
             </div>
             <Switch
-              checked={isVendor}
+              checked={isVendor || false}
               onCheckedChange={initiateVendorToggle}
-              disabled={loading.vendor}
+              disabled={isLoading || isUpdating}
             />
           </div>
           <p className="text-xs text-gray-500">
@@ -342,8 +299,11 @@ const AccountSettings = () => {
             <AlertDialogAction
               onClick={handleToggleVendor}
               className="bg-black text-white hover:bg-stone-500"
+              disabled={isUpdating}
             >
-              {pendingVendorState
+              {isUpdating
+                ? "Updating..."
+                : pendingVendorState
                 ? "Enable Vendor Account"
                 : "Disable & Delete Listings"}
             </AlertDialogAction>
