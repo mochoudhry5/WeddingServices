@@ -62,13 +62,13 @@ const serviceCategories: ServiceCategory[] = [
     color: "bg-blue-100 text-blue-800",
   },
   {
-    id: "photoVideo",
+    id: "photo_video",
     name: "Photo & Video",
     table: "photo_video_listing",
     color: "bg-purple-100 text-purple-800",
   },
   {
-    id: "hairMakeup",
+    id: "hair_makeup",
     name: "Hair & Makeup",
     table: "hair_makeup_listing",
     color: "bg-pink-100 text-pink-800",
@@ -80,7 +80,7 @@ const serviceCategories: ServiceCategory[] = [
     color: "bg-green-100 text-green-800",
   },
   {
-    id: "weddingPlanner",
+    id: "wedding_planner",
     name: "Wedding Planner & Coordinator",
     table: "wedding_planner_listing",
     color: "bg-yellow-100 text-yellow-800",
