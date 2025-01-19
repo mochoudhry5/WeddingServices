@@ -167,56 +167,6 @@ const isVenueListing = (listing: BaseListing): listing is VenueListing => {
   return "max_guests" in listing && "base_price" in listing;
 };
 
-const formatPrice = (price: number): string => {
-  return price.toLocaleString("en-US", {
-    style: "currency",
-    currency: "USD",
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 0,
-  });
-};
-
-const getPriceDisplay = (listing: BaseListing): string => {
-  if (isVenueListing(listing)) {
-    return formatPrice(listing.base_price);
-  } else if (isServiceBasedListing(listing)) {
-    return listing.min_service_price === listing.max_service_price
-      ? formatPrice(listing.min_service_price)
-      : `${formatPrice(listing.min_service_price)} - ${formatPrice(
-          listing.max_service_price
-        )}`;
-  }
-  return "";
-};
-
-const getServiceTypeDisplay = (
-  listing: BaseListing,
-  serviceType: ServiceType
-): string => {
-  if (serviceType === "hair-makeup") {
-    return listing.service_type === "both"
-      ? "Hair & Makeup"
-      : listing.service_type === "hair"
-      ? "Hair"
-      : "Makeup";
-  }
-  if (serviceType === "photo-video") {
-    return listing.service_type === "both"
-      ? "Photography & Videography"
-      : listing.service_type === "photography"
-      ? "Photography"
-      : "Videography";
-  }
-  if (serviceType === "wedding-planner") {
-    return listing.service_type === "both"
-      ? "Wedding Planner & Coordinator"
-      : listing.service_type === "weddingPlanner"
-      ? "Wedding Planner"
-      : "Wedding Coordinator";
-  }
-  return "DJ";
-};
-
 const useListings = (user: any) => {
   const [listings, setListings] = useState<Listings>({
     venue: [],
