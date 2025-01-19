@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { useRouter } from "next/navigation";
 import {
@@ -17,6 +17,7 @@ import {
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { supabase } from "@/lib/supabase";
+import ErrorBoundary from "@/components/ui/ErrorBoundary";
 
 // UI Components
 import NavBar from "@/components/ui/NavBar";
@@ -73,6 +74,16 @@ type Leads = {
   [K in ServiceType]: Lead[];
 };
 
+type SortOption = "newest" | "price-low" | "price-high";
+
+interface ServiceConfig {
+  listingTable: string;
+  type: string;
+  displayName: string;
+  icon: React.ComponentType<any>;
+  table: string;
+}
+
 const SERVICE_CONFIGS = {
   venue: {
     listingTable: "venue_listing",
@@ -111,10 +122,7 @@ const SERVICE_CONFIGS = {
   },
 } as const;
 
-export default function LeadsPage() {
-  const router = useRouter();
-  const { user } = useAuth();
-  const [activeTab, setActiveTab] = useState<ServiceType | null>(null);
+const useLeadsData = (user: any) => {
   const [userListings, setUserListings] = useState<ServiceType[]>([]);
   const [leads, setLeads] = useState<Leads>({
     venue: [],
@@ -123,81 +131,44 @@ export default function LeadsPage() {
     photoVideo: [],
     hairMakeup: [],
   });
-  const [filteredLeads, setFilteredLeads] = useState<Leads>({
-    venue: [],
-    dj: [],
-    weddingPlanner: [],
-    photoVideo: [],
-    hairMakeup: [],
-  });
   const [isLoading, setIsLoading] = useState(true);
-  const [searchTerm, setSearchTerm] = useState("");
-  const [sortBy, setSortBy] = useState<"newest" | "price-low" | "price-high">(
-    "newest"
-  );
-  const [isFilterSheetOpen, setIsFilterSheetOpen] = useState(false);
-  const [budgetRange, setBudgetRange] = useState([0, 0]);
-  const [errors, setErrors] = useState({ min: "", max: "" });
 
-  useEffect(() => {
-    if (user) {
-      loadAllLeads();
-    }
-  }, [user]);
-
-  useEffect(() => {
-    filterLeads();
-  }, [budgetRange, searchTerm, sortBy, leads, activeTab]);
-
-  useEffect(() => {
-    if (user) {
-      checkUserListings();
-    }
-  }, [user]);
-
-  const checkUserListings = async () => {
+  const checkUserListings = useCallback(async () => {
     if (!user?.id) return;
 
     try {
       setIsLoading(true);
       const foundListings: ServiceType[] = [];
 
-      // Check each service table for user listings
       await Promise.all(
         Object.entries(SERVICE_CONFIGS).map(async ([serviceType, config]) => {
           const { data, error } = await supabase
-            .from(`${config.listingTable}`)
+            .from(config.listingTable)
             .select("id")
             .eq("user_id", user.id);
 
           if (data && !error && data.length > 0) {
             foundListings.push(serviceType as ServiceType);
-            console.log(serviceType as ServiceType);
           }
         })
       );
 
-      // Sort foundListings to match the order in SERVICE_CONFIGS
       const orderedListings = Object.keys(SERVICE_CONFIGS).filter(
         (serviceType) => foundListings.includes(serviceType as ServiceType)
       ) as ServiceType[];
 
       setUserListings(orderedListings);
 
-      // Set initial active tab to the first service the user has a listing for
-      if (orderedListings.length > 0 && !activeTab) {
-        setActiveTab(orderedListings[0]);
-      }
-
-      // After finding listings, load leads only for those services
       if (orderedListings.length > 0) {
-        loadLeadsForServices(orderedListings);
+        await loadLeadsForServices(orderedListings);
       }
     } catch (error) {
       console.error("Error checking user listings:", error);
       toast.error("Failed to load your listings");
+    } finally {
+      setIsLoading(false);
     }
-  };
+  }, [user?.id]);
 
   const loadLeadsForServices = async (services: ServiceType[]) => {
     try {
@@ -225,52 +196,30 @@ export default function LeadsPage() {
     } catch (error) {
       console.error("Error loading leads:", error);
       toast.error("Failed to load leads");
-    } finally {
-      setIsLoading(false);
     }
   };
 
-  const loadAllLeads = async () => {
-    try {
-      if (!user?.id) return;
-
-      setIsLoading(true);
-      const allLeads: Leads = {
-        venue: [],
-        dj: [],
-        weddingPlanner: [],
-        photoVideo: [],
-        hairMakeup: [],
-      };
-
-      await Promise.all(
-        (Object.keys(SERVICE_CONFIGS) as ServiceType[]).map(
-          async (serviceType) => {
-            const { data, error } = await supabase
-              .from(SERVICE_CONFIGS[serviceType].table)
-              .select("*")
-              .order("created_at", { ascending: false });
-
-            if (error) throw error;
-            allLeads[serviceType] = data || [];
-          }
-        )
-      );
-
-      setLeads(allLeads);
-    } catch (error) {
-      console.error("Error loading leads:", error);
-      toast.error("Failed to load leads");
-    } finally {
-      setIsLoading(false);
+  useEffect(() => {
+    if (user) {
+      checkUserListings();
     }
-  };
+  }, [user, checkUserListings]);
 
-  const filterLeads = () => {
+  return { userListings, leads, isLoading, setLeads };
+};
+
+const useLeadsFiltering = (
+  leads: Leads,
+  searchTerm: string,
+  sortBy: SortOption,
+  budgetRange: [number, number]
+) => {
+  return useMemo(() => {
     const filtered = { ...leads };
     Object.keys(filtered).forEach((serviceType) => {
       let serviceLeads = [...leads[serviceType as ServiceType]];
 
+      // Filter by search term
       if (searchTerm) {
         const search = searchTerm.toLowerCase();
         serviceLeads = serviceLeads.filter(
@@ -284,6 +233,7 @@ export default function LeadsPage() {
         );
       }
 
+      // Filter by budget range
       if (budgetRange[0] > 0 || budgetRange[1] > 0) {
         serviceLeads = serviceLeads.filter((lead) => {
           if (budgetRange[0] > 0 && budgetRange[1] > 0) {
@@ -299,6 +249,7 @@ export default function LeadsPage() {
         });
       }
 
+      // Sort leads
       serviceLeads.sort((a, b) => {
         switch (sortBy) {
           case "newest":
@@ -317,58 +268,77 @@ export default function LeadsPage() {
 
       filtered[serviceType as ServiceType] = serviceLeads;
     });
+    return filtered;
+  }, [leads, searchTerm, sortBy, budgetRange]);
+};
 
-    setFilteredLeads(filtered);
-  };
+export default function LeadsPage() {
+  const router = useRouter();
+  const { user } = useAuth();
+  const [activeTab, setActiveTab] = useState<ServiceType | null>(null);
+  const { userListings, leads, isLoading, setLeads } = useLeadsData(user);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [sortBy, setSortBy] = useState<SortOption>("newest");
+  const [isFilterSheetOpen, setIsFilterSheetOpen] = useState(false);
+  const [budgetRange, setBudgetRange] = useState<[number, number]>([0, 0]);
+  const [errors, setErrors] = useState({ min: "", max: "" });
 
-  const validateAndSetBudget = (value: string, index: number) => {
-    const newBudgetRange = [...budgetRange];
-    const numValue = value === "" ? 0 : Math.max(0, parseInt(value));
-    newBudgetRange[index] = numValue;
+  const filteredLeads = useLeadsFiltering(
+    leads,
+    searchTerm,
+    sortBy,
+    budgetRange
+  );
 
-    const newErrors = { min: "", max: "" };
-
-    if (index === 0 && numValue > budgetRange[1] && budgetRange[1] !== 0) {
-      newErrors.min = "Min budget cannot exceed max budget";
+  useEffect(() => {
+    if (!activeTab && userListings.length > 0) {
+      setActiveTab(userListings[0]);
     }
+  }, [userListings, activeTab]);
 
-    if (index === 1 && numValue < budgetRange[0] && numValue !== 0) {
-      newErrors.max = "Max budget cannot be less than min budget";
-    }
+  const validateAndSetBudget = useCallback(
+    (value: string, index: number) => {
+      const newBudgetRange = [...budgetRange] as [number, number];
+      const numValue = value === "" ? 0 : Math.max(0, parseInt(value));
+      newBudgetRange[index] = numValue;
 
-    if (numValue > 1000000) {
-      newErrors[index === 0 ? "min" : "max"] =
-        "Budget cannot exceed $1,000,000";
-      return;
-    }
+      const newErrors = { min: "", max: "" };
 
-    setBudgetRange(newBudgetRange);
-    setErrors(newErrors);
-  };
+      if (index === 0 && numValue > budgetRange[1] && budgetRange[1] !== 0) {
+        newErrors.min = "Min budget cannot exceed max budget";
+      }
 
-  const handleFilterApply = () => {
+      if (index === 1 && numValue < budgetRange[0] && numValue !== 0) {
+        newErrors.max = "Max budget cannot be less than min budget";
+      }
+
+      if (numValue > 1000000) {
+        newErrors[index === 0 ? "min" : "max"] =
+          "Budget cannot exceed $1,000,000";
+        return;
+      }
+
+      setBudgetRange(newBudgetRange);
+      setErrors(newErrors);
+    },
+    [budgetRange]
+  );
+
+  const handleFilterApply = useCallback(() => {
     if (!errors.min && !errors.max) {
-      filterLeads();
       setIsFilterSheetOpen(false);
     }
-  };
+  }, [errors]);
 
-  const handleFilterReset = () => {
+  const handleFilterReset = useCallback(() => {
     setBudgetRange([0, 0]);
     setErrors({ min: "", max: "" });
     setIsFilterSheetOpen(false);
-  };
+  }, []);
 
-  const formatPhoneNumber = (phone: string): string => {
-    const cleaned = phone.replace(/\D/g, "");
-    return `(${cleaned.slice(0, 3)}) ${cleaned.slice(3, 6)}-${cleaned.slice(
-      6
-    )}`;
-  };
-
-  const formatDate = (dateString: string) => {
+  const formatDate = useCallback((dateString: string) => {
     return format(new Date(dateString), "MMM d, yyyy");
-  };
+  }, []);
 
   // UI Component renderers
   const renderServiceNav = () => (
@@ -505,29 +475,31 @@ export default function LeadsPage() {
     </div>
   );
 
-  const renderLeadCard = (lead: Lead) => {
-    // Early return if activeTab is null (shouldn't happen in practice)
-    if (!activeTab) return null;
-
-    const Icon = SERVICE_CONFIGS[activeTab].icon;
-
-    const handleCardClick = (e: React.MouseEvent, lead: Lead) => {
+  const handleCardClick = useCallback(
+    (e: React.MouseEvent, lead: Lead, activeTab: ServiceType) => {
       e.preventDefault();
       e.stopPropagation();
-      // Don't trigger if clicking on a button or link within the card
       if (
         !(e.target as HTMLElement).closest("button") &&
         !(e.target as HTMLElement).closest("a")
       ) {
         window.open(`/services/leads/${activeTab}/${lead.id}`, "_blank");
       }
-    };
+    },
+    []
+  );
+
+  const renderLeadCard = (lead: Lead) => {
+    // Early return if activeTab is null (shouldn't happen in practice)
+    if (!activeTab) return null;
+
+    const Icon = SERVICE_CONFIGS[activeTab].icon;
 
     return (
       <Card
         key={lead.id}
         className="overflow-hidden cursor-pointer hover:shadow-md transition-all h-full flex flex-col"
-        onClick={(e) => handleCardClick(e, lead)}
+        onClick={(e) => handleCardClick(e, lead, activeTab)}
       >
         <CardHeader className="space-y-1">
           <div className="flex items-start justify-between">
@@ -622,46 +594,50 @@ export default function LeadsPage() {
   );
 
   return (
-    <ProtectedRoute>
-      <VendorProtectedRoute>
-        <div className="flex flex-col min-h-screen bg-gray-50">
-          <NavBar />
-          <div className="flex-1">
-            <div className="max-w-7xl mx-auto px-4 py-8">
-              <h1 className="text-3xl font-bold mb-8">Service Leads</h1>
+    <ErrorBoundary>
+      <ProtectedRoute>
+        <VendorProtectedRoute>
+          <div className="flex flex-col min-h-screen bg-gray-50">
+            <NavBar />
+            <div className="flex-1">
+              <div className="max-w-7xl mx-auto px-4 py-8">
+                <h1 className="text-3xl font-bold mb-8">Service Leads</h1>
 
-              {isLoading ? (
-                renderLoadingState()
-              ) : (
-                <>
-                  {userListings.length > 0 ? (
-                    <>
-                      {renderServiceNav()}
-                      {activeTab && (
-                        <div className="mt-6">
-                          {renderFilters()}
-                          {filteredLeads[activeTab].length > 0 ? (
-                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                              {filteredLeads[activeTab].map((lead) => (
-                                <div key={lead.id}>{renderLeadCard(lead)}</div>
-                              ))}
-                            </div>
-                          ) : (
-                            renderEmptyState()
-                          )}
-                        </div>
-                      )}
-                    </>
-                  ) : (
-                    renderEmptyState()
-                  )}
-                </>
-              )}
+                {isLoading ? (
+                  renderLoadingState()
+                ) : (
+                  <>
+                    {userListings.length > 0 ? (
+                      <>
+                        {renderServiceNav()}
+                        {activeTab && (
+                          <div className="mt-6">
+                            {renderFilters()}
+                            {filteredLeads[activeTab].length > 0 ? (
+                              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                                {filteredLeads[activeTab].map((lead) => (
+                                  <div key={lead.id}>
+                                    {renderLeadCard(lead)}
+                                  </div>
+                                ))}
+                              </div>
+                            ) : (
+                              renderEmptyState()
+                            )}
+                          </div>
+                        )}
+                      </>
+                    ) : (
+                      renderEmptyState()
+                    )}
+                  </>
+                )}
+              </div>
             </div>
+            <Footer />
           </div>
-          <Footer />
-        </div>
-      </VendorProtectedRoute>
-    </ProtectedRoute>
+        </VendorProtectedRoute>
+      </ProtectedRoute>
+    </ErrorBoundary>
   );
 }
