@@ -1,11 +1,13 @@
 "use client";
 
-import React, { useState, useEffect, act } from "react";
+import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { useAuth } from "@/context/AuthContext";
+import { useRouter } from "next/navigation";
 import NavBar from "@/components/ui/NavBar";
 import Footer from "@/components/ui/Footer";
 import MediaCarousel from "@/components/ui/MediaCarousel";
 import { supabase } from "@/lib/supabase";
+import ErrorBoundary from "@/components/ui/ErrorBoundary";
 import {
   Pencil,
   Trash2,
@@ -164,8 +166,8 @@ const isServiceBasedListing = (
 const isVenueListing = (listing: BaseListing): listing is VenueListing => {
   return "max_guests" in listing && "base_price" in listing;
 };
-export default function MyListingsPage() {
-  const { user } = useAuth();
+
+const useListings = (user: any) => {
   const [listings, setListings] = useState<Listings>({
     venue: [],
     "photo-video": [],
@@ -173,44 +175,12 @@ export default function MyListingsPage() {
     dj: [],
     "wedding-planner": [],
   });
-  const [filteredListings, setFilteredListings] = useState<Listings>({
-    venue: [],
-    "photo-video": [],
-    "hair-makeup": [],
-    dj: [],
-    "wedding-planner": [],
-  });
   const [isLoading, setIsLoading] = useState(true);
-  const [listingToDelete, setListingToDelete] = useState<{
-    id: string;
-    type: ServiceType;
-  } | null>(null);
-  const [listingToArchive, setListingToArchive] = useState<{
-    id: string;
-    type: ServiceType;
-  } | null>(null);
-  const [listingToRestore, setListingToRestore] = useState<{
-    id: string;
-    type: ServiceType;
-  } | null>(null);
-  const [activeService, setActiveService] = useState<ServiceType | null>(null);
-  const [searchTerm, setSearchTerm] = useState("");
-  const [sortBy, setSortBy] = useState<SortOption>("newest");
 
-  useEffect(() => {
-    if (user) {
-      loadAllListings();
-    }
-  }, [user]);
+  const loadAllListings = useCallback(async () => {
+    if (!user?.id) return;
 
-  useEffect(() => {
-    filterListings();
-  }, [searchTerm, sortBy, listings]);
-
-  const loadAllListings = async () => {
     try {
-      if (!user?.id) return;
-
       setIsLoading(true);
       const allListings: Listings = {
         venue: [],
@@ -224,8 +194,6 @@ export default function MyListingsPage() {
         (Object.keys(SERVICE_CONFIGS) as ServiceType[]).map(
           async (serviceType) => {
             const config = SERVICE_CONFIGS[serviceType];
-
-            // Common base fields for all listings
             const baseFields = [
               "id",
               "user_id",
@@ -238,44 +206,29 @@ export default function MyListingsPage() {
               "is_archived",
             ];
 
-            // Add fields based on service type
-            let selectFields;
-            switch (serviceType) {
-              case "venue":
-                selectFields = [...baseFields, "base_price", "max_guests"].join(
-                  ","
-                );
-                break;
-              case "dj":
-                selectFields = [
-                  ...baseFields,
-                  "min_service_price",
-                  "max_service_price",
-                  "years_experience", // Add years_experience only for service-based listings
-                ].join(",");
-                break;
-              case "hair-makeup":
-              case "photo-video":
-              case "wedding-planner":
-                selectFields = [
-                  ...baseFields,
-                  "min_service_price",
-                  "max_service_price",
-                  "years_experience", // Add years_experience only for service-based listings
-                  "service_type",
-                ].join(",");
-                break;
+            const selectFields = [...baseFields];
+            if (serviceType === "venue") {
+              selectFields.push("base_price", "max_guests");
+            } else {
+              selectFields.push(
+                "min_service_price",
+                "max_service_price",
+                "years_experience"
+              );
+              if (serviceType !== "dj") {
+                selectFields.push("service_type");
+              }
             }
 
             const { data, error } = await supabase
               .from(config.tableName)
               .select(
-                `${selectFields},
-                ${config.mediaTableName} (
-                  id,
-                  file_path,
-                  display_order
-                )`
+                `${selectFields.join(",")},
+              ${config.mediaTableName} (
+                id,
+                file_path,
+                display_order
+              )`
               )
               .eq("user_id", user.id)
               .order("created_at", { ascending: false });
@@ -291,14 +244,6 @@ export default function MyListingsPage() {
         )
       );
 
-      const firstValidService = (
-        Object.keys(SERVICE_CONFIGS) as ServiceType[]
-      ).find((serviceType) => allListings[serviceType].length > 0);
-
-      if (firstValidService) {
-        setActiveService(firstValidService);
-      }
-
       setListings(allListings);
     } catch (error: any) {
       console.error("Error loading listings:", error);
@@ -306,25 +251,36 @@ export default function MyListingsPage() {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [user?.id]);
 
-  const filterListings = () => {
+  useEffect(() => {
+    if (user) {
+      loadAllListings();
+    }
+  }, [user, loadAllListings]);
+
+  return { listings, setListings, isLoading };
+};
+
+const useListingsFiltering = (
+  listings: Listings,
+  searchTerm: string,
+  sortBy: SortOption
+) => {
+  return useMemo(() => {
     const filtered = { ...listings };
     Object.keys(filtered).forEach((serviceType) => {
       let serviceListings = [...listings[serviceType as ServiceType]];
 
       if (searchTerm) {
+        const searchLower = searchTerm.toLowerCase();
         serviceListings = serviceListings.filter(
           (listing) =>
-            listing.business_name
-              .toLowerCase()
-              .includes(searchTerm.toLowerCase()) ||
-            listing.description
-              .toLowerCase()
-              .includes(searchTerm.toLowerCase()) ||
+            listing.business_name.toLowerCase().includes(searchLower) ||
+            listing.description.toLowerCase().includes(searchLower) ||
             `${listing.city}, ${listing.state}`
               .toLowerCase()
-              .includes(searchTerm.toLowerCase())
+              .includes(searchLower)
         );
       }
 
@@ -365,134 +321,176 @@ export default function MyListingsPage() {
       });
       filtered[serviceType as ServiceType] = serviceListings;
     });
+    return filtered;
+  }, [listings, searchTerm, sortBy]);
+};
 
-    setFilteredListings(filtered);
-  };
+export default function MyListingsPage() {
+  const router = useRouter();
+  const { user } = useAuth();
+  const { listings, setListings, isLoading } = useListings(user);
+  const [activeService, setActiveService] = useState<ServiceType | null>(null);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [sortBy, setSortBy] = useState<SortOption>("newest");
+  const [listingToDelete, setListingToDelete] = useState<{
+    id: string;
+    type: ServiceType;
+  } | null>(null);
+  const [listingToArchive, setListingToArchive] = useState<{
+    id: string;
+    type: ServiceType;
+  } | null>(null);
+  const [listingToRestore, setListingToRestore] = useState<{
+    id: string;
+    type: ServiceType;
+  } | null>(null);
 
-  const handleDelete = async (listingId: string, serviceType: ServiceType) => {
-    try {
-      if (!user?.id) {
-        toast.error("You must be logged in to delete a listing");
-        return;
+  const filteredListings = useListingsFiltering(listings, searchTerm, sortBy);
+
+  useEffect(() => {
+    // Set initial active service
+    if (!activeService) {
+      const firstValidService = (
+        Object.keys(SERVICE_CONFIGS) as ServiceType[]
+      ).find((serviceType) => listings[serviceType].length > 0);
+      if (firstValidService) {
+        setActiveService(firstValidService);
       }
+    }
+  }, [listings, activeService]);
 
-      const config = SERVICE_CONFIGS[serviceType];
-      const listingToDelete = listings[serviceType].find(
-        (listing) => listing.id === listingId
-      );
-
-      if (!listingToDelete) {
-        throw new Error("Listing not found");
-      }
-
-      // Delete media files first if they exist
-      if (listingToDelete.media?.length > 0) {
-        const filePaths = listingToDelete.media.map((media) => media.file_path);
-        const { error: storageError } = await supabase.storage
-          .from(config.storageBucket)
-          .remove(filePaths);
-
-        if (storageError) throw storageError;
-      }
-
-      // Call the RPC function to delete the single listing
-      const { error: deleteError } = await supabase.rpc(
-        "delete_single_listing",
-        {
-          vendor_id: user.id,
-          listing_id: listingId,
-          service_type: serviceType,
+  const handleDelete = useCallback(
+    async (listingId: string, serviceType: ServiceType) => {
+      try {
+        if (!user?.id) {
+          toast.error("You must be logged in to delete a listing");
+          return;
         }
-      );
 
-      if (deleteError) throw deleteError;
+        const config = SERVICE_CONFIGS[serviceType];
+        const listingToDelete = listings[serviceType].find(
+          (listing) => listing.id === listingId
+        );
 
-      // Update local state to remove the deleted listing
-      setListings((prev) => ({
-        ...prev,
-        [serviceType]: prev[serviceType].filter(
-          (listing) => listing.id !== listingId
-        ),
-      }));
+        if (!listingToDelete) {
+          throw new Error("Listing not found");
+        }
 
-      toast.success(`${config.displayName} deleted successfully`);
-    } catch (error: any) {
-      console.error("Delete error:", error);
-      toast.error(error.message || "Failed to delete listing");
-    } finally {
-      setListingToDelete(null);
-    }
-  };
+        // Delete media files
+        if (listingToDelete.media?.length > 0) {
+          const { error: storageError } = await supabase.storage
+            .from(config.storageBucket)
+            .remove(listingToDelete.media.map((media) => media.file_path));
 
-  const handleArchive = async (listingId: string, serviceType: ServiceType) => {
-    try {
-      if (!user?.id) {
-        toast.error("You must be logged in to archive a listing");
-        return;
+          if (storageError) throw storageError;
+        }
+
+        const { error: deleteError } = await supabase.rpc(
+          "delete_single_listing",
+          {
+            vendor_id: user.id,
+            listing_id: listingId,
+            service_type: serviceType,
+          }
+        );
+
+        if (deleteError) throw deleteError;
+
+        setListings((prev) => ({
+          ...prev,
+          [serviceType]: prev[serviceType].filter(
+            (listing) => listing.id !== listingId
+          ),
+        }));
+
+        toast.success(`${config.displayName} deleted successfully`);
+      } catch (error: any) {
+        console.error("Delete error:", error);
+        toast.error(error.message || "Failed to delete listing");
+      } finally {
+        setListingToDelete(null);
       }
+    },
+    [user?.id, listings, setListings]
+  );
 
-      const config = SERVICE_CONFIGS[serviceType];
+  const handleArchive = useCallback(
+    async (listingId: string, serviceType: ServiceType) => {
+      try {
+        if (!user?.id) {
+          toast.error("You must be logged in to archive a listing");
+          return;
+        }
 
-      // Update the is_archived column to true
-      const { error: updateError } = await supabase
-        .from(config.tableName)
-        .update({ is_archived: true })
-        .eq("id", listingId)
-        .eq("user_id", user.id);
+        const config = SERVICE_CONFIGS[serviceType];
 
-      if (updateError) throw updateError;
+        // Update the is_archived column to true
+        const { error: updateError } = await supabase
+          .from(config.tableName)
+          .update({ is_archived: true })
+          .eq("id", listingId)
+          .eq("user_id", user.id);
 
-      // Update local state to reflect the archived status
-      setListings((prev) => ({
-        ...prev,
-        [serviceType]: prev[serviceType].map((listing) =>
-          listing.id === listingId ? { ...listing, is_archived: true } : listing
-        ),
-      }));
+        if (updateError) throw updateError;
 
-      toast.success(`${config.displayName} archived successfully`);
-    } catch (error: any) {
-      console.error("Archive error:", error);
-      toast.error(error.message || "Failed to archive listing");
-    } finally {
-      setListingToArchive(null);
-    }
-  };
+        // Update local state to reflect the archived status
+        setListings((prev) => ({
+          ...prev,
+          [serviceType]: prev[serviceType].map((listing) =>
+            listing.id === listingId
+              ? { ...listing, is_archived: true }
+              : listing
+          ),
+        }));
 
-  const handleRestore = async (listingId: string, serviceType: ServiceType) => {
-    try {
-      if (!user?.id) {
-        toast.error("You must be logged in to restore a listing");
-        return;
+        toast.success(`${config.displayName} archived successfully`);
+      } catch (error: any) {
+        console.error("Archive error:", error);
+        toast.error(error.message || "Failed to archive listing");
+      } finally {
+        setListingToArchive(null);
       }
+    },
+    [user?.id, setListings]
+  );
 
-      const config = SERVICE_CONFIGS[serviceType];
+  const handleRestore = useCallback(
+    async (listingId: string, serviceType: ServiceType) => {
+      try {
+        if (!user?.id) {
+          toast.error("You must be logged in to restore a listing");
+          return;
+        }
 
-      // Update the is_archived column to false
-      const { error: updateError } = await supabase
-        .from(config.tableName)
-        .update({ is_archived: false })
-        .eq("id", listingId)
-        .eq("user_id", user.id);
+        const config = SERVICE_CONFIGS[serviceType];
 
-      if (updateError) throw updateError;
+        // Update the is_archived column to false
+        const { error: updateError } = await supabase
+          .from(config.tableName)
+          .update({ is_archived: false })
+          .eq("id", listingId)
+          .eq("user_id", user.id);
 
-      // Update local state to reflect the restored status
-      setListings((prev) => ({
-        ...prev,
-        [serviceType]: prev[serviceType].map((listing) =>
-          listing.id === listingId
-            ? { ...listing, is_archived: false }
-            : listing
-        ),
-      }));
+        if (updateError) throw updateError;
 
-      toast.success(`${config.displayName} restored successfully`);
-    } catch (error: any) {
-      console.error("Restore error:", error);
-      toast.error(error.message || "Failed to restore listing");
-    }
-  };
+        // Update local state to reflect the restored status
+        setListings((prev) => ({
+          ...prev,
+          [serviceType]: prev[serviceType].map((listing) =>
+            listing.id === listingId
+              ? { ...listing, is_archived: false }
+              : listing
+          ),
+        }));
+
+        toast.success(`${config.displayName} restored successfully`);
+      } catch (error: any) {
+        console.error("Restore error:", error);
+        toast.error(error.message || "Failed to restore listing");
+      }
+    },
+    [user?.id, setListings]
+  );
 
   const renderListingCard = (
     listing: BaseListing,
@@ -540,7 +538,7 @@ export default function MyListingsPage() {
                 <button
                   onClick={(e) => {
                     e.preventDefault();
-                    window.location.href = `/${config.routePrefix}/edit/${listing.id}`;
+                    router.push(`/${config.routePrefix}/edit/${listing.id}`);
                   }}
                   className="bg-white/90 p-2 rounded-full shadow-lg hover:bg-white transition-colors"
                 >
@@ -713,22 +711,18 @@ export default function MyListingsPage() {
   );
 
   const renderEmptyState = () => (
-    <div className="text-center py-12 bg-white rounded-lg shadow-sm">
-      <div className="mb-4">
-        <Plus className="mx-auto h-12 w-12 text-gray-400" />
-      </div>
+    <div className="text-center py-12 bg-white rounded-lg shadow">
       <h3 className="text-lg font-medium text-gray-900 mb-2">
-        No {activeService && SERVICE_CONFIGS[activeService].displayName}{" "}
-        Listings
+        No Active Listings found
       </h3>
       <p className="text-gray-500 mb-6">
-        Create your first{" "}
-        {activeService &&
-          SERVICE_CONFIGS[activeService].displayName.toLowerCase()}{" "}
-        listing
+        Start today and create your first listing on AnyWeds!
       </p>
-      <Button asChild>
-        <Link href="/services">Create Listing</Link>
+      <Button
+        onClick={() => router.push("/services")}
+        className="bg-black hover:bg-stone-500"
+      >
+        Create Listing
       </Button>
     </div>
   );
@@ -757,128 +751,143 @@ export default function MyListingsPage() {
   );
 
   return (
-    <ProtectedRoute>
-      <VendorProtectedRoute>
-        <div className="flex flex-col min-h-screen bg-gray-50">
-          <NavBar />
-          <div className="flex-1">
-            <div className="max-w-7xl mx-auto px-4 py-8">
-              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
-                <h1 className="text-3xl font-bold">My Listings</h1>
-                <Button asChild>
-                  <Link href="/services">
-                    <Plus className="w-4 h-4 mr-2" />
-                    Add New Listing
-                  </Link>
-                </Button>
-              </div>
+    <ErrorBoundary>
+      <ProtectedRoute>
+        <VendorProtectedRoute>
+          <div className="flex flex-col min-h-screen bg-gray-50">
+            <NavBar />
+            <div className="flex-1">
+              <div className="max-w-7xl mx-auto px-4 py-8">
+                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
+                  <h1 className="text-3xl font-bold">My Listings</h1>
+                  <Button className="bg-black hover:bg-stone-500" asChild>
+                    <Link href="/services">
+                      <Plus className="w-4 h-4 mr-2" />
+                      Add New Listing
+                    </Link>
+                  </Button>
+                </div>
 
-              {isLoading ? (
-                renderLoadingState()
-              ) : (
-                <>
-                  {renderServiceNav()}
-                  {activeService && (
-                    <div className="mt-6">
-                      {renderFilters()}
-                      {filteredListings[activeService].length > 0 ? (
-                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                          {filteredListings[activeService].map((listing) => (
-                            <div key={listing.id} className="group">
-                              {renderListingCard(listing, activeService)}
-                            </div>
-                          ))}
-                        </div>
-                      ) : (
-                        renderEmptyState()
-                      )}
-                    </div>
-                  )}
-                </>
-              )}
+                {isLoading ? (
+                  renderLoadingState()
+                ) : (
+                  <>
+                    {Object.values(listings).some(
+                      (serviceListing) => serviceListing.length > 0
+                    ) ? (
+                      <>
+                        {renderServiceNav()}
+                        {activeService && (
+                          <div className="mt-6">
+                            {renderFilters()}
+                            {filteredListings[activeService].length > 0 ? (
+                              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                                {filteredListings[activeService].map(
+                                  (listing) => (
+                                    <div key={listing.id} className="group">
+                                      {renderListingCard(
+                                        listing,
+                                        activeService
+                                      )}
+                                    </div>
+                                  )
+                                )}
+                              </div>
+                            ) : (
+                              renderEmptyState()
+                            )}
+                          </div>
+                        )}
+                      </>
+                    ) : (
+                      renderEmptyState()
+                    )}
+                  </>
+                )}
+              </div>
             </div>
+            <Footer />
+            <AlertDialog
+              open={!!listingToRestore}
+              onOpenChange={() => setListingToRestore(null)}
+            >
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Restore Listing</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    Are you sure you want to restore this listing? This will
+                    make it visible to the public again.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                  <AlertDialogAction
+                    onClick={() =>
+                      listingToRestore &&
+                      handleRestore(listingToRestore.id, listingToRestore.type)
+                    }
+                    className="bg-black hover:bg-stone-500"
+                  >
+                    Restore
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+            <AlertDialog
+              open={!!listingToArchive}
+              onOpenChange={() => setListingToArchive(null)}
+            >
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Archive Listing</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    Are you sure you want to archive this listing? This will
+                    hide it from public view but you can restore it later.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                  <AlertDialogAction
+                    onClick={() =>
+                      listingToArchive &&
+                      handleArchive(listingToArchive.id, listingToArchive.type)
+                    }
+                    className="bg-black hover:bg-stone-500"
+                  >
+                    Archive
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+            <AlertDialog
+              open={!!listingToDelete}
+              onOpenChange={() => setListingToDelete(null)}
+            >
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Delete Listing</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    Are you sure you want to delete this listing? This action
+                    cannot be undone.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                  <AlertDialogAction
+                    onClick={() =>
+                      listingToDelete &&
+                      handleDelete(listingToDelete.id, listingToDelete.type)
+                    }
+                    className="bg-black hover:bg-stone-500"
+                  >
+                    Delete
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
           </div>
-          <Footer />
-          <AlertDialog
-            open={!!listingToRestore}
-            onOpenChange={() => setListingToRestore(null)}
-          >
-            <AlertDialogContent>
-              <AlertDialogHeader>
-                <AlertDialogTitle>Restore Listing</AlertDialogTitle>
-                <AlertDialogDescription>
-                  Are you sure you want to restore this listing? This will make
-                  it visible to the public again.
-                </AlertDialogDescription>
-              </AlertDialogHeader>
-              <AlertDialogFooter>
-                <AlertDialogCancel>Cancel</AlertDialogCancel>
-                <AlertDialogAction
-                  onClick={() =>
-                    listingToRestore &&
-                    handleRestore(listingToRestore.id, listingToRestore.type)
-                  }
-                  className="bg-black hover:bg-stone-500"
-                >
-                  Restore
-                </AlertDialogAction>
-              </AlertDialogFooter>
-            </AlertDialogContent>
-          </AlertDialog>
-          <AlertDialog
-            open={!!listingToArchive}
-            onOpenChange={() => setListingToArchive(null)}
-          >
-            <AlertDialogContent>
-              <AlertDialogHeader>
-                <AlertDialogTitle>Archive Listing</AlertDialogTitle>
-                <AlertDialogDescription>
-                  Are you sure you want to archive this listing? This will hide
-                  it from public view but you can restore it later.
-                </AlertDialogDescription>
-              </AlertDialogHeader>
-              <AlertDialogFooter>
-                <AlertDialogCancel>Cancel</AlertDialogCancel>
-                <AlertDialogAction
-                  onClick={() =>
-                    listingToArchive &&
-                    handleArchive(listingToArchive.id, listingToArchive.type)
-                  }
-                  className="bg-black hover:bg-stone-500"
-                >
-                  Archive
-                </AlertDialogAction>
-              </AlertDialogFooter>
-            </AlertDialogContent>
-          </AlertDialog>
-          <AlertDialog
-            open={!!listingToDelete}
-            onOpenChange={() => setListingToDelete(null)}
-          >
-            <AlertDialogContent>
-              <AlertDialogHeader>
-                <AlertDialogTitle>Delete Listing</AlertDialogTitle>
-                <AlertDialogDescription>
-                  Are you sure you want to delete this listing? This action
-                  cannot be undone.
-                </AlertDialogDescription>
-              </AlertDialogHeader>
-              <AlertDialogFooter>
-                <AlertDialogCancel>Cancel</AlertDialogCancel>
-                <AlertDialogAction
-                  onClick={() =>
-                    listingToDelete &&
-                    handleDelete(listingToDelete.id, listingToDelete.type)
-                  }
-                  className="bg-black hover:bg-stone-500"
-                >
-                  Delete
-                </AlertDialogAction>
-              </AlertDialogFooter>
-            </AlertDialogContent>
-          </AlertDialog>
-        </div>
-      </VendorProtectedRoute>
-    </ProtectedRoute>
+        </VendorProtectedRoute>
+      </ProtectedRoute>
+    </ErrorBoundary>
   );
 }

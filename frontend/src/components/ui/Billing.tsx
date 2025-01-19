@@ -1,5 +1,12 @@
 import React, { useState, useEffect } from "react";
-import { CreditCard, ChevronDown, ChevronUp, XCircle } from "lucide-react";
+import {
+  CreditCard,
+  ChevronDown,
+  ChevronUp,
+  XCircle,
+  Link,
+} from "lucide-react";
+import NextLink from "next/link";
 import { useAuth } from "@/context/AuthContext";
 import { supabase } from "@/lib/supabase";
 import { toast } from "sonner";
@@ -26,6 +33,7 @@ interface StripeSubscription {
   is_annual: boolean;
   current_period_end: string;
   created_at: string;
+  listing_id: string;
 }
 
 interface BaseListing {
@@ -118,6 +126,33 @@ const CategoryCard = ({
   </div>
 );
 
+// First, update the StripeSubscription interface to include listing_id
+interface StripeSubscription {
+  id: string;
+  user_id: string;
+  stripe_subscription_id: string;
+  stripe_customer_id: string;
+  status: string;
+  service_type: string;
+  tier_type: string;
+  is_annual: boolean;
+  current_period_end: string;
+  created_at: string;
+  listing_id: string; // Add this line
+}
+
+const getServiceTypeForUrl = (dbServiceType: string): string => {
+  const mapping: { [key: string]: string } = {
+    wedding_planner: "weddingPlanner",
+    hair_makeup: "hairMakeup",
+    photo_video: "photoVideo",
+    dj: "dj",
+    venue: "venue",
+  };
+  return mapping[dbServiceType] || dbServiceType;
+};
+
+// Then update the SubscriptionList component
 const SubscriptionList = ({
   subscriptions,
   onCancelSubscription,
@@ -129,19 +164,22 @@ const SubscriptionList = ({
     <table className="w-full">
       <thead className="bg-gray-50">
         <tr>
-          <th className="px-4 py-2 text-left text-xs font-medium text-gray-500">
+          <th className="px-4 py-2 text-center text-xs font-medium text-gray-500">
             Start Date
           </th>
-          <th className="px-4 py-2 text-left text-xs font-medium text-gray-500">
+          <th className="px-4 py-2 text-center text-xs font-medium text-gray-500">
             Next Payment
           </th>
-          <th className="px-4 py-2 text-left text-xs font-medium text-gray-500">
+          <th className="px-4 py-2 text-center text-xs font-medium text-gray-500">
             Plan Type
           </th>
-          <th className="px-4 py-2 text-left text-xs font-medium text-gray-500">
+          <th className="px-4 py-2 text-center text-xs font-medium text-gray-500">
             Status
           </th>
-          <th className="px-4 py-2 text-left text-xs font-medium text-gray-500">
+          <th className="px-4 py-2 text-center text-xs font-medium text-gray-500">
+            Listing
+          </th>
+          <th className="px-4 py-2 text-center text-xs font-medium text-gray-500">
             Actions
           </th>
         </tr>
@@ -149,18 +187,18 @@ const SubscriptionList = ({
       <tbody className="divide-y divide-gray-200">
         {subscriptions.map((subscription) => (
           <tr key={subscription.id}>
-            <td className="px-4 py-3 text-sm">
+            <td className="px-4 py-3 text-sm text-center">
               {new Date(subscription.created_at).toLocaleDateString()}
             </td>
-            <td className="px-4 py-3 text-sm">
+            <td className="px-4 py-3 text-sm text-center">
               {new Date(subscription.current_period_end).toLocaleDateString()}
             </td>
-            <td className="px-4 py-3 text-sm">
+            <td className="px-4 py-3 text-sm text-center">
               {subscription.tier_type.charAt(0).toUpperCase() +
                 subscription.tier_type.slice(1)}{" "}
               ({subscription.is_annual ? "Annual" : "Monthly"})
             </td>
-            <td className="px-4 py-3">
+            <td className="px-4 py-3 text-center">
               <span
                 className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
                   subscription.status === "active"
@@ -176,11 +214,23 @@ const SubscriptionList = ({
                   subscription.status.slice(1)}
               </span>
             </td>
-            <td className="px-4 py-3">
+            <td className="px-4 py-3 text-center">
+              <NextLink
+                href={`/services/${getServiceTypeForUrl(
+                  subscription.service_type
+                )}/${subscription.listing_id}`}
+                className="inline-block text-black hover:text-stone-500 transition-colors"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                <Link size={20} />
+              </NextLink>
+            </td>
+            <td className="px-4 py-3 text-center">
               {subscription.status === "active" && (
                 <button
                   onClick={() => onCancelSubscription(subscription)}
-                  className="text-red-600 hover:text-red-800 flex items-center space-x-1"
+                  className="inline-flex items-center space-x-1 text-red-600 hover:text-red-800"
                 >
                   <XCircle size={16} />
                   <span>Cancel</span>
@@ -236,29 +286,29 @@ const Billing = () => {
 
         setListings(newListings);
 
-        // Fetch all stripe subscriptions with the correct fields
+        // Fetch all stripe subscriptions including listing_id
         const { data: subscriptionData, error: subscriptionError } =
           await supabase
             .from("subscriptions")
             .select(
               `
-              id,
-              user_id,
-              stripe_subscription_id,
-              stripe_customer_id,
-              status,
-              service_type,
-              tier_type,
-              is_annual,
-              current_period_end,
-              created_at
-            `
+            id,
+            user_id,
+            stripe_subscription_id,
+            stripe_customer_id,
+            status,
+            service_type,
+            tier_type,
+            is_annual,
+            current_period_end,
+            created_at,
+            listing_id
+          `
             )
             .eq("user_id", user.id)
             .order("created_at", { ascending: false });
 
         if (subscriptionError) throw subscriptionError;
-        console.log("Subscriptions fetched:", subscriptionData);
         setSubscriptions(subscriptionData || []);
       } catch (error) {
         console.error("Error fetching billing data:", error);

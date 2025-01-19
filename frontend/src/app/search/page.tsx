@@ -282,6 +282,22 @@ export default function ServicesSearchPage() {
     }
   }, []);
 
+  // Event Handlers for Service Type Change
+  const handleServiceTypeChange = (value: ServiceType) => {
+    const newFilters: SearchFilters = {
+      ...searchFilters,
+      searchQuery: searchFilters.searchQuery, // Preserve existing location data
+      priceRange: [0, 0],
+      capacity: { min: 0, max: 0 },
+      cateringOption: "both",
+      sortOption: "default",
+      serviceType: value,
+    };
+    setSearchFilters(newFilters);
+    updateURLWithFilters(newFilters);
+    fetchServiceListings(false, newFilters);
+  };
+
   const calculateDistance = (
     coords1: Coordinates,
     coords2: Coordinates
@@ -952,9 +968,8 @@ export default function ServicesSearchPage() {
   return (
     <div className="min-h-screen flex flex-col">
       <NavBar />
-
       <main className="flex-grow flex flex-col bg-gray-50">
-        {/* Search Bar - Fixed at top */}
+        {/* Search Bar Section */}
         <div className="bg-white border-b border-gray-200">
           <div className="max-w-7xl mx-auto w-full px-4 py-4 sm:px-6 lg:px-8">
             <form onSubmit={handleSearchSubmit}>
@@ -963,25 +978,7 @@ export default function ServicesSearchPage() {
                 <div className="w-full sm:w-auto md:w-48">
                   <Select
                     value={searchFilters.serviceType}
-                    onValueChange={(value: ServiceType) => {
-                      const newFilters: SearchFilters = {
-                        searchQuery: {
-                          enteredLocation: "",
-                          city: "",
-                          state: "",
-                          country: "",
-                          address: "",
-                        },
-                        priceRange: [0, 0],
-                        capacity: { min: 0, max: 0 },
-                        cateringOption: "both",
-                        sortOption: "default", // This is now correctly typed as SortOption
-                        serviceType: value,
-                      };
-                      setSearchFilters(newFilters);
-                      updateURLWithFilters(newFilters);
-                      fetchServiceListings(false, newFilters);
-                    }}
+                    onValueChange={handleServiceTypeChange}
                   >
                     <SelectTrigger className="h-12 w-full">
                       <SelectValue placeholder="Select service" />

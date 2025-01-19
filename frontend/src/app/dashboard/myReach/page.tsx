@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback, useMemo, memo } from "react";
 import { useAuth } from "@/context/AuthContext";
 import NavBar from "@/components/ui/NavBar";
 import Footer from "@/components/ui/Footer";
@@ -11,6 +11,7 @@ import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { ProtectedRoute } from "@/components/ui/ProtectedRoute";
 import { NonVendorProtectedRoute } from "@/components/ui/NonVendorProtectedRoute";
+import ErrorBoundary from "@/components/ui/ErrorBoundary";
 import {
   Select,
   SelectContent,
@@ -42,8 +43,8 @@ import {
   Building2,
   HeartHandshake,
 } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
-// Types remain the same
 interface Inquiry {
   id: string;
   created_at: string;
@@ -65,6 +66,8 @@ type ServiceType =
 type Inquiries = {
   [K in ServiceType]: Inquiry[];
 };
+
+type SortOption = "newest" | "price-low" | "price-high";
 
 const SERVICE_CONFIGS = {
   venue: {
@@ -99,13 +102,7 @@ const SERVICE_CONFIGS = {
   },
 } as const;
 
-export default function QuickReachesPage() {
-  const router = useRouter();
-  const { user } = useAuth();
-  const [selectedService, setSelectedService] = useState<ServiceType | null>(
-    null
-  );
-  const [activeServices, setActiveServices] = useState<ServiceType[]>([]);
+const useInquiriesData = (user: any) => {
   const [inquiries, setInquiries] = useState<Inquiries>({
     venue: [],
     photoVideo: [],
@@ -113,38 +110,16 @@ export default function QuickReachesPage() {
     dj: [],
     weddingPlanner: [],
   });
-  const [filteredInquiries, setFilteredInquiries] = useState<Inquiries>({
-    venue: [],
-    photoVideo: [],
-    hairMakeup: [],
-    dj: [],
-    weddingPlanner: [],
-  });
   const [isLoading, setIsLoading] = useState(true);
-  const [searchTerm, setSearchTerm] = useState("");
-  const [sortBy, setSortBy] = useState<"newest" | "price-low" | "price-high">(
-    "newest"
-  );
-  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
-  const [inquiryToDelete, setInquiryToDelete] = useState<Inquiry | null>(null);
+  const [activeServices, setActiveServices] = useState<ServiceType[]>([]);
 
-  useEffect(() => {
-    if (user) {
-      loadAllInquiries();
+  const loadAllInquiries = useCallback(async () => {
+    if (!user?.id) {
+      setIsLoading(false);
+      return;
     }
-  }, [user]);
 
-  useEffect(() => {
-    filterInquiries();
-  }, [searchTerm, sortBy, inquiries, selectedService]);
-
-  const loadAllInquiries = async () => {
     try {
-      if (!user?.id) {
-        setIsLoading(false);
-        return;
-      }
-
       setIsLoading(true);
       const allInquiries: Inquiries = {
         venue: [],
@@ -172,106 +147,56 @@ export default function QuickReachesPage() {
         })
       );
 
-      // Determine which services have inquiries
       const servicesWithInquiries = Object.entries(allInquiries)
         .filter(([_, inquiries]) => inquiries.length > 0)
         .map(([serviceType]) => serviceType as ServiceType);
 
       setActiveServices(servicesWithInquiries);
-
-      // Set initial selected service if there are any active services
-      if (servicesWithInquiries.length > 0 && !selectedService) {
-        setSelectedService(servicesWithInquiries[0]);
-      }
-
       setInquiries(allInquiries);
     } catch (error) {
       console.error("Error loading inquiries:", error);
-      toast.error("Failed to load inquiries");
+      toast.error("Failed to load inquiries. Please try again later.");
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [user?.id]);
 
-  // Rest of the component logic remains the same
-  const handleEdit = (inquiry: Inquiry) => {
-    if (!selectedService) return;
-
-    const editRoutes = {
-      dj: `/services/dj/editReach/${inquiry.id}`,
-      hairMakeup: `/services/hairMakeup/editReach/${inquiry.id}`,
-      photoVideo: `/services/photoVideo/editReach/${inquiry.id}`,
-      venue: `/services/venue/editReach/${inquiry.id}`,
-      weddingPlanner: `/services/weddingPlanner/editReach/${inquiry.id}`,
-    };
-
-    const route = editRoutes[selectedService];
-    if (route) {
-      router.push(route);
-    } else {
-      toast.error("Invalid service type");
+  useEffect(() => {
+    if (user) {
+      loadAllInquiries();
     }
+  }, [user, loadAllInquiries]);
+
+  const reloadInquiries = useCallback(() => {
+    loadAllInquiries();
+  }, [loadAllInquiries]);
+
+  return {
+    inquiries,
+    setInquiries,
+    isLoading,
+    activeServices,
+    setActiveServices,
+    reloadInquiries,
   };
+};
 
-  const handleDelete = async (inquiry: Inquiry) => {
-    try {
-      if (!selectedService) return;
-
-      const serviceConfig = SERVICE_CONFIGS[selectedService];
-      const { error } = await supabase
-        .from(serviceConfig.table)
-        .delete()
-        .eq("id", inquiry.id);
-
-      if (error) throw error;
-
-      setInquiries((prev) => ({
-        ...prev,
-        [selectedService]: prev[selectedService].filter(
-          (item) => item.id !== inquiry.id
-        ),
-      }));
-
-      // After deleting, check if this was the last inquiry for this service type
-      const updatedInquiries = inquiries[selectedService].filter(
-        (item) => item.id !== inquiry.id
-      );
-
-      if (updatedInquiries.length === 0) {
-        const newActiveServices = activeServices.filter(
-          (s) => s !== selectedService
-        );
-        setActiveServices(newActiveServices);
-
-        // If there are other active services, switch to the first one
-        if (newActiveServices.length > 0) {
-          setSelectedService(newActiveServices[0]);
-        } else {
-          setSelectedService(null);
-        }
-      }
-
-      toast.success("Inquiry deleted successfully");
-      setShowDeleteDialog(false);
-      setInquiryToDelete(null);
-    } catch (error) {
-      console.error("Error deleting inquiry:", error);
-      toast.error("Failed to delete inquiry");
-    }
-  };
-
-  const filterInquiries = () => {
+const useInquiriesFiltering = (
+  inquiries: Inquiries,
+  searchTerm: string,
+  sortBy: SortOption
+) => {
+  return useMemo(() => {
     const filtered = { ...inquiries };
     Object.keys(filtered).forEach((serviceType) => {
       let serviceInquiries = [...inquiries[serviceType as ServiceType]];
 
       if (searchTerm) {
+        const search = searchTerm.toLowerCase();
         serviceInquiries = serviceInquiries.filter(
           (item) =>
-            item.message?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            `${item.city}, ${item.state}`
-              .toLowerCase()
-              .includes(searchTerm.toLowerCase())
+            item.message?.toLowerCase().includes(search) ||
+            `${item.city}, ${item.state}`.toLowerCase().includes(search)
         );
       }
 
@@ -293,20 +218,23 @@ export default function QuickReachesPage() {
 
       filtered[serviceType as ServiceType] = serviceInquiries;
     });
+    return filtered;
+  }, [inquiries, searchTerm, sortBy]);
+};
 
-    setFilteredInquiries(filtered);
-  };
-
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString("en-US", {
-      year: "numeric",
-      month: "short",
-      day: "numeric",
-    });
-  };
-
-  const renderServiceNav = () => (
+// Memoized Components
+const ServiceNav = memo(
+  ({
+    activeServices,
+    selectedService,
+    setSelectedService,
+    inquiries,
+  }: {
+    activeServices: ServiceType[];
+    selectedService: ServiceType | null;
+    setSelectedService: (service: ServiceType) => void;
+    inquiries: Inquiries;
+  }) => (
     <div className="flex overflow-x-auto gap-2 p-2 bg-white rounded-lg shadow-sm no-scrollbar">
       {activeServices.map((serviceType) => {
         const Icon = SERVICE_CONFIGS[serviceType].icon;
@@ -329,43 +257,53 @@ export default function QuickReachesPage() {
         );
       })}
     </div>
-  );
+  )
+);
+ServiceNav.displayName = "ServiceNav";
 
-  // Rest of the rendering logic remains the same
-  const renderFilters = () => (
-    <div className="flex flex-col sm:flex-row gap-4 mb-6">
-      <div className="relative flex-grow">
-        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-        <Input
-          type="text"
-          placeholder="Search by location or message..."
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          className="pl-10"
-        />
-      </div>
-      <Select
-        value={sortBy}
-        onValueChange={(value: typeof sortBy) => setSortBy(value)}
-      >
-        <SelectTrigger className="w-[180px]">
-          <SelectValue placeholder="Sort by..." />
-        </SelectTrigger>
-        <SelectContent>
-          <SelectItem value="newest">Newest First</SelectItem>
-          <SelectItem value="price-low">Budget: Low to High</SelectItem>
-          <SelectItem value="price-high">Budget: High to Low</SelectItem>
-        </SelectContent>
-      </Select>
-    </div>
-  );
-
-  const renderCard = (inquiry: Inquiry) => {
-    if (!selectedService) return null;
+const InquiryCard = memo(
+  ({
+    inquiry,
+    selectedService,
+    onEdit,
+    onDelete,
+  }: {
+    inquiry: Inquiry;
+    selectedService: ServiceType;
+    onEdit: (inquiry: Inquiry) => void;
+    onDelete: (inquiry: Inquiry) => void;
+  }) => {
     const Icon = SERVICE_CONFIGS[selectedService].icon;
+    const formatDate = useCallback((dateString: string) => {
+      const date = new Date(dateString);
+      return date.toLocaleDateString("en-US", {
+        year: "numeric",
+        month: "short",
+        day: "numeric",
+      });
+    }, []);
+
+    // Stop event propagation for button clicks
+    const handleEditClick = useCallback(
+      (e: React.MouseEvent) => {
+        e.preventDefault();
+        e.stopPropagation();
+        onEdit(inquiry);
+      },
+      [inquiry, onEdit]
+    );
+
+    const handleDeleteClick = useCallback(
+      (e: React.MouseEvent) => {
+        e.preventDefault();
+        e.stopPropagation();
+        onDelete(inquiry);
+      },
+      [inquiry, onDelete]
+    );
 
     return (
-      <Card key={inquiry.id} className="overflow-hidden">
+      <Card className="overflow-hidden">
         <CardHeader className="space-y-1">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-2">
@@ -376,10 +314,7 @@ export default function QuickReachesPage() {
             </div>
             <div className="flex items-center gap-2">
               <button
-                onClick={(e) => {
-                  e.preventDefault();
-                  handleEdit(inquiry);
-                }}
+                onClick={handleEditClick}
                 className="p-2 hover:bg-gray-100 rounded-full transition-colors"
                 aria-label="Edit inquiry"
               >
@@ -400,11 +335,7 @@ export default function QuickReachesPage() {
                 </svg>
               </button>
               <button
-                onClick={(e) => {
-                  e.preventDefault();
-                  setInquiryToDelete(inquiry);
-                  setShowDeleteDialog(true);
-                }}
+                onClick={handleDeleteClick}
                 className="p-2 hover:bg-gray-100 rounded-full transition-colors"
                 aria-label="Delete inquiry"
               >
@@ -460,22 +391,187 @@ export default function QuickReachesPage() {
         </CardContent>
       </Card>
     );
+  }
+);
+
+InquiryCard.displayName = "InquiryCard";
+
+export default function QuickReachesPage() {
+  const router = useRouter();
+  const { user } = useAuth();
+  const [selectedService, setSelectedService] = useState<ServiceType | null>(
+    null
+  );
+  const {
+    inquiries,
+    setInquiries,
+    isLoading,
+    activeServices,
+    setActiveServices,
+  } = useInquiriesData(user);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [sortBy, setSortBy] = useState<SortOption>("newest");
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [inquiryToDelete, setInquiryToDelete] = useState<Inquiry | null>(null);
+
+  const filteredInquiries = useInquiriesFiltering(
+    inquiries,
+    searchTerm,
+    sortBy
+  );
+
+  useEffect(() => {
+    if (!selectedService && activeServices.length > 0) {
+      setSelectedService(activeServices[0]);
+    }
+  }, [activeServices, selectedService]);
+
+  const handleEdit = useCallback(
+    (inquiry: Inquiry) => {
+      if (!selectedService) return;
+      const editRoutes = {
+        dj: `/services/dj/editReach/${inquiry.id}`,
+        hairMakeup: `/services/hairMakeup/editReach/${inquiry.id}`,
+        photoVideo: `/services/photoVideo/editReach/${inquiry.id}`,
+        venue: `/services/venue/editReach/${inquiry.id}`,
+        weddingPlanner: `/services/weddingPlanner/editReach/${inquiry.id}`,
+      };
+
+      const route = editRoutes[selectedService];
+      if (route) {
+        router.push(route);
+      } else {
+        toast.error("Invalid service type");
+      }
+    },
+    [selectedService, router]
+  );
+
+  const handleDelete = useCallback(
+    async (inquiry: Inquiry) => {
+      try {
+        if (!selectedService) return;
+
+        const serviceConfig = SERVICE_CONFIGS[selectedService];
+        const { error } = await supabase
+          .from(serviceConfig.table)
+          .delete()
+          .eq("id", inquiry.id);
+
+        if (error) throw error;
+
+        setInquiries((prev) => ({
+          ...prev,
+          [selectedService]: prev[selectedService].filter(
+            (item) => item.id !== inquiry.id
+          ),
+        }));
+
+        // After deleting, check if this was the last inquiry for this service type
+        const updatedInquiries = inquiries[selectedService].filter(
+          (item) => item.id !== inquiry.id
+        );
+
+        if (updatedInquiries.length === 0) {
+          const newActiveServices = activeServices.filter(
+            (s) => s !== selectedService
+          );
+          setActiveServices(newActiveServices);
+
+          // If there are other active services, switch to the first one
+          if (newActiveServices.length > 0) {
+            setSelectedService(newActiveServices[0]);
+          } else {
+            setSelectedService(null);
+          }
+        }
+
+        toast.success("Inquiry deleted successfully");
+        setShowDeleteDialog(false);
+        setInquiryToDelete(null);
+      } catch (error) {
+        console.error("Error deleting inquiry:", error);
+        toast.error("Failed to delete inquiry");
+      }
+    },
+    [
+      selectedService,
+      inquiries,
+      activeServices,
+      setActiveServices,
+      setSelectedService,
+      setInquiries,
+    ]
+  );
+
+  const renderServiceNav = () => (
+    <ServiceNav
+      activeServices={activeServices}
+      selectedService={selectedService}
+      setSelectedService={setSelectedService}
+      inquiries={inquiries}
+    />
+  );
+
+  // Rest of the rendering logic remains the same
+  const renderFilters = () => (
+    <div className="flex flex-col sm:flex-row gap-4 mb-6">
+      <div className="relative flex-grow">
+        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+        <Input
+          type="text"
+          placeholder="Search by location or message..."
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          className="pl-10"
+        />
+      </div>
+      <Select
+        value={sortBy}
+        onValueChange={(value: typeof sortBy) => setSortBy(value)}
+      >
+        <SelectTrigger className="w-[180px]">
+          <SelectValue placeholder="Sort by..." />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem value="newest">Newest First</SelectItem>
+          <SelectItem value="price-low">Budget: Low to High</SelectItem>
+          <SelectItem value="price-high">Budget: High to Low</SelectItem>
+        </SelectContent>
+      </Select>
+    </div>
+  );
+
+  const renderCard = (inquiry: Inquiry) => {
+    if (!selectedService) return null;
+
+    return (
+      <InquiryCard
+        inquiry={inquiry}
+        selectedService={selectedService}
+        onEdit={handleEdit}
+        onDelete={(inq) => {
+          setInquiryToDelete(inq);
+          setShowDeleteDialog(true);
+        }}
+      />
+    );
   };
 
   const renderEmptyState = () => (
     <div className="text-center py-12 bg-white rounded-lg shadow">
       <h3 className="text-lg font-medium text-gray-900 mb-2">
-        No quick reaches yet
+        No Quick Reaches Yet
       </h3>
       <p className="text-gray-500 mb-6">
         Get started by submitting your first quick reach
       </p>
-      <button
+      <Button
         onClick={() => router.push("/quickReach")}
-        className="inline-flex items-center px-4 py-2 bg-black text-white rounded-lg hover:bg-black/90 transition-colors"
+        className="bg-black hover:bg-stone-500"
       >
-        <span>Create Quick Reach</span>
-      </button>
+        Create Quick Reach
+      </Button>
     </div>
   );
 
@@ -496,77 +592,79 @@ export default function QuickReachesPage() {
   );
 
   return (
-    <ProtectedRoute>
-      <NonVendorProtectedRoute>
-        <div className="flex flex-col min-h-screen bg-gray-50">
-          <NavBar />
-          <div className="flex-1">
-            <div className="max-w-7xl mx-auto px-4 py-8">
-              <h1 className="text-3xl font-bold mb-8">Quick Reaches</h1>
+    <ErrorBoundary>
+      <ProtectedRoute>
+        <NonVendorProtectedRoute>
+          <div className="flex flex-col min-h-screen bg-gray-50">
+            <NavBar />
+            <div className="flex-1">
+              <div className="max-w-7xl mx-auto px-4 py-8">
+                <h1 className="text-3xl font-bold mb-8">Quick Reaches</h1>
 
-              {isLoading ? (
-                renderLoadingState()
-              ) : (
-                <>
-                  {activeServices.length > 0 ? (
-                    <>
-                      {renderServiceNav()}
-                      {selectedService && (
-                        <div className="mt-6">
-                          {renderFilters()}
-                          {filteredInquiries[selectedService].length > 0 ? (
-                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                              {filteredInquiries[selectedService].map(
-                                (inquiry) => (
-                                  <div key={inquiry.id}>
-                                    {renderCard(inquiry)}
-                                  </div>
-                                )
-                              )}
-                            </div>
-                          ) : (
-                            renderEmptyState()
-                          )}
-                        </div>
-                      )}
-                    </>
-                  ) : (
-                    renderEmptyState()
-                  )}
-                </>
-              )}
+                {isLoading ? (
+                  renderLoadingState()
+                ) : (
+                  <>
+                    {activeServices.length > 0 ? (
+                      <>
+                        {renderServiceNav()}
+                        {selectedService && (
+                          <div className="mt-6">
+                            {renderFilters()}
+                            {filteredInquiries[selectedService].length > 0 ? (
+                              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                                {filteredInquiries[selectedService].map(
+                                  (inquiry) => (
+                                    <div key={inquiry.id}>
+                                      {renderCard(inquiry)}
+                                    </div>
+                                  )
+                                )}
+                              </div>
+                            ) : (
+                              renderEmptyState()
+                            )}
+                          </div>
+                        )}
+                      </>
+                    ) : (
+                      renderEmptyState()
+                    )}
+                  </>
+                )}
+              </div>
             </div>
-          </div>
-          <Footer />
+            <Footer />
 
-          {/* Delete Confirmation Dialog */}
-          <AlertDialog
-            open={showDeleteDialog}
-            onOpenChange={setShowDeleteDialog}
-          >
-            <AlertDialogContent>
-              <AlertDialogHeader>
-                <AlertDialogTitle>Delete Quick Reach</AlertDialogTitle>
-                <AlertDialogDescription>
-                  Are you sure you want to delete this quick reach? This action
-                  cannot be undone.
-                </AlertDialogDescription>
-              </AlertDialogHeader>
-              <AlertDialogFooter>
-                <AlertDialogCancel>Cancel</AlertDialogCancel>
-                <AlertDialogAction
-                  onClick={() =>
-                    inquiryToDelete && handleDelete(inquiryToDelete)
-                  }
-                  className="bg-red-600 hover:bg-red-700 focus:ring-red-600"
-                >
-                  Delete
-                </AlertDialogAction>
-              </AlertDialogFooter>
-            </AlertDialogContent>
-          </AlertDialog>
-        </div>
-      </NonVendorProtectedRoute>
-    </ProtectedRoute>
+            {/* Delete Confirmation Dialog */}
+            <AlertDialog
+              open={showDeleteDialog}
+              onOpenChange={setShowDeleteDialog}
+            >
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Delete Quick Reach</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    Are you sure you want to delete this quick reach? This
+                    action cannot be undone.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                  <AlertDialogAction
+                    onClick={() =>
+                      inquiryToDelete && handleDelete(inquiryToDelete)
+                    }
+                    className="bg-red-600 hover:bg-red-700 focus:ring-red-600"
+                  >
+                    Delete
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+          </div>
+        </NonVendorProtectedRoute>
+      </ProtectedRoute>
+    </ErrorBoundary>
   );
 }
