@@ -52,125 +52,6 @@ const LocationInput = ({
     libraries,
   });
 
-  // Function to get user's location
-  const getCurrentLocation = async () => {
-    if (!isLoaded) {
-      toast.error("Google Maps is not loaded yet");
-      return;
-    }
-
-    setIsLoadingLocation(true);
-
-    try {
-      if (!navigator.geolocation) {
-        throw new Error("Geolocation is not supported by your browser");
-      }
-
-      const position = await new Promise<GeolocationPosition>(
-        (resolve, reject) => {
-          navigator.geolocation.getCurrentPosition(
-            resolve,
-            (error) => {
-              switch (error.code) {
-                case error.PERMISSION_DENIED:
-                  reject(
-                    new Error(
-                      "Please allow location access to use this feature."
-                    )
-                  );
-                  break;
-                case error.POSITION_UNAVAILABLE:
-                  reject(new Error("Location information is unavailable."));
-                  break;
-                case error.TIMEOUT:
-                  reject(new Error("Location request timed out."));
-                  break;
-                default:
-                  reject(new Error("An unknown error occurred."));
-                  break;
-              }
-            },
-            {
-              enableHighAccuracy: true,
-              timeout: 10000,
-              maximumAge: 30000,
-            }
-          );
-        }
-      );
-
-      const { latitude, longitude } = position.coords;
-      const geocoder = new google.maps.Geocoder();
-
-      const result = await new Promise<google.maps.GeocoderResult | null>(
-        (resolve, reject) => {
-          geocoder.geocode(
-            { location: { lat: latitude, lng: longitude } },
-            (results, status) => {
-              if (status === "OK" && results && results.length > 0) {
-                resolve(results[0]);
-              } else {
-                reject(new Error("Could not find location"));
-              }
-            }
-          );
-        }
-      );
-
-      if (!result) {
-        throw new Error("No results found for your location");
-      }
-
-      const addressComponents = result.address_components || [];
-      let city = "";
-      let state = "";
-
-      for (const component of addressComponents) {
-        if (component.types.includes("locality")) {
-          city = component.long_name;
-        }
-        if (component.types.includes("administrative_area_level_1")) {
-          state = component.short_name;
-        }
-      }
-
-      const formattedLocation =
-        city && state ? `${city}, ${state}` : result.formatted_address || "";
-
-      if (!formattedLocation) {
-        throw new Error("Could not determine your location");
-      }
-
-      onChange(formattedLocation);
-
-      const place: GooglePlace = {
-        formatted_address: formattedLocation,
-        address_components: addressComponents.map((component) => ({
-          long_name: component.long_name,
-          short_name: component.short_name,
-          types: component.types,
-        })),
-        geometry: {
-          location: {
-            lat: () => latitude,
-            lng: () => longitude,
-          },
-        },
-        name: formattedLocation,
-        place_id: result.place_id,
-      };
-
-      onPlaceSelect?.(place);
-      toast.success("Life has been made easier!");
-    } catch (error) {
-      toast.error(
-        error instanceof Error ? error.message : "Failed to get your location"
-      );
-    } finally {
-      setIsLoadingLocation(false);
-    }
-  };
-
   const initializeAutocomplete = () => {
     if (!inputRef.current || !isLoaded) return;
 
@@ -179,10 +60,12 @@ const LocationInput = ({
       google.maps.event.clearInstanceListeners(autocompleteRef.current);
     }
 
-    const determine = isSearch ? ["geocode"] : (
-      isRemoteLocation ? ["(regions)"] : ["address"]
-    )
-    
+    const determine = isSearch
+      ? ["geocode"]
+      : isRemoteLocation
+      ? ["(regions)"]
+      : ["address"];
+
     // Configure autocomplete based on isRemoteLocation
     const autocompleteOptions: google.maps.places.AutocompleteOptions = {
       componentRestrictions: { country: "us" },
@@ -193,7 +76,7 @@ const LocationInput = ({
         "name",
         "place_id",
       ],
-      types: determine
+      types: determine,
     };
 
     autocompleteRef.current = new window.google.maps.places.Autocomplete(
@@ -270,20 +153,6 @@ const LocationInput = ({
     }
   };
 
-  // Effect to load user's location on mount
-  useEffect(() => {
-    const hasLoadedLocation = localStorage.getItem("hasLoadedLocation");
-
-    const loadInitialLocation = async () => {
-      if (isLoaded && !hasLoadedLocation) {
-        localStorage.setItem("hasLoadedLocation", "true");
-        await getCurrentLocation();
-      }
-    };
-
-    loadInitialLocation();
-  }, [isLoaded]);
-
   // Initialize autocomplete when script is loaded or isRemoteLocation changes
   useEffect(() => {
     if (isLoaded) {
@@ -346,19 +215,6 @@ const LocationInput = ({
             <X size={16} />
           </button>
         )}
-        <button
-          type="button"
-          onClick={getCurrentLocation}
-          disabled={!isLoaded || isLoadingLocation}
-          className="text-gray-400 hover:text-gray-600 disabled:opacity-50"
-          title="Use current location"
-        >
-          {isLoadingLocation ? (
-            <Loader2 size={20} className="animate-spin" />
-          ) : (
-            <MapPin size={20} />
-          )}
-        </button>
       </div>
     </div>
   );
