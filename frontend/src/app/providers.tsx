@@ -7,6 +7,7 @@ import { AuthProvider } from "@/context/AuthContext";
 import { Toaster } from "sonner";
 import { Analytics } from "@vercel/analytics/react";
 import { useState } from "react";
+import { SpeedInsights } from "@vercel/speed-insights/next";
 
 export default function Providers({ children }: { children: React.ReactNode }) {
   const [queryClient] = useState(
@@ -25,6 +26,7 @@ export default function Providers({ children }: { children: React.ReactNode }) {
     <AuthProvider>
       <QueryClientProvider client={queryClient}>
         {children}
+        <SpeedInsights />
         <Analytics />
         <Toaster />
         <ReactQueryDevtools initialIsOpen={false} />
