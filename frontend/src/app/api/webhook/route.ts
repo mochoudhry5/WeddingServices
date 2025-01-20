@@ -96,7 +96,45 @@ export async function POST(req: Request) {
         }
       }
 
-      // Rest of your code for updating subscription and listing...
+      // Update the user's subscription status in Supabase
+      const { error } = await supabase.from("subscriptions").upsert({
+        user_id: session.metadata?.userId,
+        listing_id: session.metadata?.listing_id,
+        stripe_subscription_id: subscription.id,
+        stripe_customer_id: subscription.customer as string,
+        status: subscription.status,
+        service_type: session.metadata?.serviceType,
+        tier_type: session.metadata?.tierType,
+        is_annual: session.metadata?.isAnnual === "true",
+        current_period_end: new Date(
+          subscription.current_period_end * 1000
+        ).toISOString(),
+      });
+
+      if (error) {
+        console.error("Error updating subscription:", error);
+        return NextResponse.json(
+          { error: "Error updating subscription" },
+          { status: 500 }
+        );
+      }
+
+      const { data: updatedData, error: updateError } = await supabase
+        .from(`${session.metadata?.serviceType}_listing`)
+        .update({
+          is_draft: false,
+        })
+        .eq("id", session.metadata?.listing_id);
+
+      if (updateError) {
+        console.error("Error updating listing:", error);
+        return NextResponse.json(
+          { error: "Error updating listing" },
+          { status: 500 }
+        );
+      } else {
+        console.log("Updated listing data:", updatedData);
+      }
     } catch (error) {
       console.error("Error processing webhook:", error);
       return NextResponse.json(
