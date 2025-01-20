@@ -1,9 +1,9 @@
 "use client";
 
-import React, { useEffect, useState, useRef } from "react";
+import React, { useEffect, useState, useCallback, useMemo } from "react";
+import { useParams } from "next/navigation";
 import NavBar from "@/components/ui/NavBar";
 import Footer from "@/components/ui/Footer";
-import { useParams } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import { toast } from "sonner";
 import MediaCarousel from "@/components/ui/MainMediaCarousel";
@@ -14,6 +14,7 @@ import LikeButton from "@/components/ui/LikeButton";
 import { ServiceInfoGrid } from "@/components/ui/CardInfoGrid";
 import { SearchX } from "lucide-react";
 import { AuthModals } from "@/components/ui/AuthModal";
+import ErrorBoundary from "@/components/ui/ErrorBoundary";
 
 interface PhotoVideoDetails {
   user_id: string;
@@ -69,70 +70,132 @@ interface InquiryForm {
   eventDate: string;
   message: string;
 }
-const ServiceCard = ({ service }: { service: PhotoVideoService }) => {
-  const [isOpen, setIsOpen] = useState(false);
-  const [hasOverflow, setHasOverflow] = useState(false);
-  const descriptionRef = useRef<HTMLDivElement>(null);
 
-  useEffect(() => {
-    const checkOverflow = () => {
-      const element = descriptionRef.current;
-      if (element) {
-        setHasOverflow(element.scrollHeight > element.clientHeight);
-      }
-    };
+// Memoized Components
+const ServiceCard = React.memo(
+  ({ service }: { service: PhotoVideoService }) => {
+    const [isOpen, setIsOpen] = useState(false);
+    const [hasOverflow, setHasOverflow] = useState(false);
+    const descriptionRef = React.useRef<HTMLDivElement>(null);
 
-    checkOverflow();
-    window.addEventListener("resize", checkOverflow);
-    return () => window.removeEventListener("resize", checkOverflow);
-  }, [service.description]);
+    useEffect(() => {
+      const checkOverflow = () => {
+        const element = descriptionRef.current;
+        if (element) {
+          setHasOverflow(element.scrollHeight > element.clientHeight);
+        }
+      };
 
-  return (
-    <div className="border border-gray-200 rounded-lg overflow-hidden shadow-sm">
-      <div
-        className={`w-full p-4 ${
-          hasOverflow ? "cursor-pointer hover:bg-gray-50" : ""
-        } transition-all duration-200`}
-        onClick={() => hasOverflow && setIsOpen(!isOpen)}
-      >
-        <div className="flex-1">
-          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 mb-2">
-            <h3 className="text-base sm:text-lg font-semibold">
-              {service.name}
-            </h3>
-            <div className="text-left sm:text-right">
-              <p className="text-green-800 font-semibold whitespace-nowrap text-sm sm:text-base">
-                <span className="text-xs sm:text-sm text-gray-500">
-                  Starting at{" "}
-                </span>
-                ${service.price.toLocaleString()}
-              </p>
-              <p className="text-xs sm:text-sm text-gray-500">
-                Duration {service.duration} minutes
-              </p>
+      checkOverflow();
+      window.addEventListener("resize", checkOverflow);
+      return () => window.removeEventListener("resize", checkOverflow);
+    }, [service.description]);
+
+    return (
+      <div className="border border-gray-200 rounded-lg overflow-hidden shadow-sm">
+        <div
+          className={`w-full p-4 ${
+            hasOverflow ? "cursor-pointer hover:bg-gray-50" : ""
+          } transition-all duration-200`}
+          onClick={() => hasOverflow && setIsOpen(!isOpen)}
+        >
+          <div className="flex-1">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 mb-2">
+              <h3 className="text-base sm:text-lg font-semibold">
+                {service.name}
+              </h3>
+              <div className="text-left sm:text-right">
+                <p className="text-green-800 font-semibold whitespace-nowrap text-sm sm:text-base">
+                  <span className="text-xs sm:text-sm text-gray-500">
+                    Starting at{" "}
+                  </span>
+                  ${service.price.toLocaleString()}
+                </p>
+                <p className="text-xs sm:text-sm text-gray-500">
+                  Duration {service.duration} minutes
+                </p>
+              </div>
             </div>
-          </div>
 
-          <div
-            ref={descriptionRef}
-            className={isOpen ? "" : "line-clamp-1"}
-            style={{
-              wordBreak: "break-word",
-              overflowWrap: "break-word",
-              whiteSpace: "pre-wrap",
-              color: "#4B5563", // text-gray-600
-              fontSize: "0.875rem", // text-sm
-            }}
-          >
-            {service.description}
+            <div
+              ref={descriptionRef}
+              className={isOpen ? "" : "line-clamp-1"}
+              style={{
+                wordBreak: "break-word",
+                overflowWrap: "break-word",
+                whiteSpace: "pre-wrap",
+                color: "#4B5563",
+                fontSize: "0.875rem",
+              }}
+            >
+              {service.description}
+            </div>
           </div>
         </div>
       </div>
-    </div>
-  );
-};
+    );
+  }
+);
 
-export default function PhotographyDetailsPage() {
+ServiceCard.displayName = "ServiceCard";
+
+const PhotoVideoStyles = React.memo(
+  ({
+    photoStyles,
+    videoStyles,
+    serviceType,
+  }: {
+    photoStyles: string[];
+    videoStyles: string[];
+    serviceType: "photography" | "videography" | "both";
+  }) => {
+    if (!photoStyles.length && !videoStyles.length) return null;
+
+    return (
+      <div className="mb-8 sm:mb-12">
+        <h2 className="text-lg sm:text-xl md:text-2xl font-bold mb-4 sm:mb-6">
+          {serviceType === "photography"
+            ? "Photography Styles"
+            : serviceType === "videography"
+            ? "Videography Styles"
+            : "Photography & Videography Styles"}
+        </h2>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4">
+          {photoStyles.map((style, index) => (
+            <div
+              key={`photo-${index}`}
+              className="p-3 sm:p-4 rounded-lg border border-black bg-stone-100"
+            >
+              <div className="flex items-center gap-2">
+                <span className="text-green-800">✓</span>
+                <span className="text-sm sm:text-base text-gray-900">
+                  {style}
+                </span>
+              </div>
+            </div>
+          ))}
+          {videoStyles.map((style, index) => (
+            <div
+              key={`video-${index}`}
+              className="p-3 sm:p-4 rounded-lg border border-black bg-stone-100"
+            >
+              <div className="flex items-center gap-2">
+                <span className="text-slate-600">✓</span>
+                <span className="text-sm sm:text-base text-gray-900">
+                  {style}
+                </span>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  }
+);
+
+PhotoVideoStyles.displayName = "PhotoVideoStyles";
+
+const PhotographyDetailsPage = () => {
   const { user } = useAuth();
   const [photoVideo, setPhotoVideo] = useState<PhotoVideoDetails | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -152,49 +215,20 @@ export default function PhotographyDetailsPage() {
   const [isLoginOpen, setIsLoginOpen] = useState(false);
   const [isSignUpOpen, setIsSignUpOpen] = useState(false);
 
-  const handleLoginClose = () => setIsLoginOpen(false);
-  const handleSignUpClose = () => setIsSignUpOpen(false);
-  const handleSwitchToSignUp = () => {
+  const handleLoginClose = useCallback(() => setIsLoginOpen(false), []);
+  const handleSignUpClose = useCallback(() => setIsSignUpOpen(false), []);
+  const handleSwitchToSignUp = useCallback(() => {
     setIsLoginOpen(false);
     setIsSignUpOpen(true);
-  };
-  const handleSwitchToLogin = () => {
+  }, []);
+  const handleSwitchToLogin = useCallback(() => {
     setIsSignUpOpen(false);
     setIsLoginOpen(true);
-  };
+  }, []);
 
-  useEffect(() => {
-    if (params.id) {
-      loadPhotographerDetails();
-    }
-  }, [params.id]);
+  const loadPhotographerDetails = useCallback(async () => {
+    if (!params.id) return;
 
-  useEffect(() => {
-    const loadContactHistory = async () => {
-      if (!user?.id || !params.id) return;
-
-      const { data, error } = await supabase
-        .from("contact_history")
-        .select("contacted_at")
-        .eq("user_id", user.id)
-        .eq("listing_id", params.id)
-        .eq("service_type", "photoVideo")
-        .order("contacted_at", { ascending: false })
-        .limit(1)
-        .single();
-
-      if (error && error.code !== "PGRST116") {
-        console.error("Error:", error);
-        return;
-      }
-
-      setContactHistory(data);
-    };
-
-    loadContactHistory();
-  }, [user?.id, params.id]);
-
-  const loadPhotographerDetails = async () => {
     try {
       const { data: photoVideoData, error } = await supabase
         .from("photo_video_listing")
@@ -233,134 +267,162 @@ export default function PhotographyDetailsPage() {
         return;
       }
 
-      if (!photoVideoData) {
-        toast.error("Photographer & Videographer not found");
-        return;
-      }
-
-      console.log("Photography & Videography data:", photoVideoData);
       setPhotoVideo(photoVideoData);
     } catch (error) {
       console.error("Error loading photography & videography listing:", error);
+      setPhotoVideo(null);
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [params.id]);
 
-  const handleInquirySubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsSubmitting(true);
-
-    if (!user?.id) {
-      toast.error("Please login to send an inquiry");
-      return;
-    }
-    if (!photoVideo) {
-      toast.error("Photographer & Videographer information not found");
-      return;
-    }
+  const loadContactHistory = useCallback(async () => {
+    if (!user?.id || !params.id) return;
 
     try {
-      // First, send the inquiry
-      const response = await fetch("/api/inquiry", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          serviceType: "photo-video",
-          serviceId: photoVideo.id,
-          formData: inquiryForm,
-          businessName: photoVideo.business_name,
-        }),
-      });
-
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.message || "Failed to send inquiry");
-      }
-
-      const { data: existingContact } = await supabase
+      const { data, error } = await supabase
         .from("contact_history")
-        .select("id")
+        .select("contacted_at")
         .eq("user_id", user.id)
-        .eq("listing_id", photoVideo.id)
+        .eq("listing_id", params.id)
         .eq("service_type", "photoVideo")
+        .order("contacted_at", { ascending: false })
+        .limit(1)
         .single();
 
-      if (existingContact) {
-        // Update existing contact history
-        const { error: updateError } = await supabase
-          .from("contact_history")
-          .update({ contacted_at: new Date().toISOString() })
-          .eq("id", existingContact.id);
-
-        if (updateError) throw updateError;
-      } else {
-        // Create new contact history
-        const { error: insertError } = await supabase
-          .from("contact_history")
-          .insert({
-            user_id: user.id,
-            listing_id: photoVideo.id,
-            service_type: "photoVideo",
-          });
-
-        if (insertError) throw insertError;
+      if (error && error.code !== "PGRST116") {
+        console.error("Error:", error);
+        return;
       }
 
-      // Update state with new contact time
-      setContactHistory({
-        contacted_at: new Date().toISOString(),
-      });
-
-      // If inquiry was successful, increment the counter
-      const { error: updateError } = await supabase
-        .from("photo_video_listing")
-        .update({
-          number_of_contacted: (photoVideo.number_of_contacted || 0) + 1,
-        })
-        .eq("id", photoVideo.id);
-
-      if (updateError) {
-        console.error("Error updating contact counter:", updateError);
-        // Don't show error to user since the inquiry was still sent successfully
-      }
-
-      // Clear form after successful submission
-      setInquiryForm({
-        firstName: "",
-        lastName: "",
-        email: "",
-        phone: "",
-        eventDate: "",
-        message: "",
-      });
-
-      toast.success("Your inquiry has been sent! They will contact you soon.");
-
-      // Reload the photographer details to get updated counter
-      loadPhotographerDetails();
+      setContactHistory(data);
     } catch (error) {
-      console.error("Error sending inquiry:", error);
-      toast.error("Failed to send inquiry. Please try again.");
-    } finally {
-      setIsSubmitting(false);
+      console.error("Error loading contact history:", error);
     }
-  };
+  }, [user?.id, params.id]);
 
-  const handleInputChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
-  ) => {
-    const { name, value } = e.target;
-    setInquiryForm((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
-  };
+  useEffect(() => {
+    loadPhotographerDetails();
+  }, [loadPhotographerDetails]);
 
-  if (isLoading) {
-    return (
+  useEffect(() => {
+    loadContactHistory();
+  }, [loadContactHistory]);
+
+  const handleInquirySubmit = useCallback(
+    async (e: React.FormEvent) => {
+      e.preventDefault();
+      if (!user?.id || !photoVideo) {
+        toast.error("Please login to send an inquiry");
+        return;
+      }
+
+      setIsSubmitting(true);
+
+      try {
+        // First, send the inquiry
+        const response = await fetch("/api/inquiry", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            serviceType: "photo-video",
+            serviceId: photoVideo.id,
+            formData: inquiryForm,
+            businessName: photoVideo.business_name,
+          }),
+        });
+
+        if (!response.ok) {
+          const error = await response.json();
+          throw new Error(error.message || "Failed to send inquiry");
+        }
+
+        const { data: existingContact } = await supabase
+          .from("contact_history")
+          .select("id")
+          .eq("user_id", user.id)
+          .eq("listing_id", photoVideo.id)
+          .eq("service_type", "photoVideo")
+          .single();
+
+        if (existingContact) {
+          // Update existing contact history
+          const { error: updateError } = await supabase
+            .from("contact_history")
+            .update({ contacted_at: new Date().toISOString() })
+            .eq("id", existingContact.id);
+
+          if (updateError) throw updateError;
+        } else {
+          // Create new contact history
+          const { error: insertError } = await supabase
+            .from("contact_history")
+            .insert({
+              user_id: user.id,
+              listing_id: photoVideo.id,
+              service_type: "photoVideo",
+            });
+
+          if (insertError) throw insertError;
+        }
+
+        // Update state with new contact time
+        setContactHistory({
+          contacted_at: new Date().toISOString(),
+        });
+
+        // If inquiry was successful, increment the counter
+        const { error: updateError } = await supabase
+          .from("photo_video_listing")
+          .update({
+            number_of_contacted: (photoVideo.number_of_contacted || 0) + 1,
+          })
+          .eq("id", photoVideo.id);
+
+        if (updateError) {
+          console.error("Error updating contact counter:", updateError);
+          // Don't show error to user since the inquiry was still sent successfully
+        }
+
+        // Clear form after successful submission
+        setInquiryForm({
+          firstName: "",
+          lastName: "",
+          email: "",
+          phone: "",
+          eventDate: "",
+          message: "",
+        });
+
+        toast.success(
+          "Your inquiry has been sent! They will contact you soon."
+        );
+
+        // Reload the photographer details to get updated counter
+        loadPhotographerDetails();
+      } catch (error) {
+        console.error("Error:", error);
+        toast.error("Failed to send inquiry. Please try again.");
+      } finally {
+        setIsSubmitting(false);
+      }
+    },
+    [user?.id, photoVideo, inquiryForm, loadPhotographerDetails]
+  );
+
+  const handleInputChange = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+      const { name, value } = e.target;
+      setInquiryForm((prev) => ({ ...prev, [name]: value }));
+    },
+    []
+  );
+
+  // Memoized Components
+  const renderLoadingState = useMemo(
+    () => (
       <div className="min-h-screen bg-slate-50">
         <NavBar />
         <div className="max-w-7xl mx-auto px-4 py-8">
@@ -375,11 +437,12 @@ export default function PhotographyDetailsPage() {
         </div>
         <Footer />
       </div>
-    );
-  }
+    ),
+    []
+  );
 
-  if (!photoVideo) {
-    return (
+  const renderNotFound = useMemo(
+    () => (
       <div className="flex flex-col min-h-screen bg-gray-50">
         <NavBar />
         <div className="flex-1 flex flex-col">
@@ -417,323 +480,304 @@ export default function PhotographyDetailsPage() {
         </div>
         <Footer />
       </div>
-    );
-  }
+    ),
+    []
+  );
 
-  const photoStyles = photoVideo.photo_video_specialties
-    .filter((s) => s.style_type === "photography")
-    .map((s) => s.specialty);
-  const videoStyles = photoVideo.photo_video_specialties
-    .filter((s) => s.style_type === "videography")
-    .map((s) => s.specialty);
+  const photoStyles = useMemo(
+    () =>
+      photoVideo?.photo_video_specialties
+        .filter((s) => s.style_type === "photography")
+        .map((s) => s.specialty) ?? [],
+    [photoVideo]
+  );
+
+  const videoStyles = useMemo(
+    () =>
+      photoVideo?.photo_video_specialties
+        .filter((s) => s.style_type === "videography")
+        .map((s) => s.specialty) ?? [],
+    [photoVideo]
+  );
+
+  if (isLoading) return renderLoadingState;
+  if (!photoVideo) return renderNotFound;
 
   return (
-    <div className="min-h-screen bg-white">
-      <NavBar />
+    <ErrorBoundary>
+      <div className="min-h-screen bg-white">
+        <NavBar />
+        <div className="relative bg-black">
+          <div className="relative h-[40vh] sm:h-[50vh] md:h-[60vh] lg:h-[80vh]">
+            <MediaCarousel
+              media={photoVideo.photo_video_media}
+              name={photoVideo.business_name}
+              service="photo-video"
+              className="w-full h-full object-cover"
+            />
+          </div>
+        </div>
 
-      {/* Hero/Media Section */}
-      <div className="relative bg-black">
-        <div className="relative h-[40vh] sm:h-[50vh] md:h-[60vh] lg:h-[80vh]">
-          <MediaCarousel
-            media={photoVideo.photo_video_media}
-            name={photoVideo.business_name}
-            service="photo-video"
-            className="w-full h-full object-cover"
+        <div className="max-w-7xl mx-auto px-4 py-6">
+          {user?.id !== photoVideo.user_id && (
+            <div className="max-w-7xl mx-auto px-4 pb-5">
+              <div className="bg-stone-100 border-black py-2">
+                <div className="max-w-3xl mx-auto px-2 sm:px-4 flex flex-col items-center justify-center">
+                  <div className="flex items-center gap-2">
+                    <span className="text-black text-base sm:text-lg font-semibold">
+                      Don't forget this listing!
+                    </span>
+                    <LikeButton
+                      itemId={photoVideo.id}
+                      service="photo-video"
+                      initialLiked={false}
+                      className="text-rose-600 hover:text-rose-700"
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Artist Header */}
+          <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-3 sm:gap-4 mb-6 sm:mb-8">
+            <div className="flex-grow min-w-0">
+              <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-gray-900 break-words">
+                {photoVideo.business_name}
+                <div className="inline-flex items-center px-3 py-1 rounded-full bg-white border border-gray-200 text-sm font-medium whitespace-normal">
+                  {photoVideo.service_type === "both"
+                    ? "Photography & Videography"
+                    : photoVideo.service_type === "photography"
+                    ? "Photography"
+                    : "Videography"}
+                </div>
+              </h1>
+              <p className="text-sm sm:text-base text-gray-600 break-words mt-2">
+                {photoVideo.is_remote_business
+                  ? `${photoVideo.city}, ${photoVideo.state} (Remote)`
+                  : `${photoVideo.address}, ${photoVideo.city}, ${photoVideo.state}`}
+              </p>
+            </div>
+            <div className="flex flex-col items-end flex-shrink-0 text-right">
+              <div className="text-2xl sm:text-3xl font-semibold text-green-800">
+                {photoVideo.min_service_price === photoVideo.max_service_price
+                  ? `$${photoVideo.max_service_price.toLocaleString()}`
+                  : `$${photoVideo.min_service_price.toLocaleString()} - $${photoVideo.max_service_price.toLocaleString()}`}
+              </div>
+              <p className="text-xs sm:text-sm text-gray-500">
+                (See Services & Pricing)
+              </p>
+            </div>
+          </div>
+
+          {/* Info Grid */}
+          <div className="pb-10">
+            <ServiceInfoGrid service={photoVideo} />
+          </div>
+
+          {/* About Section */}
+          <div className="px-2 sm:px-0 mb-8 sm:mb-12">
+            <h2 className="text-lg sm:text-xl md:text-2xl font-bold mb-3 sm:mb-4">
+              About the Business
+            </h2>
+            <p className="text-sm sm:text-base text-gray-600 leading-relaxed break-words whitespace-normal">
+              {photoVideo.description}
+            </p>
+          </div>
+
+          {/* Specialties */}
+          {(photoStyles.length > 0 || videoStyles.length > 0) && (
+            <PhotoVideoStyles
+              photoStyles={photoStyles}
+              videoStyles={videoStyles}
+              serviceType={photoVideo.service_type}
+            />
+          )}
+
+          {/* Services */}
+          {photoVideo.photo_video_services?.length > 0 && (
+            <div className="mb-8 sm:mb-12">
+              <h2 className="text-lg sm:text-xl md:text-2xl font-bold mb-4 sm:mb-6">
+                Services & Pricing
+              </h2>
+              <div className="flex flex-col lg:flex-row gap-4">
+                {/* First Column */}
+                <div className="flex-1 flex flex-col gap-4">
+                  {photoVideo.photo_video_services
+                    .filter((_, index) => index % 2 === 0)
+                    .map((service, index) => (
+                      <ServiceCard key={index * 2} service={service} />
+                    ))}
+                </div>
+
+                {/* Second Column */}
+                <div className="flex-1 flex flex-col gap-4">
+                  {photoVideo.photo_video_services
+                    .filter((_, index) => index % 2 === 1)
+                    .map((service, index) => (
+                      <ServiceCard key={index * 2 + 1} service={service} />
+                    ))}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Contact Form */}
+          {user?.id !== photoVideo.user_id ? (
+            <div className="mb-12">
+              <div className="text-center">
+                <h2 className="text-xl md:text-2xl font-bold mb-2">
+                  Contact {photoVideo.business_name}
+                </h2>
+                {contactHistory && (
+                  <p className="text-sm text-gray-600 mb-6">
+                    Last contacted{" "}
+                    {new Date(contactHistory.contacted_at).toLocaleDateString()}{" "}
+                    at{" "}
+                    {new Date(contactHistory.contacted_at).toLocaleTimeString()}
+                  </p>
+                )}
+              </div>
+              <div className="max-w-2xl mx-auto">
+                {user ? (
+                  <div className="bg-gray-50 p-4 md:p-6 rounded-lg">
+                    <form onSubmit={handleInquirySubmit} className="space-y-4">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">
+                            First Name
+                          </label>
+                          <Input
+                            name="firstName"
+                            value={inquiryForm.firstName}
+                            onChange={handleInputChange}
+                            required
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">
+                            Last Name
+                          </label>
+                          <Input
+                            name="lastName"
+                            value={inquiryForm.lastName}
+                            onChange={handleInputChange}
+                            required
+                          />
+                        </div>
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          Email
+                        </label>
+                        <Input
+                          type="email"
+                          name="email"
+                          value={inquiryForm.email}
+                          onChange={handleInputChange}
+                          required
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          Phone
+                        </label>
+                        <Input
+                          type="tel"
+                          name="phone"
+                          value={inquiryForm.phone}
+                          onChange={handleInputChange}
+                          required
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          Event Date
+                        </label>
+                        <Input
+                          type="date"
+                          name="eventDate"
+                          value={inquiryForm.eventDate}
+                          onChange={handleInputChange}
+                          required
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          Message
+                        </label>
+                        <textarea
+                          name="message"
+                          value={inquiryForm.message}
+                          onChange={handleInputChange}
+                          rows={4}
+                          className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-transparent text-sm sm:text-base"
+                          placeholder="Tell us about your event and requirements..."
+                          required
+                        />
+                      </div>
+
+                      <Button
+                        type="submit"
+                        disabled={isSubmitting}
+                        className="w-full bg-black hover:bg-stone-800 text-sm sm:text-base py-2 sm:py-3"
+                      >
+                        {isSubmitting ? "Sending..." : "Send Inquiry"}
+                      </Button>
+                    </form>
+                  </div>
+                ) : (
+                  <div className="bg-gray-50 p-8 rounded-lg text-center">
+                    <div className="max-w-md mx-auto">
+                      <h3 className="text-xl font-semibold mb-3">
+                        Ready to connect?
+                      </h3>
+                      <p className="text-gray-600 mb-6">
+                        Sign in to contact {photoVideo.business_name} and manage
+                        all your wedding vendor communications in one place.
+                        It's absolutely free!
+                      </p>
+                      <Button
+                        onClick={() => setIsLoginOpen(true)}
+                        className="w-full bg-black hover:bg-stone-800 text-sm sm:text-base py-3"
+                      >
+                        Sign in to Contact
+                      </Button>
+                      <p className="text-sm text-gray-500 mt-4">
+                        New to our platform? Creating an account takes less than
+                        a minute
+                      </p>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          ) : (
+            <div className="mb-8 sm:mb-12 text-center">
+              <p className="text-gray-600">
+                Manage your listing from your dashboard.
+              </p>
+            </div>
+          )}
+
+          {/* Auth Modals */}
+          <AuthModals
+            isLoginOpen={isLoginOpen}
+            isSignUpOpen={isSignUpOpen}
+            onLoginClose={handleLoginClose}
+            onSignUpClose={handleSignUpClose}
+            onSwitchToSignUp={handleSwitchToSignUp}
+            onSwitchToLogin={handleSwitchToLogin}
           />
         </div>
+        <Footer />
       </div>
-
-      {/* Content */}
-      <div className="max-w-7xl mx-auto px-4 py-6">
-        {/* Like Button Banner */}
-        {user?.id !== photoVideo.user_id && (
-          <div className="max-w-7xl mx-auto px-4 pb-5">
-            <div className="bg-stone-100 border-black py-2">
-              <div className="max-w-3xl mx-auto px-2 sm:px-4 flex flex-col items-center justify-center">
-                <div className="flex items-center gap-2">
-                  <span className="text-black text-base sm:text-lg font-semibold">
-                    Don't forget this listing!
-                  </span>
-                  <LikeButton
-                    itemId={photoVideo.id}
-                    service="photo-video"
-                    initialLiked={false}
-                    className="text-rose-600 hover:text-rose-700"
-                  />
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Artist Header */}
-        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-3 sm:gap-4 mb-6 sm:mb-8">
-          <div className="flex-grow min-w-0">
-            <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-gray-900 break-words">
-              {photoVideo.business_name}
-              <div className="inline-flex items-center px-3 py-1 rounded-full bg-white border border-gray-200 text-sm font-medium whitespace-normal">
-                {photoVideo.service_type === "both"
-                  ? "Photography & Videography"
-                  : photoVideo.service_type === "photography"
-                  ? "Photography"
-                  : "VIdeography"}
-              </div>
-            </h1>
-            <p className="text-sm sm:text-base text-gray-600 break-words mt-2">
-              {photoVideo.is_remote_business
-                ? `${photoVideo.city}, ${photoVideo.state} (Remote)`
-                : `${photoVideo.address}, ${photoVideo.city}, ${photoVideo.state}`}
-            </p>
-          </div>
-          <div className="flex flex-col items-end flex-shrink-0 text-right">
-            <div className="text-2xl sm:text-3xl font-semibold text-green-800">
-              {photoVideo.min_service_price === photoVideo.max_service_price
-                ? `$${photoVideo.max_service_price.toLocaleString()}`
-                : `$${photoVideo.min_service_price.toLocaleString()} - $${photoVideo.max_service_price.toLocaleString()}`}
-            </div>
-            <p className="text-xs sm:text-sm text-gray-500">
-              (See Services & Pricing)
-            </p>
-          </div>
-        </div>
-
-        {/* Info Grid */}
-        <div className="pb-10">
-          <ServiceInfoGrid service={photoVideo} />
-        </div>
-
-        {/* About Section */}
-        <div className="px-2 sm:px-0 mb-8 sm:mb-12">
-          <h2 className="text-lg sm:text-xl md:text-2xl font-bold mb-3 sm:mb-4">
-            About the Business
-          </h2>
-          <p className="text-sm sm:text-base text-gray-600 leading-relaxed break-words whitespace-normal">
-            {photoVideo.description}
-          </p>
-        </div>
-
-        {/* Specialties */}
-        {(photoStyles.length > 0 || videoStyles.length > 0) && (
-          <div className="mb-8 sm:mb-12">
-            <h2 className="text-lg sm:text-xl md:text-2xl font-bold mb-4 sm:mb-6">
-              {photoVideo.service_type === "photography"
-                ? "Photography Styles"
-                : photoVideo.service_type === "videography"
-                ? "Videography Styles"
-                : "Photography & Videography Styles"}
-            </h2>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
-              {photoStyles.map((style, index) => (
-                <div
-                  key={`photo-${index}`}
-                  className="p-3 sm:p-4 rounded-lg border border-black bg-stone-100"
-                >
-                  <div className="flex items-center gap-2">
-                    <span className="text-green-800">✓</span>
-                    <span className="text-sm sm:text-base text-gray-900">
-                      {style}
-                    </span>
-                  </div>
-                </div>
-              ))}
-              {videoStyles.map((style, index) => (
-                <div
-                  key={`video-${index}`}
-                  className="p-3 sm:p-4 rounded-lg border border-black bg-stone-100"
-                >
-                  <div className="flex items-center gap-2">
-                    <span className="text-slate-600">✓</span>
-                    <span className="text-sm sm:text-base text-gray-900">
-                      {style}
-                    </span>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* Services */}
-        {photoVideo.photo_video_services?.length > 0 && (
-          <div className="mb-8 sm:mb-12">
-            <h2 className="text-lg sm:text-xl md:text-2xl font-bold mb-4 sm:mb-6">
-              Services & Pricing
-            </h2>
-            <div className="flex flex-col lg:flex-row gap-3 sm:gap-4">
-              {/* First Column */}
-              <div className="flex-1 flex flex-col gap-3 sm:gap-4">
-                {photoVideo.photo_video_services
-                  .filter((_, index) => index % 2 === 0)
-                  .map((service, index) => (
-                    <ServiceCard key={index * 2} service={service} />
-                  ))}
-              </div>
-
-              {/* Second Column */}
-              <div className="flex-1 flex flex-col gap-3 sm:gap-4">
-                {photoVideo.photo_video_services
-                  .filter((_, index) => index % 2 === 1)
-                  .map((service, index) => (
-                    <ServiceCard key={index * 2 + 1} service={service} />
-                  ))}
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Contact Form */}
-        {user?.id !== photoVideo.user_id ? (
-          <div className="mb-12">
-            <div className="text-center">
-              <h2 className="text-xl md:text-2xl font-bold mb-2">
-                Contact {photoVideo.business_name}
-              </h2>
-              {contactHistory && (
-                <p className="text-sm text-gray-600 mb-6">
-                  Last contacted{" "}
-                  {new Date(contactHistory.contacted_at).toLocaleDateString()}{" "}
-                  at{" "}
-                  {new Date(contactHistory.contacted_at).toLocaleTimeString()}
-                </p>
-              )}
-            </div>
-            <div className="max-w-2xl mx-auto">
-              {user ? (
-                <div className="bg-gray-50 p-4 md:p-6 rounded-lg">
-                  <form onSubmit={handleInquirySubmit} className="space-y-4">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                          First Name
-                        </label>
-                        <Input
-                          name="firstName"
-                          value={inquiryForm.firstName}
-                          onChange={handleInputChange}
-                          required
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                          Last Name
-                        </label>
-                        <Input
-                          name="lastName"
-                          value={inquiryForm.lastName}
-                          onChange={handleInputChange}
-                          required
-                        />
-                      </div>
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Email
-                      </label>
-                      <Input
-                        type="email"
-                        name="email"
-                        value={inquiryForm.email}
-                        onChange={handleInputChange}
-                        required
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Phone
-                      </label>
-                      <Input
-                        type="tel"
-                        name="phone"
-                        value={inquiryForm.phone}
-                        onChange={handleInputChange}
-                        required
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Event Date
-                      </label>
-                      <Input
-                        type="date"
-                        name="eventDate"
-                        value={inquiryForm.eventDate}
-                        onChange={handleInputChange}
-                        required
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Message
-                      </label>
-                      <textarea
-                        name="message"
-                        value={inquiryForm.message}
-                        onChange={handleInputChange}
-                        rows={4}
-                        className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-transparent text-sm sm:text-base"
-                        placeholder="Tell us about your event and requirements..."
-                        required
-                      />
-                    </div>
-
-                    <Button
-                      type="submit"
-                      disabled={isSubmitting}
-                      className="w-full bg-black hover:bg-stone-800 text-sm sm:text-base py-2 sm:py-3"
-                    >
-                      {isSubmitting ? "Sending..." : "Send Inquiry"}
-                    </Button>
-                  </form>
-                </div>
-              ) : (
-                <div className="bg-gray-50 p-8 rounded-lg text-center">
-                  <div className="max-w-md mx-auto">
-                    <h3 className="text-xl font-semibold mb-3">
-                      Ready to connect?
-                    </h3>
-                    <p className="text-gray-600 mb-6">
-                      Sign in to contact {photoVideo.business_name} and manage
-                      all your wedding vendor communications in one place. It's
-                      absolutely free!
-                    </p>
-                    <Button
-                      onClick={() => setIsLoginOpen(true)}
-                      className="w-full bg-black hover:bg-stone-800 text-sm sm:text-base py-3"
-                    >
-                      Sign in to Contact
-                    </Button>
-                    <p className="text-sm text-gray-500 mt-4">
-                      New to our platform? Creating an account takes less than a
-                      minute
-                    </p>
-                  </div>
-                </div>
-              )}
-            </div>
-          </div>
-        ) : (
-          <div className="mb-8 sm:mb-12 text-center">
-            <p className="text-gray-600">
-              Manage your listing from your dashboard.
-            </p>
-          </div>
-        )}
-
-        {/* Auth Modals */}
-        <AuthModals
-          isLoginOpen={isLoginOpen}
-          isSignUpOpen={isSignUpOpen}
-          onLoginClose={handleLoginClose}
-          onSignUpClose={handleSignUpClose}
-          onSwitchToSignUp={handleSwitchToSignUp}
-          onSwitchToLogin={handleSwitchToLogin}
-        />
-      </div>
-      <Footer />
-    </div>
+    </ErrorBoundary>
   );
-}
+};
+
+export default PhotographyDetailsPage;

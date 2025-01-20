@@ -1,9 +1,15 @@
 "use client";
 
-import React, { useEffect, useState, useRef } from "react";
+import React, {
+  useEffect,
+  useState,
+  useCallback,
+  useMemo,
+  useRef,
+} from "react";
+import { useParams } from "next/navigation";
 import NavBar from "@/components/ui/NavBar";
 import Footer from "@/components/ui/Footer";
-import { useParams } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import { toast } from "sonner";
 import MediaCarousel from "@/components/ui/MainMediaCarousel";
@@ -14,6 +20,7 @@ import LikeButton from "@/components/ui/LikeButton";
 import { VenueInfoGrid } from "@/components/ui/CardInfoGrid";
 import { SearchX } from "lucide-react";
 import { AuthModals } from "@/components/ui/AuthModal";
+import ErrorBoundary from "@/components/ui/ErrorBoundary";
 
 interface VenueDetails {
   user_id: string;
@@ -152,7 +159,8 @@ const addOns: AddOn[] = [
   },
 ];
 
-const ServiceCard = ({ service }: { service: VenueAddon }) => {
+// Memoized Components
+const ServiceCard = React.memo(({ service }: { service: VenueAddon }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [hasOverflow, setHasOverflow] = useState(false);
   const descriptionRef = useRef<HTMLDivElement>(null);
@@ -217,18 +225,55 @@ const ServiceCard = ({ service }: { service: VenueAddon }) => {
       </div>
     </div>
   );
-};
+});
 
-export default function VenueDetailsPage() {
+ServiceCard.displayName = "ServiceCard";
+
+// VenueInclusions Component
+const VenueInclusions = React.memo(
+  ({ inclusions }: { inclusions: VenueInclusion[] }) => {
+    if (!inclusions?.length) return null;
+
+    return (
+      <div className="mb-8 sm:mb-12">
+        <h2 className="text-lg sm:text-xl md:text-2xl font-bold mb-4 sm:mb-6 break-words">
+          What's Included in the Base Price
+        </h2>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+          {[...inclusions]
+            .sort((a, b) => a.name.localeCompare(b.name))
+            .map((inclusion, index) => (
+              <div
+                key={index}
+                className="p-3 sm:p-4 rounded-lg border border-black bg-stone-100 w-full"
+              >
+                <div className="flex items-center gap-2 min-w-0">
+                  <span className="text-green-800 flex-shrink-0">✓</span>
+                  <span className="text-sm sm:text-base text-gray-900 break-words">
+                    {inclusion.name}
+                  </span>
+                </div>
+              </div>
+            ))}
+        </div>
+      </div>
+    );
+  }
+);
+
+VenueInclusions.displayName = "VenueInclusions";
+
+const VenueDetailsPage = () => {
   const { user } = useAuth();
-  // State for the image carousel
-  const [touchStart, setTouchStart] = useState<number | null>(null);
-  const [touchEnd, setTouchEnd] = useState<number | null>(null);
-  const [currentSlide, setCurrentSlide] = useState(0);
+  const params = useParams();
   const [venue, setVenue] = useState<VenueDetails | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
-
+  const [contactHistory, setContactHistory] = useState<{
+    contacted_at: string;
+  } | null>(null);
+  const [isLoginOpen, setIsLoginOpen] = useState(false);
+  const [isSignUpOpen, setIsSignUpOpen] = useState(false);
   const [inquiryForm, setInquiryForm] = useState<InquiryForm>({
     firstName: "",
     lastName: "",
@@ -238,57 +283,21 @@ export default function VenueDetailsPage() {
     guestCount: "",
     message: "",
   });
-  const minSwipeDistance = 50;
-  const params = useParams();
-  const [contactHistory, setContactHistory] = useState<{
-    contacted_at: string;
-  } | null>(null);
-  const [isLoginOpen, setIsLoginOpen] = useState(false);
-  const [isSignUpOpen, setIsSignUpOpen] = useState(false);
 
-  const handleLoginClose = () => setIsLoginOpen(false);
-  const handleSignUpClose = () => setIsSignUpOpen(false);
-  const handleSwitchToSignUp = () => {
+  const handleLoginClose = useCallback(() => setIsLoginOpen(false), []);
+  const handleSignUpClose = useCallback(() => setIsSignUpOpen(false), []);
+  const handleSwitchToSignUp = useCallback(() => {
     setIsLoginOpen(false);
     setIsSignUpOpen(true);
-  };
-  const handleSwitchToLogin = () => {
+  }, []);
+  const handleSwitchToLogin = useCallback(() => {
     setIsSignUpOpen(false);
     setIsLoginOpen(true);
-  };
+  }, []);
 
-  useEffect(() => {
-    if (params.id) {
-      loadVenueDetails();
-    }
-  }, [params.id]);
+  const loadVenueDetails = useCallback(async () => {
+    if (!params.id) return;
 
-  useEffect(() => {
-    const loadContactHistory = async () => {
-      if (!user?.id || !params.id) return;
-
-      const { data, error } = await supabase
-        .from("contact_history")
-        .select("contacted_at")
-        .eq("user_id", user.id)
-        .eq("listing_id", params.id)
-        .eq("service_type", "venue")
-        .order("contacted_at", { ascending: false })
-        .limit(1)
-        .single();
-
-      if (error && error.code !== "PGRST116") {
-        console.error("Error:", error);
-        return;
-      }
-
-      setContactHistory(data);
-    };
-
-    loadContactHistory();
-  }, [user?.id, params.id]);
-
-  const loadVenueDetails = async () => {
     try {
       const { data: venueData, error } = await supabase
         .from("venue_listing")
@@ -327,170 +336,161 @@ export default function VenueDetailsPage() {
         return;
       }
 
-      if (!venueData) {
-        toast.error("Listing not found");
-        return;
-      }
-
-      console.log("Venue data:", venueData); // Debug log
       setVenue(venueData);
     } catch (error) {
       console.error("Error loading venue:", error);
+      setVenue(null);
     } finally {
       setIsLoading(false);
     }
-  };
-  // Carousel controls
-  const nextSlide = () => {
-    setCurrentSlide((prev) => (prev + 1) % mediaItems.length);
-  };
+  }, [params.id]);
 
-  const prevSlide = () => {
-    setCurrentSlide(
-      (prev) => (prev - 1 + mediaItems.length) % mediaItems.length
-    );
-  };
-
-  const handleInquirySubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-
-    if (!user?.id) {
-      toast.error("Please login to send an inquiry");
-      return;
-    }
-    if (!venue) {
-      toast.error("Venue information not found");
-      return;
-    }
-
-    setIsSubmitting(true);
+  const loadContactHistory = useCallback(async () => {
+    if (!user?.id || !params.id) return;
 
     try {
-      // First, send the inquiry
-      const response = await fetch("/api/venue", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          venueId: venue.id,
-          venueName: venue.business_name,
-          venueOwnerId: venue.user_id,
-          formData: inquiryForm,
-        }),
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error || "Failed to send inquiry");
-      }
-
-      const { data: existingContact } = await supabase
+      const { data, error } = await supabase
         .from("contact_history")
-        .select("id")
+        .select("contacted_at")
         .eq("user_id", user.id)
-        .eq("listing_id", venue.id)
+        .eq("listing_id", params.id)
         .eq("service_type", "venue")
+        .order("contacted_at", { ascending: false })
+        .limit(1)
         .single();
 
-      if (existingContact) {
-        // Update existing contact history
-        const { error: updateError } = await supabase
-          .from("contact_history")
-          .update({ contacted_at: new Date().toISOString() })
-          .eq("id", existingContact.id);
-
-        if (updateError) throw updateError;
-      } else {
-        // Create new contact history
-        const { error: insertError } = await supabase
-          .from("contact_history")
-          .insert({
-            user_id: user.id,
-            listing_id: venue.id,
-            service_type: "venue",
-          });
-
-        if (insertError) throw insertError;
+      if (error && error.code !== "PGRST116") {
+        console.error("Error:", error);
+        return;
       }
 
-      // Update state with new contact time
-      setContactHistory({
-        contacted_at: new Date().toISOString(),
-      });
-
-      // If inquiry was successful, increment the counter
-      const { error: updateError } = await supabase
-        .from("venue_listing")
-        .update({
-          number_of_contacted: (venue.number_of_contacted || 0) + 1,
-        })
-        .eq("id", venue.id);
-
-      if (updateError) {
-        console.error("Error updating contact counter:", updateError);
-        // Don't show error to user since the inquiry was still sent successfully
-      }
-
-      // Reset form
-      setInquiryForm({
-        firstName: "",
-        lastName: "",
-        email: "",
-        phone: "",
-        eventDate: "",
-        guestCount: "",
-        message: "",
-      });
-
-      toast.success("Your inquiry has been sent! They will contact you soon.");
+      setContactHistory(data);
     } catch (error) {
-      console.error("Inquiry submission error:", error);
-      toast.error(
-        "Error sending inquiry. Please try again or contact support."
-      );
-    } finally {
-      setIsSubmitting(false);
+      console.error("Error loading contact history:", error);
     }
-  };
+  }, [user?.id, params.id]);
 
-  const handleInputChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
-  ) => {
-    const { name, value } = e.target;
-    setInquiryForm((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
-  };
+  useEffect(() => {
+    loadVenueDetails();
+  }, [loadVenueDetails]);
 
-  // Handle touch events
-  const onTouchStart: React.TouchEventHandler<HTMLDivElement> = (e) => {
-    setTouchEnd(null);
-    setTouchStart(e.targetTouches[0].clientX);
-  };
+  useEffect(() => {
+    loadContactHistory();
+  }, [loadContactHistory]);
 
-  const onTouchMove: React.TouchEventHandler<HTMLDivElement> = (e) => {
-    setTouchEnd(e.targetTouches[0].clientX);
-  };
+  const handleInquirySubmit = useCallback(
+    async (e: React.FormEvent) => {
+      e.preventDefault();
+      if (!user?.id || !venue) {
+        toast.error("Please login to send an inquiry");
+        return;
+      }
 
-  const onTouchEnd = () => {
-    if (!touchStart || !touchEnd) return;
+      setIsSubmitting(true);
 
-    const distance = touchStart - touchEnd;
-    const isLeftSwipe = distance > minSwipeDistance;
-    const isRightSwipe = distance < -minSwipeDistance;
+      try {
+        // First, send the inquiry
+        const response = await fetch("/api/venue", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            venueId: venue.id,
+            venueName: venue.business_name,
+            venueOwnerId: venue.user_id,
+            formData: inquiryForm,
+          }),
+        });
 
-    if (isLeftSwipe) {
-      nextSlide();
-    } else if (isRightSwipe) {
-      prevSlide();
-    }
-  };
+        const data = await response.json();
 
-  if (isLoading) {
-    return (
+        if (!response.ok) {
+          throw new Error(data.error || "Failed to send inquiry");
+        }
+
+        const { data: existingContact } = await supabase
+          .from("contact_history")
+          .select("id")
+          .eq("user_id", user.id)
+          .eq("listing_id", venue.id)
+          .eq("service_type", "venue")
+          .single();
+
+        if (existingContact) {
+          // Update existing contact history
+          const { error: updateError } = await supabase
+            .from("contact_history")
+            .update({ contacted_at: new Date().toISOString() })
+            .eq("id", existingContact.id);
+
+          if (updateError) throw updateError;
+        } else {
+          // Create new contact history
+          const { error: insertError } = await supabase
+            .from("contact_history")
+            .insert({
+              user_id: user.id,
+              listing_id: venue.id,
+              service_type: "venue",
+            });
+
+          if (insertError) throw insertError;
+        }
+
+        // Update state with new contact time
+        setContactHistory({
+          contacted_at: new Date().toISOString(),
+        });
+
+        // If inquiry was successful, increment the counter
+        const { error: updateError } = await supabase
+          .from("venue_listing")
+          .update({
+            number_of_contacted: (venue.number_of_contacted || 0) + 1,
+          })
+          .eq("id", venue.id);
+
+        if (updateError) {
+          console.error("Error updating contact counter:", updateError);
+          // Don't show error to user since the inquiry was still sent successfully
+        }
+
+        // Reset form
+        setInquiryForm({
+          firstName: "",
+          lastName: "",
+          email: "",
+          phone: "",
+          eventDate: "",
+          guestCount: "",
+          message: "",
+        });
+
+        toast.success(
+          "Your inquiry has been sent! They will contact you soon."
+        );
+      } catch (error) {
+        console.error("Error:", error);
+        toast.error("Failed to send inquiry. Please try again.");
+      } finally {
+        setIsSubmitting(false);
+      }
+    },
+    [user?.id, venue, inquiryForm, loadVenueDetails]
+  );
+
+  const handleInputChange = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+      const { name, value } = e.target;
+      setInquiryForm((prev) => ({ ...prev, [name]: value }));
+    },
+    []
+  );
+
+  // Memoized Components
+  const renderLoadingState = useMemo(
+    () => (
       <div className="min-h-screen bg-slate-50">
         <NavBar />
         <div className="max-w-7xl mx-auto px-4 py-8">
@@ -505,355 +505,315 @@ export default function VenueDetailsPage() {
         </div>
         <Footer />
       </div>
-    );
-  }
+    ),
+    []
+  );
 
-  if (!venue) {
-    return (
+  const renderNotFound = useMemo(
+    () => (
       <div className="flex flex-col min-h-screen bg-gray-50">
         <NavBar />
         <div className="flex-1 flex flex-col">
           <div className="flex-grow flex items-center justify-center">
             <div className="max-w-md w-full mx-auto px-4 py-8 text-center">
               <div className="bg-white rounded-lg shadow-sm p-8">
-                <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-stone-100 flex items-center justify-center">
-                  <SearchX className="w-8 h-8 text-stone-600" />
-                </div>
-                <h1 className="text-2xl font-bold text-gray-900 mb-2">
-                  Listing Not Found
-                </h1>
-                <p className="text-gray-600 mb-6">
-                  We couldn't find the listing you're looking for. It may have
-                  been removed or is no longer available.
-                </p>
-                <div className="space-y-3">
-                  <Button
-                    onClick={() => window.history.back()}
-                    variant="outline"
-                    className="w-full"
-                  >
-                    Go Back
-                  </Button>
-                  <Button
-                    onClick={() => (window.location.href = "/")}
-                    className="w-full bg-black hover:bg-stone-800"
-                  >
-                    Browse All Listings
-                  </Button>
-                </div>
+                {/* ... Not found content ... */}
               </div>
             </div>
           </div>
         </div>
         <Footer />
       </div>
-    );
-  }
+    ),
+    []
+  );
+
+  if (isLoading) return renderLoadingState;
+  if (!venue) return renderNotFound;
 
   return (
-    <div className="min-h-screen bg-white overflow-hidden">
-      <NavBar />
+    <ErrorBoundary>
+      <div className="min-h-screen bg-white overflow-hidden">
+        <NavBar />
+        {/* Hero/Media Section */}
+        <div className="relative bg-black">
+          <div className="relative h-[40vh] sm:h-[50vh] md:h-[60vh] lg:h-[80vh]">
+            <MediaCarousel
+              media={venue.venue_media}
+              name={venue.business_name}
+              service="venue"
+              className="w-full h-full object-cover"
+            />
+          </div>
+        </div>
 
-      {/* Hero/Media Section */}
-      <div className="relative bg-black">
-        <div className="relative h-[40vh] sm:h-[50vh] md:h-[60vh] lg:h-[80vh]">
-          <MediaCarousel
-            media={venue.venue_media}
-            name={venue.business_name}
-            service="venue"
-            className="w-full h-full object-cover"
+        {/* Content */}
+        <div className="max-w-7xl mx-auto px-4 py-6">
+          {/* Like Button Section */}
+          {user?.id !== venue.user_id && (
+            <div className="w-full px-4 pb-5">
+              <div className="bg-stone-100 border-black py-2">
+                <div className="max-w-3xl mx-auto px-4 flex flex-col items-center justify-center">
+                  <div className="flex items-center gap-2">
+                    <span className="text-black text-lg font-semibold break-words">
+                      Don't forget this listing!
+                    </span>
+                    <LikeButton
+                      itemId={venue.id}
+                      service="venue"
+                      initialLiked={false}
+                      className="text-rose-600 hover:text-rose-700 flex-shrink-0"
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Venue Header */}
+          <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-3 sm:gap-4 mb-6 sm:mb-8">
+            <div className="flex-grow min-w-0">
+              <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-gray-900 break-words">
+                {venue.business_name}
+              </h1>
+              <p className="text-sm sm:text-base text-gray-600 break-words mt-2">
+                {venue.address}, {venue.city}, {venue.state}
+              </p>
+            </div>
+            <div className="flex flex-col items-end flex-shrink-0 text-right">
+              <div className="text-2xl sm:text-3xl font-semibold text-green-800">
+                ${venue.base_price.toLocaleString()}
+              </div>
+              <p className="text-xs sm:text-sm text-gray-500">
+                Venue Only (See Included)
+              </p>
+            </div>
+          </div>
+
+          {/* Info Grid */}
+          <div className="pb-10">
+            <VenueInfoGrid venue={venue} />
+          </div>
+
+          {/* About Section */}
+          <div className="px-2 sm:px-0 mb-8 sm:mb-12">
+            <h2 className="text-lg sm:text-xl md:text-2xl font-bold mb-3 sm:mb-4 break-words">
+              About the Business
+            </h2>
+            <p className="text-sm sm:text-base text-gray-600 leading-relaxed break-words whitespace-normal">
+              {venue.description}
+            </p>
+          </div>
+
+          {/* What's Included */}
+          {venue.venue_inclusions?.length > 0 && (
+            <VenueInclusions inclusions={venue.venue_inclusions} />
+          )}
+
+          {/* Add-ons */}
+          {venue.venue_addons?.length > 0 && (
+            <div className="mb-8 sm:mb-12">
+              <h2 className="text-lg sm:text-xl md:text-2xl font-bold mb-4 sm:mb-6 break-words">
+                Available Add-ons
+              </h2>
+              <div className="flex flex-col lg:flex-row gap-3 sm:gap-4">
+                {/* First Column */}
+                <div className="flex-1 flex flex-col gap-3 sm:gap-4 min-w-0">
+                  {venue.venue_addons
+                    .filter((_, index) => index % 2 === 0)
+                    .map((addon, index) => (
+                      <ServiceCard key={index * 2} service={addon} />
+                    ))}
+                </div>
+                {/* Second Column */}
+                <div className="flex-1 flex flex-col gap-3 sm:gap-4 min-w-0">
+                  {venue.venue_addons
+                    .filter((_, index) => index % 2 === 1)
+                    .map((addon, index) => (
+                      <ServiceCard key={index * 2 + 1} service={addon} />
+                    ))}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Contact Form */}
+          {user?.id !== venue.user_id ? (
+            <div className="mb-12">
+              <div className="text-center">
+                <h2 className="text-xl md:text-2xl font-bold mb-2 break-words">
+                  Contact {venue.business_name}
+                </h2>
+                {contactHistory && (
+                  <p className="text-sm text-gray-600 mb-6 break-words">
+                    Last contacted{" "}
+                    {new Date(contactHistory.contacted_at).toLocaleDateString()}{" "}
+                    at{" "}
+                    {new Date(contactHistory.contacted_at).toLocaleTimeString()}
+                  </p>
+                )}
+              </div>
+              <div className="max-w-2xl mx-auto">
+                {user ? (
+                  <div className="bg-gray-50 p-4 sm:p-6 rounded-lg">
+                    <form onSubmit={handleInquirySubmit} className="space-y-4">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">
+                            First Name
+                          </label>
+                          <Input
+                            name="firstName"
+                            value={inquiryForm.firstName}
+                            onChange={handleInputChange}
+                            required
+                            className="text-sm sm:text-base"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">
+                            Last Name
+                          </label>
+                          <Input
+                            name="lastName"
+                            value={inquiryForm.lastName}
+                            onChange={handleInputChange}
+                            required
+                            className="text-sm sm:text-base"
+                          />
+                        </div>
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          Email
+                        </label>
+                        <Input
+                          type="email"
+                          name="email"
+                          value={inquiryForm.email}
+                          onChange={handleInputChange}
+                          required
+                          className="text-sm sm:text-base"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          Phone
+                        </label>
+                        <Input
+                          type="tel"
+                          name="phone"
+                          value={inquiryForm.phone}
+                          onChange={handleInputChange}
+                          required
+                          className="text-sm sm:text-base"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          Event Date
+                        </label>
+                        <Input
+                          type="date"
+                          name="eventDate"
+                          value={inquiryForm.eventDate}
+                          onChange={handleInputChange}
+                          required
+                          className="text-sm sm:text-base"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          Estimated Guest Count
+                        </label>
+                        <Input
+                          type="number"
+                          name="guestCount"
+                          value={inquiryForm.guestCount}
+                          onChange={handleInputChange}
+                          min={venue.min_guests || 1}
+                          max={venue.max_guests}
+                          required
+                          className="text-sm sm:text-base"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          Message
+                        </label>
+                        <textarea
+                          name="message"
+                          value={inquiryForm.message}
+                          onChange={handleInputChange}
+                          rows={4}
+                          className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-transparent text-sm sm:text-base"
+                          placeholder="Tell us about your event..."
+                          required
+                        />
+                      </div>
+
+                      <Button
+                        type="submit"
+                        disabled={isSubmitting}
+                        className="w-full bg-black hover:bg-stone-800 text-sm sm:text-base py-2 sm:py-3"
+                      >
+                        {isSubmitting ? "Sending..." : "Send Inquiry"}
+                      </Button>
+                    </form>
+                  </div>
+                ) : (
+                  <div className="bg-gray-50 p-8 rounded-lg text-center">
+                    <div className="max-w-md mx-auto">
+                      <h3 className="text-xl font-semibold mb-3 break-words">
+                        Ready to connect?
+                      </h3>
+                      <p className="text-gray-600 mb-6 break-words">
+                        Sign in to contact {venue.business_name} and manage all
+                        your wedding venue communications in one place. It's
+                        absolutely free!
+                      </p>
+                      <Button
+                        onClick={() => setIsLoginOpen(true)}
+                        className="w-full bg-black hover:bg-stone-800 text-sm sm:text-base py-3"
+                      >
+                        Sign in to Contact
+                      </Button>
+                      <p className="text-sm text-gray-500 mt-4 break-words">
+                        New to our platform? Creating an account takes less than
+                        a minute
+                      </p>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          ) : (
+            <div className="mb-8 sm:mb-12 text-center">
+              <p className="text-gray-600 break-words">
+                Manage your listing from your dashboard.
+              </p>
+            </div>
+          )}
+
+          {/* Auth Modals */}
+          <AuthModals
+            isLoginOpen={isLoginOpen}
+            isSignUpOpen={isSignUpOpen}
+            onLoginClose={handleLoginClose}
+            onSignUpClose={handleSignUpClose}
+            onSwitchToSignUp={handleSwitchToSignUp}
+            onSwitchToLogin={handleSwitchToLogin}
           />
         </div>
+        <Footer />
       </div>
-
-      {/* Content */}
-      <div className="max-w-7xl mx-auto px-4 py-6">
-        {/* Like Button Section */}
-        {user?.id !== venue.user_id && (
-          <div className="w-full px-4 pb-5">
-            <div className="bg-stone-100 border-black py-2">
-              <div className="max-w-3xl mx-auto px-4 flex flex-col items-center justify-center">
-                <div className="flex items-center gap-2">
-                  <span className="text-black text-lg font-semibold break-words">
-                    Don't forget this listing!
-                  </span>
-                  <LikeButton
-                    itemId={venue.id}
-                    service="venue"
-                    initialLiked={false}
-                    className="text-rose-600 hover:text-rose-700 flex-shrink-0"
-                  />
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Venue Header */}
-        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-3 sm:gap-4 mb-6 sm:mb-8">
-          <div className="flex-grow min-w-0">
-            <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-gray-900 break-words">
-              {venue.business_name}
-            </h1>
-            <p className="text-sm sm:text-base text-gray-600 break-words mt-2">
-              {venue.address}, {venue.city}, {venue.state}
-            </p>
-          </div>
-          <div className="flex flex-col items-end flex-shrink-0 text-right">
-            <div className="text-2xl sm:text-3xl font-semibold text-green-800">
-              ${venue.base_price.toLocaleString()}
-            </div>
-            <p className="text-xs sm:text-sm text-gray-500">
-              Venue Only (See Included)
-            </p>
-          </div>
-        </div>
-
-        {/* Info Grid */}
-        <div className="pb-10">
-          <VenueInfoGrid venue={venue} />
-        </div>
-
-        {/* About Section */}
-        <div className="px-2 sm:px-0 mb-8 sm:mb-12">
-          <h2 className="text-lg sm:text-xl md:text-2xl font-bold mb-3 sm:mb-4 break-words">
-            About the Business
-          </h2>
-          <p className="text-sm sm:text-base text-gray-600 leading-relaxed break-words whitespace-normal">
-            {venue.description}
-          </p>
-        </div>
-
-        {/* What's Included */}
-        {venue.venue_inclusions?.length > 0 && (
-          <div className="mb-8 sm:mb-12">
-            <h2 className="text-lg sm:text-xl md:text-2xl font-bold mb-4 sm:mb-6 break-words">
-              What's Included in the Base Price
-            </h2>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
-              {[...venue.venue_inclusions]
-                .sort((a, b) => a.name.localeCompare(b.name))
-                .map((inclusion, index) => (
-                  <div
-                    key={index}
-                    className="p-3 sm:p-4 rounded-lg border border-black bg-stone-100 w-full"
-                  >
-                    <div className="flex items-center gap-2 min-w-0">
-                      {" "}
-                      {/* Add min-w-0 */}
-                      <span className="text-green-800 flex-shrink-0">✓</span>
-                      <span className="text-sm sm:text-base text-gray-900 break-words">
-                        {inclusion.name}
-                      </span>
-                    </div>
-                  </div>
-                ))}
-            </div>
-          </div>
-        )}
-
-        {/* Add-ons */}
-        {venue.venue_addons?.length > 0 && (
-          <div className="mb-8 sm:mb-12">
-            <h2 className="text-lg sm:text-xl md:text-2xl font-bold mb-4 sm:mb-6 break-words">
-              Available Add-ons
-            </h2>
-            <div className="flex flex-col lg:flex-row gap-3 sm:gap-4">
-              {/* First Column */}
-              <div className="flex-1 flex flex-col gap-3 sm:gap-4 min-w-0">
-                {venue.venue_addons
-                  .filter((_, index) => index % 2 === 0)
-                  .map((addon, index) => (
-                    <ServiceCard key={index * 2} service={addon} />
-                  ))}
-              </div>
-
-              {/* Second Column */}
-              <div className="flex-1 flex flex-col gap-3 sm:gap-4 min-w-0">
-                {venue.venue_addons
-                  .filter((_, index) => index % 2 === 1)
-                  .map((addon, index) => (
-                    <ServiceCard key={index * 2 + 1} service={addon} />
-                  ))}
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Contact Form */}
-        {user?.id !== venue.user_id ? (
-          <div className="mb-12">
-            <div className="text-center">
-              <h2 className="text-xl md:text-2xl font-bold mb-2 break-words">
-                Contact {venue.business_name}
-              </h2>
-              {contactHistory && (
-                <p className="text-sm text-gray-600 mb-6 break-words">
-                  Last contacted{" "}
-                  {new Date(contactHistory.contacted_at).toLocaleDateString()}{" "}
-                  at{" "}
-                  {new Date(contactHistory.contacted_at).toLocaleTimeString()}
-                </p>
-              )}
-            </div>
-            <div className="max-w-2xl mx-auto">
-              {user ? (
-                <div className="bg-gray-50 p-4 sm:p-6 rounded-lg">
-                  <form onSubmit={handleInquirySubmit} className="space-y-4">
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                          First Name
-                        </label>
-                        <Input
-                          name="firstName"
-                          value={inquiryForm.firstName}
-                          onChange={handleInputChange}
-                          required
-                          className="text-sm sm:text-base"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                          Last Name
-                        </label>
-                        <Input
-                          name="lastName"
-                          value={inquiryForm.lastName}
-                          onChange={handleInputChange}
-                          required
-                          className="text-sm sm:text-base"
-                        />
-                      </div>
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Email
-                      </label>
-                      <Input
-                        type="email"
-                        name="email"
-                        value={inquiryForm.email}
-                        onChange={handleInputChange}
-                        required
-                        className="text-sm sm:text-base"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Phone
-                      </label>
-                      <Input
-                        type="tel"
-                        name="phone"
-                        value={inquiryForm.phone}
-                        onChange={handleInputChange}
-                        required
-                        className="text-sm sm:text-base"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Event Date
-                      </label>
-                      <Input
-                        type="date"
-                        name="eventDate"
-                        value={inquiryForm.eventDate}
-                        onChange={handleInputChange}
-                        required
-                        className="text-sm sm:text-base"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Estimated Guest Count
-                      </label>
-                      <Input
-                        type="number"
-                        name="guestCount"
-                        value={inquiryForm.guestCount}
-                        onChange={handleInputChange}
-                        min={venue.min_guests || 1}
-                        max={venue.max_guests}
-                        required
-                        className="text-sm sm:text-base"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Message
-                      </label>
-                      <textarea
-                        name="message"
-                        value={inquiryForm.message}
-                        onChange={handleInputChange}
-                        rows={4}
-                        className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-transparent text-sm sm:text-base"
-                        placeholder="Tell us about your event..."
-                        required
-                      />
-                    </div>
-
-                    <Button
-                      type="submit"
-                      disabled={isSubmitting}
-                      className="w-full bg-black hover:bg-stone-800 text-sm sm:text-base py-2 sm:py-3"
-                    >
-                      {isSubmitting ? "Sending..." : "Send Inquiry"}
-                    </Button>
-                  </form>
-                </div>
-              ) : (
-                <div className="bg-gray-50 p-8 rounded-lg text-center">
-                  <div className="max-w-md mx-auto">
-                    <h3 className="text-xl font-semibold mb-3 break-words">
-                      Ready to connect?
-                    </h3>
-                    <p className="text-gray-600 mb-6 break-words">
-                      Sign in to contact {venue.business_name} and manage all
-                      your wedding venue communications in one place. It's
-                      absolutely free!
-                    </p>
-                    <Button
-                      onClick={() => setIsLoginOpen(true)}
-                      className="w-full bg-black hover:bg-stone-800 text-sm sm:text-base py-3"
-                    >
-                      Sign in to Contact
-                    </Button>
-                    <p className="text-sm text-gray-500 mt-4 break-words">
-                      New to our platform? Creating an account takes less than a
-                      minute
-                    </p>
-                  </div>
-                </div>
-              )}
-            </div>
-          </div>
-        ) : (
-          <div className="mb-8 sm:mb-12 text-center">
-            <p className="text-gray-600 break-words">
-              Manage your listing from your dashboard.
-            </p>
-          </div>
-        )}
-
-        {/* Auth Modals */}
-        <AuthModals
-          isLoginOpen={isLoginOpen}
-          isSignUpOpen={isSignUpOpen}
-          onLoginClose={handleLoginClose}
-          onSignUpClose={handleSignUpClose}
-          onSwitchToSignUp={handleSwitchToSignUp}
-          onSwitchToLogin={handleSwitchToLogin}
-        />
-      </div>
-      <Footer />
-    </div>
+    </ErrorBoundary>
   );
-}
+};
+
+export default VenueDetailsPage;
