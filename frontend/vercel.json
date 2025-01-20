@@ -1,6 +1,3 @@
 {
-  "ignoreCommand": "git diff --quiet HEAD^ HEAD ./supabase/",
-  "excludeFiles": [
-    "supabase/**"
-  ]
+  "ignoreCommand": "git diff --quiet HEAD^ HEAD ./supabase/"
 }
