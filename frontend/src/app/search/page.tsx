@@ -358,13 +358,13 @@ export default function ServicesSearchPage() {
     const { min: minCapacity, max: maxCapacity } = filtersToUse.capacity;
 
     if (minCapacity > 0 && maxCapacity > 0) {
-      return query
-        .gte("max_guests", minCapacity)
-        .lte("min_guests", maxCapacity);
-    } else if (minCapacity > 0) {
-      return query.gte("max_guests", minCapacity);
+      return query//200 - 400
+        .lte("min_guests", minCapacity)//1 50 100 = 
+        .gte("max_guests", maxCapacity);//2 600 400
+    } else if (minCapacity > 0) {//
+      return query.gte("min_guests", minCapacity);
     } else if (maxCapacity > 0) {
-      return query.lte("min_guests", maxCapacity);
+      return query.lte("max_guests", maxCapacity);
     }
     return query;
   };
