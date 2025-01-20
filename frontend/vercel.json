@@ -1,3 +1,9 @@
 {
+  "builds": [
+    {
+      "src": "pages/**/*",
+      "use": "@vercel/static"
+    }
+  ],
   "ignoreCommand": "git diff --quiet HEAD^ HEAD ./supabase/"
 }
