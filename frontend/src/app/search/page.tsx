@@ -227,7 +227,7 @@ export default function ServicesSearchPage() {
     const minCapacity = parseInt(params.get("minCapacity") || "0");
     const maxCapacity = parseInt(params.get("maxCapacity") || "0");
     const sortOption = params.get("sort") || "default";
-    const cateringOption = params.get("catering") || "";
+    const cateringOption = params.get("catering") || "default";
 
     return {
       searchQuery: {
@@ -489,7 +489,7 @@ export default function ServicesSearchPage() {
         searchQuery: searchFilters.searchQuery,
         priceRange: [0, 0],
         capacity: { min: 0, max: 0 },
-        cateringOption: "both",
+        cateringOption: value === "venue" ? "default" : "both",
         sortOption: "default",
         serviceType: value,
       };
