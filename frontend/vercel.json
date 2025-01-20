@@ -1,5 +1,13 @@
 {
-  "ignore": [
-    "supabase/**"
+  "version": 2,
+  "builds": [
+    {
+      "src": "src/**/*.js",
+      "use": "@vercel/node"
+    },
+    {
+      "src": "public/**/*",
+      "use": "@vercel/static"
+    }
   ]
 }
