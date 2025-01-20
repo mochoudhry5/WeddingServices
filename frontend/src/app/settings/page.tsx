@@ -514,37 +514,6 @@ const NotificationSettings = () => (
   </SectionLayout>
 );
 
-const PaymentSettings = () => (
-  <SectionLayout
-    title="Payment Methods"
-    description="Manage your payment information."
-  >
-    <div className="space-y-4">
-      <div className="border rounded-lg p-4">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-3">
-            <div className="w-12 h-8 bg-gray-100 rounded flex items-center justify-center">
-              <CreditCard size={20} className="text-gray-400" />
-            </div>
-            <div>
-              <p className="text-sm font-medium">•••• •••• •••• 4242</p>
-              <p className="text-xs text-gray-500">Expires 12/24</p>
-            </div>
-          </div>
-          <button className="text-sm text-black hover:text-stone-500">
-            Remove
-          </button>
-        </div>
-      </div>
-
-      <button className="w-full p-3 border-2 border-dashed border-gray-200 rounded-lg text-sm text-black hover:text-stone-500 hover:border-black transition-colors flex items-center justify-center space-x-2">
-        <CreditCard size={16} />
-        <span>Add Payment Method</span>
-      </button>
-    </div>
-  </SectionLayout>
-);
-
 function SettingsPage() {
   const [activeSection, setActiveSection] = useState("account");
   const [showLogoutDialog, setShowLogoutDialog] = useState(false);

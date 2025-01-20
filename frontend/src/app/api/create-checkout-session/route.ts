@@ -32,9 +32,7 @@ const supabase = createClient(supabaseUrl, supabaseKey);
 
 export async function POST(request: Request) {
   try {
-    // Parse request body
     const body = await request.json();
-
     const { priceId, userId, serviceType, tierType, isAnnual, listing_id } =
       body;
 
@@ -46,22 +44,47 @@ export async function POST(request: Request) {
       );
     }
 
-    // Get user data from Supabase
-    const { data: user, error: userError } = await supabase
-      .from("user_preferences")
-      .select("*")
-      .eq("id", userId)
+    // Check if user already has a Stripe customer ID
+    const { data: existingSubscription } = await supabase
+      .from("subscriptions")
+      .select("stripe_customer_id")
+      .eq("user_id", userId)
+      .not("stripe_customer_id", "is", null)
+      .limit(1)
       .single();
 
-    if (userError || !user) {
-      return NextResponse.json({ error: "User not found" }, { status: 404 });
+    let customerId: string;
+
+    if (!existingSubscription?.stripe_customer_id) {
+      // Get user data
+      const { data: user } = await supabase
+        .from("user_preferences")
+        .select("*")
+        .eq("id", userId)
+        .single();
+
+      if (!user) {
+        return NextResponse.json({ error: "User not found" }, { status: 404 });
+      }
+
+      // Create new customer
+      const customer = await stripe.customers.create({
+        email: user.email,
+        metadata: {
+          userId: userId,
+        },
+      });
+      customerId = customer.id;
+    } else {
+      customerId = existingSubscription.stripe_customer_id;
     }
 
     const key: keyof typeof mapping = serviceType;
 
-    // Create Stripe checkout session
+    // Create Stripe checkout session with proper typing
     const session = await stripe.checkout.sessions.create({
-      mode: "subscription",
+      customer: customerId,
+      billing_address_collection: "auto",
       payment_method_types: ["card"],
       line_items: [
         {
@@ -69,6 +92,14 @@ export async function POST(request: Request) {
           quantity: 1,
         },
       ],
+      mode: "subscription",
+      subscription_data: {
+        trial_settings: {
+          end_behavior: {
+            missing_payment_method: "cancel",
+          },
+        },
+      },
       success_url: `${process.env.NEXT_PUBLIC_BASE_URL}/services/${mapping[key]}/${listing_id}`,
       cancel_url: `${process.env.NEXT_PUBLIC_BASE_URL}/services/`,
       metadata: {
@@ -78,9 +109,8 @@ export async function POST(request: Request) {
         isAnnual: isAnnual.toString(),
         listing_id,
       },
-    });
+    } as Stripe.Checkout.SessionCreateParams);
 
-    // Return successful response
     return NextResponse.json({ sessionId: session.id });
   } catch (error) {
     console.error("Checkout session error:", error);

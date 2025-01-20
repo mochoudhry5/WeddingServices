@@ -5,6 +5,7 @@ import {
   ChevronUp,
   XCircle,
   Link,
+  RefreshCcw,
 } from "lucide-react";
 import NextLink from "next/link";
 import { useAuth } from "@/context/AuthContext";
@@ -20,8 +21,9 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { AddPaymentMethodDialog } from "./AddPaymentMethodDialog";
 
-// Updated interface to match your database schema
+// Types
 interface StripeSubscription {
   id: string;
   user_id: string;
@@ -34,6 +36,7 @@ interface StripeSubscription {
   current_period_end: string;
   created_at: string;
   listing_id: string;
+  cancel_at_period_end: boolean;
 }
 
 interface BaseListing {
@@ -50,11 +53,6 @@ interface ListingsByCategory {
   weddingPlanner: BaseListing[];
 }
 
-interface CategoryStats {
-  listings: number;
-  activeSubscriptions: number;
-}
-
 interface ServiceCategory {
   id: string;
   name: string;
@@ -62,6 +60,7 @@ interface ServiceCategory {
   color: string;
 }
 
+// Constants
 const serviceCategories: ServiceCategory[] = [
   {
     id: "dj",
@@ -95,51 +94,96 @@ const serviceCategories: ServiceCategory[] = [
   },
 ];
 
-const CategoryCard = ({
-  category,
-  stats,
-  expanded,
-  onToggle,
+const PaymentMethodsSection = ({
+  paymentMethods,
+  onSetDefault,
+  onAddNew,
 }: {
-  category: ServiceCategory;
-  stats: CategoryStats;
-  expanded: boolean;
-  onToggle: () => void;
-}) => (
-  <div className="bg-white rounded-lg shadow-sm border border-gray-200">
-    <div
-      className="p-4 flex items-center justify-between cursor-pointer"
-      onClick={onToggle}
-    >
-      <div>
-        <h3 className="text-lg font-medium">{category.name}</h3>
-        <p className="text-sm text-gray-500">
-          {stats.listings} listing{stats.listings !== 1 ? "s" : ""} ·{" "}
-          {stats.activeSubscriptions} active subscription
-          {stats.activeSubscriptions !== 1 ? "s" : ""}
-        </p>
+  paymentMethods: PaymentMethod[];
+  onSetDefault: (paymentMethodId: string) => void;
+  onAddNew: () => void;
+}) => {
+  if (paymentMethods.length === 0) {
+    return (
+      <div className="mb-8">
+        <div className="flex justify-between items-center mb-4">
+          <h3 className="text-lg font-medium">Payment Methods</h3>
+          <button
+            onClick={onAddNew}
+            className="inline-flex items-center space-x-2 px-4 py-2 bg-black text-white rounded-lg hover:bg-stone-700 transition-colors"
+          >
+            <CreditCard size={16} />
+            <span>Add Payment Method</span>
+          </button>
+        </div>
+        <div className="p-6 text-center bg-gray-50 rounded-lg border border-dashed border-gray-300">
+          <CreditCard className="mx-auto h-12 w-12 text-gray-400" />
+          <h3 className="mt-2 text-sm font-medium text-gray-900">
+            No payment methods
+          </h3>
+          <p className="mt-1 text-sm text-gray-500">
+            Add a payment method to manage your subscriptions.
+          </p>
+        </div>
       </div>
-      <div className="flex items-center space-x-4">
-        {expanded ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
+    );
+  }
+
+  return (
+    <div className="mb-8">
+      <div className="flex justify-between items-center mb-4">
+        <h3 className="text-lg font-medium">Payment Methods</h3>
+        <button
+          onClick={onAddNew}
+          className="inline-flex items-center space-x-2 px-2 py-1 bg-black text-white rounded-lg hover:bg-stone-700 transition-colors"
+        >
+          <CreditCard size={16} />
+          <span>Add Payment Method</span>
+        </button>
+      </div>
+      <div className="space-y-4">
+        {paymentMethods.map((method) => (
+          <div
+            key={method.id}
+            className="flex items-center justify-between p-4 border rounded-lg bg-white"
+          >
+            <div className="flex items-center space-x-4">
+              <div className="w-12 h-8 bg-gray-100 rounded flex items-center justify-center">
+                <CreditCard size={20} className="text-gray-600" />
+              </div>
+              <div>
+                <p className="text-sm font-medium">
+                  {method.card_brand.charAt(0).toUpperCase() +
+                    method.card_brand.slice(1)}{" "}
+                  •••• {method.last_4}
+                </p>
+                <p className="text-xs text-gray-500">
+                  Expires {method.exp_month.toString().padStart(2, "0")}/
+                  {method.exp_year}
+                </p>
+              </div>
+              {method.is_default && (
+                <span className="ml-2 inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-black">
+                  Default
+                </span>
+              )}
+            </div>
+            <div className="flex items-center space-x-4">
+              {!method.is_default && (
+                <button
+                  onClick={() => onSetDefault(method.stripe_payment_method_id)}
+                  className="text-sm text-black hover:text-stone-600 transition-colors"
+                >
+                  Make Default
+                </button>
+              )}
+            </div>
+          </div>
+        ))}
       </div>
     </div>
-  </div>
-);
-
-// First, update the StripeSubscription interface to include listing_id
-interface StripeSubscription {
-  id: string;
-  user_id: string;
-  stripe_subscription_id: string;
-  stripe_customer_id: string;
-  status: string;
-  service_type: string;
-  tier_type: string;
-  is_annual: boolean;
-  current_period_end: string;
-  created_at: string;
-  listing_id: string; // Add this line
-}
+  );
+};
 
 const getServiceTypeForUrl = (dbServiceType: string): string => {
   const mapping: { [key: string]: string } = {
@@ -152,98 +196,151 @@ const getServiceTypeForUrl = (dbServiceType: string): string => {
   return mapping[dbServiceType] || dbServiceType;
 };
 
-// Then update the SubscriptionList component
-const SubscriptionList = ({
+// Components
+const SubscriptionSection = ({
+  title,
   subscriptions,
   onCancelSubscription,
+  onReactivateSubscription,
+  showReactivate = false,
 }: {
+  title: string;
   subscriptions: StripeSubscription[];
   onCancelSubscription: (subscription: StripeSubscription) => void;
-}) => (
-  <div className="mt-4 border rounded-lg overflow-hidden">
-    <table className="w-full">
-      <thead className="bg-gray-50">
-        <tr>
-          <th className="px-4 py-2 text-center text-xs font-medium text-gray-500">
-            Start Date
-          </th>
-          <th className="px-4 py-2 text-center text-xs font-medium text-gray-500">
-            Next Payment
-          </th>
-          <th className="px-4 py-2 text-center text-xs font-medium text-gray-500">
-            Plan Type
-          </th>
-          <th className="px-4 py-2 text-center text-xs font-medium text-gray-500">
-            Status
-          </th>
-          <th className="px-4 py-2 text-center text-xs font-medium text-gray-500">
-            Listing
-          </th>
-          <th className="px-4 py-2 text-center text-xs font-medium text-gray-500">
-            Actions
-          </th>
-        </tr>
-      </thead>
-      <tbody className="divide-y divide-gray-200">
-        {subscriptions.map((subscription) => (
-          <tr key={subscription.id}>
-            <td className="px-4 py-3 text-sm text-center">
-              {new Date(subscription.created_at).toLocaleDateString()}
-            </td>
-            <td className="px-4 py-3 text-sm text-center">
-              {new Date(subscription.current_period_end).toLocaleDateString()}
-            </td>
-            <td className="px-4 py-3 text-sm text-center">
-              {subscription.tier_type.charAt(0).toUpperCase() +
-                subscription.tier_type.slice(1)}{" "}
-              ({subscription.is_annual ? "Annual" : "Monthly"})
-            </td>
-            <td className="px-4 py-3 text-center">
-              <span
-                className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
-                  subscription.status === "active"
-                    ? "bg-green-100 text-green-800"
-                    : subscription.status === "past_due"
-                    ? "bg-yellow-100 text-yellow-800"
-                    : subscription.status === "canceled"
-                    ? "bg-red-100 text-red-800"
-                    : "bg-gray-100 text-gray-800"
-                }`}
-              >
-                {subscription.status.charAt(0).toUpperCase() +
-                  subscription.status.slice(1)}
-              </span>
-            </td>
-            <td className="px-4 py-3 text-center">
-              <NextLink
-                href={`/services/${getServiceTypeForUrl(
-                  subscription.service_type
-                )}/${subscription.listing_id}`}
-                className="inline-block text-black hover:text-stone-500 transition-colors"
-                target="_blank"
-                rel="noopener noreferrer"
-              >
-                <Link size={20} />
-              </NextLink>
-            </td>
-            <td className="px-4 py-3 text-center">
-              {subscription.status === "active" && (
-                <button
-                  onClick={() => onCancelSubscription(subscription)}
-                  className="inline-flex items-center space-x-1 text-red-600 hover:text-red-800"
-                >
-                  <XCircle size={16} />
-                  <span>Cancel</span>
-                </button>
-              )}
-            </td>
-          </tr>
-        ))}
-      </tbody>
-    </table>
-  </div>
-);
+  onReactivateSubscription: (subscription: StripeSubscription) => void;
+  showReactivate?: boolean;
+}) => {
+  if (subscriptions.length === 0) return null;
 
+  return (
+    <div className="mb-8">
+      <h3 className="text-lg font-medium mb-4">{title}</h3>
+      <div className="border rounded-lg overflow-hidden">
+        <table className="w-full">
+          <thead className="bg-gray-50">
+            <tr>
+              <th className="px-4 py-2 text-center text-xs font-medium text-gray-500">
+                Start Date
+              </th>
+              <th className="px-4 py-2 text-center text-xs font-medium text-gray-500">
+                Next Payment
+              </th>
+              <th className="px-4 py-2 text-center text-xs font-medium text-gray-500">
+                Plan Type
+              </th>
+              <th className="px-4 py-2 text-center text-xs font-medium text-gray-500">
+                Status
+              </th>
+              <th className="px-4 py-2 text-center text-xs font-medium text-gray-500">
+                Listing
+              </th>
+              <th className="px-4 py-2 text-center text-xs font-medium text-gray-500">
+                Actions
+              </th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-gray-200">
+            {subscriptions.map((subscription) => (
+              <tr key={subscription.id}>
+                <td className="px-4 py-3 text-sm text-center">
+                  {new Date(subscription.created_at).toLocaleDateString()}
+                </td>
+                <td className="px-4 py-3 text-sm text-center">
+                  {subscription.cancel_at_period_end ? (
+                    <span className="text-red-600">
+                      Cancels on{" "}
+                      {new Date(
+                        subscription.current_period_end
+                      ).toLocaleDateString()}
+                    </span>
+                  ) : subscription.status === "inactive" ? (
+                    "No upcoming payment"
+                  ) : (
+                    new Date(
+                      subscription.current_period_end
+                    ).toLocaleDateString()
+                  )}
+                </td>
+                <td className="px-4 py-3 text-sm text-center">
+                  {subscription.tier_type.charAt(0).toUpperCase() +
+                    subscription.tier_type.slice(1)}{" "}
+                  ({subscription.is_annual ? "Annual" : "Monthly"})
+                </td>
+                <td className="px-4 py-3 text-center">
+                  <span
+                    className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
+                      subscription.status === "active" &&
+                      !subscription.cancel_at_period_end
+                        ? "bg-green-100 text-green-800"
+                        : subscription.status === "active" &&
+                          subscription.cancel_at_period_end
+                        ? "bg-yellow-100 text-yellow-800"
+                        : subscription.status === "past_due"
+                        ? "bg-yellow-100 text-yellow-800"
+                        : "bg-red-100 text-red-800"
+                    }`}
+                  >
+                    {subscription.status.charAt(0).toUpperCase() +
+                      subscription.status.slice(1)}
+                  </span>
+                </td>
+                <td className="px-4 py-3 text-center">
+                  <NextLink
+                    href={`/services/${getServiceTypeForUrl(
+                      subscription.service_type
+                    )}/${subscription.listing_id}`}
+                    className="inline-block text-black hover:text-stone-500 transition-colors"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    <Link size={20} />
+                  </NextLink>
+                </td>
+                <td className="px-4 py-3 text-center">
+                  <div className="flex items-center justify-center space-x-2">
+                    {subscription.status === "active" &&
+                      !subscription.cancel_at_period_end && (
+                        <button
+                          onClick={() => onCancelSubscription(subscription)}
+                          className="inline-flex items-center space-x-1 text-red-600 hover:text-red-800"
+                        >
+                          <XCircle size={16} />
+                          <span>Cancel</span>
+                        </button>
+                      )}
+                    {showReactivate && (
+                      <button
+                        onClick={() => onReactivateSubscription(subscription)}
+                        className="inline-flex items-center space-x-1 text-green-600 hover:text-green-800"
+                      >
+                        <RefreshCcw size={16} />
+                        <span>Reactivate</span>
+                      </button>
+                    )}
+                  </div>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+};
+
+interface PaymentMethod {
+  id: string;
+  user_id: string;
+  stripe_payment_method_id: string;
+  stripe_customer_id: string;
+  is_default: boolean;
+  last_4: string;
+  card_brand: string;
+  exp_month: number;
+  exp_year: number;
+}
+
+// Main Component
 const Billing = () => {
   const { user } = useAuth();
   const [listings, setListings] = useState<ListingsByCategory>({
@@ -255,61 +352,38 @@ const Billing = () => {
   });
   const [subscriptions, setSubscriptions] = useState<StripeSubscription[]>([]);
   const [loading, setLoading] = useState(true);
-  const [expandedCategories, setExpandedCategories] = useState<string[]>([]);
   const [subscriptionToCancel, setSubscriptionToCancel] =
     useState<StripeSubscription | null>(null);
+  const [subscriptionToReactivate, setSubscriptionToReactivate] =
+    useState<StripeSubscription | null>(null);
+  const [showAddPaymentMethod, setShowAddPaymentMethod] = useState(false);
+  const [setupIntentSecret, setSetupIntentSecret] = useState<string | null>(
+    null
+  );
+  const [paymentMethods, setPaymentMethods] = useState<PaymentMethod[]>([]);
 
   useEffect(() => {
     const fetchBillingData = async () => {
       if (!user?.id) return;
-
       try {
-        // Fetch listings for each category
-        const listingPromises = serviceCategories.map(async (category) => {
-          const { data, error } = await supabase
-            .from(category.table)
-            .select("id, business_name, created_at")
-            .eq("user_id", user.id);
-
-          if (error) throw error;
-          return { category: category.id, listings: data || [] };
-        });
-
-        const listingResults = await Promise.all(listingPromises);
-        const newListings = listingResults.reduce(
-          (acc, { category, listings }) => ({
-            ...acc,
-            [category]: listings,
-          }),
-          {} as ListingsByCategory
+        // Get billing data
+        const { data, error } = await supabase.functions.invoke(
+          "get-billing-data"
         );
+        if (error) throw error;
 
-        setListings(newListings);
+        setSubscriptions(data.subscriptions);
+        setListings(data.listings);
 
-        // Fetch all stripe subscriptions including listing_id
-        const { data: subscriptionData, error: subscriptionError } =
-          await supabase
-            .from("subscriptions")
-            .select(
-              `
-            id,
-            user_id,
-            stripe_subscription_id,
-            stripe_customer_id,
-            status,
-            service_type,
-            tier_type,
-            is_annual,
-            current_period_end,
-            created_at,
-            listing_id
-          `
-            )
-            .eq("user_id", user.id)
-            .order("created_at", { ascending: false });
+        // Get payment methods
+        const { data: methodsData, error: methodsError } = await supabase
+          .from("payment_methods")
+          .select("*")
+          .eq("user_id", user.id)
+          .order("is_default", { ascending: false });
 
-        if (subscriptionError) throw subscriptionError;
-        setSubscriptions(subscriptionData || []);
+        if (methodsError) throw methodsError;
+        setPaymentMethods(methodsData || []);
       } catch (error) {
         console.error("Error fetching billing data:", error);
         toast.error("Failed to load billing information");
@@ -321,28 +395,143 @@ const Billing = () => {
     fetchBillingData();
   }, [user?.id]);
 
+  const handleSetDefaultPaymentMethod = async (paymentMethodId: string) => {
+    try {
+      // First, get the customer ID
+      const { data: paymentMethod } = await supabase
+        .from("payment_methods")
+        .select("stripe_customer_id")
+        .eq("stripe_payment_method_id", paymentMethodId)
+        .single();
+
+      if (!paymentMethod?.stripe_customer_id) {
+        throw new Error("Customer ID not found");
+      }
+
+      // Update in Stripe first
+      const { error: stripeError } = await supabase.functions.invoke(
+        "update-default-payment-method",
+        {
+          body: {
+            paymentMethodId,
+            customerId: paymentMethod.stripe_customer_id,
+          },
+        }
+      );
+
+      if (stripeError) throw stripeError;
+
+      // Update in our database
+      const { error: dbError } = await supabase
+        .from("payment_methods")
+        .update({ is_default: false })
+        .eq("user_id", user?.id);
+
+      if (dbError) throw dbError;
+
+      const { error: updateError } = await supabase
+        .from("payment_methods")
+        .update({ is_default: true })
+        .eq("stripe_payment_method_id", paymentMethodId);
+
+      if (updateError) throw updateError;
+
+      // Refresh payment methods
+      setPaymentMethods((prev) =>
+        prev.map((method) => ({
+          ...method,
+          is_default: method.stripe_payment_method_id === paymentMethodId,
+        }))
+      );
+
+      toast.success("Default payment method updated");
+    } catch (error) {
+      console.error("Error updating default payment method:", error);
+      toast.error("Failed to update default payment method");
+    }
+  };
+
+  const handleAddPaymentMethod = async () => {
+    try {
+      if (!paymentMethods.length && !subscriptions.length) {
+        toast.error("You need an active subscription to add a payment method");
+        return;
+      }
+
+      // Get customerId from either payment methods or subscriptions
+      const customerId =
+        paymentMethods[0]?.stripe_customer_id ||
+        subscriptions[0]?.stripe_customer_id;
+
+      const { data, error } = await supabase.functions.invoke(
+        "create-setup-intent",
+        {
+          body: { customerId },
+        }
+      );
+
+      if (error) throw error;
+
+      setSetupIntentSecret(data.clientSecret);
+      setShowAddPaymentMethod(true);
+    } catch (error) {
+      console.error("Error creating setup intent:", error);
+      toast.error("Failed to initialize payment method setup");
+    }
+  };
+
+  const refreshPaymentMethods = async () => {
+    if (!user?.id) return;
+
+    try {
+      const { data: methodsData, error: methodsError } = await supabase
+        .from("payment_methods")
+        .select("*")
+        .eq("user_id", user.id)
+        .order("is_default", { ascending: false });
+
+      if (methodsError) throw methodsError;
+      setPaymentMethods(methodsData || []);
+    } catch (error) {
+      console.error("Error refreshing payment methods:", error);
+      toast.error("Failed to refresh payment methods");
+    }
+  };
+
+  const handlePaymentMethodAdded = async () => {
+    await refreshPaymentMethods();
+    setShowAddPaymentMethod(false);
+    setSetupIntentSecret(null);
+  };
+
   const handleCancelSubscription = async () => {
     if (!subscriptionToCancel) return;
 
     try {
-      const { error } = await supabase.functions.invoke("cancel-subscription", {
-        body: {
-          subscriptionId: subscriptionToCancel.stripe_subscription_id,
-        },
-      });
+      const { data, error } = await supabase.functions.invoke(
+        "cancel-subscription",
+        {
+          body: {
+            subscriptionId: subscriptionToCancel.stripe_subscription_id,
+          },
+        }
+      );
 
       if (error) throw error;
 
-      // Refresh the subscriptions list
-      const { data: updatedData, error: fetchError } = await supabase
-        .from("subscriptions")
-        .select("*")
-        .eq("user_id", user?.id);
+      setSubscriptions((prev) =>
+        prev.map((sub) =>
+          sub.id === subscriptionToCancel.id
+            ? { ...sub, cancel_at_period_end: true }
+            : sub
+        )
+      );
 
-      if (fetchError) throw fetchError;
-
-      setSubscriptions(updatedData || []);
-      toast.success("Subscription cancelled successfully");
+      toast.success(
+        `Subscription will be cancelled on ${new Date(
+          data.effectiveDate
+        ).toLocaleDateString()}`
+      );
     } catch (error) {
       console.error("Error cancelling subscription:", error);
       toast.error("Failed to cancel subscription");
@@ -351,27 +540,47 @@ const Billing = () => {
     }
   };
 
-  const calculateCategoryStats = (categoryId: string): CategoryStats => {
-    const categoryListings = listings[categoryId as keyof ListingsByCategory];
-    const categorySubscriptions = subscriptions.filter(
-      (s) => s.service_type === categoryId // Changed from listing_type to service_type
-    );
+  const handleReactivateSubscription = async () => {
+    if (!subscriptionToReactivate) return;
 
-    return {
-      listings: categoryListings.length,
-      activeSubscriptions: categorySubscriptions.filter(
-        (s) => s.status === "active"
-      ).length,
-    };
+    try {
+      const { data, error } = await supabase.functions.invoke(
+        "reactivate-subscription",
+        {
+          body: {
+            subscriptionId: subscriptionToReactivate.stripe_subscription_id,
+          },
+        }
+      );
+
+      if (error) throw error;
+
+      const { data: billingData, error: billingError } =
+        await supabase.functions.invoke("get-billing-data");
+      if (billingError) throw billingError;
+
+      setSubscriptions(billingData.subscriptions);
+      toast.success("Subscription reactivated successfully");
+    } catch (error) {
+      console.error("Error reactivating subscription:", error);
+      toast.error("Failed to reactivate subscription");
+    } finally {
+      setSubscriptionToReactivate(null);
+    }
   };
 
-  const toggleCategory = (categoryId: string) => {
-    setExpandedCategories((prev) =>
-      prev.includes(categoryId)
-        ? prev.filter((id) => id !== categoryId)
-        : [...prev, categoryId]
-    );
-  };
+  // Group subscriptions by status
+  const activeSubscriptions = subscriptions.filter(
+    (sub) => sub.status === "active" && !sub.cancel_at_period_end
+  );
+
+  const cancelingSubscriptions = subscriptions.filter(
+    (sub) => sub.status === "active" && sub.cancel_at_period_end
+  );
+
+  const inactiveSubscriptions = subscriptions.filter(
+    (sub) => sub.status === "inactive" || sub.status === "canceled"
+  );
 
   if (loading) {
     return (
@@ -385,7 +594,7 @@ const Billing = () => {
     (categoryListings) => categoryListings.length > 0
   );
 
-  if (!hasListings) {
+  if (!hasListings && subscriptions.length === 0) {
     return (
       <div className="min-h-[390px] flex items-center justify-center">
         <div className="text-center">
@@ -406,38 +615,43 @@ const Billing = () => {
       <div className="mb-6">
         <h3 className="text-lg font-medium">Billing</h3>
         <p className="text-sm text-gray-500">
-          Manage and view your subscription history
+          Manage and view payment methods and subscription history
         </p>
       </div>
 
-      {/* Category Cards */}
-      <div className="space-y-4">
-        {serviceCategories.map((category) => {
-          const stats = calculateCategoryStats(category.id);
-          if (stats.listings === 0) return null;
+      {/* Payment Methods Section */}
+      <PaymentMethodsSection
+        paymentMethods={paymentMethods}
+        onSetDefault={handleSetDefaultPaymentMethod}
+        onAddNew={handleAddPaymentMethod}
+      />
 
-          return (
-            <div key={category.id}>
-              <CategoryCard
-                category={category}
-                stats={stats}
-                expanded={expandedCategories.includes(category.id)}
-                onToggle={() => toggleCategory(category.id)}
-              />
-              {expandedCategories.includes(category.id) && (
-                <SubscriptionList
-                  subscriptions={subscriptions.filter(
-                    (s) => s.service_type === category.id
-                  )}
-                  onCancelSubscription={setSubscriptionToCancel}
-                />
-              )}
-            </div>
-          );
-        })}
-      </div>
+      {/* Active Subscriptions */}
+      <SubscriptionSection
+        title="Active Subscriptions"
+        subscriptions={activeSubscriptions}
+        onCancelSubscription={setSubscriptionToCancel}
+        onReactivateSubscription={setSubscriptionToReactivate}
+      />
 
-      {/* Cancel Subscription Dialog */}
+      {/* Canceling Subscriptions */}
+      <SubscriptionSection
+        title="Expiring Soon Subscriptions"
+        subscriptions={cancelingSubscriptions}
+        onCancelSubscription={setSubscriptionToCancel}
+        onReactivateSubscription={setSubscriptionToReactivate}
+      />
+
+      {/* Inactive Subscriptions */}
+      <SubscriptionSection
+        title="Expired Subscriptions"
+        subscriptions={inactiveSubscriptions}
+        onCancelSubscription={setSubscriptionToCancel}
+        onReactivateSubscription={setSubscriptionToReactivate}
+        showReactivate={true}
+      />
+
+      {/* Cancel Dialog */}
       <AlertDialog
         open={!!subscriptionToCancel}
         onOpenChange={() => setSubscriptionToCancel(null)}
@@ -445,9 +659,19 @@ const Billing = () => {
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Cancel Subscription</AlertDialogTitle>
-            <AlertDialogDescription>
-              Are you sure you want to cancel this subscription? Your service
-              will continue until the end of the current billing period.
+            <AlertDialogDescription className="space-y-2">
+              <p>Are you sure you want to cancel this subscription?</p>
+              <p className="font-medium text-gray-700">
+                Your service will continue until{" "}
+                {subscriptionToCancel &&
+                  new Date(
+                    subscriptionToCancel.current_period_end
+                  ).toLocaleDateString()}{" "}
+                since you've already paid for this period.
+              </p>
+              <p className="text-sm text-gray-500">
+                No refunds will be issued for the current billing period.
+              </p>
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -461,6 +685,47 @@ const Billing = () => {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Reactivate Dialog */}
+      <AlertDialog
+        open={!!subscriptionToReactivate}
+        onOpenChange={() => setSubscriptionToReactivate(null)}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Reactivate Subscription</AlertDialogTitle>
+            <AlertDialogDescription className="space-y-2">
+              <p>
+                Would you like to reactivate this subscription? You will be
+                charged immediately for the next billing period.
+              </p>
+              <p className="text-sm text-gray-500">
+                Your subscription will renew at the same rate as before.
+              </p>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleReactivateSubscription}
+              className="bg-green-600 text-white hover:bg-green-700"
+            >
+              Reactivate Subscription
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Add Payment Method Dialog */}
+      <AddPaymentMethodDialog
+        open={showAddPaymentMethod}
+        onClose={() => {
+          setShowAddPaymentMethod(false);
+          setSetupIntentSecret(null);
+        }}
+        clientSecret={setupIntentSecret}
+        onSuccess={handlePaymentMethodAdded}
+      />
     </div>
   );
 };
