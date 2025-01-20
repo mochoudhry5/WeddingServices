@@ -141,12 +141,12 @@ const VenueInfoGrid = ({ venue }: VenueInfoGridProps) => (
       </div>
     </InfoCard>
 
-    <InfoCard title="Catering">
+    <InfoCard title="Catering Option">
       <div className="flex items-center justify-center">
         <span className="text-lg font-semibold text-black text-center">
-          {venue.catering_option === "both" && "In-house & Outside"}
-          {venue.catering_option === "in-house" && "Only in-house catering"}
-          {venue.catering_option === "outside" && "Outside vendors only"}
+          {venue.catering_option === "both" && "In-house & Outside Caterer"}
+          {venue.catering_option === "in-house" && "In-house Caterer"}
+          {venue.catering_option === "outside" && "Outside Caterer"}
         </span>
       </div>
     </InfoCard>

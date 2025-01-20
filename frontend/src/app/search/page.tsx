@@ -332,6 +332,23 @@ export default function ServicesSearchPage() {
     return query;
   };
 
+  const applyCateringOptionFilter = (
+    query: any,
+    filtersToUse: SearchFilters
+  ): any => {
+    if (filtersToUse.serviceType !== "venue") return query;
+
+    if (filtersToUse.cateringOption === "in-house") {
+      return query.or("catering_option.eq.in-house,catering_option.eq.both");
+    } else if (filtersToUse.cateringOption === "outside") {
+      return query.or("catering_option.eq.outside,catering_option.eq.both");
+    } else if (filtersToUse.cateringOption === "both") {
+      return query.eq("catering_option", "both");
+    }
+
+    return query;
+  };
+
   const applyPriceFilters = (query: any, filtersToUse: SearchFilters): any => {
     const [minPrice, maxPrice] = filtersToUse.priceRange;
     const priceField =
@@ -358,10 +375,11 @@ export default function ServicesSearchPage() {
     const { min: minCapacity, max: maxCapacity } = filtersToUse.capacity;
 
     if (minCapacity > 0 && maxCapacity > 0) {
-      return query//200 - 400
-        .lte("min_guests", minCapacity)//1 50 100 = 
-        .gte("max_guests", maxCapacity);//2 600 400
-    } else if (minCapacity > 0) {//
+      return query //200 - 400
+        .lte("min_guests", minCapacity) //1 50 100 =
+        .gte("max_guests", maxCapacity); //2 600 400
+    } else if (minCapacity > 0) {
+      //
       return query.gte("min_guests", minCapacity);
     } else if (maxCapacity > 0) {
       return query.lte("max_guests", maxCapacity);
@@ -438,6 +456,7 @@ export default function ServicesSearchPage() {
         applyPriceFilters(query, filtersToUse);
         applyCapacityFilters(query, filtersToUse);
         applySortFilters(query, filtersToUse);
+        applyCateringOptionFilter(query, filtersToUse);
       }
 
       const { data, error: queryError } = await query;
@@ -1119,8 +1138,13 @@ const FilterSheet: React.FC<FilterSheetProps> = ({
                   <SelectValue placeholder="Select option" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="in_house">In-house Only</SelectItem>
-                  <SelectItem value="outside">Outside Only</SelectItem>
+                  <SelectItem value="default">No Preference</SelectItem>
+                  <SelectItem value="in-house">
+                    In-house Catering Only
+                  </SelectItem>
+                  <SelectItem value="outside">
+                    Outside Caterer Allowed
+                  </SelectItem>
                   <SelectItem value="both">
                     In-House and Outside Catering
                   </SelectItem>

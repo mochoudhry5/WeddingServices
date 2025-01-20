@@ -700,8 +700,113 @@ export default function VenueDetailsPage() {
               {user ? (
                 <div className="bg-gray-50 p-4 sm:p-6 rounded-lg">
                   <form onSubmit={handleInquirySubmit} className="space-y-4">
-                    {/* Form fields remain the same */}
-                    {/* ... */}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          First Name
+                        </label>
+                        <Input
+                          name="firstName"
+                          value={inquiryForm.firstName}
+                          onChange={handleInputChange}
+                          required
+                          className="text-sm sm:text-base"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          Last Name
+                        </label>
+                        <Input
+                          name="lastName"
+                          value={inquiryForm.lastName}
+                          onChange={handleInputChange}
+                          required
+                          className="text-sm sm:text-base"
+                        />
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Email
+                      </label>
+                      <Input
+                        type="email"
+                        name="email"
+                        value={inquiryForm.email}
+                        onChange={handleInputChange}
+                        required
+                        className="text-sm sm:text-base"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Phone
+                      </label>
+                      <Input
+                        type="tel"
+                        name="phone"
+                        value={inquiryForm.phone}
+                        onChange={handleInputChange}
+                        required
+                        className="text-sm sm:text-base"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Event Date
+                      </label>
+                      <Input
+                        type="date"
+                        name="eventDate"
+                        value={inquiryForm.eventDate}
+                        onChange={handleInputChange}
+                        required
+                        className="text-sm sm:text-base"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Estimated Guest Count
+                      </label>
+                      <Input
+                        type="number"
+                        name="guestCount"
+                        value={inquiryForm.guestCount}
+                        onChange={handleInputChange}
+                        min={venue.min_guests || 1}
+                        max={venue.max_guests}
+                        required
+                        className="text-sm sm:text-base"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Message
+                      </label>
+                      <textarea
+                        name="message"
+                        value={inquiryForm.message}
+                        onChange={handleInputChange}
+                        rows={4}
+                        className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-transparent text-sm sm:text-base"
+                        placeholder="Tell us about your event..."
+                        required
+                      />
+                    </div>
+
+                    <Button
+                      type="submit"
+                      disabled={isSubmitting}
+                      className="w-full bg-black hover:bg-stone-800 text-sm sm:text-base py-2 sm:py-3"
+                    >
+                      {isSubmitting ? "Sending..." : "Send Inquiry"}
+                    </Button>
                   </form>
                 </div>
               ) : (
