@@ -1,6 +1,7 @@
 import React from "react";
 import { Check, Sparkles, Crown } from "lucide-react";
 import type { ServiceId, TierType } from "@/lib/stripe";
+import ServiceInput from "@/components/ui/ServiceInput";
 
 interface SubscriptionTiersProps {
   onSelect: (tier: TierType) => void;
@@ -86,23 +87,16 @@ const SubscriptionTiers: React.FC<SubscriptionTiersProps> = ({
   return (
     <div className="w-full">
       {/* Service Selection - Mobile Optimized */}
-      <div className="overflow-x-auto pb-4 mb-4 sm:mb-8 -mx-4 sm:mx-0">
-        <div className="flex justify-start sm:justify-center min-w-full px-4 sm:px-0">
+      <div className="overflow-x-auto pb-4 mb-4 sm:mb-8">
+        <div className="flex justify-center min-w-full">
           <div className="inline-flex gap-2 p-1 bg-gray-100 rounded-lg">
-            {services.map((service) => (
-              <button
-                key={service.id}
-                onClick={() => onServiceSelect(service.id)}
-                className={`px-3 sm:px-4 py-2 rounded-md text-xs sm:text-sm font-medium whitespace-nowrap transition-all
-                  ${
-                    selectedService === service.id
-                      ? "bg-white text-black shadow"
-                      : "text-gray-600 hover:text-gray-900"
-                  }`}
-              >
-                {service.name}
-              </button>
-            ))}
+            <ServiceInput
+              value={selectedService}
+              onValueChange={onServiceSelect}
+              variant="default"
+              className="min-w-[300px] sm:min-w-[400px] w-full shadow-sm"
+              triggerClassName="bg-gray-100 hover:bg-gray-50 w-full"
+            />
           </div>
         </div>
       </div>

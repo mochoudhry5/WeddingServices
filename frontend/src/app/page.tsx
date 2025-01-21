@@ -4,18 +4,19 @@ import React, { useState, useEffect, useCallback, useRef } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import Head from "next/head";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import NavBar from "@/components/ui/NavBar";
 import Footer from "@/components/ui/Footer";
 import LocationInput from "@/components/ui/LocationInput";
 import { Gem, Ban, DollarSign, Loader2 } from "lucide-react";
 import ErrorBoundary from "@/components/ui/ErrorBoundary";
+import ServiceInput from "@/components/ui/ServiceInput";
+
+type ServiceType =
+  | "venue"
+  | "hairMakeup"
+  | "photoVideo"
+  | "weddingPlanner"
+  | "dj";
 
 // Types
 interface GooglePlace {
@@ -36,7 +37,7 @@ interface GooglePlace {
 }
 
 interface SearchParams {
-  service: string;
+  service: ServiceType;
   city: string;
   state: string;
   country: string;
@@ -399,32 +400,13 @@ export default function HomePage() {
                   noValidate
                 >
                   <div className="flex flex-col gap-4">
-                    <Select
+                    <ServiceInput
                       value={searchParams.service}
                       onValueChange={(value) =>
                         setSearchParams((prev) => ({ ...prev, service: value }))
                       }
-                    >
-                      <SelectTrigger
-                        className="bg-white/20 border-0 text-white"
-                        aria-label="Select service type"
-                      >
-                        <SelectValue placeholder="Service Type" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="venue">Venue</SelectItem>
-                        <SelectItem value="hairMakeup">
-                          Hair & Makeup
-                        </SelectItem>
-                        <SelectItem value="photoVideo">
-                          Photography/Videography
-                        </SelectItem>
-                        <SelectItem value="weddingPlanner">
-                          Wedding Planner & Coordinator
-                        </SelectItem>
-                        <SelectItem value="dj">DJ</SelectItem>
-                      </SelectContent>
-                    </Select>
+                      variant="transparent"
+                    />
 
                     <LocationInput
                       value={searchParams.enteredLocation}

@@ -15,6 +15,8 @@ import { supabase } from "@/lib/supabase";
 import { toast } from "sonner";
 import { useAuth } from "@/context/AuthContext";
 import LocationInput from "@/components/ui/LocationInput";
+import ServiceInput from "@/components/ui/ServiceInput";
+
 import {
   Sheet,
   SheetContent,
@@ -630,23 +632,11 @@ export default function ServicesSearchPage() {
 
   const ServiceTypeSelect = useMemo(
     () => (
-      <Select
+      <ServiceInput
         value={searchFilters.serviceType}
         onValueChange={handleServiceTypeChange}
-      >
-        <SelectTrigger className="h-12 w-full">
-          <SelectValue placeholder="Select service" />
-        </SelectTrigger>
-        <SelectContent>
-          <SelectItem value="venue">Venue</SelectItem>
-          <SelectItem value="hairMakeup">Hair & Makeup</SelectItem>
-          <SelectItem value="photoVideo">Photo & Video</SelectItem>
-          <SelectItem value="weddingPlanner">
-            Wedding Planner & Coordinator
-          </SelectItem>
-          <SelectItem value="dj">DJ</SelectItem>
-        </SelectContent>
-      </Select>
+        variant="default"
+      />
     ),
     [searchFilters.serviceType, handleServiceTypeChange]
   );

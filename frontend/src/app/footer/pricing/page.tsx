@@ -5,6 +5,14 @@ import NavBar from "@/components/ui/NavBar";
 import Footer from "@/components/ui/Footer";
 import { Card, CardContent } from "@/components/ui/card";
 import { Check, Sparkles, Crown, Star, X } from "lucide-react";
+import ServiceInput from "@/components/ui/ServiceInput";
+
+type ServiceType =
+  | "venue"
+  | "hairMakeup"
+  | "photoVideo"
+  | "weddingPlanner"
+  | "dj";
 
 interface PlanTier {
   limit?: number;
@@ -18,10 +26,6 @@ interface CategoryData {
   features?: string[];
 }
 
-interface Categories {
-  [key: string]: CategoryData;
-}
-
 type PlanType = "basic" | "premium" | "elite";
 
 interface PricingCardProps {
@@ -32,36 +36,45 @@ interface PricingCardProps {
 }
 
 const PricingPage = () => {
-  const [selectedCategory, setSelectedCategory] = useState<string>("Venue");
+  const [selectedCategory, setSelectedCategory] =
+    useState<ServiceType>("venue");
   const [isAnnual, setIsAnnual] = useState<boolean>(false);
 
-  const categories: Categories = {
-    Venue: {
+  const categories: Record<ServiceType, CategoryData> = {
+    venue: {
       basic: { price: 25 },
       premium: { price: 45 },
       elite: { price: 65 },
       features: ["Social Media Integration", "Virtual Tours", "Event Calendar"],
     },
-    DJ: {
+    dj: {
       basic: { price: 5 },
       premium: { price: 15 },
       elite: { price: 25 },
     },
-    "Wedding Planner": {
+    weddingPlanner: {
       basic: { price: 5 },
       premium: { price: 10 },
       elite: { price: 15 },
     },
-    "Photo/Video": {
+    photoVideo: {
       basic: { price: 5 },
       premium: { price: 10 },
       elite: { price: 15 },
     },
-    "Hair/Makeup": {
+    hairMakeup: {
       basic: { price: 5 },
       premium: { price: 10 },
       elite: { price: 15 },
     },
+  };
+
+  const categoryToServiceType: Record<string, ServiceType> = {
+    Venue: "venue",
+    DJ: "dj",
+    "Wedding Planner": "weddingPlanner",
+    "Photo/Video": "photoVideo",
+    "Hair/Makeup": "hairMakeup",
   };
 
   const planIcons: Record<PlanType, typeof Star> = {
@@ -191,24 +204,17 @@ const PricingPage = () => {
           <div className="max-w-7xl mx-auto px-4 pb-12 sm:pb-16 md:pb-20">
             <div className="flex flex-col items-center gap-6 sm:gap-8 mb-8 sm:mb-12">
               {/* Category Selection */}
-              <div className="w-full overflow-x-auto pb-2 -mb-2">
-                <div className="flex gap-2 sm:gap-4 p-1 bg-gray-100 rounded-lg min-w-max max-w-fit mx-auto">
-                  {Object.keys(categories).map((category) => (
-                    <button
-                      key={category}
-                      onClick={() => setSelectedCategory(category)}
-                      className={`px-3 sm:px-4 py-2 rounded-md text-xs sm:text-sm font-medium transition-all whitespace-nowrap ${
-                        selectedCategory === category
-                          ? "bg-white text-black shadow"
-                          : "text-gray-600 hover:text-gray-900"
-                      }`}
-                    >
-                      {category}
-                    </button>
-                  ))}
+              <div className="w-full flex justify-center mb-2">
+                <div className="w-full max-w-xs">
+                  <ServiceInput
+                    value={selectedCategory}
+                    onValueChange={setSelectedCategory}
+                    variant="default"
+                    className="shadow-sm"
+                    triggerClassName="bg-gray-100 hover:bg-gray-50"
+                  />
                 </div>
               </div>
-
               {/* Toggle Switch */}
               <div className="flex items-center gap-2 sm:gap-3">
                 <span
