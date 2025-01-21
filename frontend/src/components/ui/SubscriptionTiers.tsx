@@ -95,7 +95,7 @@ const SubscriptionTiers: React.FC<SubscriptionTiersProps> = ({
               onValueChange={onServiceSelect}
               variant="default"
               className="min-w-[300px] sm:min-w-[400px] w-full shadow-sm"
-              triggerClassName="bg-gray-100 hover:bg-gray-50 w-full"
+              triggerClassName="bg-white"
             />
           </div>
         </div>

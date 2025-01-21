@@ -211,7 +211,7 @@ const PricingPage = () => {
                     onValueChange={setSelectedCategory}
                     variant="default"
                     className="shadow-sm"
-                    triggerClassName="bg-gray-100 hover:bg-gray-50"
+                    triggerClassName="bg-white"
                   />
                 </div>
               </div>
