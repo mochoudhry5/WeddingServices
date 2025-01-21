@@ -122,39 +122,35 @@ const AccountSettings = () => {
     setLoading((prev) => ({ ...prev, delete: true }));
 
     try {
-      // Delete all user data including auth user using the RPC function
+      // Call the RPC function with original parameter names
       const { data: deletionResult, error: deleteError } = await supabase.rpc(
         "delete_user_data",
         {
           uid: user.id,
-          is_vendor: isVendor,
+          is_vendor: isVendor ?? false,
         }
       );
 
-      if (deleteError) throw deleteError;
+      if (deleteError) {
+        console.error("Delete error:", deleteError);
+        throw deleteError;
+      }
 
-      if (!deletionResult.success) {
-        throw new Error(deletionResult.error || "Failed to delete account");
+      if (!deletionResult?.success) {
+        throw new Error(deletionResult?.error || "Failed to delete account");
       }
 
       // Show success message
       toast.success("Your account has been successfully deleted");
 
       // Sign out from all devices
-      const { error: signOutError } = await supabase.auth.signOut({
-        scope: "global",
-      });
+      await supabase.auth.signOut({ scope: "global" });
 
-      if (signOutError) {
-        console.error("Error signing out:", signOutError);
-      }
+      // Clear local storage
+      window.localStorage.clear();
 
-      // Clear any local auth state
-      window.localStorage.removeItem("supabase.auth.token");
-
-      // Force reload the page to clear all state and redirect to home
+      // Redirect to home page
       window.location.href = "/";
-      window.location.reload();
     } catch (error) {
       console.error("Error during account deletion:", error);
       const errorMessage =
