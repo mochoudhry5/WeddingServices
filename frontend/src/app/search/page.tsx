@@ -45,6 +45,7 @@ type ServiceType =
   | "weddingPlanner"
   | "dj";
 type SortOption = "price_asc" | "price_desc" | "default";
+type VenueType = "indoor" | "outdoor" | "both" | "default";
 
 // Base Interfaces
 interface CapacityRange {
@@ -77,7 +78,8 @@ interface VenueDetails extends BaseDetails {
   min_guests: number | null;
   max_guests: number;
   venue_media: MediaItem[];
-  catering_option: "in_house" | "preferred" | "outside" | "both" | null;
+  catering_option: "in-house" | "outside" | "both" | null;
+  venue_type: "indoor" | "outdoor" | "both" | null;
 }
 
 interface ServiceProviderDetails extends BaseDetails {
@@ -139,6 +141,7 @@ interface SearchFilters {
   sortOption: SortOption;
   serviceType: ServiceType;
   cateringOption: string;
+  venueType: VenueType;
 }
 
 interface ServiceConfig {
@@ -228,6 +231,7 @@ export default function ServicesSearchPage() {
     const maxCapacity = parseInt(params.get("maxCapacity") || "0");
     const sortOption = params.get("sort") || "default";
     const cateringOption = params.get("catering") || "default";
+    const venueType = (params.get("venueType") || "default") as VenueType;
 
     return {
       searchQuery: {
@@ -251,6 +255,7 @@ export default function ServicesSearchPage() {
         : "default",
       serviceType: isValidServiceType(serviceParam) ? serviceParam : "venue",
       cateringOption,
+      venueType,
     };
   }, []);
 
@@ -297,8 +302,10 @@ export default function ServicesSearchPage() {
         params.set("maxCapacity", newFilters.capacity.max.toString());
       if (newFilters.sortOption !== "default")
         params.set("sort", newFilters.sortOption);
-      if (newFilters.cateringOption !== "both")
+      if (newFilters.cateringOption !== "default")
         params.set("catering", newFilters.cateringOption);
+      if (newFilters.venueType !== "default")
+        params.set("venueType", newFilters.venueType);
 
       window.history.replaceState(
         {},
@@ -328,6 +335,27 @@ export default function ServicesSearchPage() {
         locationFilters.push(`state.ilike.%${filtersToUse.searchQuery.state}%`);
       }
       return query.or(locationFilters.join(","));
+    }
+    return query;
+  };
+
+  const applyVenueTypeFilter = (
+    query: any,
+    filtersToUse: SearchFilters
+  ): any => {
+    if (
+      filtersToUse.serviceType !== "venue" ||
+      filtersToUse.venueType === "default"
+    ) {
+      return query;
+    }
+
+    if (filtersToUse.venueType === "both") {
+      return query.eq("venue_type", "both");
+    } else if (filtersToUse.venueType === "indoor") {
+      return query.eq("venue_type", "indoor");
+    } else if (filtersToUse.venueType === "outdoor") {
+      return query.eq("venue_type", "outdoor");
     }
     return query;
   };
@@ -457,6 +485,7 @@ export default function ServicesSearchPage() {
         applyCapacityFilters(query, filtersToUse);
         applySortFilters(query, filtersToUse);
         applyCateringOptionFilter(query, filtersToUse);
+        applyVenueTypeFilter(query, filtersToUse);
       }
 
       const { data, error: queryError } = await query;
@@ -490,6 +519,7 @@ export default function ServicesSearchPage() {
         priceRange: [0, 0],
         capacity: { min: 0, max: 0 },
         cateringOption: value === "venue" ? "default" : "both",
+        venueType: "default",
         sortOption: "default",
         serviceType: value,
       };
@@ -522,7 +552,8 @@ export default function ServicesSearchPage() {
       capacity: { min: 0, max: 0 },
       sortOption: "default",
       serviceType: searchFilters.serviceType,
-      cateringOption: "all",
+      cateringOption: "default",
+      venueType: "default",
     };
     setSearchFilters(resetFilters);
     updateURLWithFilters(resetFilters);
@@ -1121,36 +1152,67 @@ const FilterSheet: React.FC<FilterSheetProps> = ({
             </div>
           )}
 
-          {/* Catering Options (Venues only) */}
+          {/* Venue-specific filters */}
           {searchFilters.serviceType === "venue" && (
-            <div>
-              <h3 className="text-sm font-medium mb-2">Catering Options</h3>
-              <Select
-                value={searchFilters.cateringOption}
-                onValueChange={(value: string) => {
-                  setSearchFilters((prev) => ({
-                    ...prev,
-                    cateringOption: value,
-                  }));
-                }}
-              >
-                <SelectTrigger className="w-full">
-                  <SelectValue placeholder="Select option" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="default">No Preference</SelectItem>
-                  <SelectItem value="in-house">
-                    In-house Catering Only
-                  </SelectItem>
-                  <SelectItem value="outside">
-                    Outside Caterer Allowed
-                  </SelectItem>
-                  <SelectItem value="both">
-                    In-House and Outside Catering
-                  </SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
+            <>
+              {/* Venue Type */}
+              <div>
+                <h3 className="text-sm font-medium mb-2">Venue Type</h3>
+                <Select
+                  value={searchFilters.venueType}
+                  onValueChange={(value: string) => {
+                    setSearchFilters((prev) => ({
+                      ...prev,
+                      venueType: value as
+                        | "indoor"
+                        | "outdoor"
+                        | "both"
+                        | "default",
+                    }));
+                  }}
+                >
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Select venue type" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="default">No Preference</SelectItem>
+                    <SelectItem value="indoor">Indoor Only</SelectItem>
+                    <SelectItem value="outdoor">Outdoor Only</SelectItem>
+                    <SelectItem value="both">Indoor & Outdoor</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Catering Options */}
+              <div>
+                <h3 className="text-sm font-medium mb-2">Catering Options</h3>
+                <Select
+                  value={searchFilters.cateringOption}
+                  onValueChange={(value: string) => {
+                    setSearchFilters((prev) => ({
+                      ...prev,
+                      cateringOption: value,
+                    }));
+                  }}
+                >
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Select option" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="default">No Preference</SelectItem>
+                    <SelectItem value="in-house">
+                      In-house Catering Only
+                    </SelectItem>
+                    <SelectItem value="outside">
+                      Outside Caterer Allowed
+                    </SelectItem>
+                    <SelectItem value="both">
+                      In-House and Outside Catering
+                    </SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </>
           )}
 
           {/* Filter Actions */}
