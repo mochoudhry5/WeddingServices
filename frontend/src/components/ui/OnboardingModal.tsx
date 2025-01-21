@@ -25,8 +25,18 @@ const OnboardingModal = ({
   const [currentSlide, setCurrentSlide] = useState(0);
   const [dontShowAgain, setDontShowAgain] = useState(false);
   const [showOnboarding, setShowOnboarding] = useState(true);
-  const isOpen = externalOpen || autoOpen;
   const { user } = useAuth();
+  const isOpen = (externalOpen || autoOpen) && !!user;
+
+  // Reset current slide when modal is opened via Learn More button
+  useEffect(() => {
+    if (!user) {
+      setAutoOpen(false);
+      setCurrentSlide(0);
+      setDontShowAgain(false);
+      onExternalOpenChange?.(false);
+    }
+  }, [user, onExternalOpenChange]);
 
   // Reset current slide when modal is opened via Learn More button
   useEffect(() => {
@@ -38,28 +48,28 @@ const OnboardingModal = ({
   useEffect(() => {
     const checkPreference = async () => {
       if (user) {
-        const { data, error } = await supabase
-          .from("user_preferences")
-          .select("show_onboarding_listing")
-          .eq("id", user.id)
-          .single();
+        try {
+          const { data, error } = await supabase
+            .from("user_preferences")
+            .select("show_onboarding_listing")
+            .eq("id", user.id)
+            .single();
 
-        if (error) {
+          if (error) throw error;
+
+          setAutoOpen(data.show_onboarding_listing);
+          setShowOnboarding(data.show_onboarding_listing);
+        } catch (error) {
           console.error("Error fetching preferences:", error);
           setAutoOpen(true);
           setShowOnboarding(true);
-          return;
         }
-
-        setAutoOpen(data.show_onboarding_listing);
-        setShowOnboarding(data.show_onboarding_listing);
-      } else {
-        setAutoOpen(true);
-        setShowOnboarding(true);
       }
     };
 
-    checkPreference();
+    if (user) {
+      checkPreference();
+    }
   }, [user]);
 
   const handleClose = async () => {
@@ -81,8 +91,6 @@ const OnboardingModal = ({
           .eq("id", user.id);
 
         if (error) throw error;
-
-        // Close the modal immediately when preference is saved
         handleClose();
       } catch (error) {
         console.error("Error saving preference:", error);
