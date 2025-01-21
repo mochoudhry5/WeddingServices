@@ -254,7 +254,7 @@ const QuickReachModal = ({
               {currentSlide < slides.length - 1 ? (
                 <Button
                   onClick={() => setCurrentSlide((prev) => prev + 1)}
-                  className="flex items-center gap-1"
+                  className="flex items-center gap-1 bg-black hover:bg-stone-500"
                   size="sm"
                 >
                   Next
@@ -263,7 +263,7 @@ const QuickReachModal = ({
               ) : (
                 <Button
                   onClick={handleClose}
-                  className="flex items-center gap-1"
+                  className="flex items-center gap-1 bg-black hover:bg-stone-500"
                   size="sm"
                 >
                   Get Started

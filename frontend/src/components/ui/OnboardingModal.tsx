@@ -252,7 +252,7 @@ const OnboardingModal = ({
             <div className="flex space-x-3">
               {currentSlide > 0 && (
                 <Button
-                  variant="outline"
+                  variant={"outline"}
                   onClick={() => setCurrentSlide((prev) => prev - 1)}
                   className="flex items-center gap-1"
                   size="sm"
@@ -265,7 +265,7 @@ const OnboardingModal = ({
               {currentSlide < slides.length - 1 ? (
                 <Button
                   onClick={() => setCurrentSlide((prev) => prev + 1)}
-                  className="flex items-center gap-1"
+                  className="flex items-center gap-1 bg-black hover:bg-stone-500"
                   size="sm"
                 >
                   Next
@@ -274,7 +274,7 @@ const OnboardingModal = ({
               ) : (
                 <Button
                   onClick={handleClose}
-                  className="flex items-center gap-1"
+                  className="flex items-center gap-1 bg-black hover:bg-stone-500"
                   size="sm"
                 >
                   Get Started
