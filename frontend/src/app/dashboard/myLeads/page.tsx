@@ -109,7 +109,7 @@ const SERVICE_CONFIGS = {
   photoVideo: {
     type: "photoVideo",
     listingTable: "photo_video_listing",
-    displayName: "Photo & Video",
+    displayName: "Photography & Videography",
     icon: Camera,
     table: "photo_video_leads",
   },
