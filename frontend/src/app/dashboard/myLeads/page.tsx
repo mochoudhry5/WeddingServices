@@ -122,6 +122,12 @@ const SERVICE_CONFIGS = {
   },
 } as const;
 
+const preventNegativeInput = (e: React.KeyboardEvent<HTMLInputElement>) => {
+  if (e.key === "-" || e.key === "e") {
+    e.preventDefault();
+  }
+};
+
 const useLeadsData = (user: any) => {
   const [userListings, setUserListings] = useState<ServiceType[]>([]);
   const [leads, setLeads] = useState<Leads>({
@@ -418,6 +424,7 @@ export default function LeadsPage() {
                         <input
                           type="number"
                           min="0"
+                          onKeyDown={preventNegativeInput}
                           value={budgetRange[0] || ""}
                           onChange={(e) =>
                             validateAndSetBudget(e.target.value, 0)
@@ -438,6 +445,7 @@ export default function LeadsPage() {
                         <input
                           type="number"
                           min="0"
+                          onKeyDown={preventNegativeInput}
                           value={budgetRange[1] || ""}
                           onChange={(e) =>
                             validateAndSetBudget(e.target.value, 1)

@@ -211,6 +211,12 @@ const calculateDistance = (
   return R * c;
 };
 
+const preventNegativeInput = (e: React.KeyboardEvent<HTMLInputElement>) => {
+  if (e.key === "-" || e.key === "e") {
+    e.preventDefault();
+  }
+};
+
 // Main Component
 export default function ServicesSearchPage() {
   // State Management with proper typing
@@ -1006,6 +1012,13 @@ interface FilterSheetProps {
   onReset: () => void;
 }
 
+interface Errors {
+  priceMin: string;
+  priceMax: string;
+  guestMin: string;
+  guestMax: string;
+}
+
 const FilterSheet: React.FC<FilterSheetProps> = ({
   isOpen,
   onOpenChange,
@@ -1014,6 +1027,124 @@ const FilterSheet: React.FC<FilterSheetProps> = ({
   onApply,
   onReset,
 }) => {
+  // Move the useState hook inside the component
+  const [errors, setErrors] = useState<Errors>({
+    priceMin: "",
+    priceMax: "",
+    guestMin: "",
+    guestMax: "",
+  });
+
+  const validateAndSetPrice = useCallback(
+    (value: string, index: number) => {
+      const newPriceRange = [...searchFilters.priceRange] as [number, number];
+      const numValue = value === "" ? 0 : Math.max(0, parseInt(value));
+      newPriceRange[index] = numValue;
+
+      const newErrors = { ...errors };
+
+      // Clear previous price-related errors
+      newErrors.priceMin = "";
+      newErrors.priceMax = "";
+
+      if (
+        index === 0 &&
+        numValue > searchFilters.priceRange[1] &&
+        searchFilters.priceRange[1] !== 0
+      ) {
+        newErrors.priceMin = "Min price cannot exceed max price";
+      }
+
+      if (
+        index === 1 &&
+        numValue < searchFilters.priceRange[0] &&
+        numValue !== 0
+      ) {
+        newErrors.priceMax = "Max price cannot be less than min price";
+      }
+
+      setSearchFilters((prev) => ({
+        ...prev,
+        priceRange: newPriceRange,
+      }));
+      setErrors(newErrors);
+    },
+    [searchFilters.priceRange, errors, setSearchFilters]
+  );
+
+  const validateAndSetCapacity = useCallback(
+    (value: string, index: number) => {
+      const newCapacity = {
+        min:
+          index === 0
+            ? Math.max(0, parseInt(value) || 0)
+            : searchFilters.capacity.min,
+        max:
+          index === 1
+            ? Math.max(0, parseInt(value) || 0)
+            : searchFilters.capacity.max,
+      };
+
+      const newErrors = { ...errors };
+
+      // Clear previous capacity-related errors
+      newErrors.guestMin = "";
+      newErrors.guestMax = "";
+
+      if (
+        index === 0 &&
+        newCapacity.min > searchFilters.capacity.max &&
+        searchFilters.capacity.max !== 0
+      ) {
+        newErrors.guestMin = "Min guests cannot exceed max guests";
+      }
+
+      if (
+        index === 1 &&
+        newCapacity.max < searchFilters.capacity.min &&
+        newCapacity.max !== 0
+      ) {
+        newErrors.guestMax = "Max guests cannot be less than min guests";
+      }
+
+      setSearchFilters((prev) => ({
+        ...prev,
+        capacity: newCapacity,
+      }));
+      setErrors(newErrors);
+    },
+    [searchFilters.capacity, errors, setSearchFilters]
+  );
+
+  const handleFilterApply = useCallback(() => {
+    if (
+      !errors.priceMin &&
+      !errors.priceMax &&
+      !errors.guestMin &&
+      !errors.guestMax
+    ) {
+      onApply();
+    }
+  }, [errors, onApply]);
+
+  const handleFilterReset = useCallback(() => {
+    setSearchFilters((prev) => ({
+      ...prev,
+      priceRange: [0, 0],
+      capacity: { min: 0, max: 0 },
+      sortOption: "default",
+      cateringOption: "default",
+      venueType: "default",
+    }));
+    setErrors({
+      priceMin: "",
+      priceMax: "",
+      guestMin: "",
+      guestMax: "",
+    });
+    onReset();
+  }, [setSearchFilters, onReset]);
+
   return (
     <Sheet open={isOpen} onOpenChange={onOpenChange}>
       <SheetTrigger asChild>
@@ -1026,126 +1157,96 @@ const FilterSheet: React.FC<FilterSheetProps> = ({
         </button>
       </SheetTrigger>
       <SheetContent side="right" className="w-full sm:max-w-md overflow-y-auto">
-        <SheetHeader className="space-y-2 sm:space-y-3">
+        <SheetHeader>
           <SheetTitle>Filter Options</SheetTitle>
-          <SheetDescription>
-            Customize your{" "}
-            {SERVICE_CONFIGS[searchFilters.serviceType].singularName} search
-          </SheetDescription>
         </SheetHeader>
 
         <div className="mt-6 space-y-6">
-          {/* Mobile Sort Option */}
-          <div className="block md:hidden">
-            <h3 className="text-sm font-medium mb-2">Sort By</h3>
-            <Select
-              value={searchFilters.sortOption}
-              onValueChange={(value: string) => {
-                if (isValidSortOption(value)) {
-                  setSearchFilters((prev) => ({
-                    ...prev,
-                    sortOption: value as SortOption,
-                  }));
-                }
-              }}
-            >
-              <SelectTrigger className="w-full">
-                <SelectValue placeholder="Sort by" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="price_desc">Price: High to Low</SelectItem>
-                <SelectItem value="price_asc">Price: Low to High</SelectItem>
-                <SelectItem value="default">Featured</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-
           {/* Price Range */}
           <div>
             <h3 className="text-sm font-medium mb-2">Price Range</h3>
             <div className="grid grid-cols-2 gap-4">
-              <div className="relative">
-                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">
-                  $
-                </span>
-                <input
-                  type="number"
-                  min="0"
-                  value={searchFilters.priceRange[0] || ""}
-                  onChange={(e) => {
-                    const value = Math.max(0, parseInt(e.target.value) || 0);
-                    setSearchFilters((prev) => ({
-                      ...prev,
-                      priceRange: [value, prev.priceRange[1]],
-                    }));
-                  }}
-                  className="w-full pl-7 pr-3 py-2 border rounded-lg focus:ring-2 focus:ring-black focus:border-transparent"
-                  placeholder="Min"
-                />
+              <div className="space-y-1">
+                <div className="relative">
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">
+                    $
+                  </span>
+                  <input
+                    type="number"
+                    min="0"
+                    onKeyDown={preventNegativeInput}
+                    value={searchFilters.priceRange[0] || ""}
+                    onChange={(e) => validateAndSetPrice(e.target.value, 0)}
+                    className="w-full pl-7 pr-3 py-2 border rounded-lg focus:ring-2 focus:ring-black focus:border-transparent"
+                    placeholder="Min"
+                  />
+                </div>
+                {errors.priceMin && (
+                  <p className="text-red-500 text-xs">{errors.priceMin}</p>
+                )}
               </div>
-              <div className="relative">
-                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">
-                  $
-                </span>
-                <input
-                  type="number"
-                  min="0"
-                  value={searchFilters.priceRange[1] || ""}
-                  onChange={(e) => {
-                    const value = Math.max(0, parseInt(e.target.value) || 0);
-                    setSearchFilters((prev) => ({
-                      ...prev,
-                      priceRange: [prev.priceRange[0], value],
-                    }));
-                  }}
-                  className="w-full pl-7 pr-3 py-2 border rounded-lg focus:ring-2 focus:ring-black focus:border-transparent"
-                  placeholder="Max"
-                />
+              <div className="space-y-1">
+                <div className="relative">
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">
+                    $
+                  </span>
+                  <input
+                    type="number"
+                    min="0"
+                    onKeyDown={preventNegativeInput}
+                    value={searchFilters.priceRange[1] || ""}
+                    onChange={(e) => validateAndSetPrice(e.target.value, 1)}
+                    className="w-full pl-7 pr-3 py-2 border rounded-lg focus:ring-2 focus:ring-black focus:border-transparent"
+                    placeholder="Max"
+                  />
+                </div>
+                {errors.priceMax && (
+                  <p className="text-red-500 text-xs">{errors.priceMax}</p>
+                )}
               </div>
             </div>
           </div>
 
-          {/* Capacity (Venues only) */}
+          {/* Guest Capacity */}
           {SERVICE_CONFIGS[searchFilters.serviceType].hasCapacity && (
             <div>
               <h3 className="text-sm font-medium mb-2">Guest Capacity</h3>
               <div className="grid grid-cols-2 gap-4">
-                <input
-                  type="number"
-                  min="0"
-                  value={searchFilters.capacity.min || ""}
-                  onChange={(e) => {
-                    const value = Math.max(0, parseInt(e.target.value) || 0);
-                    setSearchFilters((prev) => ({
-                      ...prev,
-                      capacity: { ...prev.capacity, min: value },
-                    }));
-                  }}
-                  className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-black focus:border-transparent"
-                  placeholder="Min guests"
-                />
-                <input
-                  type="number"
-                  min="0"
-                  value={searchFilters.capacity.max || ""}
-                  onChange={(e) => {
-                    const value = Math.max(0, parseInt(e.target.value) || 0);
-                    setSearchFilters((prev) => ({
-                      ...prev,
-                      capacity: { ...prev.capacity, max: value },
-                    }));
-                  }}
-                  className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-black focus:border-transparent"
-                  placeholder="Max guests"
-                />
+                <div className="space-y-1">
+                  <input
+                    type="number"
+                    min="0"
+                    onKeyDown={preventNegativeInput}
+                    value={searchFilters.capacity.min || ""}
+                    onChange={(e) => validateAndSetCapacity(e.target.value, 0)}
+                    className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-black focus:border-transparent"
+                    placeholder="Min guests"
+                  />
+                  {errors.guestMin && (
+                    <p className="text-red-500 text-xs">{errors.guestMin}</p>
+                  )}
+                </div>
+                <div className="space-y-1">
+                  <input
+                    type="number"
+                    min="0"
+                    onKeyDown={preventNegativeInput}
+                    value={searchFilters.capacity.max || ""}
+                    onChange={(e) => validateAndSetCapacity(e.target.value, 1)}
+                    className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-black focus:border-transparent"
+                    placeholder="Max guests"
+                  />
+                  {errors.guestMax && (
+                    <p className="text-red-500 text-xs">{errors.guestMax}</p>
+                  )}
+                </div>
               </div>
             </div>
           )}
 
-          {/* Venue-specific filters */}
+          {/* Venue Type */}
           {searchFilters.serviceType === "venue" && (
             <>
-              {/* Venue Type */}
               <div>
                 <h3 className="text-sm font-medium mb-2">Venue Type</h3>
                 <Select
@@ -1208,15 +1309,14 @@ const FilterSheet: React.FC<FilterSheetProps> = ({
           {/* Filter Actions */}
           <div className="flex gap-3 pt-6">
             <button
-              type="button"
-              onClick={onApply}
-              className="flex-1 py-2.5 bg-black text-white rounded-lg hover:bg-black/90 transition-colors"
+              onClick={handleFilterApply}
+              disabled={Object.values(errors).some((error) => error !== "")}
+              className="flex-1 py-2.5 bg-black text-white rounded-lg hover:bg-black/90 transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed"
             >
               Apply Filters
             </button>
             <button
-              type="button"
-              onClick={onReset}
+              onClick={handleFilterReset}
               className="flex-1 py-2.5 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
             >
               Reset
