@@ -140,11 +140,13 @@ export default function QuickReachPage() {
       setIsLoading(true);
       setError(null);
 
+      // Perform checks before starting the transition
       const isEligible = await checkUserEligibility();
       if (!isEligible) {
         toast.error(
           "Vendors cannot request services. Change role in Settings if you are not a vendor."
         );
+        setIsLoading(false);
         return;
       }
 
@@ -153,6 +155,7 @@ export default function QuickReachPage() {
         toast.error(
           "You already have an active request for this service. Please check My Reach."
         );
+        setIsLoading(false);
         return;
       }
 
@@ -164,7 +167,6 @@ export default function QuickReachPage() {
       console.error("Error in handleContinue:", err);
       setError("An error occurred. Please try again later.");
       toast.error("An error occurred. Please try again later.");
-    } finally {
       setIsLoading(false);
     }
   };
