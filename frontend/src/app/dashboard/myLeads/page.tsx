@@ -102,7 +102,7 @@ const SERVICE_CONFIGS = {
   weddingPlanner: {
     type: "weddingPlanner",
     listingTable: "wedding_planner_listing",
-    displayName: "Wedding Planner",
+    displayName: "Wedding Planner & Coordinator",
     icon: Calendar,
     table: "wedding_planner_leads",
   },
