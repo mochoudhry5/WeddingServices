@@ -102,14 +102,14 @@ const SERVICE_CONFIGS = {
   weddingPlanner: {
     type: "weddingPlanner",
     listingTable: "wedding_planner_listing",
-    displayName: "Wedding Planner",
+    displayName: "Wedding Planner & Coordinator",
     icon: Calendar,
     table: "wedding_planner_leads",
   },
   photoVideo: {
     type: "photoVideo",
     listingTable: "photo_video_listing",
-    displayName: "Photo & Video",
+    displayName: "Photography & Videography",
     icon: Camera,
     table: "photo_video_leads",
   },
@@ -121,6 +121,12 @@ const SERVICE_CONFIGS = {
     table: "hair_makeup_leads",
   },
 } as const;
+
+const preventNegativeInput = (e: React.KeyboardEvent<HTMLInputElement>) => {
+  if (e.key === "-" || e.key === "e") {
+    e.preventDefault();
+  }
+};
 
 const useLeadsData = (user: any) => {
   const [userListings, setUserListings] = useState<ServiceType[]>([]);
@@ -418,6 +424,7 @@ export default function LeadsPage() {
                         <input
                           type="number"
                           min="0"
+                          onKeyDown={preventNegativeInput}
                           value={budgetRange[0] || ""}
                           onChange={(e) =>
                             validateAndSetBudget(e.target.value, 0)
@@ -438,6 +445,7 @@ export default function LeadsPage() {
                         <input
                           type="number"
                           min="0"
+                          onKeyDown={preventNegativeInput}
                           value={budgetRange[1] || ""}
                           onChange={(e) =>
                             validateAndSetBudget(e.target.value, 1)

@@ -45,7 +45,7 @@ const ServiceInput: React.FC<FilterableServiceSelectProps> = ({
   const services: ServiceOption[] = [
     { value: "venue", label: "Venue" },
     { value: "hairMakeup", label: "Hair & Makeup" },
-    { value: "photoVideo", label: "Photo & Video" },
+    { value: "photoVideo", label: "Photography & Videography" },
     { value: "weddingPlanner", label: "Wedding Planner & Coordinator" },
     { value: "dj", label: "DJ" },
   ];

@@ -39,6 +39,26 @@ const isValidSortOption = (value: string): value is SortOption => {
   return ["default", "price_asc", "price_desc"].includes(value);
 };
 
+const isValidHairMakeupType = (
+  value: string
+): value is "both" | "hair" | "makeup" | "default" => {
+  return ["both", "hair", "makeup", "default"].includes(value);
+};
+
+const isValidPhotoVideoType = (
+  value: string
+): value is "both" | "photography" | "videography" | "default" => {
+  return ["both", "photography", "videography", "default"].includes(value);
+};
+
+const isValidWeddingPlannerType = (
+  value: string
+): value is "both" | "weddingPlanner" | "weddingCoordinator" | "default" => {
+  return ["both", "weddingPlanner", "weddingCoordinator", "default"].includes(
+    value
+  );
+};
+
 // Types
 type ServiceType =
   | "venue"
@@ -144,6 +164,13 @@ interface SearchFilters {
   serviceType: ServiceType;
   cateringOption: string;
   venueType: VenueType;
+  hairMakeupType: "both" | "hair" | "makeup" | "default";
+  photoVideoType: "both" | "photography" | "videography" | "default";
+  weddingPlannerType:
+    | "both"
+    | "weddingPlanner"
+    | "weddingCoordinator"
+    | "default";
 }
 
 interface ServiceConfig {
@@ -211,6 +238,12 @@ const calculateDistance = (
   return R * c;
 };
 
+const preventNegativeInput = (e: React.KeyboardEvent<HTMLInputElement>) => {
+  if (e.key === "-" || e.key === "e") {
+    e.preventDefault();
+  }
+};
+
 // Main Component
 export default function ServicesSearchPage() {
   // State Management with proper typing
@@ -226,16 +259,30 @@ export default function ServicesSearchPage() {
   // Memoized initial filters
   const initialFilters = useMemo(() => {
     const params = new URLSearchParams(window.location.search);
+
+    // Get service type parameter
     const serviceParam = (params.get("service") || "").trim();
+
+    // Price range parameters
     const minPrice = parseInt(params.get("minPrice") || "0");
     const maxPrice = parseInt(params.get("maxPrice") || "0");
+
+    // Capacity parameters
     const minCapacity = parseInt(params.get("minCapacity") || "0");
     const maxCapacity = parseInt(params.get("maxCapacity") || "0");
+
+    // Sort and venue-specific parameters
     const sortOption = params.get("sort") || "default";
     const cateringOption = params.get("catering") || "default";
     const venueType = (params.get("venueType") || "default") as VenueType;
 
+    // Service-specific type parameters
+    const hairMakeupType = params.get("hairMakeupType") || "default";
+    const photoVideoType = params.get("photoVideoType") || "default";
+    const weddingPlannerType = params.get("weddingPlannerType") || "default";
+
     return {
+      // Location details
       searchQuery: {
         enteredLocation: params.get("enteredLocation") || "",
         city: params.get("city") || "",
@@ -250,14 +297,36 @@ export default function ServicesSearchPage() {
               }
             : undefined,
       },
+
+      // Price and capacity ranges
       priceRange: [minPrice, maxPrice] as [number, number],
-      capacity: { min: minCapacity, max: maxCapacity },
+      capacity: {
+        min: minCapacity,
+        max: maxCapacity,
+      },
+
+      // Basic service and sort options
       sortOption: isValidSortOption(sortOption)
         ? (sortOption as SortOption)
         : "default",
       serviceType: isValidServiceType(serviceParam) ? serviceParam : "venue",
+
+      // Venue-specific options
       cateringOption,
       venueType,
+
+      // Service-specific type options
+      hairMakeupType: isValidHairMakeupType(hairMakeupType)
+        ? hairMakeupType
+        : "default",
+
+      photoVideoType: isValidPhotoVideoType(photoVideoType)
+        ? photoVideoType
+        : "default",
+
+      weddingPlannerType: isValidWeddingPlannerType(weddingPlannerType)
+        ? weddingPlannerType
+        : "default",
     };
   }, []);
 
@@ -279,6 +348,7 @@ export default function ServicesSearchPage() {
     (newFilters: SearchFilters): void => {
       const params = new URLSearchParams();
 
+      // Location parameters
       if (newFilters.searchQuery.enteredLocation) {
         params.set("enteredLocation", newFilters.searchQuery.enteredLocation);
         params.set("city", newFilters.searchQuery.city);
@@ -292,30 +362,68 @@ export default function ServicesSearchPage() {
         }
       }
 
-      // Add other filter params
+      // Basic service and sort parameters
       params.set("service", newFilters.serviceType);
-      if (newFilters.priceRange[0] > 0)
-        params.set("minPrice", newFilters.priceRange[0].toString());
-      if (newFilters.priceRange[1] > 0)
-        params.set("maxPrice", newFilters.priceRange[1].toString());
-      if (newFilters.capacity.min > 0)
-        params.set("minCapacity", newFilters.capacity.min.toString());
-      if (newFilters.capacity.max > 0)
-        params.set("maxCapacity", newFilters.capacity.max.toString());
-      if (newFilters.sortOption !== "default")
+      if (newFilters.sortOption !== "default") {
         params.set("sort", newFilters.sortOption);
-      if (newFilters.cateringOption !== "default")
-        params.set("catering", newFilters.cateringOption);
-      if (newFilters.venueType !== "default")
-        params.set("venueType", newFilters.venueType);
+      }
 
+      // Price range parameters
+      if (newFilters.priceRange[0] > 0) {
+        params.set("minPrice", newFilters.priceRange[0].toString());
+      }
+      if (newFilters.priceRange[1] > 0) {
+        params.set("maxPrice", newFilters.priceRange[1].toString());
+      }
+
+      // Capacity parameters (for venues)
+      if (newFilters.capacity.min > 0) {
+        params.set("minCapacity", newFilters.capacity.min.toString());
+      }
+      if (newFilters.capacity.max > 0) {
+        params.set("maxCapacity", newFilters.capacity.max.toString());
+      }
+
+      // Venue-specific parameters
+      if (newFilters.serviceType === "venue") {
+        if (newFilters.cateringOption !== "default") {
+          params.set("catering", newFilters.cateringOption);
+        }
+        if (newFilters.venueType !== "default") {
+          params.set("venueType", newFilters.venueType);
+        }
+      }
+
+      // Service-specific type parameters
+      if (
+        newFilters.serviceType === "hairMakeup" &&
+        newFilters.hairMakeupType !== "default"
+      ) {
+        params.set("hairMakeupType", newFilters.hairMakeupType);
+      }
+
+      if (
+        newFilters.serviceType === "photoVideo" &&
+        newFilters.photoVideoType !== "default"
+      ) {
+        params.set("photoVideoType", newFilters.photoVideoType);
+      }
+
+      if (
+        newFilters.serviceType === "weddingPlanner" &&
+        newFilters.weddingPlannerType !== "default"
+      ) {
+        params.set("weddingPlannerType", newFilters.weddingPlannerType);
+      }
+
+      // Update the URL without page reload
       window.history.replaceState(
         {},
         "",
         `${window.location.pathname}?${params.toString()}`
       );
     },
-    []
+    [] // Empty dependency array since this callback doesn't depend on any external values
   );
 
   const applyLocationFilters = (
@@ -435,6 +543,38 @@ export default function ServicesSearchPage() {
     }
   };
 
+  const applyServiceTypeFilter = (
+    query: any,
+    filtersToUse: SearchFilters
+  ): any => {
+    // Hair & Makeup filtering
+    if (
+      filtersToUse.serviceType === "hairMakeup" &&
+      filtersToUse.hairMakeupType !== "default"
+    ) {
+      return query.eq("service_type", filtersToUse.hairMakeupType);
+    }
+
+    // Photo & Video filtering
+    if (
+      filtersToUse.serviceType === "photoVideo" &&
+      filtersToUse.photoVideoType !== "default"
+    ) {
+      return query.eq("service_type", filtersToUse.photoVideoType);
+    }
+
+    // Wedding Planner filtering
+    if (
+      filtersToUse.serviceType === "weddingPlanner" &&
+      filtersToUse.weddingPlannerType !== "default"
+    ) {
+      return query.eq("service_type", filtersToUse.weddingPlannerType);
+    }
+
+    // If no service type filter applies or it's set to default, return unmodified query
+    return query;
+  };
+
   const processQueryResults = (
     data: any[],
     filtersToUse: SearchFilters,
@@ -488,6 +628,7 @@ export default function ServicesSearchPage() {
         applySortFilters(query, filtersToUse);
         applyCateringOptionFilter(query, filtersToUse);
         applyVenueTypeFilter(query, filtersToUse);
+        applyServiceTypeFilter(query, filtersToUse);
       }
 
       const { data, error: queryError } = await query;
@@ -524,6 +665,7 @@ export default function ServicesSearchPage() {
         venueType: "default",
         sortOption: "default",
         serviceType: value,
+        hairMakeupType: "default",
       };
       setSearchFilters(newFilters);
       updateURLWithFilters(newFilters);
@@ -556,6 +698,9 @@ export default function ServicesSearchPage() {
       serviceType: searchFilters.serviceType,
       cateringOption: "default",
       venueType: "default",
+      hairMakeupType: "default",
+      photoVideoType: "default",
+      weddingPlannerType: "default",
     };
     setSearchFilters(resetFilters);
     updateURLWithFilters(resetFilters);
@@ -1006,6 +1151,13 @@ interface FilterSheetProps {
   onReset: () => void;
 }
 
+interface Errors {
+  priceMin: string;
+  priceMax: string;
+  guestMin: string;
+  guestMax: string;
+}
+
 const FilterSheet: React.FC<FilterSheetProps> = ({
   isOpen,
   onOpenChange,
@@ -1014,6 +1166,124 @@ const FilterSheet: React.FC<FilterSheetProps> = ({
   onApply,
   onReset,
 }) => {
+  // Move the useState hook inside the component
+  const [errors, setErrors] = useState<Errors>({
+    priceMin: "",
+    priceMax: "",
+    guestMin: "",
+    guestMax: "",
+  });
+
+  const validateAndSetPrice = useCallback(
+    (value: string, index: number) => {
+      const newPriceRange = [...searchFilters.priceRange] as [number, number];
+      const numValue = value === "" ? 0 : Math.max(0, parseInt(value));
+      newPriceRange[index] = numValue;
+
+      const newErrors = { ...errors };
+
+      // Clear previous price-related errors
+      newErrors.priceMin = "";
+      newErrors.priceMax = "";
+
+      if (
+        index === 0 &&
+        numValue > searchFilters.priceRange[1] &&
+        searchFilters.priceRange[1] !== 0
+      ) {
+        newErrors.priceMin = "Min price cannot exceed max price";
+      }
+
+      if (
+        index === 1 &&
+        numValue < searchFilters.priceRange[0] &&
+        numValue !== 0
+      ) {
+        newErrors.priceMax = "Max price cannot be less than min price";
+      }
+
+      setSearchFilters((prev) => ({
+        ...prev,
+        priceRange: newPriceRange,
+      }));
+      setErrors(newErrors);
+    },
+    [searchFilters.priceRange, errors, setSearchFilters]
+  );
+
+  const validateAndSetCapacity = useCallback(
+    (value: string, index: number) => {
+      const newCapacity = {
+        min:
+          index === 0
+            ? Math.max(0, parseInt(value) || 0)
+            : searchFilters.capacity.min,
+        max:
+          index === 1
+            ? Math.max(0, parseInt(value) || 0)
+            : searchFilters.capacity.max,
+      };
+
+      const newErrors = { ...errors };
+
+      // Clear previous capacity-related errors
+      newErrors.guestMin = "";
+      newErrors.guestMax = "";
+
+      if (
+        index === 0 &&
+        newCapacity.min > searchFilters.capacity.max &&
+        searchFilters.capacity.max !== 0
+      ) {
+        newErrors.guestMin = "Min guests cannot exceed max guests";
+      }
+
+      if (
+        index === 1 &&
+        newCapacity.max < searchFilters.capacity.min &&
+        newCapacity.max !== 0
+      ) {
+        newErrors.guestMax = "Max guests cannot be less than min guests";
+      }
+
+      setSearchFilters((prev) => ({
+        ...prev,
+        capacity: newCapacity,
+      }));
+      setErrors(newErrors);
+    },
+    [searchFilters.capacity, errors, setSearchFilters]
+  );
+
+  const handleFilterApply = useCallback(() => {
+    if (
+      !errors.priceMin &&
+      !errors.priceMax &&
+      !errors.guestMin &&
+      !errors.guestMax
+    ) {
+      onApply();
+    }
+  }, [errors, onApply]);
+
+  const handleFilterReset = useCallback(() => {
+    setSearchFilters((prev) => ({
+      ...prev,
+      priceRange: [0, 0],
+      capacity: { min: 0, max: 0 },
+      sortOption: "default",
+      cateringOption: "default",
+      venueType: "default",
+    }));
+    setErrors({
+      priceMin: "",
+      priceMax: "",
+      guestMin: "",
+      guestMax: "",
+    });
+    onReset();
+  }, [setSearchFilters, onReset]);
+
   return (
     <Sheet open={isOpen} onOpenChange={onOpenChange}>
       <SheetTrigger asChild>
@@ -1026,126 +1296,188 @@ const FilterSheet: React.FC<FilterSheetProps> = ({
         </button>
       </SheetTrigger>
       <SheetContent side="right" className="w-full sm:max-w-md overflow-y-auto">
-        <SheetHeader className="space-y-2 sm:space-y-3">
+        <SheetHeader>
           <SheetTitle>Filter Options</SheetTitle>
-          <SheetDescription>
-            Customize your{" "}
-            {SERVICE_CONFIGS[searchFilters.serviceType].singularName} search
-          </SheetDescription>
         </SheetHeader>
 
         <div className="mt-6 space-y-6">
-          {/* Mobile Sort Option */}
-          <div className="block md:hidden">
-            <h3 className="text-sm font-medium mb-2">Sort By</h3>
-            <Select
-              value={searchFilters.sortOption}
-              onValueChange={(value: string) => {
-                if (isValidSortOption(value)) {
-                  setSearchFilters((prev) => ({
-                    ...prev,
-                    sortOption: value as SortOption,
-                  }));
-                }
-              }}
-            >
-              <SelectTrigger className="w-full">
-                <SelectValue placeholder="Sort by" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="price_desc">Price: High to Low</SelectItem>
-                <SelectItem value="price_asc">Price: Low to High</SelectItem>
-                <SelectItem value="default">Featured</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-
           {/* Price Range */}
           <div>
             <h3 className="text-sm font-medium mb-2">Price Range</h3>
             <div className="grid grid-cols-2 gap-4">
-              <div className="relative">
-                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">
-                  $
-                </span>
-                <input
-                  type="number"
-                  min="0"
-                  value={searchFilters.priceRange[0] || ""}
-                  onChange={(e) => {
-                    const value = Math.max(0, parseInt(e.target.value) || 0);
-                    setSearchFilters((prev) => ({
-                      ...prev,
-                      priceRange: [value, prev.priceRange[1]],
-                    }));
-                  }}
-                  className="w-full pl-7 pr-3 py-2 border rounded-lg focus:ring-2 focus:ring-black focus:border-transparent"
-                  placeholder="Min"
-                />
+              <div className="space-y-1">
+                <div className="relative">
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">
+                    $
+                  </span>
+                  <input
+                    type="number"
+                    min="0"
+                    onKeyDown={preventNegativeInput}
+                    value={searchFilters.priceRange[0] || ""}
+                    onChange={(e) => validateAndSetPrice(e.target.value, 0)}
+                    className="w-full pl-7 pr-3 py-2 border rounded-lg focus:ring-2 focus:ring-black focus:border-transparent"
+                    placeholder="Min"
+                  />
+                </div>
+                {errors.priceMin && (
+                  <p className="text-red-500 text-xs">{errors.priceMin}</p>
+                )}
               </div>
-              <div className="relative">
-                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">
-                  $
-                </span>
-                <input
-                  type="number"
-                  min="0"
-                  value={searchFilters.priceRange[1] || ""}
-                  onChange={(e) => {
-                    const value = Math.max(0, parseInt(e.target.value) || 0);
-                    setSearchFilters((prev) => ({
-                      ...prev,
-                      priceRange: [prev.priceRange[0], value],
-                    }));
-                  }}
-                  className="w-full pl-7 pr-3 py-2 border rounded-lg focus:ring-2 focus:ring-black focus:border-transparent"
-                  placeholder="Max"
-                />
+              <div className="space-y-1">
+                <div className="relative">
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">
+                    $
+                  </span>
+                  <input
+                    type="number"
+                    min="0"
+                    onKeyDown={preventNegativeInput}
+                    value={searchFilters.priceRange[1] || ""}
+                    onChange={(e) => validateAndSetPrice(e.target.value, 1)}
+                    className="w-full pl-7 pr-3 py-2 border rounded-lg focus:ring-2 focus:ring-black focus:border-transparent"
+                    placeholder="Max"
+                  />
+                </div>
+                {errors.priceMax && (
+                  <p className="text-red-500 text-xs">{errors.priceMax}</p>
+                )}
               </div>
             </div>
           </div>
 
-          {/* Capacity (Venues only) */}
+          {/* Guest Capacity */}
           {SERVICE_CONFIGS[searchFilters.serviceType].hasCapacity && (
             <div>
               <h3 className="text-sm font-medium mb-2">Guest Capacity</h3>
               <div className="grid grid-cols-2 gap-4">
-                <input
-                  type="number"
-                  min="0"
-                  value={searchFilters.capacity.min || ""}
-                  onChange={(e) => {
-                    const value = Math.max(0, parseInt(e.target.value) || 0);
-                    setSearchFilters((prev) => ({
-                      ...prev,
-                      capacity: { ...prev.capacity, min: value },
-                    }));
-                  }}
-                  className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-black focus:border-transparent"
-                  placeholder="Min guests"
-                />
-                <input
-                  type="number"
-                  min="0"
-                  value={searchFilters.capacity.max || ""}
-                  onChange={(e) => {
-                    const value = Math.max(0, parseInt(e.target.value) || 0);
-                    setSearchFilters((prev) => ({
-                      ...prev,
-                      capacity: { ...prev.capacity, max: value },
-                    }));
-                  }}
-                  className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-black focus:border-transparent"
-                  placeholder="Max guests"
-                />
+                <div className="space-y-1">
+                  <input
+                    type="number"
+                    min="0"
+                    onKeyDown={preventNegativeInput}
+                    value={searchFilters.capacity.min || ""}
+                    onChange={(e) => validateAndSetCapacity(e.target.value, 0)}
+                    className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-black focus:border-transparent"
+                    placeholder="Min guests"
+                  />
+                  {errors.guestMin && (
+                    <p className="text-red-500 text-xs">{errors.guestMin}</p>
+                  )}
+                </div>
+                <div className="space-y-1">
+                  <input
+                    type="number"
+                    min="0"
+                    onKeyDown={preventNegativeInput}
+                    value={searchFilters.capacity.max || ""}
+                    onChange={(e) => validateAndSetCapacity(e.target.value, 1)}
+                    className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-black focus:border-transparent"
+                    placeholder="Max guests"
+                  />
+                  {errors.guestMax && (
+                    <p className="text-red-500 text-xs">{errors.guestMax}</p>
+                  )}
+                </div>
               </div>
             </div>
           )}
+          {searchFilters.serviceType === "hairMakeup" && (
+            <div>
+              <h3 className="text-sm font-medium mb-2">Service Type</h3>
+              <Select
+                value={searchFilters.hairMakeupType}
+                onValueChange={(value: string) => {
+                  setSearchFilters((prev) => ({
+                    ...prev,
+                    hairMakeupType: value as
+                      | "both"
+                      | "hair"
+                      | "makeup"
+                      | "default",
+                  }));
+                }}
+              >
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="Select service type" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="default">All Services</SelectItem>
+                  <SelectItem value="hair">Hair Only</SelectItem>
+                  <SelectItem value="makeup">Makeup Only</SelectItem>
+                  <SelectItem value="both">Hair & Makeup</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          )}
+          {searchFilters.serviceType === "photoVideo" && (
+            <div>
+              <h3 className="text-sm font-medium mb-2">Service Type</h3>
+              <Select
+                value={searchFilters.photoVideoType}
+                onValueChange={(value: string) => {
+                  setSearchFilters((prev) => ({
+                    ...prev,
+                    photoVideoType: value as
+                      | "both"
+                      | "photography"
+                      | "videography"
+                      | "default",
+                  }));
+                }}
+              >
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="Select service type" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="default">All Services</SelectItem>
+                  <SelectItem value="photography">Photography Only</SelectItem>
+                  <SelectItem value="videography">Videography Only</SelectItem>
+                  <SelectItem value="both">
+                    Photography & Videography
+                  </SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          )}
+          {searchFilters.serviceType === "weddingPlanner" && (
+            <div>
+              <h3 className="text-sm font-medium mb-2">Service Type</h3>
+              <Select
+                value={searchFilters.weddingPlannerType}
+                onValueChange={(value: string) => {
+                  setSearchFilters((prev) => ({
+                    ...prev,
+                    weddingPlannerType: value as
+                      | "both"
+                      | "weddingPlanner"
+                      | "weddingCoordinator"
+                      | "default",
+                  }));
+                }}
+              >
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="Select service type" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="default">All Services</SelectItem>
+                  <SelectItem value="weddingPlanner">
+                    Wedding Planner Only
+                  </SelectItem>
+                  <SelectItem value="weddingCoordinator">
+                    Wedding Coordinator Only
+                  </SelectItem>
+                  <SelectItem value="both">
+                    Wedding Planner & Coordinator
+                  </SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          )}
 
-          {/* Venue-specific filters */}
+          {/* Venue Type */}
           {searchFilters.serviceType === "venue" && (
             <>
-              {/* Venue Type */}
               <div>
                 <h3 className="text-sm font-medium mb-2">Venue Type</h3>
                 <Select
@@ -1208,15 +1540,14 @@ const FilterSheet: React.FC<FilterSheetProps> = ({
           {/* Filter Actions */}
           <div className="flex gap-3 pt-6">
             <button
-              type="button"
-              onClick={onApply}
-              className="flex-1 py-2.5 bg-black text-white rounded-lg hover:bg-black/90 transition-colors"
+              onClick={handleFilterApply}
+              disabled={Object.values(errors).some((error) => error !== "")}
+              className="flex-1 py-2.5 bg-black text-white rounded-lg hover:bg-black/90 transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed"
             >
               Apply Filters
             </button>
             <button
-              type="button"
-              onClick={onReset}
+              onClick={handleFilterReset}
               className="flex-1 py-2.5 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
             >
               Reset

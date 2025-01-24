@@ -400,16 +400,32 @@ export default function LeadDetailsPage() {
                   </section>
 
                   {/* Contact Information */}
+                  {/* Contact Information */}
                   <section>
                     <h2 className="text-lg font-medium text-gray-900 mb-4 pt-8">
                       Contact Information
                     </h2>
+                    {lead.preferred_contact && (
+                      <div className="mb-4 inline-flex items-center px-3 py-1 rounded-full bg-green-100 text-green-800 text-sm">
+                        <span className="mr-1">✓</span>
+                        Prefers contact via{" "}
+                        {lead.preferred_contact === "phone"
+                          ? "phone call"
+                          : lead.preferred_contact === "text"
+                          ? "text message"
+                          : "email"}
+                      </div>
+                    )}
                     <div className="space-y-3">
                       {lead.email && (
                         <div className="break-all">
                           <a
                             href={`mailto:${lead.email}`}
-                            className="flex items-center gap-3 text-gray-600 hover:text-gray-900"
+                            className={`flex items-center gap-3 text-gray-600 hover:text-gray-900 ${
+                              lead.preferred_contact === "email"
+                                ? "font-medium"
+                                : ""
+                            }`}
                           >
                             <Mail className="h-5 w-5 flex-shrink-0" />
                             <span className="break-all">{lead.email}</span>
@@ -420,10 +436,20 @@ export default function LeadDetailsPage() {
                         <div className="break-all">
                           <a
                             href={`tel:${lead.phone}`}
-                            className="flex items-center gap-3 text-gray-600 hover:text-gray-900"
+                            className={`flex items-center gap-3 text-gray-600 hover:text-gray-900 ${
+                              lead.preferred_contact === "phone" ||
+                              lead.preferred_contact === "text"
+                                ? "font-medium"
+                                : ""
+                            }`}
                           >
                             <Phone className="h-5 w-5 flex-shrink-0" />
                             <span>{formatPhoneNumber(lead.phone)}</span>
+                            {lead.preferred_contact === "text" && (
+                              <span className="text-sm text-gray-500">
+                                (Prefers text)
+                              </span>
+                            )}
                           </a>
                         </div>
                       )}
