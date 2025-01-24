@@ -30,7 +30,14 @@ import TravelSection from "@/components/ui/TravelSection";
 import { ProtectedRoute } from "@/components/ui/ProtectedRoute";
 import { VendorProtectedRoute } from "@/components/ui/VendorProtectedRoute";
 import { loadStripe } from "@stripe/stripe-js";
-import { BillingPeriod, stripePriceIds, TierType } from "@/lib/stripe";
+import {
+  BillingPeriod,
+  ServiceId,
+  stripePriceIds,
+  TierType,
+} from "@/lib/stripe";
+import { PaymentConfirmationDialog } from "@/components/ui/PaymentConfirmationDialog";
+import { useAuth } from "@/context/AuthContext";
 
 // Types
 interface MediaFile {
@@ -46,6 +53,13 @@ interface Service {
   price: number;
   duration: number;
   isCustom?: boolean;
+}
+
+interface PaymentMethod {
+  card_brand: string;
+  last_4: string;
+  exp_month: number;
+  exp_year: number;
 }
 
 interface LocationState {
@@ -74,6 +88,49 @@ const commonServices = [
     suggestedDuration: 0,
   },
 ];
+
+const categoryPrices: Record<ServiceId, Record<TierType, { price: number }>> = {
+  venue: {
+    basic: { price: 25 },
+    premium: { price: 45 },
+    elite: { price: 65 },
+  },
+  hairMakeup: {
+    basic: { price: 5 },
+    premium: { price: 10 },
+    elite: { price: 15 },
+  },
+  photoVideo: {
+    basic: { price: 5 },
+    premium: { price: 10 },
+    elite: { price: 15 },
+  },
+  weddingPlanner: {
+    basic: { price: 5 },
+    premium: { price: 10 },
+    elite: { price: 15 },
+  },
+  dj: {
+    basic: { price: 5 },
+    premium: { price: 15 },
+    elite: { price: 25 },
+  },
+};
+
+const prices = {
+  basic: {
+    monthly: 29,
+    annual: 290,
+  },
+  premium: {
+    monthly: 49,
+    annual: 490,
+  },
+  elite: {
+    monthly: 99,
+    annual: 990,
+  },
+};
 
 const commonDJStyles = ["Spanish", "Bollywood", "American"];
 
@@ -106,7 +163,6 @@ const CreateDJListing = () => {
     latitude: null,
     longitude: null,
   });
-
   // Media State
   const [mediaFiles, setMediaFiles] = useState<MediaFile[]>([]);
   const [draggedItem, setDraggedItem] = useState<number | null>(null);
@@ -123,6 +179,13 @@ const CreateDJListing = () => {
   const searchParams = useSearchParams();
   const [selectedTier, setSelectedTier] = useState<TierType>("basic");
   const [isAnnual, setIsAnnual] = useState<boolean>();
+  const [showPaymentDialog, setShowPaymentDialog] = useState(false);
+  const [currentPaymentMethod, setCurrentPaymentMethod] =
+    useState<PaymentMethod | null>(null);
+  const [isPaymentLoading, setIsPaymentLoading] = useState(false);
+  const { user } = useAuth();
+  const [createdListingId, setCreatedListingId] = useState<string | null>(null);
+  const [paymentError, setPaymentError] = useState<string>("");
 
   useEffect(() => {
     const tier: TierType = searchParams.get("tier") as TierType;
@@ -163,6 +226,7 @@ const CreateDJListing = () => {
   const countCharacters = (text: string): number => {
     return text.trim().length;
   };
+
   const handleDragStart = (index: number) => {
     setDraggedItem(index);
   };
@@ -182,6 +246,7 @@ const CreateDJListing = () => {
   const handleDragEnd = () => {
     setDraggedItem(null);
   };
+
   // Form Validation
   const validateCurrentStep = () => {
     switch (currentStep) {
@@ -357,7 +422,7 @@ const CreateDJListing = () => {
     window.history.back();
   };
 
-  const handleSubmit = async () => {
+  const createListing = async () => {
     try {
       if (!travelRange && !isWillingToTravel) {
         toast.error(`Travel Range Must Be Entered`);
@@ -511,63 +576,64 @@ const CreateDJListing = () => {
         }
       }
 
-      try {
-        const billingPeriod: BillingPeriod = isAnnual ? "annual" : "monthly";
+      // try {
+      //   const billingPeriod: BillingPeriod = isAnnual ? "annual" : "monthly";
 
-        const priceId = stripePriceIds["dj"][selectedTier][billingPeriod];
+      //   const priceId = stripePriceIds["dj"][selectedTier][billingPeriod];
 
-        const requestBody = {
-          priceId,
-          userId: user.id,
-          serviceType: "dj",
-          tierType: selectedTier,
-          isAnnual,
-          listing_id: dj?.id,
-        };
+      //   const requestBody = {
+      //     priceId,
+      //     userId: user.id,
+      //     serviceType: "dj",
+      //     tierType: selectedTier,
+      //     isAnnual,
+      //     listing_id: dj?.id,
+      //   };
 
-        const response = await fetch("/api/create-checkout-session", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify(requestBody),
-        });
+      //   const response = await fetch("/api/create-checkout-session", {
+      //     method: "POST",
+      //     headers: {
+      //       "Content-Type": "application/json",
+      //     },
+      //     body: JSON.stringify(requestBody),
+      //   });
 
-        if (!response.ok) {
-          const errorData = await response.json().catch(() => null);
-          throw new Error(
-            errorData?.error || `HTTP error! status: ${response.status}`
-          );
-        }
+      //   if (!response.ok) {
+      //     const errorData = await response.json().catch(() => null);
+      //     throw new Error(
+      //       errorData?.error || `HTTP error! status: ${response.status}`
+      //     );
+      //   }
 
-        const data = await response.json();
+      //   const data = await response.json();
 
-        const stripe = await loadStripe(
-          process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!
-        );
-        if (!stripe) {
-          throw new Error("Failed to load Stripe");
-        }
+      //   const stripe = await loadStripe(
+      //     process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!
+      //   );
+      //   if (!stripe) {
+      //     throw new Error("Failed to load Stripe");
+      //   }
 
-        const { error: stripeError } = await stripe.redirectToCheckout({
-          sessionId: data.sessionId,
-        });
+      //   const { error: stripeError } = await stripe.redirectToCheckout({
+      //     sessionId: data.sessionId,
+      //   });
 
-        if (stripeError) {
-          throw stripeError;
-        }
-      } catch (error) {
-        console.error("Error initiating checkout:", error);
-        toast.error(
-          error instanceof Error
-            ? error.message
-            : "Failed to initiate checkout. Please try again."
-        );
-      }
+      //   if (stripeError) {
+      //     throw stripeError;
+      //   }
+      // } catch (error) {
+      //   console.error("Error initiating checkout:", error);
+      //   toast.error(
+      //     error instanceof Error
+      //       ? error.message
+      //       : "Failed to initiate checkout. Please try again."
+      //   );
+      // }
 
-      toast.success("DJ listing created successfully!");
-      router.push(`/services`);
-      router.replace(`/services/dj/${dj.id}`);
+      // toast.success("DJ listing created successfully!");
+      // router.push(`/services`);
+      // router.replace(`/services/dj/${dj.id}`);
+      return dj.id;
     } catch (error) {
       console.error("Error creating DJ listing:", error);
       toast.error(
@@ -575,6 +641,159 @@ const CreateDJListing = () => {
           ? error.message
           : "Failed to create DJ listing. Please try again."
       );
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleNewPaymentCheckout = async (listingId: string) => {
+    try {
+      const response = await fetch("/api/create-checkout-session", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          priceId:
+            stripePriceIds["dj"][selectedTier][isAnnual ? "annual" : "monthly"],
+          userId: user?.id,
+          serviceType: "dj",
+          tierType: selectedTier,
+          isAnnual,
+          listing_id: listingId,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to create checkout session");
+      }
+
+      const { sessionId } = await response.json();
+      const stripe = await loadStripe(
+        process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!
+      );
+
+      if (!stripe) {
+        throw new Error("Failed to load Stripe");
+      }
+
+      await stripe.redirectToCheckout({ sessionId });
+    } catch (error) {
+      console.error("Checkout error:", error);
+      toast.error("Failed to process checkout. Please try again.");
+      throw error;
+    }
+  };
+
+  const handleExistingPaymentSubscription = async () => {
+    try {
+      setIsPaymentLoading(true);
+
+      const response = await fetch("/api/create-subscription", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          priceId:
+            stripePriceIds["dj"][selectedTier][isAnnual ? "annual" : "monthly"],
+          userId: user?.id,
+          serviceType: "dj",
+          tierType: selectedTier,
+          isAnnual,
+          listing_id: createdListingId,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        // Handle different types of errors with specific messages
+        if (response.status === 400) {
+          // Payment-specific errors
+          if (data.code === "card_declined") {
+            throw new Error(
+              "Your card was declined. Please try a different payment method."
+            );
+          } else if (data.code === "insufficient_funds") {
+            throw new Error(
+              "Insufficient funds. Please try a different payment method."
+            );
+          } else if (data.code === "expired_card") {
+            throw new Error(
+              "Your card has expired. Please update your payment method."
+            );
+          }
+        }
+        throw new Error(data.error || "Something went wrong with the payment.");
+      }
+
+      // Payment succeeded
+      router.push(data.redirectUrl);
+      toast.success("Your DJ listing has been created successfully!");
+    } catch (error) {
+      console.error("Payment error:", error);
+
+      // Show a user-friendly error in the payment dialog
+      setPaymentError(
+        error instanceof Error
+          ? error.message
+          : "Payment failed. Please try again."
+      );
+
+      // Keep the dialog open so they can try again
+      setIsPaymentLoading(false);
+    }
+  };
+
+  const handleUpdatePayment = () => {
+    // Save the current path to redirect back after updating payment method
+    const currentPath = window.location.pathname + window.location.search;
+    router.push(`/billing?redirect=${encodeURIComponent(currentPath)}`);
+  };
+
+  const handleFinalSubmission = async () => {
+    try {
+      if (!validateCurrentStep()) return;
+
+      setIsSubmitting(true);
+
+      // Since listingData is directly the ID, let's be explicit about that
+      const listingId = await createListing();
+
+      if (!listingId) {
+        console.error("No listing ID received");
+        throw new Error("Failed to create listing - no ID returned");
+      }
+
+      // Now we know we have a string ID, not an object
+      console.log("Created listing with ID:", listingId);
+
+      // Set the listing ID in state
+      setCreatedListingId(listingId);
+
+      // Check for existing payment method
+      const { data: paymentMethod, error: paymentError } = await supabase
+        .from("payment_methods")
+        .select("*")
+        .eq("user_id", user?.id)
+        .single();
+
+      if (paymentError && paymentError.code !== "PGRST116") {
+        throw paymentError;
+      }
+
+      if (paymentMethod) {
+        console.log("Found payment method, showing dialog for listing:", {
+          paymentMethod,
+          listingId,
+        });
+
+        setCurrentPaymentMethod(paymentMethod);
+        setShowPaymentDialog(true);
+      } else {
+        // No payment method, redirect to checkout
+        await handleNewPaymentCheckout(listingId);
+      }
+    } catch (error) {
+      console.error("Error in submission:", error);
+      toast.error("Failed to process your request. Please try again.");
     } finally {
       setIsSubmitting(false);
     }
@@ -1588,7 +1807,9 @@ const CreateDJListing = () => {
                     <button
                       type="button"
                       onClick={
-                        currentStep === totalSteps ? handleSubmit : nextStep
+                        currentStep === totalSteps
+                          ? handleFinalSubmission
+                          : nextStep
                       }
                       disabled={isSubmitting}
                       className="flex-1 sm:flex-none px-4 sm:px-6 py-2 bg-black text-white rounded-lg hover:bg-stone-500 disabled:opacity-50"
@@ -1601,7 +1822,6 @@ const CreateDJListing = () => {
                     </button>
                   </div>
                 </div>
-
                 {/* Cancel Dialog */}
                 <AlertDialog
                   open={showCancelDialog}
@@ -1628,6 +1848,28 @@ const CreateDJListing = () => {
                     </AlertDialogFooter>
                   </AlertDialogContent>
                 </AlertDialog>
+
+                {/* Add the PaymentConfirmationDialog */}
+                {currentPaymentMethod && createdListingId && (
+                  <PaymentConfirmationDialog
+                    isOpen={true}
+                    onClose={() => {
+                      setShowPaymentDialog(false);
+                      setIsSubmitting(false);
+                    }}
+                    onConfirm={() => handleExistingPaymentSubscription}
+                    onUpdatePayment={handleUpdatePayment}
+                    paymentMethod={currentPaymentMethod}
+                    amount={
+                      prices[selectedTier][isAnnual ? "annual" : "monthly"]
+                    }
+                    isAnnual={isAnnual ? true : false}
+                    tierType={selectedTier}
+                    isLoading={isPaymentLoading}
+                    serviceType="dj"
+                    error={paymentError}
+                  />
+                )}
               </div>
             </div>
           </div>

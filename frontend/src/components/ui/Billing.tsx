@@ -1,12 +1,5 @@
 import React, { useState, useEffect } from "react";
-import {
-  CreditCard,
-  ChevronDown,
-  ChevronUp,
-  XCircle,
-  Link,
-  RefreshCcw,
-} from "lucide-react";
+import { CreditCard, Link, RefreshCcw, XCircle } from "lucide-react";
 import NextLink from "next/link";
 import { useAuth } from "@/context/AuthContext";
 import { supabase } from "@/lib/supabase";
@@ -53,133 +46,74 @@ interface ListingsByCategory {
   weddingPlanner: BaseListing[];
 }
 
-interface ServiceCategory {
+interface PaymentMethod {
   id: string;
-  name: string;
-  table: string;
-  color: string;
+  user_id: string;
+  stripe_payment_method_id: string;
+  stripe_customer_id: string;
+  last_4: string;
+  card_brand: string;
+  exp_month: number;
+  exp_year: number;
 }
 
-// Constants
-const serviceCategories: ServiceCategory[] = [
-  {
-    id: "dj",
-    name: "DJ Services",
-    table: "dj_listing",
-    color: "bg-blue-100 text-blue-800",
-  },
-  {
-    id: "photo_video",
-    name: "Photo & Video",
-    table: "photo_video_listing",
-    color: "bg-purple-100 text-purple-800",
-  },
-  {
-    id: "hair_makeup",
-    name: "Hair & Makeup",
-    table: "hair_makeup_listing",
-    color: "bg-pink-100 text-pink-800",
-  },
-  {
-    id: "venue",
-    name: "Venue",
-    table: "venue_listing",
-    color: "bg-green-100 text-green-800",
-  },
-  {
-    id: "wedding_planner",
-    name: "Wedding Planner & Coordinator",
-    table: "wedding_planner_listing",
-    color: "bg-yellow-100 text-yellow-800",
-  },
-];
-
-const PaymentMethodsSection = ({
-  paymentMethods,
-  onSetDefault,
-  onAddNew,
+const PaymentMethodSection = ({
+  paymentMethod,
+  onUpdatePaymentMethod,
 }: {
-  paymentMethods: PaymentMethod[];
-  onSetDefault: (paymentMethodId: string) => void;
-  onAddNew: () => void;
+  paymentMethod: PaymentMethod | null;
+  onUpdatePaymentMethod: () => void;
 }) => {
-  if (paymentMethods.length === 0) {
+  if (!paymentMethod) {
     return (
-      <div className="mb-8">
-        <div className="flex justify-between items-center mb-4">
-          <h3 className="text-lg font-medium">Payment Methods</h3>
+      <div className="mb-8 rounded-lg bg-gray-50 p-6">
+        <div className="flex justify-between items-center">
+          <div>
+            <h3 className="text-lg font-medium text-black">Payment</h3>
+            <p className="text-gray-600 mt-1">Link by Stripe</p>
+          </div>
           <button
-            onClick={onAddNew}
-            className="inline-flex items-center space-x-2 px-4 py-2 bg-black text-white rounded-lg hover:bg-stone-700 transition-colors"
+            onClick={onUpdatePaymentMethod}
+            className="text-black hover:text-gray-400 transition-colors font-medium"
           >
-            <CreditCard size={16} />
-            <span>Add Payment Method</span>
+            Add
           </button>
-        </div>
-        <div className="p-6 text-center bg-gray-50 rounded-lg border border-dashed border-gray-300">
-          <CreditCard className="mx-auto h-12 w-12 text-gray-400" />
-          <h3 className="mt-2 text-sm font-medium text-gray-900">
-            No payment methods
-          </h3>
-          <p className="mt-1 text-sm text-gray-500">
-            Add a payment method to manage your subscriptions.
-          </p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="mb-8">
-      <div className="flex justify-between items-center mb-4">
-        <h3 className="text-lg font-medium">Payment Methods</h3>
-        <button
-          onClick={onAddNew}
-          className="inline-flex items-center space-x-2 px-2 py-1 bg-black text-white rounded-lg hover:bg-stone-700 transition-colors"
-        >
-          <CreditCard size={16} />
-          <span>Add Payment Method</span>
-        </button>
-      </div>
-      <div className="space-y-4">
-        {paymentMethods.map((method) => (
-          <div
-            key={method.id}
-            className="flex items-center justify-between p-4 border rounded-lg bg-white"
-          >
-            <div className="flex items-center space-x-4">
-              <div className="w-12 h-8 bg-gray-100 rounded flex items-center justify-center">
-                <CreditCard size={20} className="text-gray-600" />
-              </div>
-              <div>
-                <p className="text-sm font-medium">
-                  {method.card_brand.charAt(0).toUpperCase() +
-                    method.card_brand.slice(1)}{" "}
-                  •••• {method.last_4}
-                </p>
-                <p className="text-xs text-gray-500">
-                  Expires {method.exp_month.toString().padStart(2, "0")}/
-                  {method.exp_year}
-                </p>
-              </div>
-              {method.is_default && (
-                <span className="ml-2 inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-black">
-                  Default
-                </span>
-              )}
-            </div>
-            <div className="flex items-center space-x-4">
-              {!method.is_default && (
-                <button
-                  onClick={() => onSetDefault(method.stripe_payment_method_id)}
-                  className="text-sm text-black hover:text-stone-600 transition-colors"
-                >
-                  Make Default
-                </button>
-              )}
-            </div>
+    <div className="mb-8 rounded-lg bg-gray-50 p-6">
+      <div className="flex flex-col space-y-4">
+        <div className="flex justify-between items-center">
+          <div>
+            <h3 className="text-lg font-medium text-black">Payment</h3>
+            <p className="text-gray-600 mt-1">Link by Stripe</p>
           </div>
-        ))}
+          <button
+            onClick={onUpdatePaymentMethod}
+            className="text-black hover:text-gray-400 transition-colors font-medium"
+          >
+            Update
+          </button>
+        </div>
+        <div className="flex items-center space-x-4 border-t border-gray-700 pt-4">
+          <div className="w-12 h-8 bg-gray-700 rounded flex items-center justify-center">
+            <CreditCard size={20} className="text-gray-300" />
+          </div>
+          <div>
+            <p className="text-sm font-medium text-black">
+              {paymentMethod.card_brand.charAt(0).toUpperCase() +
+                paymentMethod.card_brand.slice(1)}{" "}
+              •••• {paymentMethod.last_4}
+            </p>
+            <p className="text-sm text-gray-400">
+              Expires {paymentMethod.exp_month.toString().padStart(2, "0")}/
+              {paymentMethod.exp_year}
+            </p>
+          </div>
+        </div>
       </div>
     </div>
   );
@@ -196,7 +130,6 @@ const getServiceTypeForUrl = (dbServiceType: string): string => {
   return mapping[dbServiceType] || dbServiceType;
 };
 
-// Components
 const SubscriptionSection = ({
   title,
   subscriptions,
@@ -328,19 +261,6 @@ const SubscriptionSection = ({
   );
 };
 
-interface PaymentMethod {
-  id: string;
-  user_id: string;
-  stripe_payment_method_id: string;
-  stripe_customer_id: string;
-  is_default: boolean;
-  last_4: string;
-  card_brand: string;
-  exp_month: number;
-  exp_year: number;
-}
-
-// Main Component
 const Billing = () => {
   const { user } = useAuth();
   const [listings, setListings] = useState<ListingsByCategory>({
@@ -360,7 +280,9 @@ const Billing = () => {
   const [setupIntentSecret, setSetupIntentSecret] = useState<string | null>(
     null
   );
-  const [paymentMethods, setPaymentMethods] = useState<PaymentMethod[]>([]);
+  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod | null>(
+    null
+  );
 
   useEffect(() => {
     const fetchBillingData = async () => {
@@ -375,15 +297,15 @@ const Billing = () => {
         setSubscriptions(data.subscriptions);
         setListings(data.listings);
 
-        // Get payment methods
-        const { data: methodsData, error: methodsError } = await supabase
+        // Get payment method
+        const { data: methodData, error: methodError } = await supabase
           .from("payment_methods")
           .select("*")
           .eq("user_id", user.id)
-          .order("is_default", { ascending: false });
+          .single();
 
-        if (methodsError) throw methodsError;
-        setPaymentMethods(methodsData || []);
+        if (methodError && methodError.code !== "PGRST116") throw methodError;
+        setPaymentMethod(methodData || null);
       } catch (error) {
         console.error("Error fetching billing data:", error);
         toast.error("Failed to load billing information");
@@ -395,72 +317,16 @@ const Billing = () => {
     fetchBillingData();
   }, [user?.id]);
 
-  const handleSetDefaultPaymentMethod = async (paymentMethodId: string) => {
+  const handleAddOrUpdatePaymentMethod = async () => {
     try {
-      // First, get the customer ID
-      const { data: paymentMethod } = await supabase
-        .from("payment_methods")
-        .select("stripe_customer_id")
-        .eq("stripe_payment_method_id", paymentMethodId)
-        .single();
-
-      if (!paymentMethod?.stripe_customer_id) {
-        throw new Error("Customer ID not found");
-      }
-
-      // Update in Stripe first
-      const { error: stripeError } = await supabase.functions.invoke(
-        "update-default-payment-method",
-        {
-          body: {
-            paymentMethodId,
-            customerId: paymentMethod.stripe_customer_id,
-          },
-        }
-      );
-
-      if (stripeError) throw stripeError;
-
-      // Update in our database
-      const { error: dbError } = await supabase
-        .from("payment_methods")
-        .update({ is_default: false })
-        .eq("user_id", user?.id);
-
-      if (dbError) throw dbError;
-
-      const { error: updateError } = await supabase
-        .from("payment_methods")
-        .update({ is_default: true })
-        .eq("stripe_payment_method_id", paymentMethodId);
-
-      if (updateError) throw updateError;
-
-      // Refresh payment methods
-      setPaymentMethods((prev) =>
-        prev.map((method) => ({
-          ...method,
-          is_default: method.stripe_payment_method_id === paymentMethodId,
-        }))
-      );
-
-      toast.success("Default payment method updated");
-    } catch (error) {
-      console.error("Error updating default payment method:", error);
-      toast.error("Failed to update default payment method");
-    }
-  };
-
-  const handleAddPaymentMethod = async () => {
-    try {
-      if (!paymentMethods.length && !subscriptions.length) {
+      if (!subscriptions.length && !paymentMethod) {
         toast.error("You need an active subscription to add a payment method");
         return;
       }
 
-      // Get customerId from either payment methods or subscriptions
+      // Get customerId from either payment method or subscriptions
       const customerId =
-        paymentMethods[0]?.stripe_customer_id ||
+        paymentMethod?.stripe_customer_id ||
         subscriptions[0]?.stripe_customer_id;
 
       const { data, error } = await supabase.functions.invoke(
@@ -480,28 +346,25 @@ const Billing = () => {
     }
   };
 
-  const refreshPaymentMethods = async () => {
-    if (!user?.id) return;
-
+  const handlePaymentMethodAdded = async () => {
     try {
-      const { data: methodsData, error: methodsError } = await supabase
+      if (!user?.id) return;
+
+      const { data: methodData, error: methodError } = await supabase
         .from("payment_methods")
         .select("*")
         .eq("user_id", user.id)
-        .order("is_default", { ascending: false });
+        .single();
 
-      if (methodsError) throw methodsError;
-      setPaymentMethods(methodsData || []);
+      if (methodError) throw methodError;
+      setPaymentMethod(methodData);
+      setShowAddPaymentMethod(false);
+      setSetupIntentSecret(null);
+      toast.success("Payment method updated successfully");
     } catch (error) {
-      console.error("Error refreshing payment methods:", error);
-      toast.error("Failed to refresh payment methods");
+      console.error("Error refreshing payment method:", error);
+      toast.error("Failed to refresh payment method");
     }
-  };
-
-  const handlePaymentMethodAdded = async () => {
-    await refreshPaymentMethods();
-    setShowAddPaymentMethod(false);
-    setSetupIntentSecret(null);
   };
 
   const handleCancelSubscription = async () => {
@@ -615,15 +478,14 @@ const Billing = () => {
       <div className="mb-6">
         <h3 className="text-lg font-medium">Billing</h3>
         <p className="text-sm text-gray-500">
-          Manage and view payment methods and subscription history
+          Manage and view your payment method and subscription history
         </p>
       </div>
 
-      {/* Payment Methods Section */}
-      <PaymentMethodsSection
-        paymentMethods={paymentMethods}
-        onSetDefault={handleSetDefaultPaymentMethod}
-        onAddNew={handleAddPaymentMethod}
+      {/* Payment Method Section */}
+      <PaymentMethodSection
+        paymentMethod={paymentMethod}
+        onUpdatePaymentMethod={handleAddOrUpdatePaymentMethod}
       />
 
       {/* Active Subscriptions */}
@@ -716,7 +578,7 @@ const Billing = () => {
         </AlertDialogContent>
       </AlertDialog>
 
-      {/* Add Payment Method Dialog */}
+      {/* Add/Update Payment Method Dialog */}
       <AddPaymentMethodDialog
         open={showAddPaymentMethod}
         onClose={() => {

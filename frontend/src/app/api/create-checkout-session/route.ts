@@ -3,32 +3,11 @@ import { NextResponse } from "next/server";
 import Stripe from "stripe";
 import { createClient } from "@supabase/supabase-js";
 
-const mapping = {
-  venue: "venue",
-  hair_makeup: "hairMakeup",
-  wedding_planner: "weddingPlanner",
-  photo_video: "photoVideo",
-  dj: "dj",
-} as const;
-
-// Validate environment variables
-if (!process.env.STRIPE_SECRET_KEY) {
-  throw new Error("Missing STRIPE_SECRET_KEY");
-}
-
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
-  apiVersion: "2024-12-18.acacia",
-});
-
-// Initialize Supabase client
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-
-if (!supabaseUrl || !supabaseKey) {
-  throw new Error("Missing Supabase environment variables");
-}
-
-const supabase = createClient(supabaseUrl, supabaseKey);
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.SUPABASE_SERVICE_ROLE_KEY!
+);
 
 export async function POST(request: Request) {
   try {
@@ -36,7 +15,6 @@ export async function POST(request: Request) {
     const { priceId, userId, serviceType, tierType, isAnnual, listing_id } =
       body;
 
-    // Validate request data
     if (!priceId || !userId || !serviceType || !tierType) {
       return NextResponse.json(
         { error: "Missing required fields" },
@@ -44,7 +22,7 @@ export async function POST(request: Request) {
       );
     }
 
-    // Check if user already has a Stripe customer ID
+    // Get or create customer
     const { data: existingSubscription } = await supabase
       .from("subscriptions")
       .select("stripe_customer_id")
@@ -56,7 +34,6 @@ export async function POST(request: Request) {
     let customerId: string;
 
     if (!existingSubscription?.stripe_customer_id) {
-      // Get user data
       const { data: user } = await supabase
         .from("user_preferences")
         .select("*")
@@ -67,22 +44,16 @@ export async function POST(request: Request) {
         return NextResponse.json({ error: "User not found" }, { status: 404 });
       }
 
-      // Create new customer
       const customer = await stripe.customers.create({
         email: user.email,
-        metadata: {
-          userId: userId,
-        },
+        metadata: { userId },
       });
       customerId = customer.id;
     } else {
       customerId = existingSubscription.stripe_customer_id;
     }
 
-    const key: keyof typeof mapping = serviceType;
-
-    // Create Stripe checkout session with proper typing
-    const session = await stripe.checkout.sessions.create({
+    const sessionConfig: Stripe.Checkout.SessionCreateParams = {
       customer: customerId,
       billing_address_collection: "auto",
       payment_method_types: ["card"],
@@ -93,14 +64,9 @@ export async function POST(request: Request) {
         },
       ],
       mode: "subscription",
-      subscription_data: {
-        trial_settings: {
-          end_behavior: {
-            missing_payment_method: "cancel",
-          },
-        },
-      },
-      success_url: `${process.env.NEXT_PUBLIC_BASE_URL}/services/${mapping[key]}/${listing_id}`,
+      success_url: `${
+        process.env.NEXT_PUBLIC_BASE_URL
+      }/services/${getServiceTypeForUrl(serviceType)}/${listing_id}`,
       cancel_url: `${process.env.NEXT_PUBLIC_BASE_URL}/services/`,
       metadata: {
         userId,
@@ -109,8 +75,15 @@ export async function POST(request: Request) {
         isAnnual: isAnnual.toString(),
         listing_id,
       },
-    } as Stripe.Checkout.SessionCreateParams);
+      custom_text: {
+        submit: {
+          message:
+            "Review your subscription details and confirm your payment method.",
+        },
+      },
+    };
 
+    const session = await stripe.checkout.sessions.create(sessionConfig);
     return NextResponse.json({ sessionId: session.id });
   } catch (error) {
     console.error("Checkout session error:", error);
@@ -119,4 +92,15 @@ export async function POST(request: Request) {
       { status: 500 }
     );
   }
+}
+
+function getServiceTypeForUrl(serviceType: string): string {
+  const mapping: { [key: string]: string } = {
+    wedding_planner: "weddingPlanner",
+    hair_makeup: "hairMakeup",
+    photo_video: "photoVideo",
+    dj: "dj",
+    venue: "venue",
+  };
+  return mapping[serviceType] || serviceType;
 }
