@@ -107,7 +107,8 @@ const QuickReachModal = ({
                 </h3>
                 <p className="text-sm text-gray-600">
                   Provide your information along with the specific requirements
-                  you are seeking in the service.
+                  you are seeking in the service. Each Reach is only active for
+                  14 days.
                 </p>
               </div>
             </div>
