@@ -1,5 +1,4 @@
 "use client";
-
 import { createContext, useContext, useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { AuthSessionMissingError, User } from "@supabase/supabase-js";
@@ -20,54 +19,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
 
-  const setupNewUser = async (userId: string, email: string) => {
-    try {
-      const userDetails = {
-        email,
-        userId,
-      };
-      const response = await fetch("/api/auth/register", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(userDetails),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => null);
-        throw new Error(
-          errorData?.error || `HTTP error! status: ${response.status}`
-        );
-      }
-    } catch (error) {
-      console.error("Error setting up user:", error);
-      throw error;
-    }
-  };
-
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       setUser(session?.user ?? null);
-      if (session?.user) {
-        setupNewUser(session.user.id, session.user.email!).catch(console.error);
-      }
       setLoading(false);
     });
 
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange(async (event, session) => {
+    } = supabase.auth.onAuthStateChange((_, session) => {
       setUser(session?.user ?? null);
-      if (event === "SIGNED_IN" && session?.user) {
-        await setupNewUser(session.user.id, session.user.email!);
-      }
     });
 
     return () => subscription.unsubscribe();
   }, []);
 
-  // Existing auth methods remain the same
   const signIn = async (email: string, password: string) => {
     const { error } = await supabase.auth.signInWithPassword({
       email,
@@ -82,6 +48,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const signInWithGoogle = async () => {
+    console.log(window.location.origin);
     const { error } = await supabase.auth.signInWithOAuth({
       provider: "google",
       options: {
