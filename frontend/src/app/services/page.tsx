@@ -188,11 +188,6 @@ export default function CreateServicePage() {
       toast.error("An error occurred. Please try again later.");
       return;
     }
-
-    // const service = services.find((s) => s.id === selectedService);
-    // if (service?.available && service.path) {
-    //   window.location.href = service.path;
-    // }
   };
 
   const handleContinue = () => {

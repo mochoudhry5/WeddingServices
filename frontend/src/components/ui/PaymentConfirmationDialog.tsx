@@ -29,7 +29,8 @@ interface PaymentConfirmationDialogProps {
   tierType: string;
   isLoading: boolean;
   serviceType: string;
-  error: string;
+  error: string | null;
+  children?: React.ReactNode;
 }
 
 export function PaymentConfirmationDialog({
@@ -44,6 +45,7 @@ export function PaymentConfirmationDialog({
   isLoading,
   serviceType,
   error,
+  children,
 }: PaymentConfirmationDialogProps) {
   const formattedServiceType = serviceType
     .split("_")
@@ -137,6 +139,7 @@ export function PaymentConfirmationDialog({
               </span>
             </div>
           </div>
+          {children}
         </div>
 
         <AlertDialogFooter className="border-t border-gray-100 p-6 bg-gray-50 flex flex-col-reverse sm:flex-row sm:justify-end gap-3">
@@ -146,7 +149,7 @@ export function PaymentConfirmationDialog({
           >
             Cancel
           </AlertDialogCancel>
-          <AlertDialogAction
+          <button
             onClick={onConfirm}
             disabled={isLoading}
             className="bg-black text-white hover:bg-stone-800 transition-colors px-8"
@@ -159,7 +162,7 @@ export function PaymentConfirmationDialog({
             ) : (
               "Subscribe"
             )}
-          </AlertDialogAction>
+          </button>
         </AlertDialogFooter>
       </AlertDialogContent>
     </AlertDialog>

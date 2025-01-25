@@ -31,13 +31,18 @@ import { ProtectedRoute } from "@/components/ui/ProtectedRoute";
 import { VendorProtectedRoute } from "@/components/ui/VendorProtectedRoute";
 import { loadStripe } from "@stripe/stripe-js";
 import {
-  BillingPeriod,
-  ServiceId,
+  categoryPrices,
+  PaymentMethod,
   stripePriceIds,
   TierType,
 } from "@/lib/stripe";
 import { PaymentConfirmationDialog } from "@/components/ui/PaymentConfirmationDialog";
 import { useAuth } from "@/context/AuthContext";
+import { AddPaymentMethodDialog } from "@/components/ui/AddPaymentMethodDialog";
+import ProgressIndicator, {
+  ProgressStatus,
+  ProgressStep,
+} from "@/components/ui/ProgressIndicator";
 
 // Types
 interface MediaFile {
@@ -53,13 +58,6 @@ interface Service {
   price: number;
   duration: number;
   isCustom?: boolean;
-}
-
-interface PaymentMethod {
-  card_brand: string;
-  last_4: string;
-  exp_month: number;
-  exp_year: number;
 }
 
 interface LocationState {
@@ -88,49 +86,6 @@ const commonServices = [
     suggestedDuration: 0,
   },
 ];
-
-const categoryPrices: Record<ServiceId, Record<TierType, { price: number }>> = {
-  venue: {
-    basic: { price: 25 },
-    premium: { price: 45 },
-    elite: { price: 65 },
-  },
-  hairMakeup: {
-    basic: { price: 5 },
-    premium: { price: 10 },
-    elite: { price: 15 },
-  },
-  photoVideo: {
-    basic: { price: 5 },
-    premium: { price: 10 },
-    elite: { price: 15 },
-  },
-  weddingPlanner: {
-    basic: { price: 5 },
-    premium: { price: 10 },
-    elite: { price: 15 },
-  },
-  dj: {
-    basic: { price: 5 },
-    premium: { price: 15 },
-    elite: { price: 25 },
-  },
-};
-
-const prices = {
-  basic: {
-    monthly: 29,
-    annual: 290,
-  },
-  premium: {
-    monthly: 49,
-    annual: 490,
-  },
-  elite: {
-    monthly: 99,
-    annual: 990,
-  },
-};
 
 const commonDJStyles = ["Spanish", "Bollywood", "American"];
 
@@ -185,7 +140,41 @@ const CreateDJListing = () => {
   const [isPaymentLoading, setIsPaymentLoading] = useState(false);
   const { user } = useAuth();
   const [createdListingId, setCreatedListingId] = useState<string | null>(null);
-  const [paymentError, setPaymentError] = useState<string>("");
+  const [paymentError, setPaymentError] = useState<string | null>(null);
+  const [showAddPaymentDialog, setShowAddPaymentDialog] =
+    useState<boolean>(false);
+  const [setupIntentSecret, setSetupIntentSecret] = useState<string | null>(
+    null
+  );
+  const [progress, setProgress] = useState<Record<string, ProgressStep>>({
+    listingCreation: {
+      label: "Creating your listing",
+      status: "waiting",
+    },
+    // specialties: {
+    //   label: "Uploading listing details",
+    //   status: "waiting",
+    // },
+    // mediaUpload: {
+    //   label: "Uploading listing images",
+    //   status: "waiting",
+    // },
+    subscription: {
+      label: "Setting up your subscription",
+      status: "waiting",
+    },
+  });
+
+  // Helper function to update progress
+  const updateProgress = (step: string, status: ProgressStatus) => {
+    setProgress((prev) => ({
+      ...prev,
+      [step]: {
+        ...prev[step],
+        status,
+      },
+    }));
+  };
 
   useEffect(() => {
     const tier: TierType = searchParams.get("tier") as TierType;
@@ -542,6 +531,7 @@ const CreateDJListing = () => {
           `Failed to create media records: ${mediaError.message}`
         );
       }
+
       // Insert services
       const allServices = [
         ...Object.values(selectedServices).map((service) => ({
@@ -575,64 +565,6 @@ const CreateDJListing = () => {
           );
         }
       }
-
-      // try {
-      //   const billingPeriod: BillingPeriod = isAnnual ? "annual" : "monthly";
-
-      //   const priceId = stripePriceIds["dj"][selectedTier][billingPeriod];
-
-      //   const requestBody = {
-      //     priceId,
-      //     userId: user.id,
-      //     serviceType: "dj",
-      //     tierType: selectedTier,
-      //     isAnnual,
-      //     listing_id: dj?.id,
-      //   };
-
-      //   const response = await fetch("/api/create-checkout-session", {
-      //     method: "POST",
-      //     headers: {
-      //       "Content-Type": "application/json",
-      //     },
-      //     body: JSON.stringify(requestBody),
-      //   });
-
-      //   if (!response.ok) {
-      //     const errorData = await response.json().catch(() => null);
-      //     throw new Error(
-      //       errorData?.error || `HTTP error! status: ${response.status}`
-      //     );
-      //   }
-
-      //   const data = await response.json();
-
-      //   const stripe = await loadStripe(
-      //     process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!
-      //   );
-      //   if (!stripe) {
-      //     throw new Error("Failed to load Stripe");
-      //   }
-
-      //   const { error: stripeError } = await stripe.redirectToCheckout({
-      //     sessionId: data.sessionId,
-      //   });
-
-      //   if (stripeError) {
-      //     throw stripeError;
-      //   }
-      // } catch (error) {
-      //   console.error("Error initiating checkout:", error);
-      //   toast.error(
-      //     error instanceof Error
-      //       ? error.message
-      //       : "Failed to initiate checkout. Please try again."
-      //   );
-      // }
-
-      // toast.success("DJ listing created successfully!");
-      // router.push(`/services`);
-      // router.replace(`/services/dj/${dj.id}`);
       return dj.id;
     } catch (error) {
       console.error("Error creating DJ listing:", error);
@@ -646,9 +578,125 @@ const CreateDJListing = () => {
     }
   };
 
-  const handleNewPaymentCheckout = async (listingId: string) => {
+  const handleFinalSubmission = async () => {
     try {
-      const response = await fetch("/api/create-checkout-session", {
+      if (!validateCurrentStep()) return;
+
+      setIsSubmitting(true);
+      setPaymentError(null);
+
+      // First, check for an existing payment method
+      const { data: paymentMethod, error: paymentError } = await supabase
+        .from("payment_methods")
+        .select("*")
+        .eq("user_id", user?.id)
+        .single();
+
+      if (paymentError && paymentError.code !== "PGRST116") {
+        throw paymentError;
+      }
+
+      if (paymentMethod) {
+        // If they have a payment method, we can proceed to payment confirmation
+        setCurrentPaymentMethod(paymentMethod);
+        setShowPaymentDialog(true);
+      } else {
+        // If they don't have a payment method, we need to handle the new customer case
+        try {
+          // First check for an existing Stripe customer ID
+          const { data: customerData } = await supabase
+            .from("subscriptions")
+            .select("stripe_customer_id")
+            .eq("user_id", user?.id)
+            .limit(1)
+            .single();
+
+          let customerId = customerData?.stripe_customer_id;
+
+          // If no existing customer ID, we'll create a setup intent without one
+          // The create-setup-intent endpoint will handle customer creation
+          const response = await fetch("/api/create-setup-intent", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              customerId, // This might be null for new customers
+              userId: user?.id, // Send the userId for new customer creation
+              email: user?.email, // Send email for new customer creation
+            }),
+          });
+
+          if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(
+              errorData.error || "Failed to initialize payment setup"
+            );
+          }
+
+          const { clientSecret } = await response.json();
+          setSetupIntentSecret(clientSecret);
+          setShowAddPaymentDialog(true);
+        } catch (error) {
+          console.error("Error creating setup intent:", error);
+          toast.error("Unable to set up payment method. Please try again.");
+          throw error;
+        }
+      }
+    } catch (error) {
+      console.error("Error in submission:", error);
+      toast.error(
+        error instanceof Error
+          ? error.message
+          : "Failed to process your request. Please try again."
+      );
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handlePaymentMethodAdded = async () => {
+    try {
+      // Get the newly added payment method
+      const { data: paymentMethod, error: paymentError } = await supabase
+        .from("payment_methods")
+        .select("*")
+        .eq("user_id", user?.id)
+        .single();
+
+      if (paymentError) throw paymentError;
+
+      // Close add payment dialog and show payment confirmation
+      setShowAddPaymentDialog(false);
+      setSetupIntentSecret(null);
+      setCurrentPaymentMethod(paymentMethod);
+      setShowPaymentDialog(true);
+    } catch (error) {
+      console.error("Error after adding payment method:", error);
+      toast.error("Failed to retrieve payment method. Please try again.");
+      // Reset the dialogs to a clean state
+      setShowAddPaymentDialog(false);
+      setShowPaymentDialog(false);
+      setSetupIntentSecret(null);
+    }
+  };
+
+  const handleSubscriptionCreation = async () => {
+    try {
+      setIsPaymentLoading(true);
+      setPaymentError(null);
+
+      // First create the listing
+      updateProgress("listingCreation", "in-progress");
+      const listingId = await createListing();
+
+      if (!listingId) {
+        updateProgress("listingCreation", "error");
+        throw new Error("Failed to create listing");
+      }
+      updateProgress("listingCreation", "completed");
+      updateProgress("subscription", "in-progress");
+
+      // Create the subscription
+      const response = await fetch("/api/create-subscription", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -662,140 +710,41 @@ const CreateDJListing = () => {
         }),
       });
 
-      if (!response.ok) {
-        throw new Error("Failed to create checkout session");
-      }
-
-      const { sessionId } = await response.json();
-      const stripe = await loadStripe(
-        process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!
-      );
-
-      if (!stripe) {
-        throw new Error("Failed to load Stripe");
-      }
-
-      await stripe.redirectToCheckout({ sessionId });
-    } catch (error) {
-      console.error("Checkout error:", error);
-      toast.error("Failed to process checkout. Please try again.");
-      throw error;
-    }
-  };
-
-  const handleExistingPaymentSubscription = async () => {
-    try {
-      setIsPaymentLoading(true);
-
-      const response = await fetch("/api/create-subscription", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          priceId:
-            stripePriceIds["dj"][selectedTier][isAnnual ? "annual" : "monthly"],
-          userId: user?.id,
-          serviceType: "dj",
-          tierType: selectedTier,
-          isAnnual,
-          listing_id: createdListingId,
-        }),
-      });
-
       const data = await response.json();
 
       if (!response.ok) {
-        // Handle different types of errors with specific messages
-        if (response.status === 400) {
-          // Payment-specific errors
-          if (data.code === "card_declined") {
-            throw new Error(
-              "Your card was declined. Please try a different payment method."
-            );
-          } else if (data.code === "insufficient_funds") {
-            throw new Error(
-              "Insufficient funds. Please try a different payment method."
-            );
-          } else if (data.code === "expired_card") {
-            throw new Error(
-              "Your card has expired. Please update your payment method."
-            );
-          }
+        updateProgress("subscription", "error");
+        // Handle specific error cases
+        if (data.code === "card_declined") {
+          throw new Error(
+            "Your card was declined. Please try a different payment method."
+          );
+        } else if (data.code === "insufficient_funds") {
+          throw new Error(
+            "Insufficient funds. Please try a different payment method."
+          );
+        } else if (data.code === "expired_card") {
+          throw new Error(
+            "Your card has expired. Please update your payment method."
+          );
         }
-        throw new Error(data.error || "Something went wrong with the payment.");
+        throw new Error(data.error || "Failed to create subscription");
       }
 
-      // Payment succeeded
+      updateProgress("subscription", "completed");
+
+      // Success! Redirect to the new listing
       router.push(data.redirectUrl);
       toast.success("Your DJ listing has been created successfully!");
     } catch (error) {
       console.error("Payment error:", error);
-
-      // Show a user-friendly error in the payment dialog
       setPaymentError(
         error instanceof Error
           ? error.message
           : "Payment failed. Please try again."
       );
-
-      // Keep the dialog open so they can try again
-      setIsPaymentLoading(false);
-    }
-  };
-
-  const handleUpdatePayment = () => {
-    // Save the current path to redirect back after updating payment method
-    const currentPath = window.location.pathname + window.location.search;
-    router.push(`/billing?redirect=${encodeURIComponent(currentPath)}`);
-  };
-
-  const handleFinalSubmission = async () => {
-    try {
-      if (!validateCurrentStep()) return;
-
-      setIsSubmitting(true);
-
-      // Since listingData is directly the ID, let's be explicit about that
-      const listingId = await createListing();
-
-      if (!listingId) {
-        console.error("No listing ID received");
-        throw new Error("Failed to create listing - no ID returned");
-      }
-
-      // Now we know we have a string ID, not an object
-      console.log("Created listing with ID:", listingId);
-
-      // Set the listing ID in state
-      setCreatedListingId(listingId);
-
-      // Check for existing payment method
-      const { data: paymentMethod, error: paymentError } = await supabase
-        .from("payment_methods")
-        .select("*")
-        .eq("user_id", user?.id)
-        .single();
-
-      if (paymentError && paymentError.code !== "PGRST116") {
-        throw paymentError;
-      }
-
-      if (paymentMethod) {
-        console.log("Found payment method, showing dialog for listing:", {
-          paymentMethod,
-          listingId,
-        });
-
-        setCurrentPaymentMethod(paymentMethod);
-        setShowPaymentDialog(true);
-      } else {
-        // No payment method, redirect to checkout
-        await handleNewPaymentCheckout(listingId);
-      }
-    } catch (error) {
-      console.error("Error in submission:", error);
-      toast.error("Failed to process your request. Please try again.");
     } finally {
-      setIsSubmitting(false);
+      setIsPaymentLoading(false);
     }
   };
 
@@ -1849,26 +1798,47 @@ const CreateDJListing = () => {
                   </AlertDialogContent>
                 </AlertDialog>
 
+                {/* Payment Method Addition Dialog */}
+                <AddPaymentMethodDialog
+                  open={showAddPaymentDialog}
+                  onClose={() => {
+                    setShowAddPaymentDialog(false);
+                    setSetupIntentSecret(null);
+                  }}
+                  clientSecret={setupIntentSecret}
+                  onSuccess={handlePaymentMethodAdded}
+                />
+
                 {/* Add the PaymentConfirmationDialog */}
-                {currentPaymentMethod && createdListingId && (
+                {currentPaymentMethod && (
                   <PaymentConfirmationDialog
-                    isOpen={true}
+                    isOpen={showPaymentDialog}
                     onClose={() => {
                       setShowPaymentDialog(false);
                       setIsSubmitting(false);
                     }}
-                    onConfirm={() => handleExistingPaymentSubscription}
-                    onUpdatePayment={handleUpdatePayment}
+                    onConfirm={handleSubscriptionCreation}
+                    onUpdatePayment={() => {
+                      setShowPaymentDialog(false);
+                      setShowAddPaymentDialog(true);
+                    }}
                     paymentMethod={currentPaymentMethod}
-                    amount={
-                      prices[selectedTier][isAnnual ? "annual" : "monthly"]
-                    }
+                    amount={categoryPrices["dj"][selectedTier].price}
                     isAnnual={isAnnual ? true : false}
                     tierType={selectedTier}
                     isLoading={isPaymentLoading}
                     serviceType="dj"
                     error={paymentError}
-                  />
+                  >
+                    {isPaymentLoading && (
+                      <div className="mt-6 border-t pt-6">
+                        <h4 className="text-sm font-medium text-gray-900 mb-4">
+                          Creating Your Listing
+                        </h4>
+                        <ProgressIndicator steps={progress} />
+                      </div>
+                    )}
+                  </PaymentConfirmationDialog>
                 )}
               </div>
             </div>

@@ -201,7 +201,9 @@ const DJDetailsPage = () => {
         .eq("id", params.id)
         .single();
 
-      if (error) throw error;
+      if (error && error.code !== "PGRST116") {
+        if (error) throw error;
+      }
 
       if (!djData || djData.is_archived) {
         setDJ(null);

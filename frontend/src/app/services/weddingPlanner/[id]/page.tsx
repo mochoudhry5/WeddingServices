@@ -245,7 +245,9 @@ const WeddingDetailsPage = () => {
         .eq("id", params.id)
         .single();
 
-      if (error) throw error;
+      if (error && error.code !== "PGRST116") {
+        if (error) throw error;
+      }
 
       if (!weddingPlannerData || weddingPlannerData.is_archived) {
         setWeddingPlanner(null);

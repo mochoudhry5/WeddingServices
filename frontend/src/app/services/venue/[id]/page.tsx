@@ -329,7 +329,9 @@ const VenueDetailsPage = () => {
         .eq("id", params.id)
         .single();
 
-      if (error) throw error;
+      if (error && error.code !== "PGRST116") {
+        if (error) throw error;
+      }
 
       if (!venueData || venueData.is_archived) {
         setVenue(null);
