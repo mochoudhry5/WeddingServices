@@ -274,6 +274,17 @@ const InquiryCard = memo(
     onDelete: (inquiry: Inquiry) => void;
   }) => {
     const Icon = SERVICE_CONFIGS[selectedService].icon;
+
+    const calculateDaysRemaining = (createdAt: string) => {
+      const created = new Date(createdAt);
+      const expiry = new Date(created.getTime() + 14 * 24 * 60 * 60 * 1000);
+      const now = new Date();
+      const daysRemaining = Math.ceil(
+        (expiry.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)
+      );
+      return Math.max(0, daysRemaining);
+    };
+
     const formatDate = useCallback((dateString: string) => {
       const date = new Date(dateString);
       return date.toLocaleDateString("en-US", {
@@ -283,7 +294,6 @@ const InquiryCard = memo(
       });
     }, []);
 
-    // Stop event propagation for button clicks
     const handleEditClick = useCallback(
       (e: React.MouseEvent) => {
         e.preventDefault();
@@ -302,6 +312,8 @@ const InquiryCard = memo(
       [inquiry, onDelete]
     );
 
+    const daysRemaining = calculateDaysRemaining(inquiry.created_at);
+
     return (
       <Card className="overflow-hidden">
         <CardHeader className="space-y-1">
@@ -313,6 +325,17 @@ const InquiryCard = memo(
               </CardTitle>
             </div>
             <div className="flex items-center gap-2">
+              <span
+                className={`px-2 py-1 text-xs font-medium rounded-full ${
+                  daysRemaining <= 3
+                    ? "bg-red-100 text-red-700"
+                    : daysRemaining <= 7
+                    ? "bg-yellow-100 text-yellow-700"
+                    : "bg-green-100 text-green-700"
+                }`}
+              >
+                {daysRemaining} days left
+              </span>
               <button
                 onClick={handleEditClick}
                 className="p-2 hover:bg-gray-100 rounded-full transition-colors"
