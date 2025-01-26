@@ -67,6 +67,12 @@ export default function NavBar() {
   const { user, signOut, loading: authLoading } = useAuth();
   const { isVendor, isLoading: vendorLoading } = useVendorStatus(user?.id);
 
+  useEffect(() => {
+    if (user && !isVendor && !vendorLoading) {
+      setShowTypeModal(true);
+    }
+  }, [user, isVendor, vendorLoading]);
+
   if (authLoading || vendorLoading) {
     return (
       <header className="sticky top-0 z-50 w-full bg-white shadow-md">

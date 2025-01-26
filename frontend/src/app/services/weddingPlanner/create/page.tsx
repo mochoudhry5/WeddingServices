@@ -599,9 +599,9 @@ const CreateWeddingPlannerListing = () => {
         try {
           // First check for an existing Stripe customer ID
           const { data: customerData } = await supabase
-            .from("subscriptions")
+            .from("user_preferences")
             .select("stripe_customer_id")
-            .eq("user_id", user?.id)
+            .eq("id", user?.id)
             .limit(1)
             .single();
 
