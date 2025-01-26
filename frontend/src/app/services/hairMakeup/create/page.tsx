@@ -29,8 +29,20 @@ import Footer from "@/components/ui/Footer";
 import LocationInput from "@/components/ui/LocationInput";
 import { ProtectedRoute } from "@/components/ui/ProtectedRoute";
 import { VendorProtectedRoute } from "@/components/ui/VendorProtectedRoute";
-import { BillingPeriod, stripePriceIds, TierType } from "@/lib/stripe";
+import {
+  categoryPrices,
+  PaymentMethod,
+  stripePriceIds,
+  TierType,
+} from "@/lib/stripe";
 import { loadStripe } from "@stripe/stripe-js";
+import { useAuth } from "@/context/AuthContext";
+import { PaymentConfirmationDialog } from "@/components/ui/PaymentConfirmationDialog";
+import { AddPaymentMethodDialog } from "@/components/ui/AddPaymentMethodDialog";
+import ProgressIndicator, {
+  ProgressStatus,
+  ProgressStep,
+} from "@/components/ui/ProgressIndicator";
 
 // Types
 interface MediaFile {
@@ -155,7 +167,47 @@ const CreateMakeupListing = () => {
   const searchParams = useSearchParams();
   const [selectedTier, setSelectedTier] = useState<TierType>("basic");
   const [isAnnual, setIsAnnual] = useState<boolean>();
+  const [showPaymentDialog, setShowPaymentDialog] = useState(false);
+  const [currentPaymentMethod, setCurrentPaymentMethod] =
+    useState<PaymentMethod | null>(null);
+  const [isPaymentLoading, setIsPaymentLoading] = useState(false);
+  const { user } = useAuth();
+  const [createdListingId, setCreatedListingId] = useState<string | null>(null);
+  const [paymentError, setPaymentError] = useState<string | null>(null);
+  const [showAddPaymentDialog, setShowAddPaymentDialog] =
+    useState<boolean>(false);
+  const [setupIntentSecret, setSetupIntentSecret] = useState<string | null>(
+    null
+  );
+  const [progress, setProgress] = useState<Record<string, ProgressStep>>({
+    listingCreation: {
+      label: "Creating your listing",
+      status: "waiting",
+    },
+    // specialties: {
+    //   label: "Uploading listing details",
+    //   status: "waiting",
+    // },
+    // mediaUpload: {
+    //   label: "Uploading listing images",
+    //   status: "waiting",
+    // },
+    subscription: {
+      label: "Setting up your subscription",
+      status: "waiting",
+    },
+  });
 
+  // Helper function to update progress
+  const updateProgress = (step: string, status: ProgressStatus) => {
+    setProgress((prev) => ({
+      ...prev,
+      [step]: {
+        ...prev[step],
+        status,
+      },
+    }));
+  };
   useEffect(() => {
     const tier: TierType = searchParams.get("tier") as TierType;
     const annual = searchParams.get("annual");
@@ -195,6 +247,7 @@ const CreateMakeupListing = () => {
   const countCharacters = (text: string): number => {
     return text.trim().length;
   };
+
   const handleNumericInput = (value: string): string => {
     // Remove leading zeros, prevent negative numbers, and remove decimals
     let sanitized = value
@@ -203,6 +256,7 @@ const CreateMakeupListing = () => {
       .replace(/\./g, "");
     return sanitized === "" ? "0" : sanitized;
   };
+
   const handleDragStart = (index: number) => {
     setDraggedItem(index);
   };
@@ -222,6 +276,7 @@ const CreateMakeupListing = () => {
   const handleDragEnd = () => {
     setDraggedItem(null);
   };
+
   // Form Validation
   const validateCurrentStep = () => {
     switch (currentStep) {
@@ -433,34 +488,34 @@ const CreateMakeupListing = () => {
     window.history.back();
   };
 
-  const handleSubmit = async () => {
+  const createListing = async () => {
     try {
+      // Your existing validation checks for travel range, experience, etc.
       if (!travelRange && !isWillingToTravel) {
         toast.error(`Travel Range Must Be Entered`);
-        return false;
+        return null;
       }
+
       if (!experience) {
         toast.error(`Years of Experience Must Be Entered`);
-        return false;
+        return null;
       }
+
       if (!availability.deposit) {
         toast.error("Required Deposit Must Be Entered");
-        return;
+        return null;
       }
 
-      setIsSubmitting(true);
-
-      // Get current user
       const {
         data: { user },
         error: authError,
       } = await supabase.auth.getUser();
       if (authError || !user) {
         toast.error("Please sign in to create a listing");
-        return;
+        return null;
       }
 
-      // Create makeup listing
+      // Create the Hair & Makeup listing with all its related data
       const { data: hairMakeup, error: hairMakeupError } = await supabase
         .from("hair_makeup_listing")
         .insert({
@@ -468,7 +523,7 @@ const CreateMakeupListing = () => {
           user_email: user.email,
           business_name: businessName,
           years_experience: experience,
-          travel_range: isWillingToTravel ? -1 : parseInt(travelRange), // Use -1 to indicate willing to travel anywhere
+          travel_range: isWillingToTravel ? -1 : parseInt(travelRange),
           travel_anywhere: isWillingToTravel,
           is_remote_business: isRemoteBusiness,
           address: isRemoteBusiness ? "" : location.address,
@@ -483,19 +538,16 @@ const CreateMakeupListing = () => {
           deposit: parseInt(availability.deposit),
           latitude: location.latitude,
           longitude: location.longitude,
+          is_draft: true, // Important: Start as draft until payment is confirmed
         })
         .select()
         .single();
 
-      if (hairMakeupError) {
-        throw new Error(
-          `Failed to create Hair & Makeup listing: ${hairMakeupError.message}`
-        );
-      }
-      if (!hairMakeup) {
+      if (hairMakeupError) throw hairMakeupError;
+      if (!hairMakeup)
         throw new Error("Hair & Makeup listing created but no data returned");
-      }
 
+      // Create all the related records (specialties, media, services)
       const uniqueSpecialties = new Set([
         ...(serviceType === "hair" || serviceType === "both"
           ? specialties
@@ -629,73 +681,184 @@ const CreateMakeupListing = () => {
         }
       }
 
-      try {
-        const billingPeriod: BillingPeriod = isAnnual ? "annual" : "monthly";
-
-        const priceId =
-          stripePriceIds["hairMakeup"][selectedTier][billingPeriod];
-
-        const requestBody = {
-          priceId,
-          userId: user.id,
-          serviceType: "hair_makeup",
-          tierType: selectedTier,
-          isAnnual,
-          listing_id: hairMakeup?.id,
-        };
-
-        const response = await fetch("/api/create-checkout-session", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify(requestBody),
-        });
-
-        if (!response.ok) {
-          const errorData = await response.json().catch(() => null);
-          throw new Error(
-            errorData?.error || `HTTP error! status: ${response.status}`
-          );
-        }
-
-        const data = await response.json();
-
-        const stripe = await loadStripe(
-          process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!
-        );
-        if (!stripe) {
-          throw new Error("Failed to load Stripe");
-        }
-
-        const { error: stripeError } = await stripe.redirectToCheckout({
-          sessionId: data.sessionId,
-        });
-
-        if (stripeError) {
-          throw stripeError;
-        }
-      } catch (error) {
-        console.error("Error initiating checkout:", error);
-        toast.error(
-          error instanceof Error
-            ? error.message
-            : "Failed to initiate checkout. Please try again."
-        );
-      }
-
-      toast.success("Hair & Makeup listing created successfully!");
-      router.push(`/services`);
-      router.replace(`/services/hairMakeup/${hairMakeup.id}`);
+      return hairMakeup.id;
     } catch (error) {
       console.error("Error creating Hair & Makeup listing:", error);
+      throw error;
+    }
+  };
+
+  const handleFinalSubmission = async () => {
+    try {
+      if (!validateCurrentStep()) return;
+
+      setIsSubmitting(true);
+      setPaymentError(null);
+
+      // First, check for an existing payment method
+      const { data: paymentMethod, error: paymentError } = await supabase
+        .from("payment_methods")
+        .select("*")
+        .eq("user_id", user?.id)
+        .single();
+
+      if (paymentError && paymentError.code !== "PGRST116") {
+        throw paymentError;
+      }
+
+      if (paymentMethod) {
+        // If they have a payment method, we can proceed to payment confirmation
+        setCurrentPaymentMethod(paymentMethod);
+        setShowPaymentDialog(true);
+      } else {
+        // If they don't have a payment method, we need to handle the new customer case
+        try {
+          // First check for an existing Stripe customer ID
+          const { data: customerData } = await supabase
+            .from("user_preferences")
+            .select("stripe_customer_id")
+            .eq("id", user?.id)
+            .limit(1)
+            .single();
+
+          let customerId = customerData?.stripe_customer_id;
+
+          // If no existing customer ID, we'll create a setup intent without one
+          // The create-setup-intent endpoint will handle customer creation
+          const response = await fetch("/api/create-setup-intent", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              customerId, // This might be null for new customers
+              userId: user?.id, // Send the userId for new customer creation
+              email: user?.email, // Send email for new customer creation
+            }),
+          });
+
+          if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(
+              errorData.error || "Failed to initialize payment setup"
+            );
+          }
+
+          const { clientSecret } = await response.json();
+          setSetupIntentSecret(clientSecret);
+          setShowAddPaymentDialog(true);
+        } catch (error) {
+          console.error("Error creating setup intent:", error);
+          toast.error("Unable to set up payment method. Please try again.");
+          throw error;
+        }
+      }
+    } catch (error) {
+      console.error("Error in submission:", error);
       toast.error(
         error instanceof Error
           ? error.message
-          : "Failed to create Hair & Makeup listing. Please try again."
+          : "Failed to process your request. Please try again."
       );
     } finally {
       setIsSubmitting(false);
+    }
+  };
+
+  const handlePaymentMethodAdded = async () => {
+    try {
+      // Get the newly added payment method
+      const { data: paymentMethod, error: paymentError } = await supabase
+        .from("payment_methods")
+        .select("*")
+        .eq("user_id", user?.id)
+        .single();
+
+      if (paymentError) throw paymentError;
+
+      // Close add payment dialog and show payment confirmation
+      setShowAddPaymentDialog(false);
+      setSetupIntentSecret(null);
+      setCurrentPaymentMethod(paymentMethod);
+      setShowPaymentDialog(true);
+    } catch (error) {
+      console.error("Error after adding payment method:", error);
+      toast.error("Failed to retrieve payment method. Please try again.");
+      // Reset the dialogs to a clean state
+      setShowAddPaymentDialog(false);
+      setShowPaymentDialog(false);
+      setSetupIntentSecret(null);
+    }
+  };
+
+  const handleSubscriptionCreation = async () => {
+    try {
+      setIsPaymentLoading(true);
+      setPaymentError(null);
+
+      // First create the listing
+      updateProgress("listingCreation", "in-progress");
+      const listingId = await createListing();
+
+      if (!listingId) {
+        updateProgress("listingCreation", "error");
+        throw new Error("Failed to create listing");
+      }
+      updateProgress("listingCreation", "completed");
+      updateProgress("subscription", "in-progress");
+
+      // Create the subscription
+      const response = await fetch("/api/create-subscription", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          priceId:
+            stripePriceIds["hairMakeup"][selectedTier][
+              isAnnual ? "annual" : "monthly"
+            ],
+          userId: user?.id,
+          serviceType: "hair_makeup",
+          tierType: selectedTier,
+          isAnnual,
+          listing_id: listingId,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        updateProgress("subscription", "error");
+        // Handle specific error cases
+        if (data.code === "card_declined") {
+          throw new Error(
+            "Your card was declined. Please try a different payment method."
+          );
+        } else if (data.code === "insufficient_funds") {
+          throw new Error(
+            "Insufficient funds. Please try a different payment method."
+          );
+        } else if (data.code === "expired_card") {
+          throw new Error(
+            "Your card has expired. Please update your payment method."
+          );
+        }
+        throw new Error(data.error || "Failed to create subscription");
+      }
+
+      updateProgress("subscription", "completed");
+
+      // Success! Redirect to the new listing
+      router.push(data.redirectUrl);
+      toast.success(
+        "Your Hair & Makeup listing has been created successfully!"
+      );
+    } catch (error) {
+      console.error("Payment error:", error);
+      setPaymentError(
+        error instanceof Error
+          ? error.message
+          : "Payment failed. Please try again."
+      );
+    } finally {
+      setIsPaymentLoading(false);
     }
   };
 
@@ -1972,7 +2135,9 @@ const CreateMakeupListing = () => {
                     <button
                       type="button"
                       onClick={
-                        currentStep === totalSteps ? handleSubmit : nextStep
+                        currentStep === totalSteps
+                          ? handleFinalSubmission
+                          : nextStep
                       }
                       disabled={isSubmitting}
                       className="flex-1 sm:flex-none px-4 sm:px-6 py-2 bg-black text-white rounded-lg hover:bg-stone-500 disabled:opacity-50"
@@ -2011,6 +2176,48 @@ const CreateMakeupListing = () => {
                     </AlertDialogFooter>
                   </AlertDialogContent>
                 </AlertDialog>
+                {/* Payment Method Addition Dialog */}
+                <AddPaymentMethodDialog
+                  open={showAddPaymentDialog}
+                  onClose={() => {
+                    setShowAddPaymentDialog(false);
+                    setSetupIntentSecret(null);
+                  }}
+                  clientSecret={setupIntentSecret}
+                  onSuccess={handlePaymentMethodAdded}
+                />
+
+                {/* Add the PaymentConfirmationDialog */}
+                {currentPaymentMethod && (
+                  <PaymentConfirmationDialog
+                    isOpen={showPaymentDialog}
+                    onClose={() => {
+                      setShowPaymentDialog(false);
+                      setIsSubmitting(false);
+                    }}
+                    onConfirm={handleSubscriptionCreation}
+                    onUpdatePayment={() => {
+                      setShowPaymentDialog(false);
+                      setShowAddPaymentDialog(true);
+                    }}
+                    paymentMethod={currentPaymentMethod}
+                    amount={categoryPrices["hairMakeup"][selectedTier].price}
+                    isAnnual={isAnnual ? true : false}
+                    tierType={selectedTier}
+                    isLoading={isPaymentLoading}
+                    serviceType="hair_makeup"
+                    error={paymentError}
+                  >
+                    {isPaymentLoading && (
+                      <div className="mt-6 border-t pt-6">
+                        <h4 className="text-sm font-medium text-gray-900 mb-4">
+                          Creating Your Listing
+                        </h4>
+                        <ProgressIndicator steps={progress} />
+                      </div>
+                    )}
+                  </PaymentConfirmationDialog>
+                )}
               </div>
             </div>
           </div>

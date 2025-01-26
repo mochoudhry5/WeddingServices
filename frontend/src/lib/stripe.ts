@@ -5,12 +5,51 @@ export const stripe = loadStripe(
   process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!
 );
 
+export const categoryPrices: Record<
+  ServiceId,
+  Record<TierType, { price: number }>
+> = {
+  venue: {
+    basic: { price: 25 },
+    premium: { price: 45 },
+    elite: { price: 65 },
+  },
+  hairMakeup: {
+    basic: { price: 5 },
+    premium: { price: 10 },
+    elite: { price: 15 },
+  },
+  photoVideo: {
+    basic: { price: 5 },
+    premium: { price: 10 },
+    elite: { price: 15 },
+  },
+  weddingPlanner: {
+    basic: { price: 5 },
+    premium: { price: 10 },
+    elite: { price: 15 },
+  },
+  dj: {
+    basic: { price: 5 },
+    premium: { price: 15 },
+    elite: { price: 25 },
+  },
+};
+
+export interface PaymentMethod {
+  card_brand: string;
+  last_4: string;
+  exp_month: number;
+  exp_year: number;
+}
+
 export type ServiceId =
   | "venue"
   | "dj"
   | "hairMakeup"
   | "photoVideo"
   | "weddingPlanner";
+
 export type TierType = "basic" | "premium" | "elite";
 export type BillingPeriod = "monthly" | "annual";
 
