@@ -15,6 +15,8 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { AddPaymentMethodDialog } from "./AddPaymentMethodDialog";
+import { Invoice } from "@/lib/stripe";
+import InvoicesSection from "./InvoicesSection";
 
 // Types
 interface StripeSubscription {
@@ -149,8 +151,10 @@ const SubscriptionSection = ({
 
   return (
     <div className="mb-8">
-      <h3 className="text-lg font-medium mb-4">{title}</h3>
       <div className="border rounded-lg overflow-hidden">
+        <div className="flex justify-between items-center py-4 px-6">
+          <h3 className="text-lg font-medium">{title}</h3>
+        </div>
         <table className="w-full">
           <thead className="bg-gray-50">
             <tr>
@@ -290,6 +294,7 @@ const Billing = () => {
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod | null>(
     null
   );
+  const [invoices, setInvoices] = useState<Invoice[]>([]);
 
   useEffect(() => {
     const fetchBillingData = async () => {
@@ -303,6 +308,13 @@ const Billing = () => {
 
         setSubscriptions(data.subscriptions);
         setListings(data.listings);
+
+        // Fetch invoices
+        const { data: invoiceData, error: invoiceError } =
+          await supabase.functions.invoke("get-invoices");
+        if (invoiceError) throw invoiceError;
+
+        setInvoices(invoiceData.invoices);
 
         // Get payment method
         const { data: methodData, error: methodError } = await supabase
@@ -521,6 +533,8 @@ const Billing = () => {
         onReactivateSubscription={setSubscriptionToReactivate}
         showReactivate={true}
       />
+
+      <InvoicesSection invoices={invoices} />
 
       {/* Cancel Dialog */}
       <AlertDialog

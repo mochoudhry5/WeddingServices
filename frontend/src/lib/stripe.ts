@@ -50,6 +50,17 @@ export type ServiceId =
   | "photoVideo"
   | "weddingPlanner";
 
+export interface Invoice {
+  id: string;
+  number: string;
+  created: string;
+  amount_paid: number;
+  amount_due: number;
+  status: string;
+  subscription_id: string;
+  hosted_invoice_url: string;
+}
+
 export type TierType = "basic" | "premium" | "elite";
 export type BillingPeriod = "monthly" | "annual";
 
