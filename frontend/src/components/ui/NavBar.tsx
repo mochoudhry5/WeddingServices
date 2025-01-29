@@ -68,7 +68,7 @@ export default function NavBar() {
   const { isVendor, isLoading: vendorLoading } = useVendorStatus(user?.id);
 
   useEffect(() => {
-    if (user && !isVendor && !vendorLoading) {
+    if (user && isVendor === null && !vendorLoading) {
       setShowTypeModal(true);
     }
   }, [user, isVendor, vendorLoading]);

@@ -463,9 +463,9 @@ export default function ServicesSearchPage() {
     if (filtersToUse.venueType === "both") {
       return query.eq("venue_type", "both");
     } else if (filtersToUse.venueType === "indoor") {
-      return query.eq("venue_type", "indoor");
+      return query.or("venue_type.eq.indoor,venue_type.eq.both");
     } else if (filtersToUse.venueType === "outdoor") {
-      return query.eq("venue_type", "outdoor");
+      return query.or("venue_type.eq.outdoor,venue_type.eq.both");
     }
     return query;
   };
@@ -552,7 +552,13 @@ export default function ServicesSearchPage() {
       filtersToUse.serviceType === "hairMakeup" &&
       filtersToUse.hairMakeupType !== "default"
     ) {
-      return query.eq("service_type", filtersToUse.hairMakeupType);
+      if (filtersToUse.hairMakeupType === "both") {
+        return query.eq("service_type", "both");
+      } else if (filtersToUse.hairMakeupType === "hair") {
+        return query.or("service_type.eq.hair,service_type.eq.both");
+      } else if (filtersToUse.hairMakeupType === "makeup") {
+        return query.or("service_type.eq.makeup,service_type.eq.both");
+      }
     }
 
     // Photo & Video filtering
@@ -560,7 +566,13 @@ export default function ServicesSearchPage() {
       filtersToUse.serviceType === "photoVideo" &&
       filtersToUse.photoVideoType !== "default"
     ) {
-      return query.eq("service_type", filtersToUse.photoVideoType);
+      if (filtersToUse.photoVideoType === "both") {
+        return query.eq("service_type", "both");
+      } else if (filtersToUse.photoVideoType === "photography") {
+        return query.or("service_type.eq.photography,service_type.eq.both");
+      } else if (filtersToUse.photoVideoType === "videography") {
+        return query.or("service_type.eq.videogragrapy,service_type.eq.both");
+      }
     }
 
     // Wedding Planner filtering
@@ -568,7 +580,15 @@ export default function ServicesSearchPage() {
       filtersToUse.serviceType === "weddingPlanner" &&
       filtersToUse.weddingPlannerType !== "default"
     ) {
-      return query.eq("service_type", filtersToUse.weddingPlannerType);
+      if (filtersToUse.weddingPlannerType === "both") {
+        return query.eq("service_type", "both");
+      } else if (filtersToUse.weddingPlannerType === "weddingPlanner") {
+        return query.or("service_type.eq.weddingPlanner,service_type.eq.both");
+      } else if (filtersToUse.weddingPlannerType === "weddingCoordinator") {
+        return query.or(
+          "service_type.eq.weddingCoordinator,service_type.eq.both"
+        );
+      }
     }
 
     // If no service type filter applies or it's set to default, return unmodified query

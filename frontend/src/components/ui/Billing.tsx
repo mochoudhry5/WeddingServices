@@ -139,6 +139,7 @@ const SubscriptionSection = ({
   onReactivateSubscription,
   showReactivate = false,
   isExpiring = false,
+  isExpired = false,
 }: {
   title: string;
   subscriptions: StripeSubscription[];
@@ -146,6 +147,7 @@ const SubscriptionSection = ({
   onReactivateSubscription: (subscription: StripeSubscription) => void;
   showReactivate?: boolean;
   isExpiring?: boolean;
+  isExpired?: boolean;
 }) => {
   if (subscriptions.length === 0) return null;
 
@@ -162,7 +164,11 @@ const SubscriptionSection = ({
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500">
                   Start Date
                 </th>
-                {isExpiring ? (
+                {isExpired ? (
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500">
+                    End Date
+                  </th>
+                ) : isExpiring ? (
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500">
                     Expires On
                   </th>
@@ -192,14 +198,13 @@ const SubscriptionSection = ({
                     {new Date(subscription.created_at).toLocaleDateString()}
                   </td>
                   <td className="whitespace-nowrap px-6 py-4 text-sm">
-                    {subscription.cancel_at_period_end ? (
+                    {subscription.cancel_at_period_end &&
+                    subscription.status === "active" ? (
                       <span className="text-red-600">
                         {new Date(
                           subscription.current_period_end
                         ).toLocaleDateString()}
                       </span>
-                    ) : subscription.status === "inactive" ? (
-                      "No upcoming payment"
                     ) : (
                       new Date(
                         subscription.current_period_end
@@ -534,6 +539,7 @@ const Billing = () => {
         onCancelSubscription={setSubscriptionToCancel}
         onReactivateSubscription={setSubscriptionToReactivate}
         showReactivate={true}
+        isExpired={true}
       />
 
       <InvoicesSection invoices={invoices} />

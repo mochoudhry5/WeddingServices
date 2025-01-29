@@ -96,7 +96,7 @@ const SERVICE_CONFIGS = {
   },
   weddingPlanner: {
     type: "weddingPlanner",
-    displayName: "Wedding Planner",
+    displayName: "Wedding Planner & Coordinator",
     icon: Calendar,
     table: "wedding_planner_leads",
   },
@@ -317,95 +317,99 @@ const InquiryCard = memo(
     return (
       <Card className="overflow-hidden">
         <CardHeader className="space-y-1">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-2">
-              <Icon className="h-6 w-6" />
-              <CardTitle className="text-xl">
-                {SERVICE_CONFIGS[selectedService].displayName}
-              </CardTitle>
-            </div>
-            <div className="flex items-center gap-2">
-              <span
-                className={`px-2 py-1 text-xs font-medium rounded-full ${
-                  daysRemaining <= 3
-                    ? "bg-red-100 text-red-700"
-                    : daysRemaining <= 7
-                    ? "bg-yellow-100 text-yellow-700"
-                    : "bg-green-100 text-green-700"
-                }`}
-              >
-                {daysRemaining} days left
-              </span>
-              <button
-                onClick={handleEditClick}
-                className="p-2 hover:bg-gray-100 rounded-full transition-colors"
-                aria-label="Edit inquiry"
-              >
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  width="16"
-                  height="16"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  className="text-gray-500 hover:text-gray-700"
+          <div className="flex flex-col space-y-4">
+            <div className="flex items-start justify-between">
+              <div className="flex items-start space-x-2">
+                <Icon className="h-6 w-6 mt-1 flex-shrink-0" />
+                <CardTitle className="text-lg leading-tight">
+                  {SERVICE_CONFIGS[selectedService].displayName}
+                </CardTitle>
+              </div>
+              <div className="flex flex-shrink-0 items-center gap-2 ml-2">
+                <span
+                  className={`px-2 py-1 text-xs font-medium rounded-full whitespace-nowrap ${
+                    daysRemaining <= 3
+                      ? "bg-red-100 text-red-700"
+                      : daysRemaining <= 7
+                      ? "bg-yellow-100 text-yellow-700"
+                      : "bg-green-100 text-green-700"
+                  }`}
                 >
-                  <path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z" />
-                  <path d="m15 5 4 4" />
-                </svg>
-              </button>
-              <button
-                onClick={handleDeleteClick}
-                className="p-2 hover:bg-gray-100 rounded-full transition-colors"
-                aria-label="Delete inquiry"
-              >
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  width="16"
-                  height="16"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  className="text-red-500 hover:text-red-800"
-                >
-                  <path d="M3 6h18" />
-                  <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" />
-                  <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" />
-                  <line x1="10" x2="10" y1="11" y2="17" />
-                  <line x1="14" x2="14" y1="11" y2="17" />
-                </svg>
-              </button>
+                  {daysRemaining} days left
+                </span>
+                <div className="flex gap-1">
+                  <button
+                    onClick={handleEditClick}
+                    className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+                    aria-label="Edit inquiry"
+                  >
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      width="16"
+                      height="16"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      className="text-gray-500 hover:text-gray-700"
+                    >
+                      <path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z" />
+                      <path d="m15 5 4 4" />
+                    </svg>
+                  </button>
+                  <button
+                    onClick={handleDeleteClick}
+                    className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+                    aria-label="Delete inquiry"
+                  >
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      width="16"
+                      height="16"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      className="text-red-500 hover:text-red-800"
+                    >
+                      <path d="M3 6h18" />
+                      <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" />
+                      <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" />
+                      <line x1="10" x2="10" y1="11" y2="17" />
+                      <line x1="14" x2="14" y1="11" y2="17" />
+                    </svg>
+                  </button>
+                </div>
+              </div>
             </div>
+            <CardDescription>
+              Submitted on {formatDate(inquiry.created_at)}
+            </CardDescription>
           </div>
-          <CardDescription>
-            Submitted on {formatDate(inquiry.created_at)}
-          </CardDescription>
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
             <div className="flex items-center space-x-2 text-gray-600">
-              <Calendar className="h-4 w-4" />
+              <Calendar className="h-4 w-4 flex-shrink-0" />
               <span>Event Date: {formatDate(inquiry.event_date)}</span>
             </div>
             <div className="flex items-center space-x-2 text-gray-600">
-              <DollarSign className="h-4 w-4" />
+              <DollarSign className="h-4 w-4 flex-shrink-0" />
               <span>Budget: ${inquiry.budget.toLocaleString()}</span>
             </div>
             <div className="flex items-center space-x-2 text-gray-600">
-              <MapPin className="h-4 w-4" />
-              <span>
+              <MapPin className="h-4 w-4 flex-shrink-0" />
+              <span className="break-words">
                 Location: {inquiry.city}, {inquiry.state}
               </span>
             </div>
             {inquiry.message && (
               <div className="mt-4">
-                <p className="text-sm text-gray-600 line-clamp-1">
+                <p className="text-sm text-gray-600 break-words">
                   {inquiry.message}
                 </p>
               </div>

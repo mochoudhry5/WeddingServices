@@ -61,7 +61,7 @@ const HairMakeupInquiryForm = () => {
 
   // Specifications State
   const [budget, setBudget] = useState<string>("");
-  const [serviceType, setServiceType] = useState<ServiceType>("makeup");
+  const [serviceType, setServiceType] = useState<ServiceType>("hair");
   const [specialties, setSpecialties] = useState<string[]>([]);
   const [customMakeupStyles, setCustomMakeupStyles] = useState<string[]>([]);
   const [customHairStyles, setCustomHairStyles] = useState<string[]>([]);
@@ -578,8 +578,8 @@ const HairMakeupInquiryForm = () => {
                               <SelectValue placeholder="Select service type" />
                             </SelectTrigger>
                             <SelectContent>
-                              <SelectItem value="makeup">Makeup</SelectItem>
                               <SelectItem value="hair">Hair</SelectItem>
+                              <SelectItem value="makeup">Makeup</SelectItem>
                               <SelectItem value="both">
                                 Hair & Makeup
                               </SelectItem>

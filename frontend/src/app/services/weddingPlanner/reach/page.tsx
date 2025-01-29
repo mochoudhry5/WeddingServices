@@ -64,7 +64,7 @@ const WeddingPlannerCoordinatorInquiryForm = () => {
   const [preferredContact, setPreferredContact] = useState("");
 
   // Specifications State
-  const [serviceType, setServiceType] = useState<ServiceType | "">("");
+  const [serviceType, setServiceType] = useState<ServiceType>("weddingPlanner");
   const [budget, setBudget] = useState<string>("");
   const [eventDate, setEventDate] = useState("");
   const [message, setMessage] = useState("");
@@ -487,7 +487,7 @@ const WeddingPlannerCoordinatorInquiryForm = () => {
                                   Wedding Coordinator
                                 </SelectItem>
                                 <SelectItem value="both">
-                                  Both Planning & Coordination
+                                  Wedding Planning & Coordination
                                 </SelectItem>
                               </SelectContent>
                             </Select>
