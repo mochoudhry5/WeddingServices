@@ -22,56 +22,41 @@ const InvoicesSection: FC<InvoicesSectionProps> = ({ invoices }) => {
 
   return (
     <div className="mb-8">
-      <div className="border rounded-lg overflow-hidden">
+      <div className="border rounded-lg">
         <div className="flex justify-between items-center py-4 px-6">
           <h3 className="text-lg font-medium">Billing History</h3>
         </div>
         <div className="overflow-x-auto">
           <table className="w-full">
-            <thead className="bg-gray-50 text-sm">
+            <thead className="bg-gray-50">
               <tr>
-                <th
-                  scope="col"
-                  className="px-6 py-3 text-left text-xs font-medium text-gray-500"
-                >
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500">
                   Invoice Number
                 </th>
-                <th
-                  scope="col"
-                  className="px-6 py-3 text-left text-xs font-medium text-gray-500"
-                >
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500">
                   Date
                 </th>
-                <th
-                  scope="col"
-                  className="px-6 py-3 text-left text-xs font-medium text-gray-500"
-                >
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500">
                   Amount
                 </th>
-                <th
-                  scope="col"
-                  className="px-6 py-3 text-left text-xs font-medium text-gray-500"
-                >
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500">
                   Status
                 </th>
-                <th
-                  scope="col"
-                  className="px-6 py-3 text-center text-xs font-medium text-gray-500"
-                >
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500">
                   Invoice
                 </th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-200 bg-white">
+            <tbody className="divide-y divide-gray-200">
               {invoices.map((invoice) => (
-                <tr key={invoice.id} className="text-sm">
-                  <td className="whitespace-nowrap px-6 py-4">
+                <tr key={invoice.id}>
+                  <td className="whitespace-nowrap px-6 py-4 text-sm">
                     {invoice.number}
                   </td>
-                  <td className="whitespace-nowrap px-6 py-4">
+                  <td className="whitespace-nowrap px-6 py-4 text-sm">
                     {new Date(invoice.created).toLocaleDateString()}
                   </td>
-                  <td className="whitespace-nowrap px-6 py-4">
+                  <td className="whitespace-nowrap px-6 py-4 text-sm">
                     ${invoice.amount_paid.toFixed(2)}
                   </td>
                   <td className="whitespace-nowrap px-6 py-4">
@@ -84,7 +69,7 @@ const InvoicesSection: FC<InvoicesSectionProps> = ({ invoices }) => {
                         invoice.status.slice(1)}
                     </span>
                   </td>
-                  <td className="whitespace-nowrap px-6 py-4 text-center">
+                  <td className="whitespace-nowrap px-6 py-4">
                     <a
                       href={invoice.hosted_invoice_url}
                       className="inline-block text-gray-500 hover:text-gray-700"

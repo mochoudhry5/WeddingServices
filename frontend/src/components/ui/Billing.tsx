@@ -156,122 +156,118 @@ const SubscriptionSection = ({
           <h3 className="text-lg font-medium">{title}</h3>
         </div>
         <div className="overflow-x-auto">
-          <div className="min-w-[800px]">
-            <table className="w-full">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th className="px-4 py-2 text-center text-xs font-medium text-gray-500">
-                    Start Date
+          <table className="w-full">
+            <thead className="bg-gray-50">
+              <tr>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500">
+                  Start Date
+                </th>
+                {isExpiring ? (
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500">
+                    Expires On
                   </th>
-                  {isExpiring ? (
-                    <th className="px-4 py-2 text-center text-xs font-medium text-gray-500">
-                      Expires On
-                    </th>
-                  ) : (
-                    <th className="px-4 py-2 text-center text-xs font-medium text-gray-500">
-                      Next Payment
-                    </th>
-                  )}
-                  <th className="px-4 py-2 text-center text-xs font-medium text-gray-500">
-                    Plan Type
+                ) : (
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500">
+                    Next Payment
                   </th>
-                  <th className="px-4 py-2 text-center text-xs font-medium text-gray-500">
-                    Status
-                  </th>
-                  <th className="px-4 py-2 text-center text-xs font-medium text-gray-500">
-                    Listing
-                  </th>
-                  <th className="px-4 py-2 text-center text-xs font-medium text-gray-500">
-                    Actions
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-200">
-                {subscriptions.map((subscription) => (
-                  <tr key={subscription.id}>
-                    <td className="px-4 py-3 text-sm text-center whitespace-nowrap">
-                      {new Date(subscription.created_at).toLocaleDateString()}
-                    </td>
-                    <td className="px-4 py-3 text-sm text-center whitespace-nowrap">
-                      {subscription.cancel_at_period_end ? (
-                        <span className="text-red-600">
-                          {new Date(
-                            subscription.current_period_end
-                          ).toLocaleDateString()}
-                        </span>
-                      ) : subscription.status === "inactive" ? (
-                        "No upcoming payment"
-                      ) : (
-                        new Date(
+                )}
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500">
+                  Plan Type
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500">
+                  Status
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500">
+                  Listing
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500">
+                  Actions
+                </th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-200">
+              {subscriptions.map((subscription) => (
+                <tr key={subscription.id}>
+                  <td className="whitespace-nowrap px-6 py-4 text-sm">
+                    {new Date(subscription.created_at).toLocaleDateString()}
+                  </td>
+                  <td className="whitespace-nowrap px-6 py-4 text-sm">
+                    {subscription.cancel_at_period_end ? (
+                      <span className="text-red-600">
+                        {new Date(
                           subscription.current_period_end
-                        ).toLocaleDateString()
-                      )}
-                    </td>
-                    <td className="px-4 py-3 text-sm text-center whitespace-nowrap">
-                      {subscription.tier_type.charAt(0).toUpperCase() +
-                        subscription.tier_type.slice(1)}{" "}
-                      ({subscription.is_annual ? "Annual" : "Monthly"})
-                    </td>
-                    <td className="px-4 py-3 text-center">
-                      <span
-                        className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
-                          subscription.status === "active" &&
-                          !subscription.cancel_at_period_end
-                            ? "bg-green-100 text-green-800"
-                            : subscription.status === "active" &&
-                              subscription.cancel_at_period_end
-                            ? "bg-yellow-100 text-yellow-800"
-                            : subscription.status === "past_due"
-                            ? "bg-yellow-100 text-yellow-800"
-                            : "bg-red-100 text-red-800"
-                        }`}
-                      >
-                        {subscription.status.charAt(0).toUpperCase() +
-                          subscription.status.slice(1)}
+                        ).toLocaleDateString()}
                       </span>
-                    </td>
-                    <td className="px-4 py-3 text-center">
-                      <NextLink
-                        href={`/services/${getServiceTypeForUrl(
-                          subscription.service_type
-                        )}/${subscription.listing_id}`}
-                        className="inline-block text-black hover:text-stone-500 transition-colors"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                      >
-                        <Link size={20} />
-                      </NextLink>
-                    </td>
-                    <td className="px-4 py-3 text-center whitespace-nowrap">
-                      <div className="flex items-center justify-center space-x-2">
-                        {subscription.status === "active" &&
-                          !subscription.cancel_at_period_end && (
-                            <button
-                              onClick={() => onCancelSubscription(subscription)}
-                              className="inline-flex items-center space-x-1 text-red-600 hover:text-red-800"
-                            >
-                              <XCircle size={16} />
-                              <span>Cancel</span>
-                            </button>
-                          )}
-                        {showReactivate && (
+                    ) : subscription.status === "inactive" ? (
+                      "No upcoming payment"
+                    ) : (
+                      new Date(
+                        subscription.current_period_end
+                      ).toLocaleDateString()
+                    )}
+                  </td>
+                  <td className="whitespace-nowrap px-6 py-4 text-sm">
+                    {subscription.tier_type.charAt(0).toUpperCase() +
+                      subscription.tier_type.slice(1)}{" "}
+                    ({subscription.is_annual ? "Annual" : "Monthly"})
+                  </td>
+                  <td className="whitespace-nowrap px-6 py-4">
+                    <span
+                      className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                        subscription.status === "active" &&
+                        !subscription.cancel_at_period_end
+                          ? "bg-green-100 text-green-800"
+                          : subscription.status === "active" &&
+                            subscription.cancel_at_period_end
+                          ? "bg-yellow-100 text-yellow-800"
+                          : subscription.status === "past_due"
+                          ? "bg-yellow-100 text-yellow-800"
+                          : "bg-red-100 text-red-800"
+                      }`}
+                    >
+                      {subscription.status.charAt(0).toUpperCase() +
+                        subscription.status.slice(1)}
+                    </span>
+                  </td>
+                  <td className="whitespace-nowrap px-6 py-4">
+                    <NextLink
+                      href={`/services/${getServiceTypeForUrl(
+                        subscription.service_type
+                      )}/${subscription.listing_id}`}
+                      className="inline-block text-black hover:text-stone-500 transition-colors"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      <Link size={20} />
+                    </NextLink>
+                  </td>
+                  <td className="whitespace-nowrap px-6 py-4">
+                    <div className="flex items-center space-x-2">
+                      {subscription.status === "active" &&
+                        !subscription.cancel_at_period_end && (
                           <button
-                            onClick={() =>
-                              onReactivateSubscription(subscription)
-                            }
-                            className="inline-flex items-center space-x-1 text-green-600 hover:text-green-800"
+                            onClick={() => onCancelSubscription(subscription)}
+                            className="inline-flex items-center space-x-1 text-red-600 hover:text-red-800"
                           >
-                            <RefreshCcw size={16} />
-                            <span>Reactivate</span>
+                            <XCircle size={16} />
+                            <span>Cancel</span>
                           </button>
                         )}
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                      {showReactivate && (
+                        <button
+                          onClick={() => onReactivateSubscription(subscription)}
+                          className="inline-flex items-center space-x-1 text-green-600 hover:text-green-800"
+                        >
+                          <RefreshCcw size={16} />
+                          <span>Reactivate</span>
+                        </button>
+                      )}
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
       </div>
     </div>
