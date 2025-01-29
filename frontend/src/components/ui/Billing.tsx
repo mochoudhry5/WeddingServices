@@ -136,12 +136,14 @@ const SubscriptionSection = ({
   onCancelSubscription,
   onReactivateSubscription,
   showReactivate = false,
+  isExpiring = false,
 }: {
   title: string;
   subscriptions: StripeSubscription[];
   onCancelSubscription: (subscription: StripeSubscription) => void;
   onReactivateSubscription: (subscription: StripeSubscription) => void;
   showReactivate?: boolean;
+  isExpiring?: boolean;
 }) => {
   if (subscriptions.length === 0) return null;
 
@@ -155,9 +157,15 @@ const SubscriptionSection = ({
               <th className="px-4 py-2 text-center text-xs font-medium text-gray-500">
                 Start Date
               </th>
-              <th className="px-4 py-2 text-center text-xs font-medium text-gray-500">
-                Next Payment
-              </th>
+              {isExpiring ? (
+                <th className="px-4 py-2 text-center text-xs font-medium text-gray-500">
+                  Expires On
+                </th>
+              ) : (
+                <th className="px-4 py-2 text-center text-xs font-medium text-gray-500">
+                  Next Payment
+                </th>
+              )}
               <th className="px-4 py-2 text-center text-xs font-medium text-gray-500">
                 Plan Type
               </th>
@@ -181,7 +189,6 @@ const SubscriptionSection = ({
                 <td className="px-4 py-3 text-sm text-center">
                   {subscription.cancel_at_period_end ? (
                     <span className="text-red-600">
-                      Cancels on{" "}
                       {new Date(
                         subscription.current_period_end
                       ).toLocaleDateString()}
@@ -502,6 +509,8 @@ const Billing = () => {
         subscriptions={cancelingSubscriptions}
         onCancelSubscription={setSubscriptionToCancel}
         onReactivateSubscription={setSubscriptionToReactivate}
+        showReactivate={true}
+        isExpiring={true}
       />
 
       {/* Inactive Subscriptions */}
@@ -521,19 +530,21 @@ const Billing = () => {
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Cancel Subscription</AlertDialogTitle>
-            <AlertDialogDescription className="space-y-2">
-              <p>Are you sure you want to cancel this subscription?</p>
-              <p className="font-medium text-gray-700">
-                Your service will continue until{" "}
-                {subscriptionToCancel &&
-                  new Date(
-                    subscriptionToCancel.current_period_end
-                  ).toLocaleDateString()}{" "}
-                since you've already paid for this period.
-              </p>
-              <p className="text-sm text-gray-500">
-                No refunds will be issued for the current billing period.
-              </p>
+            <AlertDialogDescription asChild>
+              <div className="space-y-2">
+                <div>Are you sure you want to cancel this subscription?</div>
+                <div className="font-medium text-gray-700">
+                  Your service will continue until{" "}
+                  {subscriptionToCancel &&
+                    new Date(
+                      subscriptionToCancel.current_period_end
+                    ).toLocaleDateString()}{" "}
+                  since you've already paid for this period.
+                </div>
+                <div className="text-sm text-gray-500">
+                  No refunds will be issued for the current billing period.
+                </div>
+              </div>
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -556,14 +567,18 @@ const Billing = () => {
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Reactivate Subscription</AlertDialogTitle>
-            <AlertDialogDescription className="space-y-2">
-              <p>
-                Would you like to reactivate this subscription? You will be
-                charged immediately for the next billing period.
-              </p>
-              <p className="text-sm text-gray-500">
-                Your subscription will renew at the same rate as before.
-              </p>
+            <AlertDialogDescription asChild>
+              <div className="space-y-2">
+                <div>Would you like to reactivate this subscription?</div>
+                <div>
+                  If you have an active subscription that has not expired it,
+                  you will be charged at your next billing period. Otherwise,
+                  you will be charged immediately.
+                </div>
+                <div className="text-sm text-gray-500">
+                  Your subscription will renew at the same rate as before.
+                </div>
+              </div>
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
