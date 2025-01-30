@@ -8,6 +8,8 @@ import SubscriptionTiers from "@/components/ui/SubscriptionTiers";
 import { Brush, Building2, Camera, Music, NotebookPen } from "lucide-react";
 import OnboardingModal from "@/components/ui/OnboardingModal";
 import { Button } from "@/components/ui/button";
+import { useAuth } from "@/context/AuthContext";
+import { toast } from "sonner";
 
 interface UserPreferences {
   id: string;
@@ -93,8 +95,13 @@ export default function CreateServicePage() {
   const [selectedService, setSelectedService] = useState<ServiceId>("venue");
   const [isAnnual, setIsAnnual] = useState<boolean>(false);
   const [showModal, setShowModal] = useState(false);
+  const { user } = useAuth();
 
   const handleContinue = () => {
+    if (!user) {
+      toast.error("Please sign in to list your service");
+      return;
+    }
     const params = new URLSearchParams({
       tier: selectedTier ? selectedTier.toString() : "EMPTY",
       annual: isAnnual ? "TRUE" : "FALSE",

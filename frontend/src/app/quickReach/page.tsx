@@ -201,45 +201,44 @@ export default function QuickReachPage() {
 
   return (
     <ErrorBoundary>
-      <ProtectedRoute>
-        <div className="flex flex-col min-h-screen">
-          <NavBar />
-          <QuickReachModal
-            externalOpen={showModal}
-            onExternalOpenChange={setShowModal}
-          />
-          <div className="flex-1 flex flex-col">
-            <div className="min-h-screen bg-gray-50 py-8 sm:py-4">
-              <div className="max-w-4xl mx-auto px-4">
-                <div className="mb-8 sm:mb-5 text-center">
-                  <div className="mt-2 flex items-center justify-center gap-2">
-                    <p className="text-base sm:text-xl text-black font-bold">
-                      What type of wedding service are you looking for?
-                    </p>
-                  </div>
-                  <Button
-                    variant="ghost"
-                    className="text-stone-500 hover:text-stone-500"
-                    onClick={() => setShowModal(true)}
-                  >
-                    Learn More
-                  </Button>
+      <div className="flex flex-col min-h-screen">
+        <NavBar />
+        <QuickReachModal
+          externalOpen={showModal}
+          onExternalOpenChange={setShowModal}
+        />
+        <div className="flex-1 flex flex-col">
+          <div className="min-h-screen bg-gray-50 py-8 sm:py-4">
+            <div className="max-w-4xl mx-auto px-4">
+              <div className="mb-8 sm:mb-5 text-center">
+                <div className="mt-2 flex items-center justify-center gap-2">
+                  <p className="text-base sm:text-xl text-black font-bold">
+                    What type of wedding service are you looking for?
+                  </p>
                 </div>
+                <Button
+                  variant="ghost"
+                  className="text-stone-500 hover:text-stone-500"
+                  onClick={() => setShowModal(true)}
+                >
+                  Learn More
+                </Button>
+              </div>
 
-                {error ? (
-                  renderError()
-                ) : isLoading ? (
-                  renderLoadingState()
-                ) : (
-                  <>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 mb-8">
-                      {services.map((service) => (
-                        <div
-                          key={service.id}
-                          onClick={() =>
-                            service.available && setSelected(service.id)
-                          }
-                          className={`
+              {error ? (
+                renderError()
+              ) : isLoading ? (
+                renderLoadingState()
+              ) : (
+                <>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 mb-8">
+                    {services.map((service) => (
+                      <div
+                        key={service.id}
+                        onClick={() =>
+                          service.available && setSelected(service.id)
+                        }
+                        className={`
                             relative p-4 sm:p-6 rounded-xl 
                             transition-all duration-200 cursor-pointer
                             ${
@@ -253,10 +252,10 @@ export default function QuickReachPage() {
                                 : ""
                             }
                           `}
-                        >
-                          <div className="flex flex-col items-center text-center h-full">
-                            <div
-                              className={`
+                      >
+                        <div className="flex flex-col items-center text-center h-full">
+                          <div
+                            className={`
                                 w-14 h-14 rounded-full flex items-center justify-center
                                 ${
                                   selected === service.id
@@ -265,54 +264,53 @@ export default function QuickReachPage() {
                                 }
                                 transition-colors duration-200
                               `}
-                            >
-                              <service.icon
-                                size={28}
-                                className={
-                                  selected === service.id
-                                    ? "text-black"
-                                    : "text-gray-500"
-                                }
-                              />
-                            </div>
-
-                            <h3 className="mt-4 text-lg font-semibold text-gray-900">
-                              {service.name}
-                            </h3>
-
-                            <p className="mt-2 text-sm text-gray-500 flex-grow">
-                              {service.description}
-                            </p>
+                          >
+                            <service.icon
+                              size={28}
+                              className={
+                                selected === service.id
+                                  ? "text-black"
+                                  : "text-gray-500"
+                              }
+                            />
                           </div>
 
-                          {selected === service.id && (
-                            <div className="absolute top-3 right-3 w-3 h-3 rounded-full bg-black" />
-                          )}
-                        </div>
-                      ))}
-                    </div>
+                          <h3 className="mt-4 text-lg font-semibold text-gray-900">
+                            {service.name}
+                          </h3>
 
-                    <div className="text-center">
-                      <Button
-                        onClick={handleContinue}
-                        disabled={!selected || isLoading}
-                        className="px-8 py-3 bg-black text-white rounded-lg font-medium 
+                          <p className="mt-2 text-sm text-gray-500 flex-grow">
+                            {service.description}
+                          </p>
+                        </div>
+
+                        {selected === service.id && (
+                          <div className="absolute top-3 right-3 w-3 h-3 rounded-full bg-black" />
+                        )}
+                      </div>
+                    ))}
+                  </div>
+
+                  <div className="text-center">
+                    <Button
+                      onClick={handleContinue}
+                      disabled={!selected || isLoading}
+                      className="px-8 py-3 bg-black text-white rounded-lg font-medium 
                               disabled:opacity-50 disabled:cursor-not-allowed
                               hover:bg-stone-500 transition-colors"
-                      >
-                        {isLoading
-                          ? "Processing..."
-                          : "Continue to Share Details"}
-                      </Button>
-                    </div>
-                  </>
-                )}
-              </div>
+                    >
+                      {isLoading
+                        ? "Processing..."
+                        : "Continue to Share Details"}
+                    </Button>
+                  </div>
+                </>
+              )}
             </div>
           </div>
-          <Footer />
         </div>
-      </ProtectedRoute>
+        <Footer />
+      </div>
     </ErrorBoundary>
   );
 }
