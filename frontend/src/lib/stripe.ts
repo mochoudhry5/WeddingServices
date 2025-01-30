@@ -75,72 +75,72 @@ export type StripePriceIds = {
 export const stripePriceIds: StripePriceIds = {
   venue: {
     basic: {
-      monthly: "price_1QfsgjCGcL38r0cMNkKyCnzE",
-      annual: "price_1Qfsi8CGcL38r0cMiLUHmULk",
+      monthly: "price_1QmlWaCGcL38r0cMz5xiv7uB",
+      annual: "price_1QmlX7CGcL38r0cMXQL94G9p",
     },
     premium: {
-      monthly: "price_1QfskcCGcL38r0cMuVP9cm6X",
-      annual: "price_1QfskcCGcL38r0cMuoSvvrUo",
+      monthly: "price_1Qmlb7CGcL38r0cM5Df9JW7O",
+      annual: "price_1Qmlb7CGcL38r0cMYPZNGKMb",
     },
     elite: {
-      monthly: "price_1QfskcCGcL38r0cMGpwqAKt6",
-      annual: "price_1QfskcCGcL38r0cMIpO6SF4J",
+      monthly: "price_1QmldUCGcL38r0cMCd64lAtK",
+      annual: "price_1QmldUCGcL38r0cMQRAW2nNA",
     },
   },
   hairMakeup: {
     basic: {
-      monthly: "price_1QfsgjCGcL38r0cMNkKyCnzE",
-      annual: "price_1Qfsi8CGcL38r0cMiLUHmULk",
+      monthly: "price_1QmlgGCGcL38r0cMZbDvKu8E",
+      annual: "price_1QmlgGCGcL38r0cM0A0GSVuM",
     },
     premium: {
-      monthly: "price_1QfskcCGcL38r0cMuVP9cm6X",
-      annual: "price_1QfskcCGcL38r0cMuoSvvrUo",
+      monthly: "price_1QmlhbCGcL38r0cMh2fKbRh4",
+      annual: "price_1QmlhbCGcL38r0cMS0WBLxls",
     },
     elite: {
-      monthly: "price_1QfskcCGcL38r0cMGpwqAKt6",
-      annual: "price_1QfskcCGcL38r0cMIpO6SF4J",
+      monthly: "price_1Qmlk2CGcL38r0cMZWvkEFPT",
+      annual: "price_1Qmlk2CGcL38r0cMW7xQuVxA",
     },
   },
   photoVideo: {
     basic: {
-      monthly: "price_1QfsgjCGcL38r0cMNkKyCnzE",
-      annual: "price_1Qfsi8CGcL38r0cMiLUHmULk",
+      monthly: "price_1QmllOCGcL38r0cMqhEDvWEI",
+      annual: "price_1QmllOCGcL38r0cMUg4qnGN9",
     },
     premium: {
-      monthly: "price_1QfskcCGcL38r0cMuVP9cm6X",
-      annual: "price_1QfskcCGcL38r0cMuoSvvrUo",
+      monthly: "price_1QmlnECGcL38r0cMIXNJRDRM",
+      annual: "price_1QmlnECGcL38r0cMn2ExUeHx",
     },
     elite: {
-      monthly: "price_1QfskcCGcL38r0cMGpwqAKt6",
-      annual: "price_1QfskcCGcL38r0cMIpO6SF4J",
+      monthly: "price_1QmloVCGcL38r0cMEHfzOrFq",
+      annual: "price_1QmloVCGcL38r0cMifq9h9lL",
     },
   },
   weddingPlanner: {
     basic: {
-      monthly: "price_1QfsgjCGcL38r0cMNkKyCnzE",
-      annual: "price_1Qfsi8CGcL38r0cMiLUHmULk",
+      monthly: "price_1QmlpiCGcL38r0cMMeG2TWbi",
+      annual: "price_1QmlpiCGcL38r0cMNz4G284j",
     },
     premium: {
-      monthly: "price_1QfskcCGcL38r0cMuVP9cm6X",
-      annual: "price_1QfskcCGcL38r0cMuoSvvrUo",
+      monthly: "price_1QmlqYCGcL38r0cMuZ4rE0sk",
+      annual: "price_1QmlqYCGcL38r0cMO3KpWJbJ",
     },
     elite: {
-      monthly: "price_1QfskcCGcL38r0cMGpwqAKt6",
-      annual: "price_1QfskcCGcL38r0cMIpO6SF4J",
+      monthly: "price_1QmlsaCGcL38r0cMyBcUhVV9",
+      annual: "price_1QmlsaCGcL38r0cMYhWfVvMQ",
     },
   },
   dj: {
     basic: {
-      monthly: "price_1QfsgjCGcL38r0cMNkKyCnzE",
-      annual: "price_1Qfsi8CGcL38r0cMiLUHmULk",
+      monthly: "price_1QmltYCGcL38r0cMdd3xV1TV",
+      annual: "price_1QmltYCGcL38r0cMKydNhs9e",
     },
     premium: {
-      monthly: "price_1QfskcCGcL38r0cMuVP9cm6X",
-      annual: "price_1QfskcCGcL38r0cMuoSvvrUo",
+      monthly: "price_1QmluQCGcL38r0cM0chVZDIr",
+      annual: "price_1QmluQCGcL38r0cMzcaYiNTq",
     },
     elite: {
-      monthly: "price_1QfskcCGcL38r0cMGpwqAKt6",
-      annual: "price_1QfskcCGcL38r0cMIpO6SF4J",
+      monthly: "price_1QmlvJCGcL38r0cM5y84ok34",
+      annual: "price_1QmlvJCGcL38r0cMQOEoKAh2",
     },
   },
 };
