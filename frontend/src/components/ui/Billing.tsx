@@ -59,6 +59,14 @@ interface PaymentMethod {
   exp_year: number;
 }
 
+const labelMap: Record<string, string> = {
+  venue: "Venue",
+  dj: "DJ",
+  hair_makeup: "Hair & Makeup",
+  wedding_planner: "Wedding Planner",
+  photo_video: "Photography & Videography",
+};
+
 const PaymentMethodSection = ({
   paymentMethod,
   onUpdatePaymentMethod,
@@ -161,32 +169,34 @@ const SubscriptionSection = ({
           <table className="w-full">
             <thead className="bg-gray-50">
               <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500">
+                <th className="px-6 py-3 text-center text-xs font-medium text-gray-500">
                   Start Date
                 </th>
-                {isExpired ? (
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500">
-                    End Date
-                  </th>
-                ) : isExpiring ? (
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500">
-                    Expires On
-                  </th>
-                ) : (
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500">
-                    Next Payment
-                  </th>
-                )}
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500">
+                <>
+                  {isExpired ? (
+                    <th className="px-6 py-3 text-center text-xs font-medium text-gray-500">
+                      End Date
+                    </th>
+                  ) : isExpiring ? (
+                    <th className="px-6 py-3 text-center text-xs font-medium text-gray-500">
+                      Expires On
+                    </th>
+                  ) : (
+                    <th className="px-6 py-3 text-center text-xs font-medium text-gray-500">
+                      Next Payment
+                    </th>
+                  )}
+                </>
+                <th className="px-6 py-3 text-center text-xs font-medium text-gray-500">
                   Plan Type
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500">
+                <th className="px-6 py-3 text-center text-xs font-medium text-gray-500">
                   Status
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500">
+                <th className="px-6 py-3 text-center text-xs font-medium text-gray-500">
                   Listing
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500">
+                <th className="px-6 py-3 text-center text-xs font-medium text-gray-500">
                   Actions
                 </th>
               </tr>
@@ -212,7 +222,9 @@ const SubscriptionSection = ({
                     )}
                   </td>
                   <td className="whitespace-nowrap px-6 py-4 text-sm">
-                    {subscription.tier_type.charAt(0).toUpperCase() +
+                    {labelMap[subscription.service_type] +
+                      " " +
+                      subscription.tier_type.charAt(0).toUpperCase() +
                       subscription.tier_type.slice(1)}{" "}
                     ({subscription.is_annual ? "Annual" : "Monthly"})
                   </td>
@@ -438,6 +450,7 @@ const Billing = () => {
         {
           body: {
             subscriptionId: subscriptionToReactivate.stripe_subscription_id,
+            idempotencyKey: crypto.randomUUID(),
           },
         }
       );

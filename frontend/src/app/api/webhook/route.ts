@@ -28,174 +28,40 @@ export async function POST(req: Request) {
   try {
     switch (event.type) {
       case "checkout.session.completed": {
-        const session = event.data.object as Stripe.Checkout.Session;
-
-        const subscription = await stripe.subscriptions.retrieve(
-          session.subscription as string
+        await handleCheckoutCompleted(
+          event.data.object as Stripe.Checkout.Session
         );
-
-        // Get payment method ID
-        let paymentMethodId = null;
-        if (session.payment_intent) {
-          const paymentIntent = await stripe.paymentIntents.retrieve(
-            session.payment_intent as string
-          );
-          paymentMethodId = paymentIntent.payment_method;
-
-          if (paymentMethodId && typeof paymentMethodId === "string") {
-            // Only handle payment method updates if this is a new payment method
-            const paymentMethod = await stripe.paymentMethods.retrieve(
-              paymentMethodId
-            );
-
-            // Delete any existing payment methods in Stripe
-            const { data: existingPaymentMethods } = await supabase
-              .from("payment_methods")
-              .select("stripe_payment_method_id")
-              .eq("user_id", session.metadata?.userId);
-
-            if (existingPaymentMethods) {
-              for (const pm of existingPaymentMethods) {
-                try {
-                  await stripe.paymentMethods.detach(
-                    pm.stripe_payment_method_id
-                  );
-                } catch (error) {
-                  console.error("Error detaching payment method:", error);
-                }
-              }
-            }
-
-            // Delete all existing payment methods from database
-            await supabase
-              .from("payment_methods")
-              .delete()
-              .eq("user_id", session.metadata?.userId);
-
-            // Set the new payment method as default in Stripe
-            await stripe.customers.update(subscription.customer as string, {
-              invoice_settings: {
-                default_payment_method: paymentMethodId,
-              },
-            });
-
-            await stripe.subscriptions.update(subscription.id, {
-              default_payment_method: paymentMethodId,
-            });
-
-            // Insert the new payment method
-            const { error: paymentError } = await supabase
-              .from("payment_methods")
-              .insert({
-                user_id: session.metadata?.userId,
-                stripe_payment_method_id: paymentMethodId,
-                stripe_customer_id: subscription.customer as string,
-                is_default: true,
-                last_4: paymentMethod.card?.last4,
-                card_brand: paymentMethod.card?.brand,
-                exp_month: paymentMethod.card?.exp_month,
-                exp_year: paymentMethod.card?.exp_year,
-                card_fingerprint: paymentMethod.card?.fingerprint,
-              });
-
-            if (paymentError) {
-              console.error("Error storing payment method:", paymentError);
-              throw paymentError;
-            }
-          }
-        }
-
-        // Update subscription status
-        const { error } = await supabase.from("subscriptions").upsert({
-          user_id: session.metadata?.userId,
-          listing_id: session.metadata?.listing_id,
-          stripe_subscription_id: subscription.id,
-          stripe_customer_id: subscription.customer as string,
-          status: subscription.status,
-          service_type: session.metadata?.serviceType,
-          tier_type: session.metadata?.tierType,
-          is_annual: session.metadata?.isAnnual === "true",
-          current_period_end: new Date(
-            subscription.current_period_end * 1000
-          ).toISOString(),
-        });
-
-        if (error) throw error;
-
-        // Update listing status
-        const { error: updateError } = await supabase
-          .from(`${session.metadata?.serviceType}_listing`)
-          .update({
-            is_draft: false,
-          })
-          .eq("id", session.metadata?.listing_id);
-
-        if (updateError) throw updateError;
         break;
       }
 
       case "setup_intent.succeeded": {
-        const setupIntent = event.data.object as Stripe.SetupIntent;
+        await handleSetupIntentSucceeded(
+          event.data.object as Stripe.SetupIntent
+        );
+        break;
+      }
 
-        if (setupIntent.payment_method && setupIntent.customer) {
-          const paymentMethodId =
-            typeof setupIntent.payment_method === "string"
-              ? setupIntent.payment_method
-              : setupIntent.payment_method.id;
+      case "invoice.payment_succeeded": {
+        await handleSuccessfulPayment(event.data.object as Stripe.Invoice);
+        break;
+      }
 
-          const paymentMethod = await stripe.paymentMethods.retrieve(
-            paymentMethodId
-          );
+      case "invoice.payment_failed": {
+        await handleFailedPayment(event.data.object as Stripe.Invoice);
+        break;
+      }
 
-          // Delete existing payment methods in Stripe
-          const { data: existingPaymentMethods } = await supabase
-            .from("payment_methods")
-            .select("stripe_payment_method_id")
-            .eq("user_id", setupIntent.metadata?.userId);
+      case "customer.subscription.updated": {
+        await handleSubscriptionUpdated(
+          event.data.object as Stripe.Subscription
+        );
+        break;
+      }
 
-          if (existingPaymentMethods) {
-            for (const pm of existingPaymentMethods) {
-              try {
-                await stripe.paymentMethods.detach(pm.stripe_payment_method_id);
-              } catch (error) {
-                console.error("Error detaching payment method:", error);
-              }
-            }
-          }
-
-          // Delete all existing payment methods from database
-          await supabase
-            .from("payment_methods")
-            .delete()
-            .eq("user_id", setupIntent.metadata?.userId);
-
-          // Set as default payment method in Stripe
-          await stripe.customers.update(setupIntent.customer as string, {
-            invoice_settings: {
-              default_payment_method: paymentMethodId,
-            },
-          });
-
-          // Insert new payment method
-          const { error: paymentMethodError } = await supabase
-            .from("payment_methods")
-            .insert({
-              user_id: setupIntent.metadata?.userId,
-              stripe_payment_method_id: paymentMethod.id,
-              stripe_customer_id: setupIntent.customer as string,
-              is_default: true,
-              last_4: paymentMethod.card?.last4,
-              card_brand: paymentMethod.card?.brand,
-              exp_month: paymentMethod.card?.exp_month,
-              exp_year: paymentMethod.card?.exp_year,
-              card_fingerprint: paymentMethod.card?.fingerprint,
-            });
-
-          if (paymentMethodError) {
-            await stripe.paymentMethods.detach(paymentMethodId);
-            throw paymentMethodError;
-          }
-        }
+      case "customer.subscription.deleted": {
+        await handleSubscriptionDeleted(
+          event.data.object as Stripe.Subscription
+        );
         break;
       }
 
@@ -210,5 +76,242 @@ export async function POST(req: Request) {
       { error: "Webhook processing failed" },
       { status: 500 }
     );
+  }
+}
+
+async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
+  const subscription = await stripe.subscriptions.retrieve(
+    session.subscription as string
+  );
+
+  // Handle payment method if exists
+  if (session.payment_intent) {
+    await handlePaymentMethodUpdate(
+      session.payment_intent as string,
+      session.metadata?.userId,
+      subscription
+    );
+  }
+
+  // Update subscription status
+  const { error } = await supabase.from("subscriptions").upsert({
+    user_id: session.metadata?.userId,
+    listing_id: session.metadata?.listing_id,
+    stripe_subscription_id: subscription.id,
+    stripe_customer_id: subscription.customer as string,
+    status: subscription.status,
+    service_type: session.metadata?.serviceType,
+    tier_type: session.metadata?.tierType,
+    is_annual: session.metadata?.isAnnual === "true",
+    current_period_end: new Date(
+      subscription.current_period_end * 1000
+    ).toISOString(),
+  });
+
+  if (error) throw error;
+
+  // Update listing status
+  const { error: updateError } = await supabase
+    .from(`${session.metadata?.serviceType}_listing`)
+    .update({
+      is_draft: false,
+      status: "active",
+    })
+    .eq("id", session.metadata?.listing_id);
+
+  if (updateError) throw updateError;
+}
+
+async function handleSetupIntentSucceeded(setupIntent: Stripe.SetupIntent) {
+  if (setupIntent.payment_method && setupIntent.customer) {
+    const paymentMethodId =
+      typeof setupIntent.payment_method === "string"
+        ? setupIntent.payment_method
+        : setupIntent.payment_method.id;
+
+    await handlePaymentMethodUpdate(
+      paymentMethodId,
+      setupIntent.metadata?.userId,
+      undefined,
+      setupIntent.customer as string
+    );
+  }
+}
+
+async function handleSuccessfulPayment(invoice: Stripe.Invoice) {
+  const subscription = await stripe.subscriptions.retrieve(
+    invoice.subscription as string
+  );
+
+  await supabase
+    .from("subscriptions")
+    .update({
+      status: subscription.status,
+      current_period_end: new Date(
+        subscription.current_period_end * 1000
+      ).toISOString(),
+      cancel_at_period_end: subscription.cancel_at_period_end,
+    })
+    .eq("stripe_subscription_id", subscription.id);
+
+  // Record payment history
+  await supabase.from("subscription_history").insert({
+    subscription_id: subscription.id,
+    action: "payment_success",
+    metadata: {
+      invoice_id: invoice.id,
+      amount_paid: invoice.amount_paid,
+      period_end: subscription.current_period_end,
+    },
+  });
+}
+
+async function handleFailedPayment(invoice: Stripe.Invoice) {
+  const subscription = await stripe.subscriptions.retrieve(
+    invoice.subscription as string
+  );
+
+  // Get payment intent to check error details
+  let failureReason = "Unknown error";
+  if (invoice.payment_intent) {
+    const paymentIntent = await stripe.paymentIntents.retrieve(
+      typeof invoice.payment_intent === "string"
+        ? invoice.payment_intent
+        : invoice.payment_intent.id
+    );
+    failureReason =
+      paymentIntent.last_payment_error?.message ?? "Payment failed";
+  }
+
+  await supabase
+    .from("subscriptions")
+    .update({
+      status: subscription.status,
+    })
+    .eq("stripe_subscription_id", subscription.id);
+
+  // If it's past due, mark the listing as inactive
+  if (subscription.status === "past_due") {
+    const { data: sub } = await supabase
+      .from("subscriptions")
+      .select("service_type, listing_id")
+      .eq("stripe_subscription_id", subscription.id)
+      .single();
+
+    if (sub) {
+      await supabase
+        .from(sub.service_type + "_listing")
+        .update({ status: "inactive" })
+        .eq("id", sub.listing_id);
+    }
+  }
+
+  // Record failed payment
+  await supabase.from("subscription_history").insert({
+    subscription_id: subscription.id,
+    action: "payment_failed",
+    metadata: {
+      invoice_id: invoice.id,
+      failure_reason: failureReason,
+    },
+  });
+}
+
+async function handleSubscriptionUpdated(subscription: Stripe.Subscription) {
+  await supabase
+    .from("subscriptions")
+    .update({
+      status: subscription.status,
+      current_period_end: new Date(
+        subscription.current_period_end * 1000
+      ).toISOString(),
+      cancel_at_period_end: subscription.cancel_at_period_end,
+    })
+    .eq("stripe_subscription_id", subscription.id);
+}
+
+async function handleSubscriptionDeleted(subscription: Stripe.Subscription) {
+  const { data: sub } = await supabase
+    .from("subscriptions")
+    .select("service_type, listing_id")
+    .eq("stripe_subscription_id", subscription.id)
+    .single();
+
+  if (sub) {
+    await supabase
+      .from(sub.service_type + "_listing")
+      .update({ is_archived: true })
+      .eq("id", sub.listing_id);
+  }
+
+  await supabase
+    .from("subscriptions")
+    .update({
+      status: "inactive",
+      cancel_at_period_end: false,
+    })
+    .eq("stripe_subscription_id", subscription.id);
+}
+
+async function handlePaymentMethodUpdate(
+  paymentMethodId: string,
+  userId: string | undefined,
+  subscription?: Stripe.Subscription,
+  customerId?: string
+) {
+  const paymentMethod = await stripe.paymentMethods.retrieve(paymentMethodId);
+
+  // Delete existing payment methods in Stripe
+  const { data: existingPaymentMethods } = await supabase
+    .from("payment_methods")
+    .select("stripe_payment_method_id")
+    .eq("user_id", userId);
+
+  if (existingPaymentMethods) {
+    for (const pm of existingPaymentMethods) {
+      try {
+        await stripe.paymentMethods.detach(pm.stripe_payment_method_id);
+      } catch (error) {
+        console.error("Error detaching payment method:", error);
+      }
+    }
+  }
+
+  // Delete all existing payment methods from database
+  await supabase.from("payment_methods").delete().eq("user_id", userId);
+
+  const customer = customerId || (subscription?.customer as string);
+
+  // Set as default payment method in Stripe
+  await stripe.customers.update(customer, {
+    invoice_settings: {
+      default_payment_method: paymentMethodId,
+    },
+  });
+
+  if (subscription) {
+    await stripe.subscriptions.update(subscription.id, {
+      default_payment_method: paymentMethodId,
+    });
+  }
+
+  // Insert new payment method
+  const { error: paymentMethodError } = await supabase
+    .from("payment_methods")
+    .insert({
+      user_id: userId,
+      stripe_payment_method_id: paymentMethod.id,
+      stripe_customer_id: customer,
+      is_default: true,
+      last_4: paymentMethod.card?.last4,
+      card_brand: paymentMethod.card?.brand,
+      exp_month: paymentMethod.card?.exp_month,
+      exp_year: paymentMethod.card?.exp_year,
+      card_fingerprint: paymentMethod.card?.fingerprint,
+    });
+
+  if (paymentMethodError) {
+    await stripe.paymentMethods.detach(paymentMethodId);
+    throw paymentMethodError;
   }
 }

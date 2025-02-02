@@ -5,90 +5,10 @@ import type { ServiceId, TierType } from "@/lib/stripe";
 import NavBar from "@/components/ui/NavBar";
 import Footer from "@/components/ui/Footer";
 import SubscriptionTiers from "@/components/ui/SubscriptionTiers";
-import { Brush, Building2, Camera, Music, NotebookPen } from "lucide-react";
 import OnboardingModal from "@/components/ui/OnboardingModal";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/context/AuthContext";
 import { toast } from "sonner";
-
-interface UserPreferences {
-  id: string;
-  is_vendor: boolean;
-}
-
-interface Service {
-  id: ServiceId;
-  name: string;
-  icon: any;
-  description: string;
-  available: boolean;
-  path?: string;
-  comingSoon?: boolean;
-}
-
-interface ListingStepProps {
-  number: string;
-  title: string;
-  description: string;
-  delay?: number;
-}
-
-interface FaqItemProps {
-  question: string;
-  answer: string;
-  delay?: number;
-}
-
-const services: Service[] = [
-  {
-    id: "venue",
-    name: "Venue",
-    icon: Building2,
-    description:
-      "List your wedding venue and showcase your space to couples looking for their perfect venue.",
-    available: true,
-    path: "/services/venue/create",
-  },
-  {
-    id: "hairMakeup",
-    name: "Hair & Makeup",
-    icon: Brush,
-    description:
-      "Offer your professional hair/makeup services to brides and wedding parties.",
-    available: true,
-    path: "/services/hairMakeup/create",
-    comingSoon: false,
-  },
-  {
-    id: "photoVideo",
-    name: "Photography & Videography",
-    icon: Camera,
-    description:
-      "Showcase your photography portfolio and connect with couples seeking their wedding photographer.",
-    available: true,
-    path: "/services/photoVideo/create",
-    comingSoon: false,
-  },
-  {
-    id: "weddingPlanner",
-    name: "Wedding Planner & Coordinator",
-    icon: NotebookPen,
-    description:
-      "Offer your skills to help provide couples a worry-less wedding.",
-    available: true,
-    path: "/services/weddingPlanner/create",
-    comingSoon: false,
-  },
-  {
-    id: "dj",
-    name: "DJ",
-    icon: Music,
-    description: "Provide your skills to bring the vibe to the special day.",
-    available: true,
-    path: "/services/dj/create",
-    comingSoon: false,
-  },
-];
 
 export default function CreateServicePage() {
   const [selectedTier, setSelectedTier] = useState<TierType | null>(null);
@@ -120,9 +40,9 @@ export default function CreateServicePage() {
       <div className="flex-1 flex flex-col">
         <div className="min-h-screen bg-gray-50 py-8 sm:py-4">
           <div className="max-w-4xl mx-auto px-4">
-            <div className="mb-8 sm:mb-5 text-center">
-              <div className="mt-2 flex items-center justify-center gap-2">
-                <p className="text-base sm:text-xl text-black font-bold">
+            <div className="mb-8 sm:mb-3 text-center">
+              <div className="mt-1 flex items-center justify-center gap-2">
+                <p className="text-3xl sm:text-3xl font-extrabold text-gray-900 tracking-tight leading-relaxed text-center">
                   Choose the type of service you want to offer
                 </p>
               </div>
@@ -146,7 +66,7 @@ export default function CreateServicePage() {
               isAnnual={isAnnual}
             />
 
-            <div className="text-center mt-8">
+            <div className="text-center mt-6">
               <button
                 onClick={handleContinue}
                 disabled={!selectedTier}

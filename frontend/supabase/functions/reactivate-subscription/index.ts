@@ -1,5 +1,4 @@
 // supabase/functions/reactivate-subscription/index.ts
-
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import Stripe from "https://esm.sh/stripe@12.0.0?target=deno";
@@ -59,7 +58,7 @@ serve(async (req) => {
       throw new Error("Invalid authentication");
     }
 
-    // Verify the subscription belongs to the user
+    // Get subscription data
     const { data: subscription, error: subError } = await supabaseAdmin
       .from("subscriptions")
       .select("*")
@@ -72,17 +71,11 @@ serve(async (req) => {
     }
 
     try {
-      // Get the original subscription from Stripe
-      const originalSubscription = await stripe.subscriptions.retrieve(
-        subscriptionId
-      );
-
+      // Handle active subscription that's scheduled to cancel
       if (
         subscription.cancel_at_period_end &&
         subscription.status === "active"
       ) {
-        // For subscriptions that are just scheduled to cancel
-        // Simply remove the cancellation schedule
         const reactivatedSubscription = await stripe.subscriptions.update(
           subscriptionId,
           {
@@ -100,20 +93,6 @@ serve(async (req) => {
 
         if (updateError) throw updateError;
 
-        // // Create record in subscription history
-        // const { error: historyError } = await supabaseAdmin
-        //   .from("subscription_history")
-        //   .insert({
-        //     subscription_id: subscription.id,
-        //     action: "reactivated",
-        //     metadata: {
-        //       subscription_id: subscriptionId,
-        //       type: "cancellation_removed",
-        //     },
-        //   });
-
-        // if (historyError) throw historyError;
-
         return new Response(
           JSON.stringify({
             message: "Subscription reactivated successfully",
@@ -130,75 +109,70 @@ serve(async (req) => {
             status: 200,
           }
         );
-      } else {
-        // For expired subscriptions, create a new subscription
-        const newSubscription = await stripe.subscriptions.create({
-          customer: subscription.stripe_customer_id,
-          items: originalSubscription.items.data.map((item) => ({
-            price: item.price.id,
-            quantity: item.quantity,
-          })),
-          metadata: {
-            listing_id: subscription.listing_id,
-            service_type: subscription.service_type,
-          },
-        });
+      }
 
-        // Update the subscription in our database
-        const { error: updateError } = await supabaseAdmin
-          .from("subscriptions")
-          .update({
-            stripe_subscription_id: newSubscription.id,
+      // For expired subscriptions, create a new subscription
+      const prices = await stripe.prices.list({
+        active: true,
+        lookup_keys: [
+          `${subscription.service_type}_${subscription.tier_type}_${
+            subscription.is_annual ? "annual" : "monthly"
+          }`,
+        ],
+      });
+
+      if (!prices.data.length) {
+        throw new Error("Could not find matching price");
+      }
+
+      const newSubscription = await stripe.subscriptions.create({
+        customer: subscription.stripe_customer_id,
+        items: [{ price: prices.data[0].id }],
+        metadata: {
+          listing_id: subscription.listing_id,
+          service_type: subscription.service_type,
+        },
+      });
+
+      // Update the subscription in our database
+      const { error: updateError } = await supabaseAdmin
+        .from("subscriptions")
+        .update({
+          stripe_subscription_id: newSubscription.id,
+          status: newSubscription.status,
+          cancel_at_period_end: false,
+          current_period_end: new Date(
+            newSubscription.current_period_end * 1000
+          ).toISOString(),
+        })
+        .eq("id", subscription.id);
+
+      if (updateError) throw updateError;
+
+      // If the listing was deactivated, reactivate it
+      const { error: listingError } = await supabaseAdmin
+        .from(subscription.service_type + "_listing")
+        .update({ is_archived: false })
+        .eq("id", subscription.listing_id);
+
+      if (listingError) throw listingError;
+
+      return new Response(
+        JSON.stringify({
+          message: "Subscription reactivated successfully",
+          subscription: {
+            id: newSubscription.id,
             status: newSubscription.status,
-            cancel_at_period_end: false,
             current_period_end: new Date(
               newSubscription.current_period_end * 1000
             ).toISOString(),
-          })
-          .eq("id", subscription.id);
-
-        if (updateError) throw updateError;
-
-        // // Create record in subscription history
-        // const { error: historyError } = await supabaseAdmin
-        //   .from("subscription_history")
-        //   .insert({
-        //     subscription_id: subscription.id,
-        //     action: "reactivated",
-        //     metadata: {
-        //       old_subscription_id: subscriptionId,
-        //       new_subscription_id: newSubscription.id,
-        //       type: "new_subscription",
-        //     },
-        //   });
-
-        // if (historyError) throw historyError;
-
-        // If the listing was deactivated, reactivate it
-        const { error: listingError } = await supabaseAdmin
-          .from(subscription.service_type + "_listing")
-          .update({ status: "active" })
-          .eq("id", subscription.listing_id);
-
-        if (listingError) throw listingError;
-
-        return new Response(
-          JSON.stringify({
-            message: "Subscription reactivated successfully",
-            subscription: {
-              id: newSubscription.id,
-              status: newSubscription.status,
-              current_period_end: new Date(
-                newSubscription.current_period_end * 1000
-              ).toISOString(),
-            },
-          }),
-          {
-            headers: { ...corsHeaders, "Content-Type": "application/json" },
-            status: 200,
-          }
-        );
-      }
+          },
+        }),
+        {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+          status: 200,
+        }
+      );
     } catch (error) {
       throw error;
     }
@@ -207,7 +181,9 @@ serve(async (req) => {
     return new Response(
       JSON.stringify({
         error:
-          error instanceof Error ? error.message : "An unknown error occurred",
+          error instanceof Error
+            ? error.message
+            : "An unexpected error occurred",
       }),
       {
         headers: { ...corsHeaders, "Content-Type": "application/json" },

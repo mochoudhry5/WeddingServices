@@ -87,7 +87,7 @@ const SubscriptionTiers: React.FC<SubscriptionTiersProps> = ({
   return (
     <div className="w-full">
       {/* Service Selection - Mobile Optimized */}
-      <div className="overflow-x-auto pb-4 mb-4 sm:mb-8">
+      <div className="overflow-x-auto mb-4 sm:mb-7">
         <div className="flex justify-center min-w-full">
           <div className="inline-flex gap-2 p-1 bg-gray-100 rounded-lg">
             <ServiceInput
@@ -102,8 +102,8 @@ const SubscriptionTiers: React.FC<SubscriptionTiersProps> = ({
       </div>
 
       {/* Annual/Monthly Toggle */}
-      <div className="flex justify-center items-center gap-3 mb-6 sm:mb-8">
-        <span className={`text-sm ${!isAnnual ? "font-medium" : ""}`}>
+      <div className="flex justify-center items-center gap-2 mb-6 sm:mb-8">
+        <span className={`text-sm ${!isAnnual ? "font-bold" : ""}`}>
           Monthly
         </span>
         <button
@@ -118,7 +118,7 @@ const SubscriptionTiers: React.FC<SubscriptionTiersProps> = ({
             }`}
           />
         </button>
-        <span className="text-sm">
+        <span className={`text-sm ${isAnnual ? "font-bold" : ""}`}>
           Annual <span className="text-green-600">(Save 20%)</span>
         </span>
       </div>
