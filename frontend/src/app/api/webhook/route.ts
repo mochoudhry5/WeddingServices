@@ -115,7 +115,7 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
     .from(`${session.metadata?.serviceType}_listing`)
     .update({
       is_draft: false,
-      status: "active",
+      is_archived: false,
     })
     .eq("id", session.metadata?.listing_id);
 
@@ -143,6 +143,14 @@ async function handleSuccessfulPayment(invoice: Stripe.Invoice) {
     invoice.subscription as string
   );
 
+  // Get the subscription details to know the service type and listing ID
+  const { data: subData } = await supabase
+    .from("subscriptions")
+    .select("service_type, listing_id")
+    .eq("stripe_subscription_id", subscription.id)
+    .single();
+
+  // Update subscription
   await supabase
     .from("subscriptions")
     .update({
@@ -153,6 +161,14 @@ async function handleSuccessfulPayment(invoice: Stripe.Invoice) {
       cancel_at_period_end: subscription.cancel_at_period_end,
     })
     .eq("stripe_subscription_id", subscription.id);
+
+  // Update listing status to active
+  if (subData) {
+    await supabase
+      .from(`${subData.service_type}_listing`)
+      .update({ is_archived: false })
+      .eq("id", subData.listing_id);
+  }
 
   // Record payment history
   await supabase.from("subscription_history").insert({
@@ -201,7 +217,7 @@ async function handleFailedPayment(invoice: Stripe.Invoice) {
     if (sub) {
       await supabase
         .from(sub.service_type + "_listing")
-        .update({ status: "inactive" })
+        .update({ is_archived: true })
         .eq("id", sub.listing_id);
     }
   }

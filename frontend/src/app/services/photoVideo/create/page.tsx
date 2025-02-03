@@ -192,6 +192,7 @@ const CreatePhotographyListing = () => {
       status: "waiting",
     },
   });
+  const [promoCode, setPromoCode] = useState<string>("");
 
   // Helper function to update progress
   const updateProgress = (step: string, status: ProgressStatus) => {
@@ -809,6 +810,7 @@ const CreatePhotographyListing = () => {
           tierType: selectedTier,
           isAnnual,
           listing_id: listingId,
+          promoCode,
         }),
       });
 
@@ -2331,6 +2333,8 @@ const CreatePhotographyListing = () => {
                     isLoading={isPaymentLoading}
                     serviceType="photo_video"
                     error={paymentError}
+                    promoCode={promoCode}
+                    setPromoCode={setPromoCode}
                   >
                     {isPaymentLoading && (
                       <div className="mt-6 border-t pt-6">

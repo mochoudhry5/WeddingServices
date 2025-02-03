@@ -549,7 +549,7 @@ function SettingsPage() {
       <div className="flex flex-col min-h-screen">
         <NavBar />
         <div className="flex-1 bg-gray-50">
-          <div className="max-w-5xl mx-auto px-4 py-8">
+          <div className="max-w-7xl mx-auto px-4 py-8">
             <div className="flex flex-col md:flex-row gap-6">
               {/* Sidebar Navigation */}
               <div className="w-full md:w-56 flex-shrink-0">

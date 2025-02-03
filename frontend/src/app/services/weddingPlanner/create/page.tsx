@@ -171,6 +171,7 @@ const CreateWeddingPlannerListing = () => {
       status: "waiting",
     },
   });
+  const [promoCode, setPromoCode] = useState<string>("");
 
   // Helper function to update progress
   const updateProgress = (step: string, status: ProgressStatus) => {
@@ -703,6 +704,7 @@ const CreateWeddingPlannerListing = () => {
           tierType: selectedTier,
           isAnnual,
           listing_id: listingId,
+          promoCode,
         }),
       });
 
@@ -1860,6 +1862,8 @@ const CreateWeddingPlannerListing = () => {
                     isLoading={isPaymentLoading}
                     serviceType="wedding_planner"
                     error={paymentError}
+                    promoCode={promoCode}
+                    setPromoCode={setPromoCode}
                   >
                     {isPaymentLoading && (
                       <div className="mt-6 border-t pt-6">

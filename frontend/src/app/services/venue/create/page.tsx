@@ -337,6 +337,7 @@ export default function CreateVenueListing() {
       status: "waiting",
     },
   });
+  const [promoCode, setPromoCode] = useState<string>("");
 
   // Helper function to update progress
   const updateProgress = (step: string, status: ProgressStatus) => {
@@ -860,6 +861,7 @@ export default function CreateVenueListing() {
           tierType: selectedTier,
           isAnnual,
           listing_id: listingId,
+          promoCode,
         }),
       });
 
@@ -1354,7 +1356,6 @@ export default function CreateVenueListing() {
                   )}
 
                   {/* Step 3: Inclusions */}
-                  {/* Step 3: Inclusions */}
                   {currentStep === 3 && (
                     <div className="space-y-6">
                       <div>
@@ -1801,6 +1802,8 @@ export default function CreateVenueListing() {
                     isLoading={isPaymentLoading}
                     serviceType="venue"
                     error={paymentError}
+                    promoCode={promoCode}
+                    setPromoCode={setPromoCode}
                   >
                     {isPaymentLoading && (
                       <div className="mt-6 border-t pt-6">

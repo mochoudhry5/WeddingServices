@@ -22,46 +22,64 @@ const InvoicesSection: FC<InvoicesSectionProps> = ({ invoices }) => {
 
   return (
     <div className="mb-8">
-      <div className="border rounded-lg">
-        <div className="flex justify-between items-center py-4 px-6">
-          <h3 className="text-lg font-medium">Billing History</h3>
+      <div className="border rounded-lg bg-white">
+        <div className="flex justify-between items-center py-4 px-6 border-b">
+          <h3 className="text-xl font-bold text-gray-900">Billing History</h3>
         </div>
         <div className="overflow-x-auto">
           <table className="w-full">
-            <thead className="bg-gray-50">
+            <thead className="bg-gray-50 border-b">
               <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500">
+                <th
+                  scope="col"
+                  className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                >
                   Invoice Number
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500">
+                <th
+                  scope="col"
+                  className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                >
                   Date
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500">
+                <th
+                  scope="col"
+                  className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                >
                   Amount
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500">
+                <th
+                  scope="col"
+                  className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                >
                   Status
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500">
+                <th
+                  scope="col"
+                  className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                >
                   Invoice
                 </th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-200">
+            <tbody className="divide-y divide-gray-100 bg-white">
               {invoices.map((invoice) => (
-                <tr key={invoice.id}>
-                  <td className="whitespace-nowrap px-6 py-4 text-sm">
+                <tr
+                  key={invoice.id}
+                  className="hover:bg-gray-50 transition-colors"
+                >
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                     {invoice.number}
                   </td>
-                  <td className="whitespace-nowrap px-6 py-4 text-sm">
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                     {new Date(invoice.created).toLocaleDateString()}
                   </td>
-                  <td className="whitespace-nowrap px-6 py-4 text-sm">
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                     ${invoice.amount_paid.toFixed(2)}
                   </td>
-                  <td className="whitespace-nowrap px-6 py-4">
+                  <td className="px-6 py-4 whitespace-nowrap text-sm">
                     <span
-                      className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${getStatusStyle(
+                      className={`inline-flex px-2 py-1 rounded-full text-xs font-medium ${getStatusStyle(
                         invoice.status
                       )}`}
                     >
@@ -69,14 +87,14 @@ const InvoicesSection: FC<InvoicesSectionProps> = ({ invoices }) => {
                         invoice.status.slice(1)}
                     </span>
                   </td>
-                  <td className="whitespace-nowrap px-6 py-4">
+                  <td className="px-6 py-4 whitespace-nowrap text-sm">
                     <a
                       href={invoice.hosted_invoice_url}
-                      className="inline-block text-gray-500 hover:text-gray-700"
+                      className="text-gray-600 hover:text-gray-900 transition-colors"
                       target="_blank"
                       rel="noopener noreferrer"
                     >
-                      <FileText className="h-5 w-5" />
+                      <FileText size={20} />
                     </a>
                   </td>
                 </tr>

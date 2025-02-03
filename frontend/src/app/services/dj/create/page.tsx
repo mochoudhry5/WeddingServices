@@ -164,6 +164,7 @@ const CreateDJListing = () => {
       status: "waiting",
     },
   });
+  const [promoCode, setPromoCode] = useState<string>("");
 
   // Helper function to update progress
   const updateProgress = (step: string, status: ProgressStatus) => {
@@ -707,6 +708,7 @@ const CreateDJListing = () => {
           tierType: selectedTier,
           isAnnual,
           listing_id: listingId,
+          promoCode,
         }),
       });
 
@@ -1829,6 +1831,8 @@ const CreateDJListing = () => {
                     isLoading={isPaymentLoading}
                     serviceType="dj"
                     error={paymentError}
+                    promoCode={promoCode}
+                    setPromoCode={setPromoCode}
                   >
                     {isPaymentLoading && (
                       <div className="mt-6 border-t pt-6">

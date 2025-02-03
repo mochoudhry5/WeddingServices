@@ -46,6 +46,7 @@ serve(async (req) => {
           stripe_customer_id,
           status,
           service_type,
+          is_trial,
           tier_type,
           is_annual,
           current_period_end,

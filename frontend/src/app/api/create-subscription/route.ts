@@ -12,8 +12,17 @@ const supabase = createClient(
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { priceId, userId, serviceType, tierType, isAnnual, listing_id } =
-      body;
+    const {
+      priceId,
+      userId,
+      serviceType,
+      tierType,
+      isAnnual,
+      listing_id,
+      promoCode,
+    } = body;
+
+    let isTrialCoupon = false;
 
     // Validate required fields
     if (!priceId || !userId || !serviceType || !tierType || !listing_id) {
@@ -37,18 +46,66 @@ export async function POST(request: Request) {
       );
     }
 
+    let subscriptionMetadata = {
+      userId,
+      serviceType,
+      tierType,
+      isAnnual: isAnnual.toString(),
+      listing_id,
+      isTrial: "false",
+      trialPromoCode: null,
+    };
+
+    // Validate promo code if provided
+    let finalPromoCode;
+    if (promoCode) {
+      try {
+        finalPromoCode = await stripe.promotionCodes.list({
+          code: promoCode,
+          active: true,
+        });
+
+        if (!finalPromoCode.data.length) {
+          return NextResponse.json(
+            { error: "Invalid promo code" },
+            { status: 400 }
+          );
+        }
+
+        // Get the coupon details to check if it's a trial coupon
+        const coupon = await stripe.coupons.retrieve(
+          promoCode.data[0].coupon.id
+        );
+
+        isTrialCoupon = coupon.metadata?.isTrial === "true"; // Add this metadata in Stripe dashboard
+
+        if (isTrialCoupon) {
+          // Add trial metadata to subscription if it's a trial coupon
+          subscriptionMetadata = {
+            ...subscriptionMetadata,
+            isTrial: "true",
+            trialPromoCode: body.promoCode,
+          };
+        }
+      } catch (error) {
+        return NextResponse.json(
+          { error: "Invalid promo code" },
+          { status: 400 }
+        );
+      }
+    }
+
+    // Create subscription with optional promotion code
     const subscription = await stripe.subscriptions.create({
       customer: paymentMethod.stripe_customer_id,
       items: [{ price: priceId }],
       default_payment_method: paymentMethod.stripe_payment_method_id,
       payment_behavior: "error_if_incomplete",
-      metadata: {
-        userId,
-        serviceType,
-        tierType,
-        isAnnual: isAnnual.toString(),
-        listing_id,
-      },
+      metadata: subscriptionMetadata,
+      // Add promotion code if valid
+      ...(finalPromoCode?.data[0] && {
+        promotion_code: finalPromoCode.data[0].id,
+      }),
     });
 
     // If we get here, payment was successful, so create the subscription record
@@ -62,10 +119,12 @@ export async function POST(request: Request) {
         status: subscription.status,
         service_type: serviceType,
         tier_type: tierType,
+        is_trial: isTrialCoupon,
         is_annual: isAnnual,
         current_period_end: new Date(
           subscription.current_period_end * 1000
         ).toISOString(),
+        // applied_coupon: coupon?.id,
       });
 
     if (subscriptionError) throw subscriptionError;

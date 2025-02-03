@@ -1,7 +1,6 @@
 // components/ui/PaymentConfirmationDialog.tsx
 import {
   AlertDialog,
-  AlertDialogAction,
   AlertDialogCancel,
   AlertDialogContent,
   AlertDialogDescription,
@@ -10,6 +9,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { CreditCard, Info, XCircle } from "lucide-react";
+import React, { Dispatch, SetStateAction } from "react";
 
 interface PaymentMethod {
   card_brand: string;
@@ -33,6 +33,23 @@ interface PaymentConfirmationDialogProps {
   children?: React.ReactNode;
 }
 
+interface PaymentConfirmationDialogProps {
+  isOpen: boolean;
+  onClose: () => void;
+  onConfirm: () => void;
+  onUpdatePayment: () => void;
+  paymentMethod: PaymentMethod;
+  amount: number;
+  isAnnual: boolean;
+  tierType: string;
+  isLoading: boolean;
+  serviceType: string;
+  error: string | null;
+  promoCode: string;
+  setPromoCode: Dispatch<SetStateAction<string>>;
+  children?: React.ReactNode;
+}
+
 export function PaymentConfirmationDialog({
   isOpen,
   onClose,
@@ -45,6 +62,8 @@ export function PaymentConfirmationDialog({
   isLoading,
   serviceType,
   error,
+  promoCode,
+  setPromoCode,
   children,
 }: PaymentConfirmationDialogProps) {
   const formattedServiceType = serviceType
@@ -66,7 +85,7 @@ export function PaymentConfirmationDialog({
         </AlertDialogHeader>
 
         <div className="p-6 space-y-6">
-          {/* Show error message if present */}
+          {/* Error Message */}
           {error && (
             <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-4">
               <div className="flex items-center space-x-2">
@@ -78,6 +97,7 @@ export function PaymentConfirmationDialog({
               </p>
             </div>
           )}
+
           {/* Subscription Details Section */}
           <div className="space-y-4">
             <div className="flex items-center justify-between pb-4 border-b border-gray-200">
@@ -125,6 +145,26 @@ export function PaymentConfirmationDialog({
                   Try a different payment method
                 </button>
               )}
+            </div>
+          </div>
+
+          {/* Promo Code Section */}
+          <div className="space-y-2">
+            <label
+              htmlFor="promoCode"
+              className="text-sm font-medium text-gray-700"
+            >
+              Have a promo code?
+            </label>
+            <div className="flex gap-2">
+              <input
+                id="promoCode"
+                type="text"
+                value={promoCode}
+                onChange={(e) => setPromoCode(e.target.value)}
+                placeholder="Enter promo code"
+                className="flex-1 rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-black focus:border-transparent"
+              />
             </div>
           </div>
 

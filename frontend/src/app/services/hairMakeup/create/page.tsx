@@ -197,6 +197,7 @@ const CreateMakeupListing = () => {
       status: "waiting",
     },
   });
+  const [promoCode, setPromoCode] = useState<string>("");
 
   // Helper function to update progress
   const updateProgress = (step: string, status: ProgressStatus) => {
@@ -819,6 +820,7 @@ const CreateMakeupListing = () => {
           tierType: selectedTier,
           isAnnual,
           listing_id: listingId,
+          promoCode,
         }),
       });
 
@@ -2207,6 +2209,8 @@ const CreateMakeupListing = () => {
                     isLoading={isPaymentLoading}
                     serviceType="hair_makeup"
                     error={paymentError}
+                    promoCode={promoCode}
+                    setPromoCode={setPromoCode}
                   >
                     {isPaymentLoading && (
                       <div className="mt-6 border-t pt-6">

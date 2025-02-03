@@ -50,16 +50,21 @@ serve(async (req) => {
     if (authError || !user) throw new Error("Invalid authentication");
 
     // Get all subscriptions for the user
-    const { data: subscriptions, error: subError } = await supabaseAdmin
-      .from("subscriptions")
-      .select("stripe_customer_id")
-      .eq("user_id", user.id);
+    const { data: userPreferences, error: userPreferencesError } =
+      await supabaseAdmin
+        .from("user_preferences")
+        .select("stripe_customer_id")
+        .eq("id", user.id);
 
-    if (subError) throw subError;
+    if (userPreferencesError) throw userPreferencesError;
 
     // Get unique customer IDs
     const customerIds = [
-      ...new Set(subscriptions.map((sub) => sub.stripe_customer_id)),
+      ...new Set(
+        userPreferences.map(
+          (userPreference) => userPreference.stripe_customer_id
+        )
+      ),
     ];
 
     // Fetch invoices for each customer ID

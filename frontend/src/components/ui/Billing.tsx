@@ -26,6 +26,7 @@ interface StripeSubscription {
   stripe_customer_id: string;
   status: string;
   service_type: string;
+  is_trial: boolean;
   tier_type: string;
   is_annual: boolean;
   current_period_end: string;
@@ -161,53 +162,57 @@ const SubscriptionSection = ({
 
   return (
     <div className="mb-8">
-      <div className="border rounded-lg">
-        <div className="flex justify-between items-center py-4 px-6">
-          <h3 className="text-lg font-medium">{title}</h3>
+      <div className="border rounded-lg bg-white">
+        <div className="flex justify-between items-center py-4 px-6 border-b">
+          <h3 className="text-xl font-bold text-gray-900">{title}</h3>
         </div>
         <div className="overflow-x-auto">
           <table className="w-full">
-            <thead className="bg-gray-50">
+            <thead className="bg-gray-50 border-b">
               <tr>
-                <th className="px-6 py-3 text-center text-xs font-medium text-gray-500">
-                  Start Date
+                <th
+                  scope="col"
+                  className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                >
+                  {isExpired
+                    ? "End Date"
+                    : isExpiring
+                    ? "Expires On"
+                    : "Next Payment"}
                 </th>
-                <>
-                  {isExpired ? (
-                    <th className="px-6 py-3 text-center text-xs font-medium text-gray-500">
-                      End Date
-                    </th>
-                  ) : isExpiring ? (
-                    <th className="px-6 py-3 text-center text-xs font-medium text-gray-500">
-                      Expires On
-                    </th>
-                  ) : (
-                    <th className="px-6 py-3 text-center text-xs font-medium text-gray-500">
-                      Next Payment
-                    </th>
-                  )}
-                </>
-                <th className="px-6 py-3 text-center text-xs font-medium text-gray-500">
+                <th
+                  scope="col"
+                  className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                >
                   Plan Type
                 </th>
-                <th className="px-6 py-3 text-center text-xs font-medium text-gray-500">
+                <th
+                  scope="col"
+                  className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                >
                   Status
                 </th>
-                <th className="px-6 py-3 text-center text-xs font-medium text-gray-500">
+                <th
+                  scope="col"
+                  className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                >
                   Listing
                 </th>
-                <th className="px-6 py-3 text-center text-xs font-medium text-gray-500">
+                <th
+                  scope="col"
+                  className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                >
                   Actions
                 </th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-200">
+            <tbody className="divide-y divide-gray-100 bg-white">
               {subscriptions.map((subscription) => (
-                <tr key={subscription.id}>
-                  <td className="whitespace-nowrap px-6 py-4 text-sm">
-                    {new Date(subscription.created_at).toLocaleDateString()}
-                  </td>
-                  <td className="whitespace-nowrap px-6 py-4 text-sm">
+                <tr
+                  key={subscription.id}
+                  className="hover:bg-gray-50 transition-colors"
+                >
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                     {subscription.cancel_at_period_end &&
                     subscription.status === "active" ? (
                       <span className="text-red-600">
@@ -221,45 +226,56 @@ const SubscriptionSection = ({
                       ).toLocaleDateString()
                     )}
                   </td>
-                  <td className="whitespace-nowrap px-6 py-4 text-sm">
-                    {labelMap[subscription.service_type] +
-                      " " +
-                      subscription.tier_type.charAt(0).toUpperCase() +
-                      subscription.tier_type.slice(1)}{" "}
-                    ({subscription.is_annual ? "Annual" : "Monthly"})
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <div className="text-sm font-medium text-gray-900">
+                      {labelMap[subscription.service_type]}
+                    </div>
+                    <div className="text-sm text-gray-500">
+                      {subscription.tier_type.charAt(0).toUpperCase() +
+                        subscription.tier_type.slice(1)}{" "}
+                      ({subscription.is_annual ? "Annual" : "Monthly"})
+                    </div>
                   </td>
-                  <td className="whitespace-nowrap px-6 py-4">
-                    <span
-                      className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                        subscription.status === "active" &&
-                        !subscription.cancel_at_period_end
-                          ? "bg-green-100 text-green-800"
-                          : subscription.status === "active" &&
-                            subscription.cancel_at_period_end
-                          ? "bg-yellow-100 text-yellow-800"
-                          : subscription.status === "past_due"
-                          ? "bg-yellow-100 text-yellow-800"
-                          : "bg-red-100 text-red-800"
-                      }`}
-                    >
-                      {subscription.status.charAt(0).toUpperCase() +
-                        subscription.status.slice(1)}
-                    </span>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm">
+                    <div className="flex flex-col gap-1.5">
+                      <span
+                        className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium w-fit ${
+                          subscription.status === "active" &&
+                          !subscription.cancel_at_period_end
+                            ? "bg-green-50 text-green-700"
+                            : subscription.status === "active" &&
+                              subscription.cancel_at_period_end
+                            ? "bg-yellow-100 text-yellow-800"
+                            : subscription.status === "past_due"
+                            ? "bg-yellow-100 text-yellow-800"
+                            : "bg-red-100 text-red-800"
+                        }`}
+                      >
+                        {subscription.status.charAt(0).toUpperCase() +
+                          subscription.status.slice(1)}
+                      </span>
+                      {subscription.is_trial &&
+                        subscription.status === "active" && (
+                          <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-blue-50 text-blue-700 w-fit">
+                            Free 3 Month Trial
+                          </span>
+                        )}
+                    </div>
                   </td>
-                  <td className="whitespace-nowrap px-6 py-4">
+                  <td className="px-6 py-4 whitespace-nowrap text-sm">
                     <NextLink
                       href={`/services/${getServiceTypeForUrl(
                         subscription.service_type
                       )}/${subscription.listing_id}`}
-                      className="inline-block text-black hover:text-stone-500 transition-colors"
+                      className="text-gray-600 hover:text-gray-900 transition-colors"
                       target="_blank"
                       rel="noopener noreferrer"
                     >
                       <Link size={20} />
                     </NextLink>
                   </td>
-                  <td className="whitespace-nowrap px-6 py-4">
-                    <div className="flex items-center space-x-2">
+                  <td className="px-6 py-4 whitespace-nowrap text-sm">
+                    <div className="flex items-center space-x-3">
                       {subscription.status === "active" &&
                         !subscription.cancel_at_period_end && (
                           <button
