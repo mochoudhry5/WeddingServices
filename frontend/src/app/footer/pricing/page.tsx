@@ -90,13 +90,13 @@ const PricingPage = () => {
       ["Extra Leads from Quick Reach", true],
     ],
     premium: [
-      ["Premium Business Exposure in city", true],
-      ["Only 20 spots available per city", true],
-      ["Priority Support", true],
+      ["Featured placement in search results", true],
+      ["No Lead Generation Fees", true],
+      ["Priority Customer Support", true],
     ],
     elite: [
-      ["Elite Exposure (Top placement in city)", true],
-      ["Only 3 spots available per city", true],
+      ["Top search placement", true],
+      ["No Lead Generation Fees", true],
       ["Social Media Content", true],
     ],
   };
@@ -265,6 +265,135 @@ const PricingPage = () => {
                 features={commonFeatures.elite}
                 price={categories[selectedCategory].elite.price}
               />
+            </div>
+
+            {/* Feature Comparison Table */}
+            <div className="mt-16 max-w-7xl mx-auto px-4">
+              <h2 className="text-2xl font-bold text-center mb-8">
+                Feature Comparison
+              </h2>
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead>
+                    <tr>
+                      <th className="text-left p-4 bg-gray-50">Features</th>
+                      <th className="p-4 bg-gray-50 text-center">Basic</th>
+                      <th className="p-4 bg-gray-50 text-center">Premium</th>
+                      <th className="p-4 bg-gray-50 text-center">Elite</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-200">
+                    <tr>
+                      <td className="p-4">Profile Listing</td>
+                      <td className="p-4 text-center">
+                        <Check className="w-5 h-5 text-green-500 mx-auto" />
+                      </td>
+                      <td className="p-4 text-center">
+                        <Check className="w-5 h-5 text-green-500 mx-auto" />
+                      </td>
+                      <td className="p-4 text-center">
+                        <Check className="w-5 h-5 text-green-500 mx-auto" />
+                      </td>
+                    </tr>
+                    <tr>
+                      <td className="p-4">Photo/Video Gallery</td>
+                      <td className="p-4 text-center">
+                        <Check className="w-5 h-5 text-green-500 mx-auto" />
+                      </td>
+                      <td className="p-4 text-center">
+                        <Check className="w-5 h-5 text-green-500 mx-auto" />
+                      </td>
+                      <td className="p-4 text-center">
+                        <Check className="w-5 h-5 text-green-500 mx-auto" />
+                      </td>
+                    </tr>
+                    <tr>
+                      <td className="p-4">Lead Management</td>
+                      <td className="p-4 text-center">
+                        <Check className="w-5 h-5 text-green-500 mx-auto" />
+                      </td>
+                      <td className="p-4 text-center">
+                        <Check className="w-5 h-5 text-green-500 mx-auto" />
+                      </td>
+                      <td className="p-4 text-center">
+                        <Check className="w-5 h-5 text-green-500 mx-auto" />
+                      </td>
+                    </tr>
+                    <tr>
+                      <td className="p-4">Basic Anyalytic</td>
+                      <td className="p-4 text-center">
+                        <Check className="w-5 h-5 text-green-500 mx-auto" />
+                      </td>
+                      <td className="p-4 text-center">
+                        <Check className="w-5 h-5 text-green-500 mx-auto" />
+                      </td>
+                      <td className="p-4 text-center">
+                        <Check className="w-5 h-5 text-green-500 mx-auto" />
+                      </td>
+                    </tr>
+                    <tr>
+                      <td className="p-4">Featured Reach</td>
+                      <td className="p-4 text-center">
+                        <X className="w-5 h-5 text-gray-300 mx-auto" />
+                      </td>
+                      <td className="p-4 text-center">
+                        <Check className="w-5 h-5 text-green-500 mx-auto" />
+                      </td>
+                      <td className="p-4 text-center">
+                        <Check className="w-5 h-5 text-green-500 mx-auto" />
+                      </td>
+                    </tr>
+                    <tr>
+                      <td className="p-4">Priority Support</td>
+                      <td className="p-4 text-center">
+                        <X className="w-5 h-5 text-gray-300 mx-auto" />
+                      </td>
+                      <td className="p-4 text-center">
+                        <Check className="w-5 h-5 text-green-500 mx-auto" />
+                      </td>
+                      <td className="p-4 text-center">
+                        <Check className="w-5 h-5 text-green-500 mx-auto" />
+                      </td>
+                    </tr>
+                    <tr>
+                      <td className="p-4">Elite Reach</td>
+                      <td className="p-4 text-center">
+                        <X className="w-5 h-5 text-gray-300 mx-auto" />
+                      </td>
+                      <td className="p-4 text-center">
+                        <X className="w-5 h-5 text-gray-300 mx-auto" />
+                      </td>
+                      <td className="p-4 text-center">
+                        <Check className="w-5 h-5 text-green-500 mx-auto" />
+                      </td>
+                    </tr>
+                    <tr>
+                      <td className="p-4">Social Media Integration</td>
+                      <td className="p-4 text-center">
+                        <X className="w-5 h-5 text-gray-300 mx-auto" />
+                      </td>
+                      <td className="p-4 text-center">
+                        <X className="w-5 h-5 text-gray-300 mx-auto" />
+                      </td>
+                      <td className="p-4 text-center">
+                        <Check className="w-5 h-5 text-green-500 mx-auto" />
+                      </td>
+                    </tr>
+                    <tr>
+                      <td className="p-4">Marketing Tools</td>
+                      <td className="p-4 text-center">
+                        <X className="w-5 h-5 text-gray-300 mx-auto" />
+                      </td>
+                      <td className="p-4 text-center">
+                        <X className="w-5 h-5 text-gray-300 mx-auto" />
+                      </td>
+                      <td className="p-4 text-center">
+                        <Check className="w-5 h-5 text-green-500 mx-auto" />
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
             </div>
           </div>
         </main>
