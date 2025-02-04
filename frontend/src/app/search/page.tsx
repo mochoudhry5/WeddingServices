@@ -637,7 +637,8 @@ export default function ServicesSearchPage() {
       const query = supabase
         .from(getServiceTable(filtersToUse.serviceType))
         .select(getServiceQuery(filtersToUse.serviceType))
-        .eq("is_archived", false);
+        .eq("is_archived", false) // Exclude archived listings
+        .eq("is_draft", false); // Exclude draft listings
 
       // Apply filters
       applyLocationFilters(query, filtersToUse, hasExactAddress);

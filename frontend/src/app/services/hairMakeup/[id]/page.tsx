@@ -41,6 +41,7 @@ interface HairMakeupDetails {
   min_service_price: number;
   max_service_price: number;
   is_archived: boolean;
+  is_draft: boolean;
   number_of_contacted: number;
 }
 
@@ -183,6 +184,7 @@ const HairMakeupDetailsPage = () => {
           user_email,
           is_remote_business,
           is_archived,
+          is_draft,
           number_of_contacted,
           hair_makeup_media (
             file_path,
@@ -208,7 +210,7 @@ const HairMakeupDetailsPage = () => {
         if (error) throw error;
       }
 
-      if (!makeupData || makeupData.is_archived) {
+      if (!makeupData || makeupData.is_archived || makeupData.is_draft) {
         setHairMakeup(null);
         return;
       }

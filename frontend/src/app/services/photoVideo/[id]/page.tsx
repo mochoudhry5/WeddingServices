@@ -15,6 +15,7 @@ import { ServiceInfoGrid } from "@/components/ui/CardInfoGrid";
 import { SearchX } from "lucide-react";
 import { AuthModals } from "@/components/ui/AuthModal";
 import ErrorBoundary from "@/components/ui/ErrorBoundary";
+import PhotoVideoEditPage from "../editReach/[id]/page";
 
 interface PhotoVideoDetails {
   user_id: string;
@@ -40,6 +41,7 @@ interface PhotoVideoDetails {
   min_service_price: number;
   max_service_price: number;
   is_archived: boolean;
+  is_draft: boolean;
   number_of_contacted: number;
 }
 
@@ -238,6 +240,7 @@ const PhotographyDetailsPage = () => {
           user_id,
           user_email,
           is_archived,
+          is_draft,
           number_of_contacted,
           photo_video_media (
             file_path,
@@ -264,7 +267,11 @@ const PhotographyDetailsPage = () => {
         if (error) throw error;
       }
 
-      if (!photoVideoData || photoVideoData.is_archived) {
+      if (
+        !photoVideoData ||
+        photoVideoData.is_archived ||
+        photoVideoData.is_draft
+      ) {
         setPhotoVideo(null);
         return;
       }

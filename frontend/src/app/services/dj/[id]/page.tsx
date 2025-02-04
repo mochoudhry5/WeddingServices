@@ -26,6 +26,7 @@ interface DJDetails {
   travel_range: number;
   is_remote_business: boolean;
   is_archived: boolean;
+  is_draft: boolean;
   address: string | null;
   city: string;
   state: string;
@@ -180,6 +181,7 @@ const DJDetailsPage = () => {
           user_email,
           is_remote_business,
           is_archived,
+          is_draft,
           number_of_contacted,
           dj_media (
             file_path,
@@ -205,7 +207,7 @@ const DJDetailsPage = () => {
         if (error) throw error;
       }
 
-      if (!djData || djData.is_archived) {
+      if (!djData || djData.is_archived || djData.is_draft) {
         setDJ(null);
         return;
       }

@@ -46,6 +46,7 @@ interface WeddingPlannerDetails {
   min_service_price: number;
   max_service_price: number;
   is_archived: boolean;
+  is_draft: boolean;
   number_of_contacted: number;
 }
 
@@ -225,6 +226,7 @@ const WeddingDetailsPage = () => {
           user_id,
           user_email,
           is_archived,
+          is_draft,
           number_of_contacted,
           wedding_planner_media (
             file_path,
@@ -249,7 +251,11 @@ const WeddingDetailsPage = () => {
         if (error) throw error;
       }
 
-      if (!weddingPlannerData || weddingPlannerData.is_archived) {
+      if (
+        !weddingPlannerData ||
+        weddingPlannerData.is_archived ||
+        weddingPlannerData.is_draft
+      ) {
         setWeddingPlanner(null);
         return;
       }

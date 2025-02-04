@@ -42,6 +42,7 @@ interface VenueDetails {
   venue_media: VenueMedia[];
   venue_addons: VenueAddon[];
   is_archived: boolean;
+  is_draft: boolean;
   number_of_contacted: number;
 }
 
@@ -307,6 +308,7 @@ const VenueDetailsPage = () => {
           user_id,
           user_email,
           is_archived,
+          is_draft,
           number_of_contacted,
           venue_media (
             file_path,
@@ -333,7 +335,7 @@ const VenueDetailsPage = () => {
         if (error) throw error;
       }
 
-      if (!venueData || venueData.is_archived) {
+      if (!venueData || venueData.is_archived || venueData.is_draft) {
         setVenue(null);
         return;
       }
