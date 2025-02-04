@@ -133,6 +133,7 @@ interface BaseListing {
   min_service_price?: number;
   max_service_price?: number;
   is_archived: boolean;
+  is_draft: boolean;
 }
 
 // Service-based listing interface (for services with price ranges)
@@ -204,6 +205,7 @@ const useListings = (user: any) => {
               "description",
               "created_at",
               "is_archived",
+              "is_draft",
             ];
 
             const selectFields = [...baseFields];
@@ -231,8 +233,8 @@ const useListings = (user: any) => {
               )`
               )
               .eq("user_id", user.id)
+              .eq("is_draft", false)
               .order("created_at", { ascending: false });
-
             if (error) throw error;
 
             allListings[serviceType] = (data || []).map((listing: any) => ({
@@ -362,25 +364,30 @@ export default function MyListingsPage() {
   const handleDelete = useCallback(
     async (listingId: string, serviceType: ServiceType) => {
       try {
+        const listing = listings[serviceType].find((l) => l.id === listingId);
+        if (!listing) {
+          throw new Error("Listing not found");
+        }
+
+        // If listing is not archived, navigate to billing
+        if (!listing.is_archived) {
+          router.push("/billing");
+          return;
+        }
+
+        // Otherwise, proceed with deletion for archived listings
         if (!user?.id) {
           toast.error("You must be logged in to delete a listing");
           return;
         }
 
         const config = SERVICE_CONFIGS[serviceType];
-        const listingToDelete = listings[serviceType].find(
-          (listing) => listing.id === listingId
-        );
-
-        if (!listingToDelete) {
-          throw new Error("Listing not found");
-        }
 
         // Delete media files
-        if (listingToDelete.media?.length > 0) {
+        if (listing.media?.length > 0) {
           const { error: storageError } = await supabase.storage
             .from(config.storageBucket)
-            .remove(listingToDelete.media.map((media) => media.file_path));
+            .remove(listing.media.map((media) => media.file_path));
 
           if (storageError) throw storageError;
         }
@@ -411,47 +418,7 @@ export default function MyListingsPage() {
         setListingToDelete(null);
       }
     },
-    [user?.id, listings, setListings]
-  );
-
-  const handleArchive = useCallback(
-    async (listingId: string, serviceType: ServiceType) => {
-      try {
-        if (!user?.id) {
-          toast.error("You must be logged in to archive a listing");
-          return;
-        }
-
-        const config = SERVICE_CONFIGS[serviceType];
-
-        // Update the is_archived column to true
-        const { error: updateError } = await supabase
-          .from(config.tableName)
-          .update({ is_archived: true })
-          .eq("id", listingId)
-          .eq("user_id", user.id);
-
-        if (updateError) throw updateError;
-
-        // Update local state to reflect the archived status
-        setListings((prev) => ({
-          ...prev,
-          [serviceType]: prev[serviceType].map((listing) =>
-            listing.id === listingId
-              ? { ...listing, is_archived: true }
-              : listing
-          ),
-        }));
-
-        toast.success(`${config.displayName} archived successfully`);
-      } catch (error: any) {
-        console.error("Archive error:", error);
-        toast.error(error.message || "Failed to archive listing");
-      } finally {
-        setListingToArchive(null);
-      }
-    },
-    [user?.id, setListings]
+    [user?.id, listings, setListings, router]
   );
 
   const handleRestore = useCallback(
@@ -516,6 +483,15 @@ export default function MyListingsPage() {
             {listing.is_archived ? (
               <>
                 <button
+                  onClick={(e) => {
+                    e.preventDefault();
+                    router.push(`/${config.routePrefix}/edit/${listing.id}`);
+                  }}
+                  className="bg-white/90 p-2 rounded-full shadow-lg hover:bg-white transition-colors"
+                >
+                  <Pencil className="w-4 h-4 text-gray-600" />
+                </button>
+                <button
                   onClick={() =>
                     setListingToRestore({ id: listing.id, type: serviceType })
                   }
@@ -525,9 +501,10 @@ export default function MyListingsPage() {
                   <ArchiveRestore className="w-4 h-4 text-black" />
                 </button>
                 <button
-                  onClick={() =>
-                    setListingToDelete({ id: listing.id, type: serviceType })
-                  }
+                  onClick={(e) => {
+                    e.preventDefault();
+                    setListingToDelete({ id: listing.id, type: serviceType });
+                  }}
                   className="bg-white/90 p-2 rounded-full shadow-lg hover:bg-white transition-colors"
                 >
                   <Trash2 className="w-4 h-4 text-red-600" />
@@ -547,16 +524,7 @@ export default function MyListingsPage() {
                 <button
                   onClick={(e) => {
                     e.preventDefault();
-                    setListingToArchive({ id: listing.id, type: serviceType });
-                  }}
-                  className="bg-white/90 p-2 rounded-full shadow-lg hover:bg-white transition-colors"
-                >
-                  <Archive className="w-4 h-4 text-black" />
-                </button>
-                <button
-                  onClick={(e) => {
-                    e.preventDefault();
-                    setListingToDelete({ id: listing.id, type: serviceType });
+                    router.push("/settings");
                   }}
                   className="bg-white/90 p-2 rounded-full shadow-lg hover:bg-white transition-colors"
                 >
@@ -829,32 +797,6 @@ export default function MyListingsPage() {
                     className="bg-black hover:bg-stone-500"
                   >
                     Restore
-                  </AlertDialogAction>
-                </AlertDialogFooter>
-              </AlertDialogContent>
-            </AlertDialog>
-            <AlertDialog
-              open={!!listingToArchive}
-              onOpenChange={() => setListingToArchive(null)}
-            >
-              <AlertDialogContent>
-                <AlertDialogHeader>
-                  <AlertDialogTitle>Archive Listing</AlertDialogTitle>
-                  <AlertDialogDescription>
-                    Are you sure you want to archive this listing? This will
-                    hide it from public view but you can restore it later.
-                  </AlertDialogDescription>
-                </AlertDialogHeader>
-                <AlertDialogFooter>
-                  <AlertDialogCancel>Cancel</AlertDialogCancel>
-                  <AlertDialogAction
-                    onClick={() =>
-                      listingToArchive &&
-                      handleArchive(listingToArchive.id, listingToArchive.type)
-                    }
-                    className="bg-black hover:bg-stone-500"
-                  >
-                    Archive
                   </AlertDialogAction>
                 </AlertDialogFooter>
               </AlertDialogContent>
