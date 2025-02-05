@@ -862,6 +862,7 @@ export default function CreateVenueListing() {
           isAnnual,
           listing_id: listingId,
           promoCode,
+          idempotencyKey: crypto.randomUUID(),
         }),
       });
 

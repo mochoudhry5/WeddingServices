@@ -821,6 +821,7 @@ const CreateMakeupListing = () => {
           isAnnual,
           listing_id: listingId,
           promoCode,
+          idempotencyKey: crypto.randomUUID(),
         }),
       });
 

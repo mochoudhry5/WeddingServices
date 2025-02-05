@@ -709,6 +709,7 @@ const CreateDJListing = () => {
           isAnnual,
           listing_id: listingId,
           promoCode,
+          idempotencyKey: crypto.randomUUID(),
         }),
       });
 

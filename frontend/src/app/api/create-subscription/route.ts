@@ -1,4 +1,3 @@
-//app/api/create-subscription/route.ts
 import { NextResponse } from "next/server";
 import Stripe from "stripe";
 import { createClient } from "@supabase/supabase-js";
@@ -84,7 +83,6 @@ export async function POST(request: Request) {
     }
 
     let promotionCode: Stripe.PromotionCode | null = null;
-    let trialPeriodDays: number | undefined = undefined;
 
     // Validate promo code if provided
     if (promoCode) {
@@ -92,7 +90,7 @@ export async function POST(request: Request) {
         const promotionCodes = await stripe.promotionCodes.list({
           code: promoCode,
           active: true,
-          expand: ["coupon"],
+          expand: ["data.coupon"],
         });
 
         if (!promotionCodes.data.length) {
@@ -103,13 +101,6 @@ export async function POST(request: Request) {
         }
 
         promotionCode = promotionCodes.data[0];
-
-        // Check if this is a trial promotion
-        const coupon = promotionCode.coupon as Stripe.Coupon;
-        if (coupon.metadata?.isTrial === "true") {
-          const months = parseInt(coupon.metadata.trialDurationMonths || "3");
-          trialPeriodDays = months * 30;
-        }
       } catch (error) {
         console.error("Error validating promo code:", error);
         return NextResponse.json(
@@ -127,7 +118,6 @@ export async function POST(request: Request) {
         default_payment_method: paymentMethod.stripe_payment_method_id,
         payment_behavior: "error_if_incomplete",
         promotion_code: promotionCode?.id,
-        trial_period_days: trialPeriodDays,
         metadata: {
           userId,
           serviceType,
@@ -152,13 +142,13 @@ export async function POST(request: Request) {
         status: subscription.status,
         service_type: serviceType,
         tier_type: tierType,
-        is_trial: !!trialPeriodDays,
+        is_trial: subscription.discount !== null,
         is_annual: isAnnual,
-        trial_start: trialPeriodDays ? new Date().toISOString() : null,
-        trial_end: trialPeriodDays
-          ? new Date(
-              Date.now() + trialPeriodDays * 24 * 60 * 60 * 1000
-            ).toISOString()
+        trial_start: subscription.discount?.start
+          ? new Date(subscription.discount.start * 1000).toISOString()
+          : null,
+        trial_end: subscription.discount?.end
+          ? new Date(subscription.discount.end * 1000).toISOString()
           : null,
         current_period_end: new Date(
           subscription.current_period_end * 1000

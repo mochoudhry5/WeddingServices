@@ -47,7 +47,7 @@ export const PaymentMethodForm = ({
 
       if (setupIntent && setupIntent.status === "succeeded") {
         // Wait a short moment for the webhook to process
-        await new Promise((resolve) => setTimeout(resolve, 1500));
+        await new Promise((resolve) => setTimeout(resolve, 2500));
 
         // Verify the payment method was added by checking our database
         const { count } = await supabase

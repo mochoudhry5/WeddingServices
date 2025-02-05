@@ -705,6 +705,7 @@ const CreateWeddingPlannerListing = () => {
           isAnnual,
           listing_id: listingId,
           promoCode,
+          idempotencyKey: crypto.randomUUID(),
         }),
       });
 
