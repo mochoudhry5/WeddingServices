@@ -736,6 +736,22 @@ const UpdateDJListing = () => {
       }
 
       toast.success("DJ listing updated successfully!");
+
+      const { data: listing, error: listingError } = await supabase
+        .from("dj_listing")
+        .select("is_archived")
+        .eq("id", id)
+        .single();
+
+      if (listingError) {
+        throw new Error("Failed to check listing status");
+      }
+
+      if (listing?.is_archived) {
+        router.push("/dashboard/listings");
+        return;
+      }
+
       router.push(`/dashboard/listings`);
       router.replace(`/services/dj/${dj.id}`);
     } catch (error) {
