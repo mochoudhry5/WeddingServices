@@ -29,6 +29,10 @@ interface PasswordFormData {
   confirmPassword: string;
 }
 
+interface AccountSettingsProps {
+  setActiveSection: (section: string) => void;
+}
+
 const SectionLayout = ({
   title,
   description,
@@ -47,7 +51,9 @@ const SectionLayout = ({
   </div>
 );
 
-const AccountSettings = () => {
+const AccountSettings: React.FC<AccountSettingsProps> = ({
+  setActiveSection,
+}) => {
   const { user, signOut } = useAuth();
   const [email, setEmail] = useState(user?.email || "");
   const [showVendorDialog, setShowVendorDialog] = useState(false);
@@ -122,23 +128,33 @@ const AccountSettings = () => {
     setLoading((prev) => ({ ...prev, delete: true }));
 
     try {
-      // Call the RPC function with original parameter names
-      const { data: deletionResult, error: deleteError } = await supabase.rpc(
-        "delete_user_data",
-        {
-          uid: user.id,
-          is_vendor: isVendor ?? false,
+      // If user is a vendor, check for active subscriptions first
+      if (isVendor) {
+        const { data: subscriptions, error: subscriptionError } = await supabase
+          .from("subscriptions")
+          .select("status")
+          .eq("user_id", user.id)
+          .or("status.eq.active,status.eq.trialing");
+
+        if (subscriptionError) throw subscriptionError;
+
+        if (subscriptions && subscriptions.length > 0) {
+          toast.error(
+            "You have active subscriptions. Please cancel or wait till expiration date is reached."
+          );
+          setShowDeleteDialog(false);
+          setActiveSection("billing");
+          return;
         }
-      );
-
-      if (deleteError) {
-        console.error("Delete error:", deleteError);
-        throw deleteError;
       }
 
-      if (!deletionResult?.success) {
-        throw new Error(deletionResult?.error || "Failed to delete account");
-      }
+      // If no active subscriptions, proceed with the deletion
+      const { error: deleteError } = await supabase
+        .from("users")
+        .delete()
+        .eq("id", user.id);
+
+      if (deleteError) throw deleteError;
 
       // Show success message
       toast.success("Your account has been successfully deleted");
@@ -534,7 +550,7 @@ function SettingsPage() {
   const renderContent = () => {
     switch (activeSection) {
       case "account":
-        return <AccountSettings />;
+        return <AccountSettings setActiveSection={setActiveSection} />;
       case "security":
         return <SecuritySettings />;
       case "billing":
