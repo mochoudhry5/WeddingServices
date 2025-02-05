@@ -884,7 +884,7 @@ const UpdatePhotoVideoListing = () => {
       }
 
       if (listing?.is_archived) {
-        router.push("/dashboard/listings");
+        router.push("/dashboard/listings?service=photo-video");
         return;
       }
 

@@ -956,7 +956,7 @@ export default function UpdateVenueListing() {
       }
 
       if (listing?.is_archived) {
-        router.push("/dashboard/listings");
+        router.push("/dashboard/listings?service=venue");
         return;
       }
 

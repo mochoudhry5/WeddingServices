@@ -898,7 +898,7 @@ const UpdateHairMakeupListing = () => {
       }
 
       if (listing?.is_archived) {
-        router.push("/dashboard/listings");
+        router.push("/dashboard/listings?service=hair-makeup");
         return;
       }
 

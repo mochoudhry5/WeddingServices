@@ -361,6 +361,14 @@ export default function MyListingsPage() {
     }
   }, [listings, activeService]);
 
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const serviceParam = params.get("service") as ServiceType;
+    if (serviceParam && Object.keys(SERVICE_CONFIGS).includes(serviceParam)) {
+      setActiveService(serviceParam);
+    }
+  }, []);
+
   const handleDelete = useCallback(
     async (listingId: string, serviceType: ServiceType) => {
       try {
@@ -633,7 +641,13 @@ export default function MyListingsPage() {
         listings[serviceType].length > 0 ? (
           <button
             key={serviceType}
-            onClick={() => setActiveService(serviceType)}
+            onClick={() => {
+              setActiveService(serviceType);
+              // Update URL when changing service
+              const newUrl = new URL(window.location.href);
+              newUrl.searchParams.set("service", serviceType);
+              window.history.pushState({}, "", newUrl);
+            }}
             className={`px-4 py-2 rounded-lg whitespace-nowrap transition-all ${
               activeService === serviceType
                 ? "bg-black text-white"
