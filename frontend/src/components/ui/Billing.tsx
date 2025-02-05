@@ -1,3 +1,5 @@
+"use client";
+
 import React, { useState, useEffect } from "react";
 import { CreditCard, Link, RefreshCcw, XCircle } from "lucide-react";
 import NextLink from "next/link";
@@ -18,7 +20,7 @@ import { AddPaymentMethodDialog } from "./AddPaymentMethodDialog";
 import { Invoice } from "@/lib/stripe";
 import InvoicesSection from "./InvoicesSection";
 
-// Types
+// Types for subscription data
 interface StripeSubscription {
   id: string;
   user_id: string;
@@ -33,20 +35,42 @@ interface StripeSubscription {
   created_at: string;
   listing_id: string;
   cancel_at_period_end: boolean;
+  trial_start: string | null;
+  trial_end: string | null;
+  promo_code: string | null;
 }
 
-interface BaseListing {
-  id: string;
-  business_name: string;
-  created_at: string;
+// Types for subscription details from Stripe
+interface SubscriptionDetails {
+  amount: number;
+  currency: string;
+  nextPaymentAttempt: number | null;
+  periodEnd: number;
+  trialEnd: number | null;
+  recurring_price: number; // The full subscription price
+  recurring_currency: string; // The currency for the full price
 }
 
+// Combined billing data response
+interface BillingData {
+  subscriptions: StripeSubscription[];
+  subscriptionDetails: { [key: string]: SubscriptionDetails };
+  listings: ListingsByCategory;
+}
+
+// Types for listing data
 interface ListingsByCategory {
   dj: BaseListing[];
   photoVideo: BaseListing[];
   hairMakeup: BaseListing[];
   venue: BaseListing[];
   weddingPlanner: BaseListing[];
+}
+
+interface BaseListing {
+  id: string;
+  business_name: string;
+  created_at: string;
 }
 
 interface PaymentMethod {
@@ -60,6 +84,7 @@ interface PaymentMethod {
   exp_year: number;
 }
 
+// Service type labels for display
 const labelMap: Record<string, string> = {
   venue: "Venue",
   dj: "DJ",
@@ -130,7 +155,9 @@ const PaymentMethodSection = ({
   );
 };
 
-const getServiceTypeForUrl = (dbServiceType: string): string => {
+// Helper function to convert service types for URLs
+// This ensures our frontend routes match our database service types
+function getServiceTypeForUrl(serviceType: string): string {
   const mapping: { [key: string]: string } = {
     wedding_planner: "weddingPlanner",
     hair_makeup: "hairMakeup",
@@ -138,27 +165,76 @@ const getServiceTypeForUrl = (dbServiceType: string): string => {
     dj: "dj",
     venue: "venue",
   };
-  return mapping[dbServiceType] || dbServiceType;
-};
+  return mapping[serviceType] || serviceType;
+}
 
-const SubscriptionSection = ({
-  title,
-  subscriptions,
-  onCancelSubscription,
-  onReactivateSubscription,
-  showReactivate = false,
-  isExpiring = false,
-  isExpired = false,
-}: {
+// Props interface for the SubscriptionSection component
+interface SubscriptionSectionProps {
   title: string;
   subscriptions: StripeSubscription[];
+  subscriptionDetails: { [key: string]: SubscriptionDetails };
   onCancelSubscription: (subscription: StripeSubscription) => void;
   onReactivateSubscription: (subscription: StripeSubscription) => void;
   showReactivate?: boolean;
   isExpiring?: boolean;
   isExpired?: boolean;
+}
+
+// Component to display a section of subscriptions
+const SubscriptionSection: React.FC<SubscriptionSectionProps> = ({
+  title,
+  subscriptions,
+  subscriptionDetails,
+  onCancelSubscription,
+  onReactivateSubscription,
+  showReactivate = false,
+  isExpiring = false,
+  isExpired = false,
 }) => {
   if (subscriptions.length === 0) return null;
+
+  // Formats currency amounts with proper currency symbol and decimal places
+  const formatCurrency = (amount: number, currency: string) => {
+    return new Intl.NumberFormat("en-US", {
+      style: "currency",
+      currency: currency.toUpperCase(),
+    }).format(amount / 100);
+  };
+
+  // Calculates remaining trial days for trial subscriptions
+  const getRemainingTrialDays = (subscription: StripeSubscription) => {
+    if (!subscription.is_trial || !subscription.trial_end) return null;
+
+    const trialEnd = new Date(subscription.trial_end);
+    const now = new Date();
+
+    if (trialEnd <= now) return null;
+
+    const daysRemaining = Math.ceil(
+      (trialEnd.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)
+    );
+    return daysRemaining > 0 ? daysRemaining : null;
+  };
+
+  // Gets formatted next payment information including trial status
+  const getNextPaymentInfo = (subscription: StripeSubscription) => {
+    const details = subscriptionDetails[subscription.stripe_subscription_id];
+    if (!details) return null;
+
+    const trialDays = getRemainingTrialDays(subscription);
+    if (trialDays) {
+      // Get the full price from the subscription details
+      const fullPrice = details.recurring_price || details.amount;
+      return `Free for ${trialDays} days, then ${formatCurrency(
+        fullPrice,
+        details.currency
+      )}`;
+    }
+
+    return details.amount === 0
+      ? "Free"
+      : formatCurrency(details.amount, details.currency);
+  };
 
   return (
     <div className="mb-8">
@@ -212,20 +288,38 @@ const SubscriptionSection = ({
                   key={subscription.id}
                   className="hover:bg-gray-50 transition-colors"
                 >
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    {subscription.cancel_at_period_end &&
-                    subscription.status === "active" ? (
-                      <span className="text-red-600">
-                        {new Date(
-                          subscription.current_period_end
-                        ).toLocaleDateString()}
+                  {/* Payment/Expiry Date Column */}
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <div className="flex flex-col">
+                      <span
+                        className={
+                          subscription.cancel_at_period_end
+                            ? "text-red-600"
+                            : "text-gray-900"
+                        }
+                      >
+                        {subscription.is_trial && subscription.trial_end ? (
+                          <div>
+                            {new Date(
+                              subscription.trial_end
+                            ).toLocaleDateString()}
+                          </div>
+                        ) : (
+                          <div>
+                            {new Date(
+                              subscription.current_period_end
+                            ).toLocaleDateString()}
+                          </div>
+                        )}
                       </span>
-                    ) : (
-                      new Date(
-                        subscription.current_period_end
-                      ).toLocaleDateString()
-                    )}
+                      {subscription.status === "active" && (
+                        <span className="text-sm text-gray-500">
+                          {getNextPaymentInfo(subscription)}
+                        </span>
+                      )}
+                    </div>
                   </td>
+                  {/* Plan Type Column */}
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="text-sm font-medium text-gray-900">
                       {labelMap[subscription.service_type]}
@@ -236,10 +330,12 @@ const SubscriptionSection = ({
                       ({subscription.is_annual ? "Annual" : "Monthly"})
                     </div>
                   </td>
+                  {/* Status Column */}
                   <td className="px-6 py-4 whitespace-nowrap text-sm">
                     <div className="flex flex-col gap-1.5">
                       <span
-                        className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium w-fit ${
+                        className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium w-fit
+                        ${
                           subscription.status === "active" &&
                           !subscription.cancel_at_period_end
                             ? "bg-green-50 text-green-700"
@@ -254,14 +350,9 @@ const SubscriptionSection = ({
                         {subscription.status.charAt(0).toUpperCase() +
                           subscription.status.slice(1)}
                       </span>
-                      {subscription.is_trial &&
-                        subscription.status === "active" && (
-                          <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-blue-50 text-blue-700 w-fit">
-                            Free 3 Month Trial
-                          </span>
-                        )}
                     </div>
                   </td>
+                  {/* Listing Link Column */}
                   <td className="px-6 py-4 whitespace-nowrap text-sm">
                     <NextLink
                       href={`/services/${getServiceTypeForUrl(
@@ -274,6 +365,7 @@ const SubscriptionSection = ({
                       <Link size={20} />
                     </NextLink>
                   </td>
+                  {/* Actions Column */}
                   <td className="px-6 py-4 whitespace-nowrap text-sm">
                     <div className="flex items-center space-x-3">
                       {subscription.status === "active" &&
@@ -305,18 +397,24 @@ const SubscriptionSection = ({
       </div>
     </div>
   );
-};
-
-const Billing = () => {
+}; // Main Billing Component
+const Billing: React.FC = () => {
+  // State Management
+  // We use BillingData interface to maintain a single source of truth for subscription and listing data
   const { user } = useAuth();
-  const [listings, setListings] = useState<ListingsByCategory>({
-    dj: [],
-    photoVideo: [],
-    hairMakeup: [],
-    venue: [],
-    weddingPlanner: [],
+  const [billingData, setBillingData] = useState<BillingData>({
+    subscriptions: [],
+    subscriptionDetails: {},
+    listings: {
+      dj: [],
+      photoVideo: [],
+      hairMakeup: [],
+      venue: [],
+      weddingPlanner: [],
+    },
   });
-  const [subscriptions, setSubscriptions] = useState<StripeSubscription[]>([]);
+
+  // UI state management
   const [loading, setLoading] = useState(true);
   const [subscriptionToCancel, setSubscriptionToCancel] =
     useState<StripeSubscription | null>(null);
@@ -331,23 +429,30 @@ const Billing = () => {
   );
   const [invoices, setInvoices] = useState<Invoice[]>([]);
 
+  // Data fetching on component mount and when user changes
   useEffect(() => {
     const fetchBillingData = async () => {
       if (!user?.id) return;
+
       try {
         // Get billing data
-        const { data, error } = await supabase.functions.invoke(
-          "get-billing-data"
-        );
-        if (error) throw error;
+        const { data: billingResponse, error: billingError } =
+          await supabase.functions.invoke<BillingData>("get-billing-data");
 
-        setSubscriptions(data.subscriptions);
-        setListings(data.listings);
+        // Handle errors explicitly
+        if (billingError) throw billingError;
+        if (!billingResponse) throw new Error("No billing data received");
+
+        // Now TypeScript knows billingResponse is definitely BillingData
+        setBillingData(billingResponse);
 
         // Fetch invoices
         const { data: invoiceData, error: invoiceError } =
           await supabase.functions.invoke("get-invoices");
+
+        // Handle invoice errors similarly
         if (invoiceError) throw invoiceError;
+        if (!invoiceData) throw new Error("No invoice data received");
 
         setInvoices(invoiceData.invoices);
 
@@ -358,6 +463,7 @@ const Billing = () => {
           .eq("user_id", user.id)
           .single();
 
+        // PGRST116 is the error code for no rows returned - this is expected
         if (methodError && methodError.code !== "PGRST116") throw methodError;
         setPaymentMethod(methodData || null);
       } catch (error) {
@@ -371,17 +477,19 @@ const Billing = () => {
     fetchBillingData();
   }, [user?.id]);
 
+  // Handles adding or updating a payment method
   const handleAddOrUpdatePaymentMethod = async () => {
     try {
-      if (!subscriptions.length && !paymentMethod) {
+      // Require an active subscription to add payment method
+      if (!billingData.subscriptions.length && !paymentMethod) {
         toast.error("You need an active subscription to add a payment method");
         return;
       }
 
-      // Get customerId from either payment method or subscriptions
+      // Get customer ID from existing payment method or subscription
       const customerId =
         paymentMethod?.stripe_customer_id ||
-        subscriptions[0]?.stripe_customer_id;
+        billingData.subscriptions[0]?.stripe_customer_id;
 
       const { data, error } = await supabase.functions.invoke(
         "create-setup-intent",
@@ -400,6 +508,7 @@ const Billing = () => {
     }
   };
 
+  // Handles successful payment method addition
   const handlePaymentMethodAdded = async () => {
     try {
       if (!user?.id) return;
@@ -421,6 +530,7 @@ const Billing = () => {
     }
   };
 
+  // Handles subscription cancellation
   const handleCancelSubscription = async () => {
     if (!subscriptionToCancel) return;
 
@@ -436,13 +546,15 @@ const Billing = () => {
 
       if (error) throw error;
 
-      setSubscriptions((prev) =>
-        prev.map((sub) =>
+      // Update local state to reflect cancellation
+      setBillingData((prev) => ({
+        ...prev,
+        subscriptions: prev.subscriptions.map((sub) =>
           sub.id === subscriptionToCancel.id
             ? { ...sub, cancel_at_period_end: true }
             : sub
-        )
-      );
+        ),
+      }));
 
       toast.success(
         `Subscription will be cancelled on ${new Date(
@@ -457,6 +569,7 @@ const Billing = () => {
     }
   };
 
+  // Handles subscription reactivation
   const handleReactivateSubscription = async () => {
     if (!subscriptionToReactivate) return;
 
@@ -466,18 +579,20 @@ const Billing = () => {
         {
           body: {
             subscriptionId: subscriptionToReactivate.stripe_subscription_id,
-            idempotencyKey: crypto.randomUUID(),
+            idempotencyKey: crypto.randomUUID(), // Prevent duplicate reactivations
           },
         }
       );
 
       if (error) throw error;
 
-      const { data: billingData, error: billingError } =
-        await supabase.functions.invoke("get-billing-data");
+      // Refresh all billing data to get updated subscription status
+      const { data: billingResponse, error: billingError } =
+        await supabase.functions.invoke<BillingData>("get-billing-data");
       if (billingError) throw billingError;
+      if (!billingResponse) throw new Error("No billing data received");
 
-      setSubscriptions(billingData.subscriptions);
+      setBillingData(billingResponse);
       toast.success("Subscription reactivated successfully");
     } catch (error) {
       console.error("Error reactivating subscription:", error);
@@ -487,19 +602,20 @@ const Billing = () => {
     }
   };
 
-  // Group subscriptions by status
-  const activeSubscriptions = subscriptions.filter(
+  // Filter subscriptions by their status for display
+  const activeSubscriptions = billingData.subscriptions.filter(
     (sub) => sub.status === "active" && !sub.cancel_at_period_end
   );
 
-  const cancelingSubscriptions = subscriptions.filter(
+  const cancelingSubscriptions = billingData.subscriptions.filter(
     (sub) => sub.status === "active" && sub.cancel_at_period_end
   );
 
-  const inactiveSubscriptions = subscriptions.filter(
+  const inactiveSubscriptions = billingData.subscriptions.filter(
     (sub) => sub.status === "inactive" || sub.status === "canceled"
   );
 
+  // Loading state
   if (loading) {
     return (
       <div className="min-h-[390px] flex items-center justify-center">
@@ -508,11 +624,7 @@ const Billing = () => {
     );
   }
 
-  const hasListings = Object.values(listings).some(
-    (categoryListings) => categoryListings.length > 0
-  );
-
-  if (!hasListings && subscriptions.length === 0) {
+  if (billingData.subscriptions.length === 0) {
     return (
       <div className="min-h-[390px] flex items-center justify-center">
         <div className="text-center">
@@ -526,10 +638,10 @@ const Billing = () => {
         </div>
       </div>
     );
-  }
-
+  } // Main render method for the billing interface
   return (
     <div className="min-h-[390px] flex flex-col">
+      {/* Header Section */}
       <div className="mb-6">
         <h3 className="text-lg font-medium">Billing</h3>
         <p className="text-sm text-gray-500">
@@ -543,37 +655,39 @@ const Billing = () => {
         onUpdatePaymentMethod={handleAddOrUpdatePaymentMethod}
       />
 
-      {/* Active Subscriptions */}
+      {/* Subscription Sections */}
       <SubscriptionSection
         title="Active Subscriptions"
         subscriptions={activeSubscriptions}
+        subscriptionDetails={billingData.subscriptionDetails}
         onCancelSubscription={setSubscriptionToCancel}
         onReactivateSubscription={setSubscriptionToReactivate}
       />
 
-      {/* Canceling Subscriptions */}
       <SubscriptionSection
         title="Expiring Soon Subscriptions"
         subscriptions={cancelingSubscriptions}
+        subscriptionDetails={billingData.subscriptionDetails}
         onCancelSubscription={setSubscriptionToCancel}
         onReactivateSubscription={setSubscriptionToReactivate}
         showReactivate={true}
         isExpiring={true}
       />
 
-      {/* Inactive Subscriptions */}
       <SubscriptionSection
         title="Expired Subscriptions"
         subscriptions={inactiveSubscriptions}
+        subscriptionDetails={billingData.subscriptionDetails}
         onCancelSubscription={setSubscriptionToCancel}
         onReactivateSubscription={setSubscriptionToReactivate}
         showReactivate={true}
         isExpired={true}
       />
 
+      {/* Invoice History Section */}
       <InvoicesSection invoices={invoices} />
 
-      {/* Cancel Dialog */}
+      {/* Cancel Subscription Dialog */}
       <AlertDialog
         open={!!subscriptionToCancel}
         onOpenChange={() => setSubscriptionToCancel(null)}
@@ -584,14 +698,21 @@ const Billing = () => {
             <AlertDialogDescription asChild>
               <div className="space-y-2">
                 <div>Are you sure you want to cancel this subscription?</div>
-                <div className="font-medium text-gray-700">
-                  Your service will continue until{" "}
-                  {subscriptionToCancel &&
-                    new Date(
-                      subscriptionToCancel.current_period_end
-                    ).toLocaleDateString()}{" "}
-                  since you've already paid for this period.
-                </div>
+                {subscriptionToCancel?.is_trial ? (
+                  <div className="font-medium text-gray-700">
+                    Your trial will end immediately and you will lose access to
+                    the service.
+                  </div>
+                ) : (
+                  <div className="font-medium text-gray-700">
+                    Your service will continue until{" "}
+                    {subscriptionToCancel &&
+                      new Date(
+                        subscriptionToCancel.current_period_end
+                      ).toLocaleDateString()}{" "}
+                    since you've already paid for this period.
+                  </div>
+                )}
                 <div className="text-sm text-gray-500">
                   No refunds will be issued for the current billing period.
                 </div>
@@ -610,7 +731,7 @@ const Billing = () => {
         </AlertDialogContent>
       </AlertDialog>
 
-      {/* Reactivate Dialog */}
+      {/* Reactivate Subscription Dialog */}
       <AlertDialog
         open={!!subscriptionToReactivate}
         onOpenChange={() => setSubscriptionToReactivate(null)}
@@ -621,11 +742,20 @@ const Billing = () => {
             <AlertDialogDescription asChild>
               <div className="space-y-2">
                 <div>Would you like to reactivate this subscription?</div>
-                <div>
-                  If you have an active subscription that has not expired it,
-                  you will be charged at your next billing period. Otherwise,
-                  you will be charged immediately.
-                </div>
+                {subscriptionToReactivate?.is_trial &&
+                new Date(subscriptionToReactivate.trial_end!) > new Date() ? (
+                  <div>
+                    Your trial period will resume with the remaining time.
+                  </div>
+                ) : (
+                  <div>
+                    {billingData.subscriptionDetails[
+                      subscriptionToReactivate?.stripe_subscription_id!
+                    ]?.amount === 0
+                      ? "Your subscription will be reactivated at no cost."
+                      : "You will be charged for the subscription upon reactivation."}
+                  </div>
+                )}
                 <div className="text-sm text-gray-500">
                   Your subscription will renew at the same rate as before.
                 </div>
