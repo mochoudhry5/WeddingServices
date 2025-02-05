@@ -22,6 +22,7 @@ import { ProtectedRoute } from "@/components/ui/ProtectedRoute";
 import Billing from "@/components/ui/Billing";
 import { toast } from "sonner";
 import { useVendorStatus } from "@/hooks/useVendorStatus";
+import { useSearchParams } from "next/navigation";
 
 interface PasswordFormData {
   currentPassword: string;
@@ -530,6 +531,14 @@ function SettingsPage() {
   const [activeSection, setActiveSection] = useState("account");
   const [showLogoutDialog, setShowLogoutDialog] = useState(false);
   const { signOut } = useAuth();
+  const searchParams = useSearchParams();
+
+  useEffect(() => {
+    const section = searchParams.get("section");
+    if (section) {
+      setActiveSection(section);
+    }
+  }, [searchParams]);
 
   const handleLogout = async () => {
     try {

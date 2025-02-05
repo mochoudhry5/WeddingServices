@@ -524,7 +524,7 @@ export default function MyListingsPage() {
                 <button
                   onClick={(e) => {
                     e.preventDefault();
-                    router.push("/settings");
+                    router.push("/settings?section=billing");
                   }}
                   className="bg-white/90 p-2 rounded-full shadow-lg hover:bg-white transition-colors"
                 >
