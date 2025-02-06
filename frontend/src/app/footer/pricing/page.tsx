@@ -368,19 +368,7 @@ const PricingPage = () => {
                       </td>
                     </tr>
                     <tr>
-                      <td className="p-4">Social Media Integration</td>
-                      <td className="p-4 text-center">
-                        <X className="w-5 h-5 text-gray-300 mx-auto" />
-                      </td>
-                      <td className="p-4 text-center">
-                        <X className="w-5 h-5 text-gray-300 mx-auto" />
-                      </td>
-                      <td className="p-4 text-center">
-                        <Check className="w-5 h-5 text-green-500 mx-auto" />
-                      </td>
-                    </tr>
-                    <tr>
-                      <td className="p-4">Marketing Tools</td>
+                      <td className="p-4">Social Media Content</td>
                       <td className="p-4 text-center">
                         <X className="w-5 h-5 text-gray-300 mx-auto" />
                       </td>
