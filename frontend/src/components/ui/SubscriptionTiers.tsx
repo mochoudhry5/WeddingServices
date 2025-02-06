@@ -55,13 +55,13 @@ const planFeatures: Record<TierType, string[]> = {
     "Extra Leads from Quick Reach",
   ],
   premium: [
-    "Premium Business Exposure in city",
-    "Only 20 spots available per city",
-    "Priority Support",
+    "Featured placement in search results",
+    "No Lead Generation Fees",
+    "Priority Customer Support",
   ],
   elite: [
-    "Elite Exposure (Top placement in city)",
-    "Only 3 spots available per city",
+    "Top placement in search results",
+    "No Lead Generation Fees",
     "Social Media Content",
   ],
 };
@@ -157,11 +157,14 @@ const SubscriptionTiers: React.FC<SubscriptionTiersProps> = ({
                 <h3 className="text-lg sm:text-xl font-bold mb-2 capitalize">
                   {tier} Plan
                 </h3>
-                <div className="text-2xl sm:text-3xl font-bold">
+                <div className="text-2xl sm:text-3xl font-bold mb-1">
                   ${getPrice(price)}
                   <span className="text-sm sm:text-base text-gray-500">
                     /{isAnnual ? "year" : "month"}
                   </span>
+                </div>
+                <div className="text-xs font-normal text-black mt-0.5">
+                  Cancel Anytime
                 </div>
               </div>
 
