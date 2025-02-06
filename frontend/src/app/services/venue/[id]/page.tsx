@@ -801,9 +801,8 @@ const VenueDetailsPage = () => {
                         Ready to connect?
                       </h3>
                       <p className="text-gray-600 mb-6 break-words">
-                        Sign in to contact {venue.business_name} and manage all
-                        your wedding venue communications in one place. It's
-                        absolutely free!
+                        Sign in to contact {venue.business_name} and ask any
+                        questions you may have. It's absolutely free!
                       </p>
                       <Button
                         onClick={() => setIsLoginOpen(true)}

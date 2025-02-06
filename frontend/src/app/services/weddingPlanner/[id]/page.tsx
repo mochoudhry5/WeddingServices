@@ -642,8 +642,7 @@ const WeddingDetailsPage = () => {
                       </h3>
                       <p className="text-gray-600 mb-6">
                         Sign in to contact {weddingPlanner.business_name} and
-                        manage all your wedding vendor communications in one
-                        place. It's absolutely free!
+                        ask any questions you may have. It's absolutely free!
                       </p>
                       <Button
                         onClick={() => setIsLoginOpen(true)}
