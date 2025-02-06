@@ -284,6 +284,18 @@ const PricingPage = () => {
                   </thead>
                   <tbody className="divide-y divide-gray-200">
                     <tr>
+                      <td className="p-4">Cancel Anytime</td>
+                      <td className="p-4 text-center">
+                        <Check className="w-5 h-5 text-green-500 mx-auto" />
+                      </td>
+                      <td className="p-4 text-center">
+                        <Check className="w-5 h-5 text-green-500 mx-auto" />
+                      </td>
+                      <td className="p-4 text-center">
+                        <Check className="w-5 h-5 text-green-500 mx-auto" />
+                      </td>
+                    </tr>
+                    <tr>
                       <td className="p-4">Profile Listing</td>
                       <td className="p-4 text-center">
                         <Check className="w-5 h-5 text-green-500 mx-auto" />
