@@ -54,8 +54,7 @@ export default function HelpCenterPage() {
                   How can we help you?
                 </h1>
                 <p className="text-xl text-gray-600 mb-8">
-                  Search our help center or browse frequently asked questions
-                  below
+                  Contact us or browse frequently asked questions below
                 </p>
               </div>
             </div>
@@ -109,7 +108,7 @@ export default function HelpCenterPage() {
                 </p>
                 <a
                   href="/footer/contact"
-                  className="inline-flex items-center bg-gradient-to-r from-stone-400 to-stone-400 text-white px-8 py-3 rounded-lg hover:from-stone-500 hover:to-stone-500 transition-all duration-300 group"
+                  className="inline-flex items-center bg-black text-white px-8 py-3 rounded-lg hover:bg-stone-500 transition-all duration-300 group"
                 >
                   Contact Support
                   <ArrowRight className="ml-2 w-4 h-4 group-hover:translate-x-1 transition-transform" />

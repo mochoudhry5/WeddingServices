@@ -116,7 +116,7 @@ export default function AboutPage() {
                     </li>
                     <li className="flex items-center gap-3">
                       <CheckCircle2 className="w-5 h-5 text-green-500  flex-shrink-0" />
-                      <span>Completely Free</span>
+                      <span>Completely free</span>
                     </li>
                     <li className="flex items-center gap-3">
                       <CheckCircle2 className="w-5 h-5 text-green-500  flex-shrink-0" />
@@ -144,11 +144,11 @@ export default function AboutPage() {
                     </li>
                     <li className="flex items-center gap-3">
                       <CheckCircle2 className="w-5 h-5 text-green-500 flex-shrink-0" />
-                      <span>Only $15 a month </span>
+                      <span>Fixed flat fee (No Extra Costs)</span>
                     </li>
                     <li className="flex items-center gap-3">
                       <CheckCircle2 className="w-5 h-5 text-green-500  flex-shrink-0" />
-                      <span>Fully Customizable Listing Page</span>
+                      <span>Fully customizable listing page</span>
                     </li>
                   </ul>
                 </div>
