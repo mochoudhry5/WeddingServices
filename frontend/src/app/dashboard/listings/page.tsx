@@ -429,44 +429,6 @@ export default function MyListingsPage() {
     [user?.id, listings, setListings, router]
   );
 
-  const handleRestore = useCallback(
-    async (listingId: string, serviceType: ServiceType) => {
-      try {
-        if (!user?.id) {
-          toast.error("You must be logged in to restore a listing");
-          return;
-        }
-
-        const config = SERVICE_CONFIGS[serviceType];
-
-        // Update the is_archived column to false
-        const { error: updateError } = await supabase
-          .from(config.tableName)
-          .update({ is_archived: false })
-          .eq("id", listingId)
-          .eq("user_id", user.id);
-
-        if (updateError) throw updateError;
-
-        // Update local state to reflect the restored status
-        setListings((prev) => ({
-          ...prev,
-          [serviceType]: prev[serviceType].map((listing) =>
-            listing.id === listingId
-              ? { ...listing, is_archived: false }
-              : listing
-          ),
-        }));
-
-        toast.success(`${config.displayName} restored successfully`);
-      } catch (error: any) {
-        console.error("Restore error:", error);
-        toast.error(error.message || "Failed to restore listing");
-      }
-    },
-    [user?.id, setListings]
-  );
-
   const renderListingCard = (
     listing: BaseListing,
     serviceType: ServiceType
@@ -795,22 +757,33 @@ export default function MyListingsPage() {
             >
               <AlertDialogContent>
                 <AlertDialogHeader>
-                  <AlertDialogTitle>Restore Listing</AlertDialogTitle>
+                  <AlertDialogTitle>Reactivate Listing</AlertDialogTitle>
                   <AlertDialogDescription>
-                    Are you sure you want to restore this listing? This will
-                    make it visible to the public again.
+                    To reactivate your listing, you'll be directed to the
+                    billing section where you can renew your expired
+                    subscription.
+                  </AlertDialogDescription>
+                  <AlertDialogDescription>
+                    If you have any questions reach out to us at{" "}
+                    <a
+                      href="mailto:support@anyweds.com"
+                      className="text-black hover:text-stone-600"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      support@anyweds.com
+                    </a>
                   </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>
                   <AlertDialogCancel>Cancel</AlertDialogCancel>
                   <AlertDialogAction
-                    onClick={() =>
-                      listingToRestore &&
-                      handleRestore(listingToRestore.id, listingToRestore.type)
-                    }
+                    onClick={(e) => {
+                      e.preventDefault();
+                      router.push("/settings?section=billing");
+                    }}
                     className="bg-black hover:bg-stone-500"
                   >
-                    Restore
+                    Go to Billing
                   </AlertDialogAction>
                 </AlertDialogFooter>
               </AlertDialogContent>
