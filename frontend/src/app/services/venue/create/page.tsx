@@ -1056,7 +1056,7 @@ export default function CreateVenueListing() {
                                 e.preventDefault();
                               }
                             }}
-                            placeholder="5000"
+                            placeholder="0"
                             className="pl-10 w-full"
                           />
                         </div>
