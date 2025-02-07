@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import { Check, Sparkles, Crown, Star, X } from "lucide-react";
+import { Check, Sparkles, Crown, Handshake, X } from "lucide-react";
 import NavBar from "@/components/ui/NavBar";
 import Footer from "@/components/ui/Footer";
 import { Card, CardContent } from "@/components/ui/card";
@@ -67,8 +67,8 @@ const PricingPage = () => {
   };
 
   const planIcons = {
-    basic: Sparkles,
-    premium: Crown,
+    basic: Handshake,
+    premium: Sparkles,
     elite: Crown,
   } as const;
 
@@ -286,7 +286,7 @@ const PricingPage = () => {
                     isAnnual ? "font-medium text-black" : "text-gray-500"
                   }`}
                 >
-                  Annual
+                  Annually
                   <span className="ml-1 text-green-600 font-medium">
                     (Save 25%)
                   </span>

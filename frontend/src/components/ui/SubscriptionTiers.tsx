@@ -1,5 +1,5 @@
 import React from "react";
-import { Check, Sparkles, Crown } from "lucide-react";
+import { Check, Sparkles, Crown, Handshake } from "lucide-react";
 import type { ServiceId, TierType } from "@/lib/stripe";
 import ServiceInput from "@/components/ui/ServiceInput";
 
@@ -67,8 +67,8 @@ const planFeatures: Record<TierType, string[]> = {
 };
 
 const planIcons = {
-  basic: Sparkles,
-  premium: Crown,
+  basic: Handshake,
+  premium: Sparkles,
   elite: Crown,
 } as const;
 
@@ -86,110 +86,167 @@ const SubscriptionTiers: React.FC<SubscriptionTiersProps> = ({
 
   return (
     <div className="w-full">
-      {/* Service Selection - Mobile Optimized */}
-      <div className="overflow-x-auto mb-4 sm:mb-7">
-        <div className="flex justify-center min-w-full">
-          <div className="inline-flex gap-2 p-1 bg-gray-100 rounded-lg">
-            <ServiceInput
-              value={selectedService}
-              onValueChange={onServiceSelect}
-              variant="default"
-              className="min-w-[300px] sm:min-w-[400px] w-full shadow-sm"
-              triggerClassName="bg-white"
+      {/* Service Selection and Billing Toggle */}
+      <div className="flex flex-col sm:flex-row items-center justify-center gap-6 mb-12">
+        <div className="w-full max-w-xs">
+          <ServiceInput
+            value={selectedService}
+            onValueChange={onServiceSelect}
+            variant="default"
+            className="shadow-sm"
+            triggerClassName="bg-white"
+          />
+        </div>
+
+        {/* Toggle Switch */}
+        <div className="flex items-center gap-3 rounded-full px-6 py-2.5">
+          <span
+            className={`text-sm whitespace-nowrap ${
+              !isAnnual ? "font-medium text-black" : "text-gray-500"
+            }`}
+          >
+            Monthly
+          </span>
+          <button
+            onClick={() => onAnnualChange(!isAnnual)}
+            className={`relative w-14 h-7 rounded-full transition-colors ${
+              isAnnual ? "bg-black" : "bg-gray-200"
+            }`}
+          >
+            <div
+              className={`absolute top-1 left-1 w-5 h-5 rounded-full bg-white transition-transform ${
+                isAnnual ? "translate-x-7" : ""
+              }`}
             />
-          </div>
+          </button>
+          <span
+            className={`text-sm whitespace-nowrap ${
+              isAnnual ? "font-medium text-black" : "text-gray-500"
+            }`}
+          >
+            Annually
+            <span className="ml-1 text-green-600 font-medium">(Save 25%)</span>
+          </span>
         </div>
       </div>
 
-      {/* Annual/Monthly Toggle */}
-      <div className="flex justify-center items-center gap-2 mb-6 sm:mb-8">
-        <span className={`text-sm ${!isAnnual ? "font-bold" : ""}`}>
-          Monthly
-        </span>
-        <button
-          onClick={() => onAnnualChange(!isAnnual)}
-          className={`relative w-14 h-7 rounded-full transition-colors ${
-            isAnnual ? "bg-black" : "bg-gray-200"
-          }`}
-        >
-          <div
-            className={`absolute top-1 left-1 w-5 h-5 rounded-full bg-white transition-transform ${
-              isAnnual ? "translate-x-7" : ""
-            }`}
-          />
-        </button>
-        <span className={`text-sm ${isAnnual ? "font-bold" : ""}`}>
-          Annual <span className="text-green-600">(Save 25%)</span>
-        </span>
-      </div>
-
       {/* Pricing Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6 px-4 sm:px-0">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 max-w-[1200px] mx-auto">
         {(["basic", "premium", "elite"] as const).map((tier) => {
           const Icon = planIcons[tier];
           const isPopular = tier === "premium";
           const price = categoryPrices[selectedService][tier].price;
+          const isSelected = selectedTier === tier;
 
           return (
             <div
               key={tier}
               onClick={() => onSelect(tier)}
-              className={`relative p-4 sm:p-6 rounded-xl border-2 transition-all cursor-pointer
-                ${
-                  selectedTier === tier
-                    ? "border-black bg-gray-50"
-                    : "border-gray-200 hover:border-gray-300"
-                }
-                ${isPopular ? "ring-1 ring-black" : ""}`}
+              className={`relative transform transition-all duration-300 hover:scale-[1.02] hover:shadow-lg 
+              rounded-xl bg-white cursor-pointer
+              ${isSelected ? "ring-2 ring-black shadow-lg" : ""}
+              ${!isSelected ? "ring-2 ring-black/5" : ""}`}
             >
-              {isPopular && (
-                <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
-                  <span className="bg-black text-white text-xs font-bold px-3 sm:px-4 py-1 rounded-full whitespace-nowrap">
+              {isPopular && !isSelected && (
+                <div className="absolute -top-4 left-1/2 transform -translate-x-1/2">
+                  <span className="bg-stone-600 text-white text-xs font-bold px-6 py-1.5 rounded-full whitespace-nowrap shadow-sm">
                     MOST POPULAR
                   </span>
                 </div>
               )}
-
-              <div className="text-center mb-4 sm:mb-6">
-                <div className="flex justify-center mb-3 sm:mb-4">
-                  <Icon className="h-6 w-6 sm:h-8 sm:w-8 text-black" />
-                </div>
-                <h3 className="text-lg sm:text-xl font-bold mb-2 capitalize">
-                  {tier} Plan
-                </h3>
-                <div className="text-2xl sm:text-3xl font-bold mb-1">
-                  ${getPrice(price)}
-                  <span className="text-sm sm:text-base text-gray-500">
-                    /{isAnnual ? "year" : "month"}
+              {isSelected && (
+                <div className="absolute -top-4 left-1/2 transform -translate-x-1/2">
+                  <span className="bg-black text-white text-xs font-bold px-6 py-1.5 rounded-full whitespace-nowrap shadow-sm">
+                    SELECTED
                   </span>
                 </div>
-                <div className="text-xs font-normal text-black mt-0.5">
-                  Cancel Anytime
-                </div>
-              </div>
+              )}
 
-              <ul className="space-y-3 sm:space-y-4">
-                {planFeatures[tier].map((feature) => (
-                  <li key={feature} className="flex items-start gap-2">
-                    <Check className="w-4 h-4 sm:w-5 sm:h-5 text-green-500 flex-shrink-0 mt-0.5" />
-                    <span className="text-sm sm:text-base text-gray-600">
-                      {feature}
-                    </span>
-                  </li>
-                ))}
-              </ul>
-
-              <button
-                onClick={() => onSelect(tier)}
-                className={`w-full mt-4 sm:mt-6 py-2.5 sm:py-3 rounded-lg font-medium transition-colors text-sm sm:text-base
-                  ${
-                    selectedTier === tier
-                      ? "bg-black text-white"
-                      : "bg-gray-100 text-gray-900 hover:bg-gray-200"
-                  }`}
+              <div
+                className={`p-6 sm:p-8 rounded-xl ${
+                  isSelected ? "bg-gradient-to-b from-stone-50 to-white" : ""
+                }`}
               >
-                {selectedTier === tier ? "Selected" : "Select Plan"}
-              </button>
+                <div className="flex items-center justify-center mb-6">
+                  <div
+                    className={`p-3 rounded-full transition-colors ${
+                      isSelected ? "bg-black" : "bg-stone-100"
+                    }`}
+                  >
+                    <Icon
+                      className={`w-6 h-6 sm:w-8 sm:h-8 ${
+                        isSelected ? "text-white" : "text-black"
+                      }`}
+                    />
+                  </div>
+                </div>
+
+                <div className="text-center mb-5">
+                  <h3 className="text-xl font-bold text-gray-900 capitalize mb-4">
+                    {tier} Plan
+                  </h3>
+                  <div className="flex items-start justify-center gap-1">
+                    <span className="text-3xl sm:text-4xl font-bold">
+                      ${getPrice(price)}
+                    </span>
+                    <span className="text-gray-500 mt-2">
+                      /{isAnnual ? "year" : "month"}
+                    </span>
+                  </div>
+                  {isAnnual && (
+                    <div className="text-sm text-green-600 font-medium mt-2">
+                      Save ${Math.floor(price * 12 * 0.25)} annually
+                    </div>
+                  )}
+                  <div className="text-xs text-gray-500 mt-2">
+                    Cancel anytime
+                    <div className="text-[10px] text-gray-400">
+                      No proration for mid-period cancellations
+                    </div>
+                  </div>
+                </div>
+
+                <ul className="space-y-4 mb-5">
+                  {planFeatures[tier].map((feature) => (
+                    <li key={feature} className="flex items-start gap-3">
+                      <div
+                        className={`mt-1 rounded-full p-0.5 ${
+                          isSelected ? "bg-green-200" : "bg-green-100"
+                        }`}
+                      >
+                        <Check
+                          className={`w-4 h-4 ${
+                            isSelected ? "text-green-700" : "text-green-600"
+                          }`}
+                        />
+                      </div>
+                      <span
+                        className={`text-sm ${
+                          isSelected ? "text-gray-700" : "text-gray-600"
+                        }`}
+                      >
+                        {feature}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onSelect(tier);
+                  }}
+                  className={`w-full py-3 px-4 rounded-lg font-medium transition-all
+                    ${
+                      isSelected
+                        ? "bg-black text-white hover:bg-black"
+                        : "bg-white text-black hover:bg-stone-200"
+                    }
+                  `}
+                >
+                  {isSelected ? "Selected Plan" : "Select Plan"}
+                </button>
+              </div>
             </div>
           );
         })}
