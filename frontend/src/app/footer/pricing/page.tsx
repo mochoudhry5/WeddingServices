@@ -6,6 +6,7 @@ import NavBar from "@/components/ui/NavBar";
 import Footer from "@/components/ui/Footer";
 import { Card, CardContent } from "@/components/ui/card";
 import ServiceInput from "@/components/ui/ServiceInput";
+import { useRouter } from "next/navigation";
 
 type ServiceType =
   | "venue"
@@ -33,6 +34,7 @@ interface PricingCardProps {
 }
 
 const PricingPage = () => {
+  const router = useRouter();
   const [selectedCategory, setSelectedCategory] =
     useState<ServiceType>("venue");
   const [isAnnual, setIsAnnual] = useState<boolean>(false);
@@ -106,6 +108,15 @@ const PricingPage = () => {
     const Icon = planIcons[tier];
     const isSelected = selectedPlan === tier;
 
+    const handleCardClick = () => {
+      setSelectedPlan(tier);
+    };
+
+    const handleGetStarted = (e: React.MouseEvent) => {
+      e.stopPropagation();
+      router.push("/services");
+    };
+
     return (
       <Card
         className={`relative transform transition-all duration-300 cursor-pointer
@@ -114,13 +125,20 @@ const PricingPage = () => {
               ? "ring-2 ring-black scale-[1.02] shadow-lg"
               : "hover:scale-[1.02] hover:shadow-lg border-2 border-transparent"
           } 
-          ${isPopular && !isSelected ? "ring-2 ring-black/20" : ""}`}
-        onClick={() => setSelectedPlan(tier)}
+          ${!isSelected ? "ring-2 ring-black/20" : ""}`}
+        onClick={handleCardClick}
       >
-        {isPopular && (
+        {isPopular && !isSelected && (
           <div className="absolute -top-4 left-1/2 transform -translate-x-1/2">
-            <span className="bg-gradient-to-r from-black to-stone-700 text-white text-xs font-bold px-6 py-1.5 rounded-full whitespace-nowrap shadow-sm">
+            <span className="bg-stone-600 text-white text-xs font-bold px-6 py-1.5 rounded-full whitespace-nowrap shadow-sm">
               MOST POPULAR
+            </span>
+          </div>
+        )}
+        {isSelected && (
+          <div className="absolute -top-4 left-1/2 transform -translate-x-1/2">
+            <span className="bg-black text-white text-xs font-bold px-6 py-1.5 rounded-full whitespace-nowrap shadow-sm">
+              SELECTED
             </span>
           </div>
         )}
@@ -214,6 +232,7 @@ const PricingPage = () => {
           </ul>
 
           <button
+            onClick={handleGetStarted}
             className={`w-full mt-8 px-6 py-3 rounded-lg font-medium text-sm transition-colors
               ${
                 isSelected
@@ -236,7 +255,7 @@ const PricingPage = () => {
           {/* Hero Section */}
           <div className="relative bg-gradient-to-b from-stone-50 to-white">
             <div className="absolute inset-0 bg-grid-gray-100/50 [mask-image:linear-gradient(0deg,white,rgba(255,255,255,0.6))]" />
-            <div className="relative max-w-7xl mx-auto px-4 py-12 sm:py-16 md:py-24 text-center">
+            <div className="relative max-w-7xl mx-auto px-4 py-8 sm:py-12 text-center">
               <h1 className="text-4xl sm:text-5xl font-bold text-gray-900 mb-4">
                 Simple, transparent pricing
               </h1>
@@ -248,9 +267,9 @@ const PricingPage = () => {
 
           {/* Pricing Section */}
           <div className="max-w-7xl mx-auto px-4 pb-12 sm:pb-16 md:pb-24">
-            <div className="flex flex-col items-center gap-8 mb-12">
-              {/* Category Selection */}
-              <div className="w-full max-w-xs">
+            {/* Controls Section */}
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-12">
+              <div className="w-full sm:w-64">
                 <ServiceInput
                   value={selectedCategory}
                   onValueChange={setSelectedCategory}
@@ -260,8 +279,7 @@ const PricingPage = () => {
                 />
               </div>
 
-              {/* Toggle Switch */}
-              <div className="flex items-center gap-3 bg-white rounded-full px-4 py-2 shadow-sm">
+              <div className="flex items-center gap-3 rounded-full px-4 py-2">
                 <span
                   className={`text-sm ${
                     !isAnnual ? "font-medium text-black" : "text-gray-500"
@@ -295,7 +313,7 @@ const PricingPage = () => {
             </div>
 
             {/* Pricing Cards */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8 max-w-lg lg:max-w-none mx-auto mb-16">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 max-w-lg lg:max-w-none mx-auto">
               <PricingCard
                 tier="basic"
                 features={commonFeatures.basic}

@@ -240,7 +240,7 @@ const SubscriptionTiers: React.FC<SubscriptionTiersProps> = ({
                     ${
                       isSelected
                         ? "bg-black text-white hover:bg-black"
-                        : "bg-white text-black hover:bg-stone-200"
+                        : "bg-stone-100 text-black hover:bg-gray-300"
                     }
                   `}
                 >
