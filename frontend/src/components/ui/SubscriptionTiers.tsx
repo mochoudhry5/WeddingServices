@@ -81,7 +81,7 @@ const SubscriptionTiers: React.FC<SubscriptionTiersProps> = ({
   isAnnual,
 }) => {
   const getPrice = (basePrice: number): number => {
-    return isAnnual ? Math.floor(basePrice * 10) : basePrice;
+    return isAnnual ? Math.floor(basePrice * 12 * 0.75) : basePrice;
   };
 
   return (
@@ -119,7 +119,7 @@ const SubscriptionTiers: React.FC<SubscriptionTiersProps> = ({
           />
         </button>
         <span className={`text-sm ${isAnnual ? "font-bold" : ""}`}>
-          Annual <span className="text-green-600">(Save 20%)</span>
+          Annual <span className="text-green-600">(Save 25%)</span>
         </span>
       </div>
 

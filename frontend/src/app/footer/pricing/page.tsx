@@ -103,7 +103,7 @@ const PricingPage = () => {
 
   const getPrice = (basePrice: number): number => {
     if (isAnnual) {
-      return Math.floor(basePrice * 10);
+      return Math.floor(basePrice * 12 * 0.75);
     }
     return basePrice;
   };
@@ -146,7 +146,7 @@ const PricingPage = () => {
             </div>
             {isAnnual && (
               <div className="text-xs sm:text-sm text-green-600 mt-1">
-                Save ${Math.floor(price * 2)} annually
+                Save ${Math.floor(price * 12 * 0.25)} annually
               </div>
             )}
           </div>
@@ -242,7 +242,7 @@ const PricingPage = () => {
                   }`}
                 >
                   Annual
-                  <span className="ml-1 text-green-600">(Save 20%)</span>
+                  <span className="ml-1 text-green-600">(Save 25%)</span>
                 </span>
               </div>
             </div>
