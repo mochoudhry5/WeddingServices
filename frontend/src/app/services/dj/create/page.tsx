@@ -751,6 +751,43 @@ const CreateDJListing = () => {
     }
   };
 
+  // In your parent component
+  const handleValidatePromo = async (code: string) => {
+    try {
+      const response = await fetch("/api/validate-promo", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ promoCode: code }),
+      });
+
+      const data = await response.json();
+
+      if (!data.isValid) {
+        return {
+          isValid: false,
+          error: data.error,
+        };
+      }
+
+      // Optionally show the discount amount in the UI
+      const discountMessage =
+        data.details.discountType === "fixed"
+          ? `$${data.details.discountAmount} off`
+          : `${data.details.discountAmount}% off`;
+
+      return {
+        isValid: true,
+        details: data.details,
+        message: discountMessage,
+      };
+    } catch (error) {
+      return {
+        isValid: false,
+        error: "Failed to validate promo code. Please try again.",
+      };
+    }
+  };
+
   return (
     <ProtectedRoute>
       <VendorProtectedRoute>
@@ -1834,6 +1871,7 @@ const CreateDJListing = () => {
                     error={paymentError}
                     promoCode={promoCode}
                     setPromoCode={setPromoCode}
+                    onValidatePromo={handleValidatePromo}
                   >
                     {isPaymentLoading && (
                       <div className="mt-6 border-t pt-6">

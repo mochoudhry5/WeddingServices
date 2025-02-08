@@ -13,13 +13,11 @@ serve(async (req) => {
   try {
     const { data, error } = await supabase.auth.admin.getUserById(record.id);
 
-    console.log("Hi", JSON.stringify(data));
-
     if (error) throw error;
 
     const customer = await stripe.customers.create({
       email: data.user.email,
-      metadata: { supabaseUid: record.id },
+      metadata: { userId: record.id },
     });
 
     const { error: userPreferencesError } = await supabase

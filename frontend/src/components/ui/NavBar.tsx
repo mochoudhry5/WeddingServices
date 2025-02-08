@@ -111,7 +111,7 @@ export default function NavBar() {
     setIsMobileMenuOpen(false);
     setTimeout(() => {
       setIsSignUpOpen(true);
-    }, 500);
+    }, 100);
   };
 
   const handleSwitchToLogin = () => {
@@ -119,7 +119,7 @@ export default function NavBar() {
     setIsMobileMenuOpen(false);
     setTimeout(() => {
       setIsLoginOpen(true);
-    }, 500);
+    }, 100);
   };
 
   const handleLoginClose = () => {

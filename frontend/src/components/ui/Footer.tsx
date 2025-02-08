@@ -39,11 +39,11 @@ export default function Footer() {
   const handleSignUpClose = () => setIsSignUpOpen(false);
   const handleSwitchToSignUp = () => {
     setIsLoginOpen(false);
-    setTimeout(() => setIsSignUpOpen(true), 500);
+    setTimeout(() => setIsSignUpOpen(true), 100);
   };
   const handleSwitchToLogin = () => {
     setIsSignUpOpen(false);
-    setTimeout(() => setIsLoginOpen(true), 500);
+    setTimeout(() => setIsLoginOpen(true), 100);
   };
 
   return (

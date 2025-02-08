@@ -19,7 +19,7 @@ export async function POST(request: Request) {
       // Create a new customer in Stripe
       const customer = await stripe.customers.create({
         email,
-        metadata: { supabaseUid: userId },
+        metadata: { userId },
       });
 
       finalCustomerId = customer.id;
