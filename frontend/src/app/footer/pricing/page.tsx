@@ -1,11 +1,12 @@
 "use client";
 
 import React, { useState } from "react";
+import { Check, Sparkles, Crown, Handshake, X } from "lucide-react";
 import NavBar from "@/components/ui/NavBar";
 import Footer from "@/components/ui/Footer";
 import { Card, CardContent } from "@/components/ui/card";
-import { Check, Sparkles, Crown, Star, X } from "lucide-react";
 import ServiceInput from "@/components/ui/ServiceInput";
+import { useRouter } from "next/navigation";
 
 type ServiceType =
   | "venue"
@@ -13,9 +14,9 @@ type ServiceType =
   | "photoVideo"
   | "weddingPlanner"
   | "dj";
+type PlanType = "basic" | "premium" | "elite";
 
 interface PlanTier {
-  limit?: number;
   price: number;
 }
 
@@ -23,10 +24,7 @@ interface CategoryData {
   basic: PlanTier;
   premium: PlanTier;
   elite: PlanTier;
-  features?: string[];
 }
-
-type PlanType = "basic" | "premium" | "elite";
 
 interface PricingCardProps {
   tier: PlanType;
@@ -36,16 +34,17 @@ interface PricingCardProps {
 }
 
 const PricingPage = () => {
+  const router = useRouter();
   const [selectedCategory, setSelectedCategory] =
     useState<ServiceType>("venue");
   const [isAnnual, setIsAnnual] = useState<boolean>(false);
+  const [selectedPlan, setSelectedPlan] = useState<PlanType | null>(null);
 
   const categories: Record<ServiceType, CategoryData> = {
     venue: {
       basic: { price: 25 },
       premium: { price: 45 },
       elite: { price: 65 },
-      features: ["Social Media Integration", "Virtual Tours", "Event Calendar"],
     },
     dj: {
       basic: { price: 5 },
@@ -69,19 +68,11 @@ const PricingPage = () => {
     },
   };
 
-  const categoryToServiceType: Record<string, ServiceType> = {
-    Venue: "venue",
-    DJ: "dj",
-    "Wedding Planner": "weddingPlanner",
-    "Photo/Video": "photoVideo",
-    "Hair/Makeup": "hairMakeup",
-  };
-
-  const planIcons: Record<PlanType, typeof Star> = {
-    basic: Sparkles,
-    premium: Crown,
+  const planIcons = {
+    basic: Handshake,
+    premium: Sparkles,
     elite: Crown,
-  };
+  } as const;
 
   const commonFeatures: Record<PlanType, [string, boolean][]> = {
     basic: [
@@ -103,7 +94,7 @@ const PricingPage = () => {
 
   const getPrice = (basePrice: number): number => {
     if (isAnnual) {
-      return Math.floor(basePrice * 10);
+      return Math.floor(basePrice * 12 * 0.75);
     }
     return basePrice;
   };
@@ -115,52 +106,123 @@ const PricingPage = () => {
     isPopular = false,
   }) => {
     const Icon = planIcons[tier];
+    const isSelected = selectedPlan === tier;
+
+    const handleCardClick = () => {
+      setSelectedPlan(tier);
+    };
+
+    const handleGetStarted = (e: React.MouseEvent) => {
+      e.stopPropagation();
+      router.push("/services");
+    };
+
     return (
       <Card
-        className={`relative transform transition-all duration-300 hover:scale-105 ${
-          isPopular ? "ring-2 ring-black" : ""
-        }`}
+        className={`relative transform transition-all duration-300 cursor-pointer
+          ${
+            isSelected
+              ? "ring-2 ring-black scale-[1.02] shadow-lg"
+              : "hover:scale-[1.02] hover:shadow-lg border-2 border-transparent"
+          } 
+          ${!isSelected ? "ring-2 ring-black/20" : ""}`}
+        onClick={handleCardClick}
       >
-        {isPopular && (
+        {isPopular && !isSelected && (
           <div className="absolute -top-4 left-1/2 transform -translate-x-1/2">
-            <span className="bg-black text-white text-xs font-bold px-4 py-1 rounded-full whitespace-nowrap">
+            <span className="bg-stone-600 text-white text-xs font-bold px-6 py-1.5 rounded-full whitespace-nowrap shadow-sm">
               MOST POPULAR
             </span>
           </div>
         )}
-        <CardContent className="p-4 sm:p-6">
-          <div className="flex items-center justify-center mb-4">
-            <Icon className="w-6 h-6 sm:w-8 sm:h-8 text-black" />
+        {isSelected && (
+          <div className="absolute -top-4 left-1/2 transform -translate-x-1/2">
+            <span className="bg-black text-white text-xs font-bold px-6 py-1.5 rounded-full whitespace-nowrap shadow-sm">
+              SELECTED
+            </span>
           </div>
-          <div className="text-center mb-4 sm:mb-6">
-            <h3 className="text-lg sm:text-xl font-bold text-gray-900 capitalize mb-2">
+        )}
+        <CardContent
+          className={`p-6 sm:p-8 ${
+            isSelected
+              ? "bg-gradient-to-b from-stone-50 to-white"
+              : isPopular
+              ? "bg-gradient-to-b from-stone-50/50 to-white"
+              : ""
+          }`}
+        >
+          <div className="flex items-center justify-center mb-6">
+            <div
+              className={`p-3 rounded-full ${
+                isSelected ? "bg-black" : "bg-stone-100"
+              }`}
+            >
+              <Icon
+                className={`w-6 h-6 sm:w-8 sm:h-8 ${
+                  isSelected ? "text-white" : "text-black"
+                }`}
+              />
+            </div>
+          </div>
+
+          <div className="text-center mb-8">
+            <h3
+              className={`text-xl font-bold capitalize mb-4 ${
+                isSelected ? "text-black" : "text-gray-900"
+              }`}
+            >
               {tier} Plan
             </h3>
-            <div className="flex items-center justify-center gap-1">
-              <span className="text-2xl sm:text-3xl font-bold">
+            <div className="flex items-start justify-center gap-1">
+              <span className="text-3xl sm:text-4xl font-bold">
                 ${getPrice(price)}
               </span>
-              <span className="text-sm sm:text-base text-gray-500">
+              <span className="text-gray-500 mt-2">
                 /{isAnnual ? "year" : "month"}
               </span>
             </div>
             {isAnnual && (
-              <div className="text-xs sm:text-sm text-green-600 mt-1">
-                Save ${Math.floor(price * 2)} annually
+              <div className="text-sm text-green-600 font-medium mt-2">
+                Save ${Math.floor(price * 12 * 0.25)} annually
               </div>
             )}
+            <div className="text-xs text-gray-500 mt-2">
+              Cancel anytime
+              <div className="text-[10px] text-gray-400">
+                No proration for mid-period cancellations
+              </div>
+            </div>
           </div>
-          <ul className="space-y-2 sm:space-y-3">
+
+          <ul className="space-y-4">
             {features.map(([feature, included], index) => (
-              <li key={index} className="flex items-start gap-2">
-                {included ? (
-                  <Check className="w-4 h-4 sm:w-5 sm:h-5 text-green-500 flex-shrink-0 mt-0.5" />
-                ) : (
-                  <X className="w-4 h-4 sm:w-5 sm:h-5 text-gray-300 flex-shrink-0 mt-0.5" />
-                )}
+              <li key={index} className="flex items-start gap-3">
+                <div
+                  className={`mt-1 rounded-full p-0.5 ${
+                    included
+                      ? isSelected
+                        ? "bg-green-200"
+                        : "bg-green-100"
+                      : "bg-gray-100"
+                  }`}
+                >
+                  {included ? (
+                    <Check
+                      className={`w-4 h-4 ${
+                        isSelected ? "text-green-700" : "text-green-600"
+                      }`}
+                    />
+                  ) : (
+                    <X className="w-4 h-4 text-gray-400" />
+                  )}
+                </div>
                 <span
-                  className={`text-sm sm:text-base ${
-                    included ? "text-gray-700" : "text-gray-400"
+                  className={`text-sm ${
+                    included
+                      ? isSelected
+                        ? "text-gray-700"
+                        : "text-gray-600"
+                      : "text-gray-400"
                   }`}
                 >
                   {feature}
@@ -168,12 +230,15 @@ const PricingPage = () => {
               </li>
             ))}
           </ul>
+
           <button
-            className={`w-full mt-4 sm:mt-6 px-3 sm:px-4 py-2 rounded-lg font-medium text-sm sm:text-base transition-colors ${
-              isPopular
-                ? "bg-black text-white hover:bg-gray-800"
-                : "bg-gray-100 text-gray-900 hover:bg-gray-200"
-            }`}
+            onClick={handleGetStarted}
+            className={`w-full mt-8 px-6 py-3 rounded-lg font-medium text-sm transition-colors
+              ${
+                isSelected
+                  ? "bg-black text-white hover:bg-stone-800"
+                  : "bg-stone-100 text-gray-900 hover:bg-stone-200"
+              }`}
           >
             Get Started
           </button>
@@ -188,67 +253,67 @@ const PricingPage = () => {
       <div className="flex-1 flex flex-col">
         <main className="flex-grow">
           {/* Hero Section */}
-          <div className="relative bg-gradient-to-b from-stone-200 to-white">
+          <div className="relative bg-gradient-to-b from-stone-50 to-white">
             <div className="absolute inset-0 bg-grid-gray-100/50 [mask-image:linear-gradient(0deg,white,rgba(255,255,255,0.6))]" />
-            <div className="relative max-w-7xl mx-auto px-4 py-12 sm:py-16 md:py-24 text-center">
-              <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-stone-400 to-black mb-3 sm:mb-4">
+            <div className="relative max-w-7xl mx-auto px-4 py-8 sm:py-12 text-center">
+              <h1 className="text-4xl sm:text-5xl font-bold text-gray-900 mb-4">
                 Simple, transparent pricing
               </h1>
-              <p className="text-lg sm:text-xl text-gray-600 max-w-2xl mx-auto px-4">
+              <p className="text-lg text-gray-600 max-w-2xl mx-auto">
                 Choose the perfect plan for your wedding business
               </p>
             </div>
           </div>
 
           {/* Pricing Section */}
-          <div className="max-w-7xl mx-auto px-4 pb-12 sm:pb-16 md:pb-20">
-            <div className="flex flex-col items-center gap-6 sm:gap-8 mb-8 sm:mb-12">
-              {/* Category Selection */}
-              <div className="w-full flex justify-center mb-2">
-                <div className="w-full max-w-xs">
-                  <ServiceInput
-                    value={selectedCategory}
-                    onValueChange={setSelectedCategory}
-                    variant="default"
-                    className="shadow-sm"
-                    triggerClassName="bg-white"
-                  />
-                </div>
+          <div className="max-w-7xl mx-auto px-4 pb-12 sm:pb-16 md:pb-24">
+            {/* Controls Section */}
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-12">
+              <div className="w-full sm:w-64">
+                <ServiceInput
+                  value={selectedCategory}
+                  onValueChange={setSelectedCategory}
+                  variant="default"
+                  className="shadow-sm"
+                  triggerClassName="bg-white"
+                />
               </div>
-              {/* Toggle Switch */}
-              <div className="flex items-center gap-2 sm:gap-3">
+
+              <div className="flex items-center gap-3 rounded-full px-4 py-2">
                 <span
-                  className={`text-xs sm:text-sm ${
-                    !isAnnual ? "font-medium" : ""
+                  className={`text-sm ${
+                    !isAnnual ? "font-medium text-black" : "text-gray-500"
                   }`}
                 >
                   Monthly
                 </span>
                 <button
                   onClick={() => setIsAnnual(!isAnnual)}
-                  className={`relative w-12 sm:w-14 h-6 sm:h-7 rounded-full transition-colors ${
+                  className={`relative w-14 h-7 rounded-full transition-colors ${
                     isAnnual ? "bg-black" : "bg-gray-200"
                   }`}
                 >
                   <div
-                    className={`absolute top-1 left-1 w-4 sm:w-5 h-4 sm:h-5 rounded-full bg-white transition-transform ${
-                      isAnnual ? "translate-x-6 sm:translate-x-7" : ""
+                    className={`absolute top-1 left-1 w-5 h-5 rounded-full bg-white transition-transform ${
+                      isAnnual ? "translate-x-7" : ""
                     }`}
                   />
                 </button>
                 <span
-                  className={`text-xs sm:text-sm ${
-                    isAnnual ? "font-medium" : ""
+                  className={`text-sm ${
+                    isAnnual ? "font-medium text-black" : "text-gray-500"
                   }`}
                 >
-                  Annual
-                  <span className="ml-1 text-green-600">(Save 20%)</span>
+                  Annually
+                  <span className="ml-1 text-green-600 font-medium">
+                    (Save 25%)
+                  </span>
                 </span>
               </div>
             </div>
 
             {/* Pricing Cards */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8 sm:gap-6 md:gap-8 max-w-lg sm:max-w-none mx-auto">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 max-w-lg lg:max-w-none mx-auto">
               <PricingCard
                 tier="basic"
                 features={commonFeatures.basic}
@@ -268,129 +333,70 @@ const PricingPage = () => {
             </div>
 
             {/* Feature Comparison Table */}
-            <div className="mt-16 max-w-7xl mx-auto px-4">
+            <div className="mt-16">
               <h2 className="text-2xl font-bold text-center mb-8">
                 Feature Comparison
               </h2>
-              <div className="overflow-x-auto">
-                <table className="w-full">
+              <div className="overflow-hidden rounded-xl border border-gray-200">
+                <table className="w-full bg-white">
                   <thead>
-                    <tr>
-                      <th className="text-left p-4 bg-gray-50">Features</th>
-                      <th className="p-4 bg-gray-50 text-center">Basic</th>
-                      <th className="p-4 bg-gray-50 text-center">Premium</th>
-                      <th className="p-4 bg-gray-50 text-center">Elite</th>
+                    <tr className="bg-stone-50">
+                      <th className="text-left p-4 font-medium text-gray-500">
+                        Features
+                      </th>
+                      <th className="p-4 text-center font-medium text-gray-500">
+                        Basic
+                      </th>
+                      <th className="p-4 text-center font-medium text-gray-500">
+                        Premium
+                      </th>
+                      <th className="p-4 text-center font-medium text-gray-500">
+                        Elite
+                      </th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-gray-200">
-                    <tr>
-                      <td className="p-4">Profile Listing</td>
-                      <td className="p-4 text-center">
-                        <Check className="w-5 h-5 text-green-500 mx-auto" />
-                      </td>
-                      <td className="p-4 text-center">
-                        <Check className="w-5 h-5 text-green-500 mx-auto" />
-                      </td>
-                      <td className="p-4 text-center">
-                        <Check className="w-5 h-5 text-green-500 mx-auto" />
-                      </td>
-                    </tr>
-                    <tr>
-                      <td className="p-4">Photo/Video Gallery</td>
-                      <td className="p-4 text-center">
-                        <Check className="w-5 h-5 text-green-500 mx-auto" />
-                      </td>
-                      <td className="p-4 text-center">
-                        <Check className="w-5 h-5 text-green-500 mx-auto" />
-                      </td>
-                      <td className="p-4 text-center">
-                        <Check className="w-5 h-5 text-green-500 mx-auto" />
-                      </td>
-                    </tr>
-                    <tr>
-                      <td className="p-4">Lead Management</td>
-                      <td className="p-4 text-center">
-                        <Check className="w-5 h-5 text-green-500 mx-auto" />
-                      </td>
-                      <td className="p-4 text-center">
-                        <Check className="w-5 h-5 text-green-500 mx-auto" />
-                      </td>
-                      <td className="p-4 text-center">
-                        <Check className="w-5 h-5 text-green-500 mx-auto" />
-                      </td>
-                    </tr>
-                    <tr>
-                      <td className="p-4">Basic Anyalytic</td>
-                      <td className="p-4 text-center">
-                        <Check className="w-5 h-5 text-green-500 mx-auto" />
-                      </td>
-                      <td className="p-4 text-center">
-                        <Check className="w-5 h-5 text-green-500 mx-auto" />
-                      </td>
-                      <td className="p-4 text-center">
-                        <Check className="w-5 h-5 text-green-500 mx-auto" />
-                      </td>
-                    </tr>
-                    <tr>
-                      <td className="p-4">Featured Reach</td>
-                      <td className="p-4 text-center">
-                        <X className="w-5 h-5 text-gray-300 mx-auto" />
-                      </td>
-                      <td className="p-4 text-center">
-                        <Check className="w-5 h-5 text-green-500 mx-auto" />
-                      </td>
-                      <td className="p-4 text-center">
-                        <Check className="w-5 h-5 text-green-500 mx-auto" />
-                      </td>
-                    </tr>
-                    <tr>
-                      <td className="p-4">Priority Support</td>
-                      <td className="p-4 text-center">
-                        <X className="w-5 h-5 text-gray-300 mx-auto" />
-                      </td>
-                      <td className="p-4 text-center">
-                        <Check className="w-5 h-5 text-green-500 mx-auto" />
-                      </td>
-                      <td className="p-4 text-center">
-                        <Check className="w-5 h-5 text-green-500 mx-auto" />
-                      </td>
-                    </tr>
-                    <tr>
-                      <td className="p-4">Elite Reach</td>
-                      <td className="p-4 text-center">
-                        <X className="w-5 h-5 text-gray-300 mx-auto" />
-                      </td>
-                      <td className="p-4 text-center">
-                        <X className="w-5 h-5 text-gray-300 mx-auto" />
-                      </td>
-                      <td className="p-4 text-center">
-                        <Check className="w-5 h-5 text-green-500 mx-auto" />
-                      </td>
-                    </tr>
-                    <tr>
-                      <td className="p-4">Social Media Integration</td>
-                      <td className="p-4 text-center">
-                        <X className="w-5 h-5 text-gray-300 mx-auto" />
-                      </td>
-                      <td className="p-4 text-center">
-                        <X className="w-5 h-5 text-gray-300 mx-auto" />
-                      </td>
-                      <td className="p-4 text-center">
-                        <Check className="w-5 h-5 text-green-500 mx-auto" />
-                      </td>
-                    </tr>
-                    <tr>
-                      <td className="p-4">Marketing Tools</td>
-                      <td className="p-4 text-center">
-                        <X className="w-5 h-5 text-gray-300 mx-auto" />
-                      </td>
-                      <td className="p-4 text-center">
-                        <X className="w-5 h-5 text-gray-300 mx-auto" />
-                      </td>
-                      <td className="p-4 text-center">
-                        <Check className="w-5 h-5 text-green-500 mx-auto" />
-                      </td>
-                    </tr>
+                  <tbody className="divide-y divide-gray-100">
+                    {[
+                      "Cancel Anytime",
+                      "Profile Listing",
+                      "Photo/Video Gallery",
+                      "Lead Management",
+                      "Basic Analytics",
+                      "Featured Reach",
+                      "Priority Support",
+                      "Elite Reach",
+                      "Social Media Content",
+                    ].map((feature, index) => (
+                      <tr
+                        key={index}
+                        className="hover:bg-stone-50 transition-colors"
+                      >
+                        <td className="p-4 text-sm text-gray-600">{feature}</td>
+                        <td className="p-4 text-center">
+                          {index < 5 ? (
+                            <div className="mx-auto w-5 h-5 rounded-full bg-green-100 flex items-center justify-center">
+                              <Check className="w-3 h-3 text-green-600" />
+                            </div>
+                          ) : (
+                            <X className="w-5 h-5 text-gray-300 mx-auto" />
+                          )}
+                        </td>
+                        <td className="p-4 text-center">
+                          {index < 7 ? (
+                            <div className="mx-auto w-5 h-5 rounded-full bg-green-100 flex items-center justify-center">
+                              <Check className="w-3 h-3 text-green-600" />
+                            </div>
+                          ) : (
+                            <X className="w-5 h-5 text-gray-300 mx-auto" />
+                          )}
+                        </td>
+                        <td className="p-4 text-center">
+                          <div className="mx-auto w-5 h-5 rounded-full bg-green-100 flex items-center justify-center">
+                            <Check className="w-3 h-3 text-green-600" />
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
                   </tbody>
                 </table>
               </div>

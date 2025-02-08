@@ -872,6 +872,22 @@ const UpdatePhotoVideoListing = () => {
       }
 
       toast.success("Photography & Videography listing updated successfully!");
+
+      const { data: listing, error: listingError } = await supabase
+        .from("photo_video_listing")
+        .select("is_archived")
+        .eq("id", id)
+        .single();
+
+      if (listingError) {
+        throw new Error("Failed to check listing status");
+      }
+
+      if (listing?.is_archived) {
+        router.push("/dashboard/listings?service=photo-video");
+        return;
+      }
+
       router.push(`/dashboard/listings`);
       router.replace(`/services/photoVideo/${photoVideo.id}`);
     } catch (error) {

@@ -746,9 +746,8 @@ const PhotographyDetailsPage = () => {
                         Ready to connect?
                       </h3>
                       <p className="text-gray-600 mb-6">
-                        Sign in to contact {photoVideo.business_name} and manage
-                        all your wedding vendor communications in one place.
-                        It's absolutely free!
+                        Sign in to contact {photoVideo.business_name} and ask
+                        any questions you may have. It's absolutely free!
                       </p>
                       <Button
                         onClick={() => setIsLoginOpen(true)}

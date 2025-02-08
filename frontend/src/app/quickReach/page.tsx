@@ -137,7 +137,6 @@ export default function QuickReachPage() {
     }
 
     try {
-      setIsLoading(true);
       setError(null);
 
       // Perform checks before starting the transition
@@ -158,6 +157,8 @@ export default function QuickReachPage() {
         setIsLoading(false);
         return;
       }
+      
+      setIsLoading(true);
 
       const service = services.find((s) => s.id === selected);
       if (service?.available && service.path) {

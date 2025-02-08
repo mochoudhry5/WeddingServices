@@ -26,17 +26,8 @@ const OnboardingModal = ({
   const [dontShowAgain, setDontShowAgain] = useState(false);
   const [showOnboarding, setShowOnboarding] = useState(true);
   const { user } = useAuth();
-  const isOpen = (externalOpen || autoOpen) && !!user;
-
-  // Reset current slide when modal is opened via Learn More button
-  useEffect(() => {
-    if (!user) {
-      setAutoOpen(false);
-      setCurrentSlide(0);
-      setDontShowAgain(false);
-      onExternalOpenChange?.(false);
-    }
-  }, [user, onExternalOpenChange]);
+  // Simplified isOpen condition to match QuickReachModal
+  const isOpen = externalOpen || autoOpen;
 
   // Reset current slide when modal is opened via Learn More button
   useEffect(() => {
@@ -55,7 +46,12 @@ const OnboardingModal = ({
             .eq("id", user.id)
             .single();
 
-          if (error) throw error;
+          if (error) {
+            console.error("Error fetching preferences:", error);
+            setAutoOpen(true);
+            setShowOnboarding(true);
+            return;
+          }
 
           setAutoOpen(data.show_onboarding_listing);
           setShowOnboarding(data.show_onboarding_listing);
@@ -64,12 +60,13 @@ const OnboardingModal = ({
           setAutoOpen(true);
           setShowOnboarding(true);
         }
+      } else {
+        setAutoOpen(true);
+        setShowOnboarding(true);
       }
     };
 
-    if (user) {
-      checkPreference();
-    }
+    checkPreference();
   }, [user]);
 
   const handleClose = async () => {
@@ -167,8 +164,9 @@ const OnboardingModal = ({
                 How much does it cost to list my service?
               </h3>
               <p className="text-sm text-gray-600">
-                Listing your service on AnyWeds involves a simple flat fee of
-                $15 a month. Cancel anytime.
+                Listing your service on AnyWeds involves a simple flat fee which
+                is dependent on the service type and tier you select. Cancel
+                anytime.
               </p>
             </div>
 
@@ -252,7 +250,7 @@ const OnboardingModal = ({
             <div className="flex space-x-3">
               {currentSlide > 0 && (
                 <Button
-                  variant={"outline"}
+                  variant="outline"
                   onClick={() => setCurrentSlide((prev) => prev - 1)}
                   className="flex items-center gap-1"
                   size="sm"

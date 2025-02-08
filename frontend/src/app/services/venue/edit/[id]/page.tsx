@@ -944,6 +944,22 @@ export default function UpdateVenueListing() {
         throw new Error("Failed to update add-ons");
       }
       toast.success("Venue listing updated successfully!");
+
+      const { data: listing, error: listingError } = await supabase
+        .from("venue_listing")
+        .select("is_archived")
+        .eq("id", id)
+        .single();
+
+      if (listingError) {
+        throw new Error("Failed to check listing status");
+      }
+
+      if (listing?.is_archived) {
+        router.push("/dashboard/listings?service=venue");
+        return;
+      }
+
       router.push(`/dashboard/listings`);
       router.replace(`/services/venue/${venue.id}`);
     } catch (error) {
@@ -1102,7 +1118,7 @@ export default function UpdateVenueListing() {
                                   e.preventDefault();
                                 }
                               }}
-                              placeholder="5000"
+                              placeholder="0"
                               className="pl-10 w-full"
                             />
                           </div>

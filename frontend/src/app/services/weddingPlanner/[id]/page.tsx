@@ -366,7 +366,35 @@ const WeddingDetailsPage = () => {
         <NavBar />
         <div className="flex-1 flex flex-col">
           <div className="flex-grow flex items-center justify-center">
-            {/* Not found content remains the same */}
+            <div className="max-w-md w-full mx-auto px-4 py-8 text-center">
+              <div className="bg-white rounded-lg shadow-sm p-8">
+                <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-stone-100 flex items-center justify-center">
+                  <SearchX className="w-8 h-8 text-stone-600" />
+                </div>
+                <h1 className="text-2xl font-bold text-gray-900 mb-2">
+                  Listing Not Found
+                </h1>
+                <p className="text-gray-600 mb-6">
+                  We couldn't find the listing you're looking for. It may have
+                  been removed or is no longer available.
+                </p>
+                <div className="space-y-3">
+                  <Button
+                    onClick={() => window.history.back()}
+                    variant="outline"
+                    className="w-full"
+                  >
+                    Go Back
+                  </Button>
+                  <Button
+                    onClick={() => (window.location.href = "/")}
+                    className="w-full bg-black hover:bg-stone-800"
+                  >
+                    Browse All Listings
+                  </Button>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
         <Footer />
@@ -614,8 +642,7 @@ const WeddingDetailsPage = () => {
                       </h3>
                       <p className="text-gray-600 mb-6">
                         Sign in to contact {weddingPlanner.business_name} and
-                        manage all your wedding vendor communications in one
-                        place. It's absolutely free!
+                        ask any questions you may have. It's absolutely free!
                       </p>
                       <Button
                         onClick={() => setIsLoginOpen(true)}

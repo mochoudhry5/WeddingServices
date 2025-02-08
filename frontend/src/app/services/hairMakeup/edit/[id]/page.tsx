@@ -886,6 +886,22 @@ const UpdateHairMakeupListing = () => {
       }
 
       toast.success("Hair & Makeup listing updated successfully!");
+
+      const { data: listing, error: listingError } = await supabase
+        .from("hair_makeup_listing")
+        .select("is_archived")
+        .eq("id", id)
+        .single();
+
+      if (listingError) {
+        throw new Error("Failed to check listing status");
+      }
+
+      if (listing?.is_archived) {
+        router.push("/dashboard/listings?service=hair-makeup");
+        return;
+      }
+
       router.push(`/dashboard/listings`);
       router.replace(`/services/hairMakeup/${hairMakeup.id}`);
     } catch (error) {
