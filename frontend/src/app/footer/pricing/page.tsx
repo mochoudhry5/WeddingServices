@@ -6,7 +6,7 @@ import NavBar from "@/components/ui/NavBar";
 import Footer from "@/components/ui/Footer";
 import { Card, CardContent } from "@/components/ui/card";
 import ServiceInput from "@/components/ui/ServiceInput";
-import { useRouter } from "next/navigation";
+import { toast } from "sonner";
 
 type ServiceType =
   | "venue"
@@ -34,7 +34,6 @@ interface PricingCardProps {
 }
 
 const PricingPage = () => {
-  const router = useRouter();
   const [selectedCategory, setSelectedCategory] =
     useState<ServiceType>("venue");
   const [isAnnual, setIsAnnual] = useState<boolean>(false);
@@ -99,6 +98,20 @@ const PricingPage = () => {
     return basePrice;
   };
 
+  const handleGetStarted = () => {
+    if (!selectedPlan) {
+      toast.error("Please select a plan to continue");
+      return;
+    }
+
+    const params = new URLSearchParams({
+      tier: selectedPlan,
+      annual: isAnnual ? "TRUE" : "FALSE",
+    });
+
+    window.location.href = `/services/${selectedCategory}/create?${params.toString()}`;
+  };
+
   const PricingCard: React.FC<PricingCardProps> = ({
     tier,
     features,
@@ -110,11 +123,6 @@ const PricingPage = () => {
 
     const handleCardClick = () => {
       setSelectedPlan(tier);
-    };
-
-    const handleGetStarted = (e: React.MouseEvent) => {
-      e.stopPropagation();
-      router.push("/services");
     };
 
     return (
@@ -232,7 +240,10 @@ const PricingPage = () => {
           </ul>
 
           <button
-            onClick={handleGetStarted}
+            onClick={(e) => {
+              e.stopPropagation();
+              handleGetStarted();
+            }}
             className={`w-full mt-8 px-6 py-3 rounded-lg font-medium text-sm transition-colors
               ${
                 isSelected

@@ -12,7 +12,7 @@ import { Button } from "@/components/ui/button";
 import { useAuth } from "@/context/AuthContext";
 import LikeButton from "@/components/ui/LikeButton";
 import { ServiceInfoGrid } from "@/components/ui/CardInfoGrid";
-import { SearchX } from "lucide-react";
+import { ArchiveX, SearchX } from "lucide-react";
 import { AuthModals } from "@/components/ui/AuthModal";
 import ErrorBoundary from "@/components/ui/ErrorBoundary";
 import PhotoVideoEditPage from "../editReach/[id]/page";
@@ -268,9 +268,10 @@ const PhotographyDetailsPage = () => {
       }
 
       if (
-        !photoVideoData ||
-        photoVideoData.is_archived ||
-        photoVideoData.is_draft
+        !photoVideo ||
+        (photoVideo.is_archived &&
+          (!user?.id || user.id !== photoVideo.user_id)) ||
+        photoVideo.is_draft
       ) {
         setPhotoVideo(null);
         return;
@@ -543,6 +544,26 @@ const PhotographyDetailsPage = () => {
                       className="text-rose-600 hover:text-rose-700"
                     />
                   </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {photoVideo.is_archived && user?.id === photoVideo.user_id && (
+            <div className="w-full bg-amber-50 border-y border-amber-200">
+              <div className="max-w-7xl mx-auto px-4 py-3">
+                <div className="flex items-center justify-center gap-2">
+                  <ArchiveX className="w-5 h-5 text-amber-600" />
+                  <p className="text-sm text-amber-800">
+                    This listing is archived and is only visible to you. If you
+                    want to reactivate the listing go to{" "}
+                    <a
+                      href="/dashboard/listings"
+                      className="underline font-medium hover:text-amber-900"
+                    >
+                      My Listings
+                    </a>
+                  </p>
                 </div>
               </div>
             </div>
