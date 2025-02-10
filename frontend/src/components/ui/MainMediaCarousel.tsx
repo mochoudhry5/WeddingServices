@@ -1,19 +1,20 @@
 import React, { useState, useRef, useEffect } from "react";
 import type { Swiper as SwiperType } from "swiper";
 import { Swiper, SwiperSlide } from "swiper/react";
-import { Navigation, Keyboard } from "swiper/modules";
+import { Navigation, Keyboard, EffectCoverflow } from "swiper/modules";
 import {
   Play,
   Maximize2,
   Minimize2,
   ChevronLeft,
   ChevronRight,
+  Loader2,
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 
-// Import Swiper styles
 import "swiper/css";
 import "swiper/css/navigation";
+import "swiper/css/effect-coverflow";
 
 interface MediaItem {
   file_path: string;
@@ -37,10 +38,15 @@ export default function MediaCarousel({
   const [isPlaying, setIsPlaying] = useState(false);
   const [progress, setProgress] = useState(0);
   const [showControls, setShowControls] = useState(false);
+  const [loadedImages, setLoadedImages] = useState<Set<string>>(new Set());
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const [isLoading, setIsLoading] = useState<Record<string, boolean>>({});
 
   const containerRef = useRef<HTMLDivElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
   const swiperRef = useRef<SwiperType>();
+  const preloadQueue = useRef<string[]>([]);
+  const urlCache = useRef<Map<string, string>>(new Map());
 
   const getMediaType = (filePath: string) => {
     const extension = filePath?.toLowerCase().split(".").pop();
@@ -48,11 +54,55 @@ export default function MediaCarousel({
   };
 
   const getMediaUrl = (mediaItem?: MediaItem) => {
-    return mediaItem
-      ? supabase.storage
-          .from(`${service}-media`)
-          .getPublicUrl(mediaItem.file_path).data.publicUrl
-      : "/api/placeholder/400/300";
+    if (!mediaItem) return "/api/placeholder/400/300";
+
+    const cacheKey = mediaItem.file_path;
+    if (urlCache.current.has(cacheKey)) {
+      return urlCache.current.get(cacheKey)!;
+    }
+
+    const url = supabase.storage
+      .from(`${service}-media`)
+      .getPublicUrl(mediaItem.file_path).data.publicUrl;
+
+    urlCache.current.set(cacheKey, url);
+    return url;
+  };
+
+  const preloadImage = (url: string) => {
+    if (loadedImages.has(url)) return;
+
+    return new Promise((resolve, reject) => {
+      const img = new Image();
+      img.onload = () => {
+        setLoadedImages((prev) => new Set(prev).add(url));
+        resolve(url);
+      };
+      img.onerror = reject;
+      img.src = url;
+    });
+  };
+
+  const preloadAdjacentSlides = async (currentIndex: number) => {
+    const totalSlides = media.length;
+    const preloadIndexes = [
+      (currentIndex + 1) % totalSlides,
+      (currentIndex + 2) % totalSlides,
+      (currentIndex - 1 + totalSlides) % totalSlides,
+    ];
+
+    const preloadUrls = preloadIndexes
+      .map((index) => media[index])
+      .filter((item) => getMediaType(item.file_path) === "image")
+      .map((item) => getMediaUrl(item));
+
+    preloadQueue.current = preloadUrls;
+
+    for (const url of preloadUrls) {
+      if (preloadQueue.current.includes(url)) {
+        await preloadImage(url);
+      }
+    }
   };
 
   const enterFullscreen = async (element: HTMLElement) => {
@@ -136,7 +186,20 @@ export default function MediaCarousel({
     }
   };
 
-  // Handle ESC key
+  const handleSlideChange = (swiper: SwiperType) => {
+    setCurrentIndex(swiper.realIndex);
+    setIsPlaying(false);
+    preloadAdjacentSlides(swiper.realIndex);
+  };
+
+  const handleImageLoad = (path: string) => {
+    setIsLoading((prev) => ({ ...prev, [path]: false }));
+  };
+
+  const handleImageLoadStart = (path: string) => {
+    setIsLoading((prev) => ({ ...prev, [path]: true }));
+  };
+
   useEffect(() => {
     const handleEscKey = (event: KeyboardEvent) => {
       if (event.key === "Escape" && isFullscreen) {
@@ -148,7 +211,6 @@ export default function MediaCarousel({
     return () => document.removeEventListener("keydown", handleEscKey);
   }, [isFullscreen]);
 
-  // Handle fullscreen changes
   useEffect(() => {
     const handleFullscreenChange = () => {
       const doc = document as any;
@@ -184,26 +246,43 @@ export default function MediaCarousel({
     };
   }, []);
 
-  // Handle video events
   useEffect(() => {
     const video = videoRef.current;
     if (!video) return;
 
-    video.addEventListener("play", () => setIsPlaying(true));
-    video.addEventListener("pause", () => setIsPlaying(false));
+    const handlePlay = () => setIsPlaying(true);
+    const handlePause = () => setIsPlaying(false);
+
+    video.addEventListener("play", handlePlay);
+    video.addEventListener("pause", handlePause);
     video.addEventListener("timeupdate", handleProgressUpdate);
 
     return () => {
-      video.removeEventListener("play", () => setIsPlaying(true));
-      video.removeEventListener("pause", () => setIsPlaying(false));
+      video.removeEventListener("play", handlePlay);
+      video.removeEventListener("pause", handlePause);
       video.removeEventListener("timeupdate", handleProgressUpdate);
     };
+  }, []);
+
+  useEffect(() => {
+    const initialPreload = async () => {
+      const firstThreeImages = media
+        .slice(0, 3)
+        .filter((item) => getMediaType(item.file_path) === "image")
+        .map((item) => getMediaUrl(item));
+
+      for (const url of firstThreeImages) {
+        await preloadImage(url);
+      }
+    };
+
+    initialPreload();
   }, []);
 
   return (
     <div
       ref={containerRef}
-      className={`relative bg-black ${className} ${
+      className={`relative bg ${className} ${
         isFullscreen ? "fixed inset-0 z-50" : "h-full"
       }`}
       onMouseEnter={() => setShowControls(true)}
@@ -215,17 +294,36 @@ export default function MediaCarousel({
         onSwiper={(swiper) => {
           swiperRef.current = swiper;
         }}
-        modules={[Navigation, Keyboard]}
+        modules={[Navigation, Keyboard, EffectCoverflow]}
         keyboard={{ enabled: true }}
         loop={true}
         className="h-full"
-        onSlideChange={() => {
-          setIsPlaying(false);
-        }}
+        onSlideChange={handleSlideChange}
         centeredSlides={true}
+        watchSlidesProgress={true}
+        slidesPerView={1.25}
+        spaceBetween={10}
+        breakpoints={{
+          640: {
+            slidesPerView: 1.35,
+            spaceBetween: 15,
+          },
+          1024: {
+            slidesPerView: 1.5,
+            spaceBetween: 20,
+          },
+        }}
+        effect="coverflow"
+        coverflowEffect={{
+          rotate: 0,
+          stretch: 0,
+          depth: 100,
+          modifier: 1,
+          slideShadows: false,
+        }}
       >
         {media.map((item, index) => (
-          <SwiperSlide key={index} className="h-full">
+          <SwiperSlide key={index} className="h-full swiper-slide">
             <div className="flex items-center justify-center h-full">
               {getMediaType(item.file_path) === "video" ? (
                 <div className="relative w-full h-full">
@@ -254,15 +352,23 @@ export default function MediaCarousel({
                   </div>
                 </div>
               ) : (
-                <div
-                  className="relative w-full h-full cursor-pointer"
-                  onClick={handleFullscreen}
-                >
+                <div className="relative w-full h-full">
+                  {isLoading[item.file_path] && (
+                    <div className="absolute inset-0 flex items-center justify-center bg-black/10">
+                      <Loader2 className="w-8 h-8 text-blue-500 animate-spin" />
+                    </div>
+                  )}
                   <img
                     src={getMediaUrl(item)}
                     alt={`${name} - ${index + 1}`}
-                    className="w-full h-full object-contain"
-                    loading="eager"
+                    className={`w-full h-full object-contain transition-opacity duration-300 ${
+                      loadedImages.has(getMediaUrl(item))
+                        ? "opacity-100"
+                        : "opacity-0"
+                    }`}
+                    loading={index <= 2 ? "eager" : "lazy"}
+                    onLoadStart={() => handleImageLoadStart(item.file_path)}
+                    onLoad={() => handleImageLoad(item.file_path)}
                   />
                 </div>
               )}
@@ -271,7 +377,6 @@ export default function MediaCarousel({
         ))}
       </Swiper>
 
-      {/* Navigation Arrows */}
       {showControls && (
         <>
           <button
@@ -291,7 +396,6 @@ export default function MediaCarousel({
         </>
       )}
 
-      {/* Fullscreen Button */}
       {showControls && (
         <button
           onClick={handleFullscreen}
