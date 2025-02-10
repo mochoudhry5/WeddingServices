@@ -18,7 +18,7 @@ import { Button } from "@/components/ui/button";
 import { useAuth } from "@/context/AuthContext";
 import LikeButton from "@/components/ui/LikeButton";
 import { ServiceInfoGrid } from "@/components/ui/CardInfoGrid";
-import { SearchX } from "lucide-react";
+import { ArchiveX, SearchX } from "lucide-react";
 import { AuthModals } from "@/components/ui/AuthModal";
 import ErrorBoundary from "@/components/ui/ErrorBoundary";
 
@@ -252,9 +252,10 @@ const WeddingDetailsPage = () => {
       }
 
       if (
-        !weddingPlannerData ||
-        weddingPlannerData.is_archived ||
-        weddingPlannerData.is_draft
+        !weddingPlanner ||
+        (weddingPlanner.is_archived &&
+          (!user?.id || user.id !== weddingPlanner.user_id)) ||
+        weddingPlanner.is_draft
       ) {
         setWeddingPlanner(null);
         return;
@@ -444,6 +445,27 @@ const WeddingDetailsPage = () => {
               </div>
             </div>
           )}
+
+          {weddingPlanner.is_archived &&
+            user?.id === weddingPlanner.user_id && (
+              <div className="w-full bg-amber-50 border-y border-amber-200">
+                <div className="max-w-7xl mx-auto px-4 py-3">
+                  <div className="flex items-center justify-center gap-2">
+                    <ArchiveX className="w-5 h-5 text-amber-600" />
+                    <p className="text-sm text-amber-800">
+                      This listing is archived and is only visible to you. If
+                      you want to reactivate the listing go to{" "}
+                      <a
+                        href="/dashboard/listings"
+                        className="underline font-medium hover:text-amber-900"
+                      >
+                        My Listings
+                      </a>
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
 
           {/* Planner Header */}
           <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-3 sm:gap-4 mb-6 sm:mb-8">
