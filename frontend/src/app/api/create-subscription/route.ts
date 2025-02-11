@@ -117,6 +117,7 @@ export async function POST(request: Request) {
         items: [{ price: priceId }],
         default_payment_method: paymentMethod.stripe_payment_method_id,
         payment_behavior: "error_if_incomplete",
+        off_session: true,
         promotion_code: promotionCode?.id,
         metadata: {
           userId,
@@ -125,6 +126,18 @@ export async function POST(request: Request) {
           isAnnual: String(isAnnual),
           listing_id,
         },
+        payment_settings: {
+          payment_method_options: {
+            card: {
+              mandate_options: {
+                description: `Subscription for ${serviceType} service`,
+              },
+              request_three_d_secure: "automatic",
+            },
+          },
+          save_default_payment_method: "on_subscription",
+        },
+        expand: ["latest_invoice.payment_intent"],
       },
       {
         idempotencyKey,

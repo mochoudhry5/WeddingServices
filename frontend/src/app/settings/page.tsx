@@ -129,33 +129,23 @@ const AccountSettings: React.FC<AccountSettingsProps> = ({
     setLoading((prev) => ({ ...prev, delete: true }));
 
     try {
-      // If user is a vendor, check for active subscriptions first
-      if (isVendor) {
-        const { data: subscriptions, error: subscriptionError } = await supabase
-          .from("subscriptions")
-          .select("status")
-          .eq("user_id", user.id)
-          .or("status.eq.active,status.eq.trialing");
-
-        if (subscriptionError) throw subscriptionError;
-
-        if (subscriptions && subscriptions.length > 0) {
-          toast.error(
-            "You have active subscriptions. Please cancel or wait till expiration date is reached."
-          );
-          setShowDeleteDialog(false);
-          setActiveSection("billing");
-          return;
+      // Call the RPC function with original parameter names
+      const { data: deletionResult, error: deleteError } = await supabase.rpc(
+        "delete_user_data",
+        {
+          uid: user.id,
+          is_vendor: isVendor ?? false,
         }
+      );
+
+      if (deleteError) {
+        console.error("Delete error:", deleteError);
+        throw deleteError;
       }
 
-      // If no active subscriptions, proceed with the deletion
-      const { error: deleteError } = await supabase
-        .from("users")
-        .delete()
-        .eq("id", user.id);
-
-      if (deleteError) throw deleteError;
+      if (!deletionResult?.success) {
+        throw new Error(deletionResult?.error || "Failed to delete account");
+      }
 
       // Show success message
       toast.success("Your account has been successfully deleted");

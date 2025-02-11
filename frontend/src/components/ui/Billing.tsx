@@ -312,11 +312,12 @@ const SubscriptionSection: React.FC<SubscriptionSectionProps> = ({
                           </div>
                         )}
                       </span>
-                      {subscription.status === "active" && (
-                        <span className="text-sm text-gray-500">
-                          {getNextPaymentInfo(subscription)}
-                        </span>
-                      )}
+                      {subscription.status === "active" &&
+                        !subscription.cancel_at_period_end && (
+                          <span className="text-sm text-gray-500">
+                            {getNextPaymentInfo(subscription)}
+                          </span>
+                        )}
                     </div>
                   </td>
                   {/* Plan Type Column */}

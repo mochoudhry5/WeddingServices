@@ -268,10 +268,10 @@ const PhotographyDetailsPage = () => {
       }
 
       if (
-        !photoVideo ||
-        (photoVideo.is_archived &&
-          (!user?.id || user.id !== photoVideo.user_id)) ||
-        photoVideo.is_draft
+        !photoVideoData ||
+        (photoVideoData.is_archived &&
+          (!user?.id || user.id !== photoVideoData.user_id)) ||
+        photoVideoData.is_draft
       ) {
         setPhotoVideo(null);
         return;

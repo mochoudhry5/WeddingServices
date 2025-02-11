@@ -2,16 +2,6 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import Stripe from "https://esm.sh/stripe@12.0.0?target=deno";
 
-declare global {
-  interface Window {
-    Deno: {
-      env: {
-        get(key: string): string | undefined;
-      };
-    };
-  }
-}
-
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers":
@@ -33,7 +23,6 @@ serve(async (req) => {
 
   try {
     const stripe = new Stripe(STRIPE_SECRET_KEY, {
-      apiVersion: "2023-10-16",
       httpClient: Stripe.createFetchHttpClient(),
     });
 
@@ -41,9 +30,7 @@ serve(async (req) => {
       SUPABASE_URL,
       SUPABASE_SERVICE_ROLE_KEY,
       {
-        auth: {
-          persistSession: false,
-        },
+        auth: { persistSession: false },
       }
     );
 
@@ -78,70 +65,88 @@ serve(async (req) => {
       throw new Error("Subscription not found or unauthorized");
     }
 
-    // Get current subscription from Stripe to check details
+    // Get current subscription from Stripe with expanded discount information
     const currentSubscription = await stripe.subscriptions.retrieve(
-      subscriptionId
+      subscriptionId,
+      {
+        expand: ["discount", "discount.coupon"],
+      }
     );
 
-    // Check if there's an active discount
+    // Log the subscription state before cancellation
+    console.log("Current subscription state:", {
+      id: currentSubscription.id,
+      status: currentSubscription.status,
+      discount: currentSubscription.discount,
+      current_period_end: currentSubscription.current_period_end,
+      cancel_at_period_end: currentSubscription.cancel_at_period_end,
+      cancel_at: currentSubscription.cancel_at,
+    });
+
+    // Check for active discount
     const hasActiveDiscount =
       currentSubscription.discount ||
       (currentSubscription.discounts &&
         currentSubscription.discounts.length > 0);
 
+    // Set up cancellation parameters
     let cancelationSettings: any = {
-      proration_behavior: "none", // Ensures no proration occurs
+      proration_behavior: "none",
     };
 
-    if (hasActiveDiscount) {
-      // If there's a discount, cancel immediately when discount ends
-      // Find the discount end timestamp
-      const discount =
-        currentSubscription.discount || currentSubscription.discounts?.[0];
-      if (discount && "end" in discount) {
-        cancelationSettings.cancel_at = discount.end;
-      } else {
-        // If we can't find the discount end date, fall back to period end
-        cancelationSettings.cancel_at_period_end = true;
-      }
+    // Determine cancellation timing based on discount
+    if (hasActiveDiscount && currentSubscription.discount?.end) {
+      console.log(
+        "Setting cancellation at discount end:",
+        new Date(currentSubscription.discount.end * 1000)
+      );
+      cancelationSettings.cancel_at = currentSubscription.discount.end;
     } else {
-      // No discount - cancel at period end
+      console.log("Setting cancellation at period end");
       cancelationSettings.cancel_at_period_end = true;
     }
 
-    // Cancel the subscription with determined settings
+    // Log the cancellation settings we're about to apply
+    console.log("Applying cancellation settings:", cancelationSettings);
+
+    // Update the subscription in Stripe
     const canceledSubscription = await stripe.subscriptions.update(
       subscriptionId,
       cancelationSettings
     );
 
-    // Calculate remaining days
+    // Log the subscription after cancellation
+    console.log("Subscription after cancellation:", {
+      id: canceledSubscription.id,
+      status: canceledSubscription.status,
+      cancel_at: canceledSubscription.cancel_at,
+      cancel_at_period_end: canceledSubscription.cancel_at_period_end,
+    });
+
+    // Update Supabase to reflect cancellation status
+    // We set cancel_at_period_end to true for both types of cancellation
+    // to indicate the subscription is scheduled to end
+    const { error: updateError } = await supabaseAdmin
+      .from("subscriptions")
+      .update({
+        cancel_at_period_end: true,
+      })
+      .eq("id", subscription.id);
+
+    if (updateError) {
+      console.error("Error updating Supabase:", updateError);
+      throw new Error("Failed to update subscription status");
+    }
+
+    // Calculate remaining time for the response
     const effectiveEndDate =
       canceledSubscription.cancel_at || canceledSubscription.current_period_end;
+
     const now = new Date();
     const remainingDays = Math.ceil(
       (new Date(effectiveEndDate * 1000).getTime() - now.getTime()) /
         (1000 * 60 * 60 * 24)
     );
-
-    // Update subscription status in database
-    const { error: updateError } = await supabaseAdmin
-      .from("subscriptions")
-      .update({
-        status: "active", // Keep as active until the end
-        cancel_at_period_end: true,
-        current_period_end: new Date(
-          canceledSubscription.current_period_end * 1000
-        ).toISOString(),
-        cancel_at: canceledSubscription.cancel_at
-          ? new Date(canceledSubscription.cancel_at * 1000).toISOString()
-          : null,
-      })
-      .eq("id", subscription.id);
-
-    if (updateError) {
-      throw new Error("Failed to update subscription status");
-    }
 
     return new Response(
       JSON.stringify({

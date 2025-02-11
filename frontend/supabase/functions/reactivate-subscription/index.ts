@@ -1,7 +1,9 @@
-// supabase/functions/reactivate-subscription/index.ts
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import Stripe from "https://esm.sh/stripe@12.0.0?target=deno";
+
+// First, import the necessary types from Stripe
+type SubscriptionUpdateParams = Stripe.SubscriptionUpdateParams;
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -32,9 +34,7 @@ serve(async (req) => {
       SUPABASE_URL,
       SUPABASE_SERVICE_ROLE_KEY,
       {
-        auth: {
-          persistSession: false,
-        },
+        auth: { persistSession: false },
       }
     );
 
@@ -58,7 +58,7 @@ serve(async (req) => {
       throw new Error("Invalid authentication");
     }
 
-    // Get subscription data
+    // Get subscription data from database
     const { data: subscription, error: subError } = await supabaseAdmin
       .from("subscriptions")
       .select("*")
@@ -71,19 +71,48 @@ serve(async (req) => {
     }
 
     try {
+      // Get current subscription state from Stripe
+      const stripeSubscription = await stripe.subscriptions.retrieve(
+        subscriptionId
+      );
+      console.log("Current subscription state:", {
+        id: stripeSubscription.id,
+        status: stripeSubscription.status,
+        cancel_at_period_end: stripeSubscription.cancel_at_period_end,
+        cancel_at: stripeSubscription.cancel_at,
+      });
+
       // Handle active subscription that's scheduled to cancel
-      if (
-        subscription.cancel_at_period_end &&
-        subscription.status === "active"
-      ) {
+      if (stripeSubscription.status === "active") {
+        console.log("Reactivating active subscription");
+
+        // Then define our reactivation settings with the correct type
+        let reactivationSettings: SubscriptionUpdateParams = {
+          billing_cycle_anchor: "unchanged" as const,
+          proration_behavior: "none" as const,
+        };
+
+        // Now we can safely add the cancellation parameters
+        if (stripeSubscription.cancel_at) {
+          reactivationSettings = {
+            ...reactivationSettings,
+            cancel_at: null,
+          };
+        } else if (stripeSubscription.cancel_at_period_end) {
+          reactivationSettings = {
+            ...reactivationSettings,
+            cancel_at_period_end: false,
+          };
+        }
+
+        console.log("Applying reactivation settings:", reactivationSettings);
+
         const reactivatedSubscription = await stripe.subscriptions.update(
           subscriptionId,
-          {
-            cancel_at_period_end: false,
-          }
+          reactivationSettings
         );
 
-        // Update the subscription in our database
+        // Update our database - we only need to clear the cancellation status
         const { error: updateError } = await supabaseAdmin
           .from("subscriptions")
           .update({
@@ -111,7 +140,10 @@ serve(async (req) => {
         );
       }
 
-      // For expired subscriptions, create a new subscription
+      // Handle expired/inactive subscription - create new one
+      console.log("Creating new subscription for expired subscription");
+
+      // Get the appropriate price for the subscription
       const prices = await stripe.prices.list({
         active: true,
         lookup_keys: [
@@ -125,41 +157,44 @@ serve(async (req) => {
         throw new Error("Could not find matching price");
       }
 
+      // Create a new subscription with the same parameters
       const newSubscription = await stripe.subscriptions.create({
         customer: subscription.stripe_customer_id,
         items: [{ price: prices.data[0].id }],
         metadata: {
+          userId: user.id,
           listing_id: subscription.listing_id,
-          service_type: subscription.service_type,
+          serviceType: subscription.service_type,
+          tierType: subscription.tier_type,
+          isAnnual: String(subscription.is_annual),
+        },
+        payment_settings: {
+          payment_method_options: {
+            card: {
+              mandate_options: {
+                description: `Subscription for ${subscription.service_type} service`,
+              },
+              request_three_d_secure: "automatic",
+            },
+          },
         },
       });
 
-      // Update the subscription in our database
+      // Update our database with the new subscription ID
       const { error: updateError } = await supabaseAdmin
         .from("subscriptions")
         .update({
           stripe_subscription_id: newSubscription.id,
-          status: newSubscription.status,
           cancel_at_period_end: false,
-          current_period_end: new Date(
-            newSubscription.current_period_end * 1000
-          ).toISOString(),
+          // Let the webhook handle the rest of the updates
         })
         .eq("id", subscription.id);
 
       if (updateError) throw updateError;
 
-      // If the listing was deactivated, reactivate it
-      const { error: listingError } = await supabaseAdmin
-        .from(subscription.service_type + "_listing")
-        .update({ is_archived: false })
-        .eq("id", subscription.listing_id);
-
-      if (listingError) throw listingError;
-
       return new Response(
         JSON.stringify({
-          message: "Subscription reactivated successfully",
+          message: "New subscription created successfully",
           subscription: {
             id: newSubscription.id,
             status: newSubscription.status,
