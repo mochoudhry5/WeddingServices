@@ -208,6 +208,8 @@ const useListings = (user: any) => {
               "created_at",
               "is_archived",
               "is_draft",
+              "like_count",
+              "number_of_contacted",
             ];
 
             const selectFields = [...baseFields];
