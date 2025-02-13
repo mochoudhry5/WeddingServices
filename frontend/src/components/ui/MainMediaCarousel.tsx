@@ -186,6 +186,26 @@ export default function MediaCarousel({
     }
   };
 
+  const handleImageClick = (e: React.MouseEvent<HTMLDivElement>) => {
+    const rect = e.currentTarget.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const width = rect.width;
+
+    // Define click zones (20% from each edge)
+    const clickZoneWidth = width * 0.2;
+
+    if (x < clickZoneWidth) {
+      // Left click zone
+      handlePrevious();
+    } else if (x > width - clickZoneWidth) {
+      // Right click zone
+      handleNext();
+    } else {
+      // Center zone - trigger fullscreen
+      handleFullscreen();
+    }
+  };
+
   const handleSlideChange = (swiper: SwiperType) => {
     setCurrentIndex(swiper.realIndex);
     setIsPlaying(false);
@@ -282,7 +302,7 @@ export default function MediaCarousel({
   return (
     <div
       ref={containerRef}
-      className={`relative bg ${className} ${
+      className={`relative bg-black ${className} ${
         isFullscreen ? "fixed inset-0 z-50" : "h-full"
       }`}
       onMouseEnter={() => setShowControls(true)}
@@ -294,44 +314,27 @@ export default function MediaCarousel({
         onSwiper={(swiper) => {
           swiperRef.current = swiper;
         }}
-        modules={[Navigation, Keyboard, EffectCoverflow]}
+        modules={[Navigation, Keyboard]}
         keyboard={{ enabled: true }}
         loop={true}
-        className="h-full"
+        className="h-full select-none"
         onSlideChange={handleSlideChange}
-        centeredSlides={true}
-        watchSlidesProgress={true}
-        slidesPerView={1.25}
-        spaceBetween={10}
-        breakpoints={{
-          640: {
-            slidesPerView: 1.35,
-            spaceBetween: 15,
-          },
-          1024: {
-            slidesPerView: 1.5,
-            spaceBetween: 20,
-          },
-        }}
-        effect="coverflow"
-        coverflowEffect={{
-          rotate: 0,
-          stretch: 0,
-          depth: 100,
-          modifier: 1,
-          slideShadows: false,
-        }}
+        slidesPerView={1}
+        spaceBetween={0}
+        allowTouchMove={true}
+        speed={500}
+        grabCursor={true}
       >
         {media.map((item, index) => (
-          <SwiperSlide key={index} className="h-full swiper-slide">
-            <div className="flex items-center justify-center h-full">
+          <SwiperSlide key={index} className="h-full bg-black">
+            <div className="relative w-full h-full flex items-center justify-center">
               {getMediaType(item.file_path) === "video" ? (
-                <div className="relative w-full h-full">
+                <div className="relative w-full h-full flex items-center justify-center bg-black">
                   <video
                     ref={videoRef}
                     muted
                     playsInline
-                    className="w-full h-full object-contain cursor-pointer"
+                    className="max-h-full w-auto object-contain"
                     onClick={handleVideoClick}
                   >
                     <source src={getMediaUrl(item)} type="video/mp4" />
@@ -352,7 +355,10 @@ export default function MediaCarousel({
                   </div>
                 </div>
               ) : (
-                <div className="relative w-full h-full">
+                <div
+                  className="relative w-full h-full flex items-center justify-center bg-black cursor-pointer"
+                  onClick={handleImageClick}
+                >
                   {isLoading[item.file_path] && (
                     <div className="absolute inset-0 flex items-center justify-center bg-black/10">
                       <Loader2 className="w-8 h-8 text-blue-500 animate-spin" />
@@ -361,7 +367,7 @@ export default function MediaCarousel({
                   <img
                     src={getMediaUrl(item)}
                     alt={`${name} - ${index + 1}`}
-                    className={`w-full h-full object-contain transition-opacity duration-300 ${
+                    className={`max-h-full w-auto object-contain transition-opacity duration-300 ${
                       loadedImages.has(getMediaUrl(item))
                         ? "opacity-100"
                         : "opacity-0"
