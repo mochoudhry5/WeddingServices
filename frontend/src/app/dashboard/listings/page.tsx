@@ -13,7 +13,7 @@ import {
   Trash2,
   Plus,
   Search,
-  Archive,
+  BarChart3,
   ArchiveRestore,
   MapPin,
 } from "lucide-react";
@@ -134,6 +134,8 @@ interface BaseListing {
   max_service_price?: number;
   is_archived: boolean;
   is_draft: boolean;
+  number_of_contacted?: number;
+  like_count?: number;
 }
 
 // Service-based listing interface (for services with price ranges)
@@ -346,7 +348,9 @@ export default function MyListingsPage() {
     id: string;
     type: ServiceType;
   } | null>(null);
-
+  const [analyticsListing, setAnalyticsListing] = useState<BaseListing | null>(
+    null
+  );
   const filteredListings = useListingsFiltering(listings, searchTerm, sortBy);
 
   useEffect(() => {
@@ -458,6 +462,7 @@ export default function MyListingsPage() {
                     router.push(`/${config.routePrefix}/edit/${listing.id}`);
                   }}
                   className="bg-white/90 p-2 rounded-full shadow-lg hover:bg-white transition-colors"
+                  title="Edit Listing"
                 >
                   <Pencil className="w-4 h-4 text-gray-600" />
                 </button>
@@ -476,6 +481,7 @@ export default function MyListingsPage() {
                     setListingToDelete({ id: listing.id, type: serviceType });
                   }}
                   className="bg-white/90 p-2 rounded-full shadow-lg hover:bg-white transition-colors"
+                  title="Delete Listing"
                 >
                   <Trash2 className="w-4 h-4 text-red-600" />
                 </button>
@@ -488,8 +494,19 @@ export default function MyListingsPage() {
                     router.push(`/${config.routePrefix}/edit/${listing.id}`);
                   }}
                   className="bg-white/90 p-2 rounded-full shadow-lg hover:bg-white transition-colors"
+                  title="Edit Listing"
                 >
                   <Pencil className="w-4 h-4 text-gray-600" />
+                </button>
+                <button
+                  onClick={(e) => {
+                    e.preventDefault();
+                    setAnalyticsListing(listing);
+                  }}
+                  className="bg-white/90 p-2 rounded-full shadow-lg hover:bg-white transition-colors"
+                  title="View Analytics"
+                >
+                  <BarChart3 className="w-4 h-4 text-blue-600" />
                 </button>
                 <button
                   onClick={(e) => {
@@ -497,6 +514,7 @@ export default function MyListingsPage() {
                     router.push("/settings?section=billing");
                   }}
                   className="bg-white/90 p-2 rounded-full shadow-lg hover:bg-white transition-colors"
+                  title="Delete Listing"
                 >
                   <Trash2 className="w-4 h-4 text-red-600" />
                 </button>
@@ -810,6 +828,50 @@ export default function MyListingsPage() {
                     className="bg-black hover:bg-stone-500"
                   >
                     Delete
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+            {/* Analytics Dialog */}
+            <AlertDialog
+              open={!!analyticsListing}
+              onOpenChange={() => setAnalyticsListing(null)}
+            >
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Listing Analytics</AlertDialogTitle>
+                </AlertDialogHeader>
+
+                {analyticsListing && (
+                  <>
+                    <div className="grid grid-cols-2 gap-4 my-4">
+                      <div className="bg-gray-50 p-4 rounded-lg">
+                        <div className="text-sm text-gray-500">Total Likes</div>
+                        <div className="text-2xl font-semibold mt-1">
+                          {analyticsListing.like_count || 0}
+                        </div>
+                      </div>
+                      <div className="bg-gray-50 p-4 rounded-lg">
+                        <div className="text-sm text-gray-500">
+                          Total Contacts
+                        </div>
+                        <div className="text-2xl font-semibold mt-1">
+                          {analyticsListing.number_of_contacted || 0}
+                        </div>
+                      </div>
+                    </div>
+                    <div className="text-sm text-gray-500">
+                      Statistics for {analyticsListing.business_name}
+                    </div>
+                  </>
+                )}
+
+                <AlertDialogFooter>
+                  <AlertDialogAction
+                    onClick={() => setAnalyticsListing(null)}
+                    className="bg-black hover:bg-stone-500"
+                  >
+                    Close
                   </AlertDialogAction>
                 </AlertDialogFooter>
               </AlertDialogContent>
