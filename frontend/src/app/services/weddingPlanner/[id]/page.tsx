@@ -472,7 +472,7 @@ const WeddingDetailsPage = () => {
             <div className="flex-grow min-w-0">
               <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-gray-900 break-words">
                 {weddingPlanner.business_name}
-                <div className="inline-flex items-center px-3 py-1 rounded-full bg-white border border-gray-200 text-sm font-medium whitespace-normal">
+                <div className="inline-flex items-center ml-2 px-3 py-1 rounded-full bg-white border border-gray-200 text-sm font-medium whitespace-normal">
                   {weddingPlanner.service_type === "both"
                     ? "Wedding Planner & Coordinator"
                     : weddingPlanner.service_type === "weddingPlanner"

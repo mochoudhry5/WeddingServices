@@ -36,8 +36,17 @@ const privacyPolicy: PolicySection[] = [
       {
         subtitle: "Personal Information",
         points: [
+          "Name: Used for account identification and personalization",
           "Email Address: To communicate with you and provide account-related notifications",
+          "Service Details: Information about services provided or subscribed to on our platform",
           "Location Information: To display relevant vendors and services tailored to your area",
+        ],
+      },
+      {
+        subtitle: "Payment Information",
+        points: [
+          "Last four digits of your card, card fingerprint, and expiration date are stored in Supabase",
+          "Full card details are processed and stored securely by Stripe, which is PCI-DSS compliant",
         ],
       },
       {
@@ -45,12 +54,7 @@ const privacyPolicy: PolicySection[] = [
         points: [
           "Device information (e.g., browser type, operating system)",
           "IP address and usage data (e.g., pages visited, time spent on the platform)",
-        ],
-      },
-      {
-        subtitle: "Vendor-Specific Information",
-        points: [
-          "Subscription details, business profiles, and service descriptions",
+          "Analytics data collected through Vercel to improve website performance and user experience",
         ],
       },
     ],
@@ -64,7 +68,8 @@ const privacyPolicy: PolicySection[] = [
           "To connect users with wedding-related vendors",
           "To personalize your experience on the platform",
           "To communicate important updates, changes, or promotional offers",
-          "To process vendor subscriptions and payments",
+          "To process vendor subscriptions and payments via Stripe",
+          "To improve website performance through analytics provided by Vercel",
           "To comply with legal obligations and resolve disputes",
         ],
       },
@@ -77,7 +82,9 @@ const privacyPolicy: PolicySection[] = [
       {
         subtitle: "Third-Party Service Providers",
         points: [
-          "Payment processors, email providers, and analytics services to facilitate and enhance our Services",
+          "Payment processing by Stripe, which handles transactions securely",
+          "Supabase for data storage, including limited payment details (last four digits, fingerprint, expiration)",
+          "Vercel for hosting and analytics, which helps monitor site performance",
         ],
       },
       {
@@ -102,7 +109,7 @@ const privacyPolicy: PolicySection[] = [
         points: [
           "Access and Update: You can access and update your personal information through your account settings",
           "Opt-Out: You may unsubscribe from promotional communications",
-          "Account Deletion: Contact us to delete your account and associated data",
+          "Account Deletion: If you delete your account, all personal data, including stored payment details, will be removed from Supabase and Stripe",
         ],
       },
     ],
@@ -114,6 +121,7 @@ const privacyPolicy: PolicySection[] = [
       {
         points: [
           "We implement appropriate technical and organizational measures to protect your information",
+          "Supabase and Stripe employ industry-standard security practices",
           "Regular security assessments and updates are performed",
           "No method of transmission over the Internet is 100% secure",
         ],
@@ -126,7 +134,8 @@ const privacyPolicy: PolicySection[] = [
     content: [
       {
         points: [
-          "Your information may be transferred to and processed in countries outside of your own",
+          "Your information is stored in the U.S. through Supabase",
+          "Vercel's infrastructure may store and process data in multiple regions for performance and reliability",
           "We ensure that such transfers comply with applicable data protection laws",
         ],
       },
@@ -160,7 +169,7 @@ const privacyPolicy: PolicySection[] = [
   },
 ];
 export default function PrivacyPolicyPage() {
-  const lastUpdated = "December 13, 2024";
+  const lastUpdated = "February 12, 2025";
 
   return (
     <div className="flex flex-col min-h-screen">

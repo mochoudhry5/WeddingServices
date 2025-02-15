@@ -80,13 +80,13 @@ const PricingPage = () => {
       ["Extra Leads from Quick Reach", true],
     ],
     premium: [
+      ["Everything included in Basic Tier", true],
       ["Featured placement in search results", true],
-      ["No Lead Generation Fees", true],
       ["Priority Customer Support", true],
     ],
     elite: [
+      ["Everything included in Premium Tier", true],
       ["Top search placement", true],
-      ["No Lead Generation Fees", true],
       ["Social Media Content", true],
     ],
   };

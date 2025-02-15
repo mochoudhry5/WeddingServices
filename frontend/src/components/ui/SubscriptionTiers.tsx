@@ -55,13 +55,13 @@ const planFeatures: Record<TierType, string[]> = {
     "Extra Leads from Quick Reach",
   ],
   premium: [
+    "Everything included in Basic Tier",
     "Featured placement in search results",
-    "No Lead Generation Fees",
     "Priority Customer Support",
   ],
   elite: [
+    "Everything included in Premium Tier",
     "Top placement in search results",
-    "No Lead Generation Fees",
     "Social Media Content",
   ],
 };

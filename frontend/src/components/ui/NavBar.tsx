@@ -415,7 +415,9 @@ export default function NavBar() {
         {/* Left Section */}
         <div className="flex items-center gap-8">
           <Link href="/" className="flex items-center gap-2">
-            <span className="text-3xl font-bold text-black">AnyWeds</span>
+            <span className="text-4xl font-black text-black tracking-tighter">
+              AnyWeds
+            </span>
           </Link>
         </div>
 
