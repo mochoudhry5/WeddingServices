@@ -129,23 +129,11 @@ const AccountSettings: React.FC<AccountSettingsProps> = ({
     setLoading((prev) => ({ ...prev, delete: true }));
 
     try {
-      // Call the RPC function with original parameter names
-      const { data: deletionResult, error: deleteError } = await supabase.rpc(
-        "delete_user_data",
-        {
-          uid: user.id,
-          is_vendor: isVendor ?? false,
-        }
-      );
+      const { error } = await supabase.functions.invoke("delete-account", {
+        body: { isVendor },
+      });
 
-      if (deleteError) {
-        console.error("Delete error:", deleteError);
-        throw deleteError;
-      }
-
-      if (!deletionResult?.success) {
-        throw new Error(deletionResult?.error || "Failed to delete account");
-      }
+      if (error) throw error;
 
       // Show success message
       toast.success("Your account has been successfully deleted");
@@ -170,6 +158,53 @@ const AccountSettings: React.FC<AccountSettingsProps> = ({
       setShowDeleteDialog(false);
     }
   };
+
+  // const handleDeleteAccount = async () => {
+  //   if (!user?.id) return;
+  //   setLoading((prev) => ({ ...prev, delete: true }));
+
+  //   try {
+  //     // Call the RPC function with original parameter names
+  //     const { data: deletionResult, error: deleteError } = await supabase.rpc(
+  //       "delete_user_data",
+  //       {
+  //         uid: user.id,
+  //         is_vendor: isVendor ?? false,
+  //       }
+  //     );
+
+  //     if (deleteError) {
+  //       console.error("Delete error:", deleteError);
+  //       throw deleteError;
+  //     }
+
+  //     if (!deletionResult?.success) {
+  //       throw new Error(deletionResult?.error || "Failed to delete account");
+  //     }
+
+  //     // Show success message
+  //     toast.success("Your account has been successfully deleted");
+
+  //     // Sign out from all devices
+  //     await supabase.auth.signOut({ scope: "global" });
+
+  //     // Clear local storage
+  //     window.localStorage.clear();
+
+  //     // Redirect to home page
+  //     window.location.href = "/";
+  //   } catch (error) {
+  //     console.error("Error during account deletion:", error);
+  //     const errorMessage =
+  //       error instanceof Error
+  //         ? error.message
+  //         : "Failed to delete account. Please try again later.";
+  //     toast.error(errorMessage);
+  //   } finally {
+  //     setLoading((prev) => ({ ...prev, delete: false }));
+  //     setShowDeleteDialog(false);
+  //   }
+  // };
 
   return (
     <div className="divide-y divide-gray-200">

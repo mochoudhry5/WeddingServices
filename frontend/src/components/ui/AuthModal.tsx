@@ -138,7 +138,11 @@ export function AuthModals({
           <DialogHeader className="p-6 pb-0">
             <DialogTitle asChild>
               <div className="flex flex-col items-center space-y-2 text-center">
-                <div className="text-3xl font-bold text-gray-900">AnyWeds</div>
+                <div className="text-3xl font-bold text-gray-900">
+                  <span className="text-4xl font-black text-black tracking-tighter">
+                    AnyWeds
+                  </span>
+                </div>
                 <h2 className="text-xl font-semibold tracking-tight">
                   {isForgotPassword ? "Reset Password" : "Welcome back"}
                 </h2>
@@ -315,7 +319,11 @@ export function AuthModals({
           <DialogHeader className="p-6 pb-0">
             <DialogTitle asChild>
               <div className="flex flex-col items-center space-y-2 text-center">
-                <div className="text-3xl font-bold text-gray-900">AnyWeds</div>
+                <div className="text-3xl font-bold text-gray-900">
+                  <span className="text-4xl font-black text-black tracking-tighter">
+                    AnyWeds
+                  </span>
+                </div>
                 <h2 className="text-xl font-medium tracking-tight">
                   Create your account
                 </h2>
