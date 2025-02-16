@@ -1154,9 +1154,7 @@ export default function ServicesSearchPage() {
           </div>
         </main>
 
-        <div className="mt-8 sm:mt-16">
-          <Footer />
-        </div>
+        <Footer />
       </div>
     </ErrorBoundary>
   );
