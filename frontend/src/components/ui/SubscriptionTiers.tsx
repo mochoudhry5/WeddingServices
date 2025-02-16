@@ -87,7 +87,7 @@ const SubscriptionTiers: React.FC<SubscriptionTiersProps> = ({
   return (
     <div className="w-full">
       {/* Service Selection and Billing Toggle */}
-      <div className="flex flex-col sm:flex-row items-center justify-center gap-6 mb-12">
+      <div className="flex flex-col sm:flex-row items-center justify-center gap-6 mb-9">
         <div className="w-full max-w-xs">
           <ServiceInput
             value={selectedService}
@@ -99,7 +99,7 @@ const SubscriptionTiers: React.FC<SubscriptionTiersProps> = ({
         </div>
 
         {/* Toggle Switch */}
-        <div className="flex items-center gap-3 rounded-full px-6 py-2.5">
+        <div className="flex items-center gap-3 rounded-full px-6">
           <span
             className={`text-sm whitespace-nowrap ${
               !isAnnual ? "font-medium text-black" : "text-gray-500"

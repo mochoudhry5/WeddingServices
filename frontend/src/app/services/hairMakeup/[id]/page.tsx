@@ -211,10 +211,10 @@ const HairMakeupDetailsPage = () => {
       }
 
       if (
-        !hairMakeup ||
-        (hairMakeup.is_archived &&
-          (!user?.id || user.id !== hairMakeup.user_id)) ||
-        hairMakeup.is_draft
+        !makeupData ||
+        (makeupData.is_archived &&
+          (!user?.id || user.id !== makeupData.user_id)) ||
+        makeupData.is_draft
       ) {
         setHairMakeup(null);
         return;

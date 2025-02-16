@@ -252,10 +252,10 @@ const WeddingDetailsPage = () => {
       }
 
       if (
-        !weddingPlanner ||
-        (weddingPlanner.is_archived &&
-          (!user?.id || user.id !== weddingPlanner.user_id)) ||
-        weddingPlanner.is_draft
+        !weddingPlannerData ||
+        (weddingPlannerData.is_archived &&
+          (!user?.id || user.id !== weddingPlannerData.user_id)) ||
+        weddingPlannerData.is_draft
       ) {
         setWeddingPlanner(null);
         return;

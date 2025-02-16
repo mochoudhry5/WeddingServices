@@ -19,6 +19,8 @@ import {
 import { AddPaymentMethodDialog } from "./AddPaymentMethodDialog";
 import { Invoice } from "@/lib/stripe";
 import InvoicesSection from "./InvoicesSection";
+import { formatInTimeZone } from "date-fns-tz";
+import { toZonedTime } from "date-fns-tz";
 
 // Types for subscription data
 interface StripeSubscription {
@@ -201,19 +203,35 @@ const SubscriptionSection: React.FC<SubscriptionSectionProps> = ({
     }).format(amount / 100);
   };
 
-  // Calculates remaining trial days for trial subscriptions
+  // Calculates remaining trial days with timezone awareness
   const getRemainingTrialDays = (subscription: StripeSubscription) => {
     if (!subscription.is_trial || !subscription.trial_end) return null;
 
-    const trialEnd = new Date(subscription.trial_end);
-    const now = new Date();
+    // Get user's timezone
+    const userTimeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+
+    // Convert dates to user's timezone
+    const trialEnd = toZonedTime(
+      new Date(subscription.trial_end),
+      userTimeZone
+    );
+    const now = toZonedTime(new Date(), userTimeZone);
 
     if (trialEnd <= now) return null;
 
-    const daysRemaining = Math.ceil(
-      (trialEnd.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)
-    );
-    return daysRemaining > 0 ? daysRemaining : null;
+    // Calculate the difference in milliseconds
+    const timeDiff = trialEnd.getTime() - now.getTime();
+
+    // Get remaining time in hours
+    const hoursRemaining = timeDiff / (1000 * 60 * 60);
+
+    if (hoursRemaining < 24) {
+      // If less than a day, return a decimal
+      return hoursRemaining / 24;
+    }
+
+    // Subtract one day since payment occurs on the last day
+    return Math.ceil(timeDiff / (1000 * 60 * 60 * 24)) - 1;
   };
 
   // Gets formatted next payment information including trial status
@@ -222,10 +240,22 @@ const SubscriptionSection: React.FC<SubscriptionSectionProps> = ({
     if (!details) return null;
 
     const trialDays = getRemainingTrialDays(subscription);
-    if (trialDays) {
+    if (trialDays !== null) {
       // Get the full price from the subscription details
       const fullPrice = details.recurring_price || details.amount;
-      return `Free for ${trialDays} days, then ${formatCurrency(
+
+      // Format the trial remaining time
+      let trialText;
+      if (trialDays < 1) {
+        const hoursLeft = Math.ceil(trialDays * 24);
+        trialText = `Free for ${hoursLeft} hour${hoursLeft !== 1 ? "s" : ""}`;
+      } else {
+        trialText = `Free for ${Math.ceil(trialDays)} day${
+          Math.ceil(trialDays) !== 1 ? "s" : ""
+        }`;
+      }
+
+      return `${trialText}, then ${formatCurrency(
         fullPrice,
         details.currency
       )}`;
@@ -298,19 +328,24 @@ const SubscriptionSection: React.FC<SubscriptionSectionProps> = ({
                             : "text-gray-900"
                         }
                       >
-                        {subscription.is_trial && subscription.trial_end ? (
-                          <div>
-                            {new Date(
-                              subscription.trial_end
-                            ).toLocaleDateString()}
-                          </div>
-                        ) : (
-                          <div>
-                            {new Date(
-                              subscription.current_period_end
-                            ).toLocaleDateString()}
-                          </div>
-                        )}
+                        {(() => {
+                          const date = new Date(
+                            subscription.is_trial && subscription.trial_end
+                              ? subscription.trial_end
+                              : subscription.current_period_end
+                          );
+                          const timeZone =
+                            Intl.DateTimeFormat().resolvedOptions().timeZone;
+
+                          const formattedDate = formatInTimeZone(
+                            date,
+                            timeZone,
+                            "PPP, p"
+                          );
+                          const timeZoneName = timeZone.replace("_", " ");
+
+                          return `${formattedDate} (${timeZoneName})`;
+                        })()}
                       </span>
                       {subscription.status === "active" &&
                         !subscription.cancel_at_period_end && (

@@ -208,9 +208,9 @@ const DJDetailsPage = () => {
       }
 
       if (
-        !dj ||
-        (dj.is_archived && (!user?.id || user.id !== dj.user_id)) ||
-        dj.is_draft
+        !djData ||
+        (djData.is_archived && (!user?.id || user.id !== djData.user_id)) ||
+        djData.is_draft
       ) {
         setDJ(null);
         return;
