@@ -1818,6 +1818,7 @@ export default function CreateVenueListing() {
                   }}
                   clientSecret={setupIntentSecret}
                   onSuccess={handlePaymentMethodAdded}
+                  mode="create"
                 />
 
                 {/* Add the PaymentConfirmationDialog */}

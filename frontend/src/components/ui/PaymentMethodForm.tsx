@@ -1,4 +1,3 @@
-// components/PaymentMethodForm.tsx
 import React, { useState } from "react";
 import {
   PaymentElement,
@@ -11,11 +10,13 @@ import { supabase } from "@/lib/supabase";
 interface PaymentMethodFormProps {
   onSuccess: () => void;
   onCancel: () => void;
+  mode: "update" | "create";
 }
 
 export const PaymentMethodForm = ({
   onSuccess,
   onCancel,
+  mode,
 }: PaymentMethodFormProps) => {
   const stripe = useStripe();
   const elements = useElements();
@@ -23,13 +24,9 @@ export const PaymentMethodForm = ({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-
-    if (!stripe || !elements) {
-      return;
-    }
+    if (!stripe || !elements) return;
 
     setIsProcessing(true);
-
     try {
       const { setupIntent, error } = await stripe.confirmSetup({
         elements,
@@ -46,27 +43,30 @@ export const PaymentMethodForm = ({
       }
 
       if (setupIntent && setupIntent.status === "succeeded") {
-        // Wait a short moment for the webhook to process
+        // Wait for webhook processing
         await new Promise((resolve) => setTimeout(resolve, 2500));
 
-        // Verify the payment method was added by checking our database
+        // Verify payment method addition
         const { count } = await supabase
           .from("payment_methods")
           .select("*", { count: "exact" })
           .eq("stripe_payment_method_id", setupIntent.payment_method);
 
         if (count === 0) {
-          // If the payment method isn't in our database, it was likely rejected as a duplicate
           toast.error("This card has already been added to your account");
           return;
         }
 
-        toast.success("Payment method added successfully");
+        toast.success(
+          mode === "update"
+            ? "Payment method updated successfully"
+            : "Payment method added successfully"
+        );
         onSuccess();
       }
     } catch (error) {
       console.error("Error:", error);
-      toast.error("Failed to add payment method");
+      toast.error("Failed to process payment method");
     } finally {
       setIsProcessing(false);
     }
@@ -100,9 +100,19 @@ export const PaymentMethodForm = ({
           disabled={!stripe || isProcessing}
           className="px-4 py-2 text-sm font-medium text-white bg-black rounded-md hover:bg-gray-800 disabled:opacity-50"
         >
-          {isProcessing ? "Processing..." : "Add Payment Method"}
+          {isProcessing
+            ? "Processing..."
+            : mode === "update"
+            ? "Update Payment Method"
+            : "Continue to Review"}
         </button>
       </div>
+      {mode === "create" && (
+        <p className="text-xs text-gray-500 text-center mt-4">
+          Your card won't be charged until you review and confirm your
+          subscription.
+        </p>
+      )}
     </form>
   );
 };

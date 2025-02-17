@@ -1876,6 +1876,7 @@ const CreateWeddingPlannerListing = () => {
                   }}
                   clientSecret={setupIntentSecret}
                   onSuccess={handlePaymentMethodAdded}
+                  mode="create"
                 />
 
                 {/* Add the PaymentConfirmationDialog */}

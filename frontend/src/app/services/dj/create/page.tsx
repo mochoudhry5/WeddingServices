@@ -1847,6 +1847,7 @@ const CreateDJListing = () => {
                   }}
                   clientSecret={setupIntentSecret}
                   onSuccess={handlePaymentMethodAdded}
+                  mode="create"
                 />
 
                 {/* Add the PaymentConfirmationDialog */}

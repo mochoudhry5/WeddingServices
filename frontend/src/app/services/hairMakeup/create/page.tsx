@@ -2225,6 +2225,7 @@ const CreateMakeupListing = () => {
                   }}
                   clientSecret={setupIntentSecret}
                   onSuccess={handlePaymentMethodAdded}
+                  mode="create"
                 />
 
                 {/* Add the PaymentConfirmationDialog */}
