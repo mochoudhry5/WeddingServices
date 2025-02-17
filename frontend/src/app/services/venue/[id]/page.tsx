@@ -395,6 +395,19 @@ const VenueDetailsPage = () => {
         return;
       }
 
+      const isEmpty = Object.values(inquiryForm).some((value) => !value.trim());
+      if (isEmpty) {
+        toast.error("Please fill in all fields");
+        return;
+      }
+
+      // Validate phone number has 10 digits
+      const phoneDigits = inquiryForm.phone.replace(/\D/g, "");
+      if (phoneDigits.length !== 10) {
+        toast.error("Please enter a valid 10-digit phone number");
+        return;
+      }
+
       setIsSubmitting(true);
 
       try {
@@ -489,10 +502,62 @@ const VenueDetailsPage = () => {
     [user?.id, venue, inquiryForm, loadVenueDetails]
   );
 
+  const formatPhoneNumber = (value: string) => {
+    // Remove all non-digit characters
+    const numbers = value.replace(/\D/g, "");
+
+    // Format as (XXX)XXX-XXXX
+    if (numbers.length >= 10) {
+      return `(${numbers.slice(0, 3)})${numbers.slice(3, 6)}-${numbers.slice(
+        6,
+        10
+      )}`;
+    }
+    // Partial formatting as user types
+    else if (numbers.length > 6) {
+      return `(${numbers.slice(0, 3)})${numbers.slice(3, 6)}-${numbers.slice(
+        6
+      )}`;
+    } else if (numbers.length > 3) {
+      return `(${numbers.slice(0, 3)})${numbers.slice(3)}`;
+    } else if (numbers.length > 0) {
+      return `(${numbers}`;
+    }
+    return numbers;
+  };
+
   const handleInputChange = useCallback(
     (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
       const { name, value } = e.target;
-      setInquiryForm((prev) => ({ ...prev, [name]: value }));
+
+      // Apply specific validation rules for each field
+      let processedValue = value;
+
+      switch (name) {
+        case "firstName":
+        case "lastName":
+          processedValue = value.slice(0, 25); // Max 25 characters
+          break;
+
+        case "email":
+          processedValue = value.slice(0, 320); // Max 320 characters
+          break;
+
+        case "phone":
+          // Format phone number and limit to 10 digits
+          const digitsOnly = value.replace(/\D/g, "").slice(0, 10);
+          processedValue = formatPhoneNumber(digitsOnly);
+          break;
+
+        case "message":
+          if (value.trim() === "") return; // Prevent empty messages
+          break;
+      }
+
+      setInquiryForm((prev) => ({
+        ...prev,
+        [name]: processedValue,
+      }));
     },
     []
   );
@@ -720,8 +785,8 @@ const VenueDetailsPage = () => {
                             name="firstName"
                             value={inquiryForm.firstName}
                             onChange={handleInputChange}
+                            maxLength={25}
                             required
-                            className="text-sm sm:text-base"
                           />
                         </div>
                         <div>
@@ -732,8 +797,8 @@ const VenueDetailsPage = () => {
                             name="lastName"
                             value={inquiryForm.lastName}
                             onChange={handleInputChange}
+                            maxLength={25}
                             required
-                            className="text-sm sm:text-base"
                           />
                         </div>
                       </div>
@@ -747,8 +812,8 @@ const VenueDetailsPage = () => {
                           name="email"
                           value={inquiryForm.email}
                           onChange={handleInputChange}
+                          maxLength={320}
                           required
-                          className="text-sm sm:text-base"
                         />
                       </div>
 
@@ -761,11 +826,10 @@ const VenueDetailsPage = () => {
                           name="phone"
                           value={inquiryForm.phone}
                           onChange={handleInputChange}
+                          placeholder="(XXX)XXX-XXXX"
                           required
-                          className="text-sm sm:text-base"
                         />
                       </div>
-
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">
                           Event Date
