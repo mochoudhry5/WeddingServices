@@ -472,6 +472,8 @@ const CreatePhotographyListing = () => {
   };
 
   const createListing = async () => {
+    let listingID = null;
+
     try {
       if (!travelRange && !isWillingToTravel) {
         toast.error(`Travel Range Must Be Entered`);
@@ -523,9 +525,11 @@ const CreatePhotographyListing = () => {
         .select()
         .single();
 
+      listingID = photoVideo.id;
+
       if (photoVideoError) {
         throw new Error(
-          `Failed to create Photography & Videography listing: ${photoVideoError.message}`
+          `Failed to create Photography & Videography listing. Please try again later.`
         );
       }
       if (!photoVideo) {
@@ -595,7 +599,7 @@ const CreatePhotographyListing = () => {
 
         if (insertSpecialtiesError) {
           throw new Error(
-            `Failed to create specialties: ${insertSpecialtiesError.message}`
+            `Failed to create specialties for listing. Please try again later.`
           );
         }
       }
@@ -611,7 +615,7 @@ const CreatePhotographyListing = () => {
 
         if (uploadError) {
           throw new Error(
-            `Failed to upload media file ${index}: ${uploadError.message}`
+            `Failed to upload media files. Please try again later.`
           );
         }
 
@@ -630,7 +634,7 @@ const CreatePhotographyListing = () => {
 
       if (mediaError) {
         throw new Error(
-          `Failed to create media records: ${mediaError.message}`
+          `Failed to create media records. Please try again later.`
         );
       }
       // Insert services
@@ -662,7 +666,7 @@ const CreatePhotographyListing = () => {
 
         if (servicesError) {
           throw new Error(
-            `Failed to create services: ${servicesError.message}`
+            `Failed to create services for listing. Please try again later.`
           );
         }
       }
@@ -672,8 +676,24 @@ const CreatePhotographyListing = () => {
       toast.error(
         error instanceof Error
           ? error.message
-          : "Failed to create Photography & Videography listing. Please try again."
+          : "Failed to create Photography & Videography listing. Please try again later."
       );
+
+      const { data, error: deleteError } = await supabase
+        .from("photo_video_listing")
+        .delete()
+        .eq("id", listingID)
+        .select();
+
+      if (deleteError) {
+        throw new Error(
+          `We have some issues we need to fix. Please try again later.`
+        );
+      }
+
+      if (!data || data.length === 0) {
+        throw new Error("Listing not found");
+      }
     } finally {
       setIsSubmitting(false);
     }

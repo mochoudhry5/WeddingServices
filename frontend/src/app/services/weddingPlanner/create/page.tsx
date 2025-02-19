@@ -405,6 +405,8 @@ const CreateWeddingPlannerListing = () => {
   };
 
   const createListing = async () => {
+    let listingID = null;
+
     try {
       if (!travelRange && !isWillingToTravel) {
         toast.error(`Travel Range Must Be Entered`);
@@ -458,9 +460,11 @@ const CreateWeddingPlannerListing = () => {
           .select()
           .single();
 
+      listingID = weddingPlanner.id;
+
       if (weddingPlannerError) {
         throw new Error(
-          `Failed to create Wedding Planner & Coordinator listing: ${weddingPlannerError.message}`
+          `Failed to create Wedding Planner & Coordinator listing. Please try again later.`
         );
       }
       if (!weddingPlanner) {
@@ -489,7 +493,7 @@ const CreateWeddingPlannerListing = () => {
 
       if (specialtiesError) {
         throw new Error(
-          `Failed to create specialties: ${specialtiesError.message}`
+          `Failed to create specialties for listing. Please try again later.`
         );
       }
 
@@ -504,7 +508,7 @@ const CreateWeddingPlannerListing = () => {
 
         if (uploadError) {
           throw new Error(
-            `Failed to upload media file ${index}: ${uploadError.message}`
+            `Failed to upload media files. Please try again later.`
           );
         }
 
@@ -523,7 +527,7 @@ const CreateWeddingPlannerListing = () => {
 
       if (mediaError) {
         throw new Error(
-          `Failed to create media records: ${mediaError.message}`
+          `Failed to create media records. Please try again later.`
         );
       }
       // Insert services
@@ -553,7 +557,7 @@ const CreateWeddingPlannerListing = () => {
 
         if (servicesError) {
           throw new Error(
-            `Failed to create services: ${servicesError.message}`
+            `Failed to create services for listing. Please try again later.`
           );
         }
       }
@@ -566,8 +570,24 @@ const CreateWeddingPlannerListing = () => {
       toast.error(
         error instanceof Error
           ? error.message
-          : "Failed to create Wedding Planner & Coordinator listing. Please try again."
+          : "Failed to create Wedding Planner & Coordinator listing. Please try again later."
       );
+
+      const { data, error: deleteError } = await supabase
+        .from("wedding_planner_listing")
+        .delete()
+        .eq("id", listingID)
+        .select();
+
+      if (deleteError) {
+        throw new Error(
+          `We have some issues we need to fix. Please try again later.`
+        );
+      }
+
+      if (!data || data.length === 0) {
+        throw new Error("Listing not found");
+      }
     } finally {
       setIsSubmitting(false);
     }

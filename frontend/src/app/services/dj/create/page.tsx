@@ -43,6 +43,7 @@ import ProgressIndicator, {
   ProgressStatus,
   ProgressStep,
 } from "@/components/ui/ProgressIndicator";
+import { list } from "postcss";
 
 // Types
 interface MediaFile {
@@ -413,6 +414,8 @@ const CreateDJListing = () => {
   };
 
   const createListing = async () => {
+    let listingID = null;
+
     try {
       if (!travelRange && !isWillingToTravel) {
         toast.error(`Travel Range Must Be Entered`);
@@ -467,8 +470,10 @@ const CreateDJListing = () => {
         .select()
         .single();
 
+      listingID = dj.id;
+
       if (djError) {
-        throw new Error(`Failed to create DJ listing: ${djError.message}`);
+        throw new Error(`Failed to create DJ listing. Please try again later.`);
       }
       if (!dj) {
         throw new Error("DJ listing created but no data returned");
@@ -495,7 +500,7 @@ const CreateDJListing = () => {
 
       if (specialtiesError) {
         throw new Error(
-          `Failed to create specialties: ${specialtiesError.message}`
+          `Failed to create specialties for listing. Please try again later.`
         );
       }
 
@@ -510,7 +515,7 @@ const CreateDJListing = () => {
 
         if (uploadError) {
           throw new Error(
-            `Failed to upload media file ${index}: ${uploadError.message}`
+            `Failed to upload media files. Please try again later.`
           );
         }
 
@@ -529,7 +534,7 @@ const CreateDJListing = () => {
 
       if (mediaError) {
         throw new Error(
-          `Failed to create media records: ${mediaError.message}`
+          `Failed to create media records. Please try again later.`
         );
       }
 
@@ -562,7 +567,7 @@ const CreateDJListing = () => {
 
         if (servicesError) {
           throw new Error(
-            `Failed to create services: ${servicesError.message}`
+            `Failed to create services for listing. Please try again later.`
           );
         }
       }
@@ -574,6 +579,22 @@ const CreateDJListing = () => {
           ? error.message
           : "Failed to create DJ listing. Please try again."
       );
+
+      const { data, error: deleteError } = await supabase
+        .from("dj_listing")
+        .delete()
+        .eq("id", listingID)
+        .select();
+
+      if (deleteError) {
+        throw new Error(
+          `We have some issues we need to fix. Please try again later.`
+        );
+      }
+
+      if (!data || data.length === 0) {
+        throw new Error("Listing not found");
+      }
     } finally {
       setIsSubmitting(false);
     }

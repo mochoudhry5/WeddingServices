@@ -490,6 +490,8 @@ const CreateMakeupListing = () => {
   };
 
   const createListing = async () => {
+    let listingID = null;
+
     try {
       // Your existing validation checks for travel range, experience, etc.
       if (!travelRange && !isWillingToTravel) {
@@ -543,6 +545,8 @@ const CreateMakeupListing = () => {
         })
         .select()
         .single();
+
+      listingID = hairMakeup.id;
 
       if (hairMakeupError) throw hairMakeupError;
       if (!hairMakeup)
@@ -610,7 +614,7 @@ const CreateMakeupListing = () => {
 
         if (insertSpecialtiesError) {
           throw new Error(
-            `Failed to crate specialties: ${insertSpecialtiesError.message}`
+            `Failed to crate specialties for listing. Please try again later.`
           );
         }
       }
@@ -626,7 +630,7 @@ const CreateMakeupListing = () => {
 
         if (uploadError) {
           throw new Error(
-            `Failed to upload media file ${index}: ${uploadError.message}`
+            `Failed to upload media files. Please try again later.`
           );
         }
 
@@ -645,7 +649,7 @@ const CreateMakeupListing = () => {
 
       if (mediaError) {
         throw new Error(
-          `Failed to create media records: ${mediaError.message}`
+          `Failed to create media records. Please try again later.`
         );
       }
       // Insert services
@@ -677,7 +681,7 @@ const CreateMakeupListing = () => {
 
         if (servicesError) {
           throw new Error(
-            `Failed to create services: ${servicesError.message}`
+            `Failed to create services for listing. Please try again later.`
           );
         }
       }
@@ -685,7 +689,29 @@ const CreateMakeupListing = () => {
       return hairMakeup.id;
     } catch (error) {
       console.error("Error creating Hair & Makeup listing:", error);
-      throw error;
+      toast.error(
+        error instanceof Error
+          ? error.message
+          : "Failed to create Hair & Makeup listing. Please try again later."
+      );
+
+      const { data, error: deleteError } = await supabase
+        .from("hair_makeup_listing")
+        .delete()
+        .eq("id", listingID)
+        .select();
+
+      if (deleteError) {
+        throw new Error(
+          `We have some issues we need to fix. Please try again later.`
+        );
+      }
+
+      if (!data || data.length === 0) {
+        throw new Error("Listing not found");
+      }
+    } finally {
+      setIsSubmitting(false);
     }
   };
 

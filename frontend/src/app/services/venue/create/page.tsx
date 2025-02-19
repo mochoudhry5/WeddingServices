@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Upload, Plus, X, DollarSign } from "lucide-react";
+import { Upload, Plus, X, DollarSign, VenetianMask } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/lib/supabase";
 import { Input } from "@/components/ui/input";
@@ -533,6 +533,8 @@ export default function CreateVenueListing() {
 
   // Form Submission
   const createListing = async () => {
+    let listingID = null;
+
     try {
       // Validate common add-ons
       for (const [name, details] of Object.entries(selectedAddOns)) {
@@ -610,9 +612,11 @@ export default function CreateVenueListing() {
         .select()
         .single();
 
+      listingID = venue.id;
+
       if (venueError) {
         throw new Error(
-          `Failed to create Venue listing: ${venueError.message}`
+          `Failed to create Venue listing. Please try again later.`
         );
       }
 
@@ -632,7 +636,7 @@ export default function CreateVenueListing() {
         if (uploadError) {
           console.error("Media upload error:", uploadError);
           throw new Error(
-            `Failed to upload media file ${index}: ${uploadError.message}`
+            `Failed to upload media files. Please try again later.`
           );
         }
 
@@ -652,7 +656,7 @@ export default function CreateVenueListing() {
 
       if (mediaError) {
         throw new Error(
-          `Failed to create media records: ${mediaError.message}`
+          `Failed to create media records. Please try again later.`
         );
       }
 
@@ -680,7 +684,7 @@ export default function CreateVenueListing() {
         if (inclusionsError) {
           console.error("Inclusions creation error:", inclusionsError);
           throw new Error(
-            `Failed to create inclusions: ${inclusionsError.message}`
+            `Failed to create inclusions for listing. Please try again later.`
           );
         }
       }
@@ -714,17 +718,35 @@ export default function CreateVenueListing() {
 
         if (addonsError) {
           console.error("Add-ons creation error:", addonsError);
-          throw new Error(`Failed to create add-ons: ${addonsError.message}`);
+          throw new Error(
+            `Failed to create add-ons for listing. Please try again later.`
+          );
         }
       }
       return venue.id;
     } catch (error) {
-      console.error("Error creating venue:", error);
+      console.error("Error creating Venue Listing:", error);
       toast.error(
         error instanceof Error
           ? error.message
-          : "Failed to create Venue listing. Please try again."
+          : "Failed to create Venue listing. Please try again later."
       );
+
+      const { data, error: deleteError } = await supabase
+        .from("venue_listing")
+        .delete()
+        .eq("id", listingID)
+        .select();
+
+      if (deleteError) {
+        throw new Error(
+          `We have some issues we need to fix. Please try again later.`
+        );
+      }
+
+      if (!data || data.length === 0) {
+        throw new Error("Listing not found");
+      }
     } finally {
       setIsSubmitting(false);
     }
