@@ -191,6 +191,7 @@ async function handleSubscriptionDeleted(subscription: Stripe.Subscription) {
   }
 
   // Update subscription status and clear promotional fields
+  // Using UTC timestamp for consistency
   await supabase
     .from("subscriptions")
     .update({
@@ -200,6 +201,9 @@ async function handleSubscriptionDeleted(subscription: Stripe.Subscription) {
       trial_start: null,
       trial_end: null,
       promo_code: null,
+      current_period_end: subscription.canceled_at
+        ? new Date(subscription.canceled_at * 1000).toISOString()
+        : new Date().toISOString(),
     })
     .eq("stripe_subscription_id", subscription.id);
 }
