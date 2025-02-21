@@ -44,7 +44,7 @@ interface SearchParams {
   enteredLocation: string;
   address: string;
   lat: string;
-  long: string;
+  lng: string;
 }
 
 interface Feature {
@@ -292,7 +292,7 @@ export default function HomePage() {
     enteredLocation: "",
     address: "",
     lat: "",
-    long: "",
+    lng: "",
   });
   const [error, setError] = useState<ErrorState | null>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -307,32 +307,45 @@ export default function HomePage() {
     }
 
     try {
-      const city = extractAddressComponent(
-        place.address_components,
-        "locality"
-      );
-      const state = extractAddressComponent(
-        place.address_components,
-        "administrative_area_level_1"
-      );
-      const country = extractAddressComponent(
-        place.address_components,
-        "country"
-      );
+      let city = "";
+      let state = "";
+      let country = "";
+      let address = "";
+      let lat = "";
+      let lng = "";
 
-      const lat = place.geometry?.location.lat().toString() || "";
-      const long = place.geometry?.location.lng().toString() || "";
-      const address = place.formatted_address || "";
+      // Extract components properly
+      place.address_components?.forEach((component) => {
+        if (component.types.includes("locality")) {
+          city = component.long_name;
+        }
+        if (component.types.includes("administrative_area_level_1")) {
+          state = component.long_name;
+        }
+        if (component.types.includes("country")) {
+          country = component.long_name;
+        }
+        // Only set address if we have a street number
+        if (component.types.includes("street_number")) {
+          address = place.formatted_address || "";
+        }
+      });
+
+      // Set coordinates if available
+      if (place.geometry && place.geometry.location) {
+        lat = place.geometry.location.lat().toString();
+        lng = place.geometry.location.lng().toString();
+      }
 
       setSearchParams((prev) => ({
         ...prev,
         city,
         state,
         country,
-        enteredLocation: address,
-        lat,
-        long,
+        enteredLocation: place.formatted_address || "",
         address,
+        lat,
+        lng,
       }));
       setError(null);
     } catch (err) {
