@@ -45,14 +45,26 @@ export function AuthModals({
         toast.success("Welcome back!");
       } else {
         await signUp(email, password);
-        toast.success("Please check your email to confirm your account!");
+        toast.success("Please check your email to confirm your account!", {
+          position: "top-center",
+          richColors: true,
+          closeButton: true,
+          duration: 5000,
+          style: { zIndex: 100 },
+        });
       }
       setEmail("");
       setPassword("");
       if (isLogin) onLoginClose();
       else onSignUpClose();
     } catch (error: any) {
-      toast.error(error.message);
+      toast.error(error.message, {
+        position: "top-center",
+        richColors: true,
+        closeButton: true,
+        duration: 5000,
+        style: { zIndex: 100 },
+      });
     } finally {
       setIsLoading(false);
     }
@@ -64,7 +76,13 @@ export function AuthModals({
       await signInWithGoogle();
       // Note: We don't need to close the modal here as the redirect will handle it
     } catch (error: any) {
-      toast.error(error.message);
+      toast.error(error.message, {
+        position: "top-center",
+        richColors: true,
+        closeButton: true,
+        duration: 5000,
+        style: { zIndex: 100 },
+      });
       setIsLoading(false);
     }
   };
@@ -74,11 +92,23 @@ export function AuthModals({
     setIsLoading(true);
     try {
       await resetPassword(email);
-      toast.success("Password reset email sent! Please check your inbox.");
+      toast.success("Password reset email sent! Please check your inbox.", {
+        position: "top-center",
+        richColors: true,
+        closeButton: true,
+        duration: 5000,
+        style: { zIndex: 100 },
+      });
       setIsForgotPassword(false);
       setEmail("");
     } catch (error: any) {
-      toast.error(error.message);
+      toast.error(error.message, {
+        position: "top-center",
+        richColors: true,
+        closeButton: true,
+        duration: 5000,
+        style: { zIndex: 100 },
+      });
     } finally {
       setIsLoading(false);
     }
