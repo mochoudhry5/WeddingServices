@@ -21,6 +21,7 @@ import { Invoice } from "@/lib/stripe";
 import InvoicesSection from "./InvoicesSection";
 import { formatInTimeZone } from "date-fns-tz";
 import { toZonedTime } from "date-fns-tz";
+import { FunctionsHttpError } from "@supabase/supabase-js";
 
 // Types for subscription data
 interface StripeSubscription {
@@ -475,6 +476,12 @@ const Billing: React.FC = () => {
         const { data: billingResponse, error: billingError } =
           await supabase.functions.invoke<BillingData>("get-billing-data");
 
+        if (billingError instanceof FunctionsHttpError) {
+          const errorMessage = await billingError.context.json();
+          console.log("Function returned an error", errorMessage);
+          if (errorMessage) throw new Error(errorMessage.error);
+        }
+
         // Handle errors explicitly
         if (billingError) throw billingError;
         if (!billingResponse) throw new Error("No billing data received");
@@ -485,6 +492,12 @@ const Billing: React.FC = () => {
         // Fetch invoices
         const { data: invoiceData, error: invoiceError } =
           await supabase.functions.invoke("get-invoices");
+
+        if (invoiceError instanceof FunctionsHttpError) {
+          const errorMessage = await invoiceError.context.json();
+          console.log("Function returned an error", errorMessage);
+          if (errorMessage) throw new Error(errorMessage.error);
+        }
 
         // Handle invoice errors similarly
         if (invoiceError) throw invoiceError;
@@ -534,6 +547,12 @@ const Billing: React.FC = () => {
         }
       );
 
+      if (error instanceof FunctionsHttpError) {
+        const errorMessage = await error.context.json();
+        console.log("Function returned an error", errorMessage);
+        if (errorMessage) throw new Error(errorMessage.error);
+      }
+
       if (error) throw error;
 
       setSetupIntentSecret(data.clientSecret);
@@ -580,6 +599,12 @@ const Billing: React.FC = () => {
         }
       );
 
+      if (error instanceof FunctionsHttpError) {
+        const errorMessage = await error.context.json();
+        console.log("Function returned an error", errorMessage);
+        if (errorMessage) throw new Error(errorMessage.error);
+      }
+
       if (error) throw error;
 
       // Update local state to reflect cancellation
@@ -620,11 +645,24 @@ const Billing: React.FC = () => {
         }
       );
 
+      if (error instanceof FunctionsHttpError) {
+        const errorMessage = await error.context.json();
+        console.log("Function returned an error", errorMessage);
+        if (errorMessage) throw new Error(errorMessage.error);
+      }
+
       if (error) throw error;
 
       // Refresh all billing data to get updated subscription status
       const { data: billingResponse, error: billingError } =
         await supabase.functions.invoke<BillingData>("get-billing-data");
+
+      if (billingError instanceof FunctionsHttpError) {
+        const errorMessage = await billingError.context.json();
+        console.log("Function returned an error", errorMessage);
+        if (errorMessage) throw new Error(errorMessage.error);
+      }
+
       if (billingError) throw billingError;
       if (!billingResponse) throw new Error("No billing data received");
 

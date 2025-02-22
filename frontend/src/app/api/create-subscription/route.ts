@@ -100,6 +100,13 @@ export async function POST(request: Request) {
           );
         }
 
+        if (isAnnual) {
+          return NextResponse.json(
+            { error: "Promo code can not be used for Annual subscription" },
+            { status: 400 }
+          );
+        }
+
         promotionCode = promotionCodes.data[0];
       } catch (error) {
         console.error("Error validating promo code:", error);

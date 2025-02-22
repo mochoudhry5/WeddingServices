@@ -106,6 +106,9 @@ const terms = [
       "Data retention periods vary by type of information",
       "Users can request their data under applicable laws",
       "Third-party integrations have separate privacy policies",
+      "We use Vercel Analytics to monitor website performance and " +
+        "improve user experience. This analytics tool does not use cookies " +
+        "or track personal data. For more details, please refer to our Privacy Policy.",
     ],
     icon: Lock,
   },

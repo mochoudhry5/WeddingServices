@@ -54,7 +54,10 @@ const privacyPolicy: PolicySection[] = [
         points: [
           "Device information (e.g., browser type, operating system)",
           "IP address and usage data (e.g., pages visited, time spent on the platform)",
-          "Analytics data collected through Vercel to improve website performance and user experience",
+          "We use Vercel Analytics to track and analyze website traffic. Vercel Analytics " +
+            "does not use cookies or collect personally identifiable information (PII). It provides " +
+            "insights into website performance through anonymized metrics such as page views, time spent " +
+            "on the platform, and device/browser information.",
         ],
       },
     ],
