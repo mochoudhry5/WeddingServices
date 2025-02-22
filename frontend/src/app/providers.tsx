@@ -28,7 +28,15 @@ export default function Providers({ children }: { children: React.ReactNode }) {
         {children}
         <SpeedInsights />
         <Analytics />
-        <Toaster />
+        <Toaster
+          position="top-center"
+          expand={false}
+          richColors
+          closeButton
+          theme="light"
+          style={{ zIndex: 100 }}
+          duration={3000}
+        />
         <ReactQueryDevtools initialIsOpen={false} />
       </QueryClientProvider>
     </AuthProvider>
