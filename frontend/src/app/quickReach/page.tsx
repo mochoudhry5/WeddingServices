@@ -157,7 +157,7 @@ export default function QuickReachPage() {
         setIsLoading(false);
         return;
       }
-      
+
       setIsLoading(true);
 
       const service = services.find((s) => s.id === selected);
@@ -213,9 +213,9 @@ export default function QuickReachPage() {
             <div className="max-w-4xl mx-auto px-4">
               <div className="mb-8 sm:mb-5 text-center">
                 <div className="mt-2 flex items-center justify-center gap-2">
-                  <p className="text-base sm:text-xl text-black font-bold">
-                    What type of wedding service are you looking for?
-                  </p>
+                  <h1 className="text-4xl font-black text-stone-900 tracking-tighter">
+                    What service are you looking for?
+                  </h1>
                 </div>
                 <Button
                   variant="ghost"
