@@ -7,6 +7,7 @@ import Footer from "@/components/ui/Footer";
 import { Card, CardContent } from "@/components/ui/card";
 import ServiceInput from "@/components/ui/ServiceInput";
 import { toast } from "sonner";
+import { useAuth } from "@/context/AuthContext";
 
 type ServiceType =
   | "venue"
@@ -38,6 +39,7 @@ const PricingPage = () => {
     useState<ServiceType>("venue");
   const [isAnnual, setIsAnnual] = useState<boolean>(false);
   const [selectedPlan, setSelectedPlan] = useState<PlanType | null>(null);
+  const { user } = useAuth();
 
   const categories: Record<ServiceType, CategoryData> = {
     venue: {
@@ -101,6 +103,11 @@ const PricingPage = () => {
   const handleGetStarted = () => {
     if (!selectedPlan) {
       toast.error("Please select a plan to continue");
+      return;
+    }
+
+    if (!user) {
+      window.location.href = "/services";
       return;
     }
 
