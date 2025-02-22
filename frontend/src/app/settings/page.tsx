@@ -58,6 +58,8 @@ const AccountSettings: React.FC<AccountSettingsProps> = ({
 }) => {
   const { user, signOut } = useAuth();
   const [email, setEmail] = useState(user?.email || "");
+  const [showActiveSubscriptionsDialog, setShowActiveSubscriptionsDialog] =
+    useState(false);
   const [showVendorDialog, setShowVendorDialog] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [pendingVendorState, setPendingVendorState] = useState(false);
@@ -68,6 +70,12 @@ const AccountSettings: React.FC<AccountSettingsProps> = ({
   });
   const { isVendor, isLoading, isUpdating, updateVendorStatus } =
     useVendorStatus(user?.id);
+
+  const navigateToBilling = () => {
+    setShowActiveSubscriptionsDialog(false);
+    setShowVendorDialog(false);
+    setActiveSection("billing");
+  };
 
   const handleUpdateEmail = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -108,6 +116,22 @@ const AccountSettings: React.FC<AccountSettingsProps> = ({
     }
   };
 
+  const checkActiveSubscriptions = async (userId: string) => {
+    try {
+      const { data: subscriptions, error } = await supabase
+        .from("subscriptions")
+        .select("*")
+        .eq("user_id", userId)
+        .eq("status", "active");
+
+      if (error) throw error;
+      return subscriptions && subscriptions.length > 0;
+    } catch (error) {
+      console.error("Error checking subscriptions:", error);
+      throw error;
+    }
+  };
+
   const initiateVendorToggle = (newState: boolean) => {
     setPendingVendorState(newState);
     setShowVendorDialog(true);
@@ -117,11 +141,27 @@ const AccountSettings: React.FC<AccountSettingsProps> = ({
     if (!user?.id) return;
 
     try {
+      if (!pendingVendorState && isVendor) {
+        // Check for active subscriptions when switching from vendor to non-vendor
+        const hasSubscriptions = await checkActiveSubscriptions(user.id);
+
+        if (hasSubscriptions) {
+          // Show dialog instead of proceeding with status change
+          setShowActiveSubscriptionsDialog(true);
+          return;
+        }
+      }
+
       await updateVendorStatus(pendingVendorState);
       setShowVendorDialog(false);
+      toast.success("Vendor status updated successfully");
     } catch (error) {
-      // Error handling is done in the hook
       console.error("Error updating vendor status:", error);
+      toast.error(
+        error instanceof Error
+          ? error.message
+          : "Failed to update vendor status"
+      );
     }
   };
 
@@ -309,6 +349,31 @@ const AccountSettings: React.FC<AccountSettingsProps> = ({
                 : pendingVendorState
                 ? "Enable Vendor Account"
                 : "Disable & Delete Listings"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog
+        open={showActiveSubscriptionsDialog}
+        onOpenChange={setShowActiveSubscriptionsDialog}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Active Listings Found</AlertDialogTitle>
+            <AlertDialogDescription>
+              You have active listings that need to be managed before switching
+              to a non-vendor account. Listings need to be expired in order to
+              switch to non-vendor account.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={navigateToBilling}
+              className="bg-black text-white hover:bg-stone-500"
+            >
+              Go to Billing
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
