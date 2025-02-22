@@ -47,7 +47,7 @@ export default function CreateServicePage() {
               <div className="inline-flex items-center space-x-2">
                 <Sparkles className="w-5 h-5 text-stone-600" />
                 <h1 className="text-4xl font-black text-stone-900 tracking-tighter">
-                  List your service on anyweds
+                  List your service on AnyWeds
                 </h1>
               </div>
 
