@@ -22,6 +22,7 @@ import InvoicesSection from "./InvoicesSection";
 import { formatInTimeZone } from "date-fns-tz";
 import { toZonedTime } from "date-fns-tz";
 import { FunctionsHttpError } from "@supabase/supabase-js";
+import { json } from "node:stream/consumers";
 
 // Types for subscription data
 interface StripeSubscription {
@@ -465,66 +466,68 @@ const Billing: React.FC = () => {
     null
   );
   const [invoices, setInvoices] = useState<Invoice[]>([]);
+  const [isReactivating, setIsReactivating] = useState(false);
+  const [isCancelling, setIsCancelling] = useState(false);
 
   // Data fetching on component mount and when user changes
   useEffect(() => {
-    const fetchBillingData = async () => {
-      if (!user?.id) return;
-
-      try {
-        // Get billing data
-        const { data: billingResponse, error: billingError } =
-          await supabase.functions.invoke<BillingData>("get-billing-data");
-
-        if (billingError instanceof FunctionsHttpError) {
-          const errorMessage = await billingError.context.json();
-          console.log("Function returned an error", errorMessage);
-          if (errorMessage) throw new Error(errorMessage.error);
-        }
-
-        // Handle errors explicitly
-        if (billingError) throw billingError;
-        if (!billingResponse) throw new Error("No billing data received");
-
-        // Now TypeScript knows billingResponse is definitely BillingData
-        setBillingData(billingResponse);
-
-        // Fetch invoices
-        const { data: invoiceData, error: invoiceError } =
-          await supabase.functions.invoke("get-invoices");
-
-        if (invoiceError instanceof FunctionsHttpError) {
-          const errorMessage = await invoiceError.context.json();
-          console.log("Function returned an error", errorMessage);
-          if (errorMessage) throw new Error(errorMessage.error);
-        }
-
-        // Handle invoice errors similarly
-        if (invoiceError) throw invoiceError;
-        if (!invoiceData) throw new Error("No invoice data received");
-
-        setInvoices(invoiceData.invoices);
-
-        // Get payment method
-        const { data: methodData, error: methodError } = await supabase
-          .from("payment_methods")
-          .select("*")
-          .eq("user_id", user.id)
-          .single();
-
-        // PGRST116 is the error code for no rows returned - this is expected
-        if (methodError && methodError.code !== "PGRST116") throw methodError;
-        setPaymentMethod(methodData || null);
-      } catch (error) {
-        console.error("Error fetching billing data:", error);
-        toast.error("Failed to load billing information");
-      } finally {
-        setLoading(false);
-      }
-    };
-
     fetchBillingData();
   }, [user?.id]);
+
+  const fetchBillingData = async () => {
+    if (!user?.id) return;
+
+    try {
+      // Get billing data
+      const { data: billingResponse, error: billingError } =
+        await supabase.functions.invoke<BillingData>("get-billing-data");
+
+      if (billingError instanceof FunctionsHttpError) {
+        const errorMessage = await billingError.context.json();
+        console.log("Function returned an error", errorMessage);
+        if (errorMessage) throw new Error(errorMessage.error);
+      }
+
+      // Handle errors explicitly
+      if (billingError) throw billingError;
+      if (!billingResponse) throw new Error("No billing data received");
+
+      // Now TypeScript knows billingResponse is definitely BillingData
+      setBillingData(billingResponse);
+
+      // Fetch invoices
+      const { data: invoiceData, error: invoiceError } =
+        await supabase.functions.invoke("get-invoices");
+
+      if (invoiceError instanceof FunctionsHttpError) {
+        const errorMessage = await invoiceError.context.json();
+        console.log("Function returned an error", errorMessage);
+        if (errorMessage) throw new Error(errorMessage.error);
+      }
+
+      // Handle invoice errors similarly
+      if (invoiceError) throw invoiceError;
+      if (!invoiceData) throw new Error("No invoice data received");
+
+      setInvoices(invoiceData.invoices);
+
+      // Get payment method
+      const { data: methodData, error: methodError } = await supabase
+        .from("payment_methods")
+        .select("*")
+        .eq("user_id", user.id)
+        .single();
+
+      // PGRST116 is the error code for no rows returned - this is expected
+      if (methodError && methodError.code !== "PGRST116") throw methodError;
+      setPaymentMethod(methodData || null);
+    } catch (error) {
+      console.error("Error fetching billing data:", error);
+      toast.error("Failed to load billing information");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   // Handles adding or updating a payment method
   const handleAddOrUpdatePaymentMethod = async () => {
@@ -589,6 +592,7 @@ const Billing: React.FC = () => {
   const handleCancelSubscription = async () => {
     if (!subscriptionToCancel) return;
 
+    setIsCancelling(true);
     try {
       const { data, error } = await supabase.functions.invoke(
         "cancel-subscription",
@@ -627,6 +631,7 @@ const Billing: React.FC = () => {
       toast.error("Failed to cancel subscription");
     } finally {
       setSubscriptionToCancel(null);
+      setIsCancelling(false);
     }
   };
 
@@ -634,6 +639,7 @@ const Billing: React.FC = () => {
   const handleReactivateSubscription = async () => {
     if (!subscriptionToReactivate) return;
 
+    setIsReactivating(true);
     try {
       const { data, error } = await supabase.functions.invoke(
         "reactivate-subscription",
@@ -653,26 +659,14 @@ const Billing: React.FC = () => {
 
       if (error) throw error;
 
-      // Refresh all billing data to get updated subscription status
-      const { data: billingResponse, error: billingError } =
-        await supabase.functions.invoke<BillingData>("get-billing-data");
-
-      if (billingError instanceof FunctionsHttpError) {
-        const errorMessage = await billingError.context.json();
-        console.log("Function returned an error", errorMessage);
-        if (errorMessage) throw new Error(errorMessage.error);
-      }
-
-      if (billingError) throw billingError;
-      if (!billingResponse) throw new Error("No billing data received");
-
-      setBillingData(billingResponse);
+      await fetchBillingData();
       toast.success("Subscription reactivated successfully");
     } catch (error) {
       console.error("Error reactivating subscription:", error);
       toast.error("Failed to reactivate subscription");
     } finally {
       setSubscriptionToReactivate(null);
+      setIsReactivating(false);
     }
   };
 
@@ -795,12 +789,22 @@ const Billing: React.FC = () => {
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Keep Subscription</AlertDialogCancel>
-            <AlertDialogAction
+            <button
               onClick={handleCancelSubscription}
-              className="bg-red-600 text-white hover:bg-red-700"
+              className="bg-red-600 text-white hover:bg-red-700 relative h-10 px-4 py-2 rounded-md"
+              disabled={isCancelling}
             >
-              Cancel Subscription
-            </AlertDialogAction>
+              {isCancelling ? (
+                <>
+                  <span className="opacity-0">Cancel Subscription</span>
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <div className="h-5 w-5 animate-spin rounded-full border-b-2 border-white"></div>
+                  </div>
+                </>
+              ) : (
+                "Cancel Subscription"
+              )}
+            </button>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
@@ -825,25 +829,70 @@ const Billing: React.FC = () => {
                   <div>
                     {billingData.subscriptionDetails[
                       subscriptionToReactivate?.stripe_subscription_id!
-                    ]?.amount === 0
-                      ? "Your subscription will be reactivated at no cost."
-                      : "You will be charged for the subscription upon reactivation."}
+                    ]?.amount === 0 ? (
+                      "Your subscription will be reactivated at no cost."
+                    ) : subscriptionToReactivate?.status === "inactive" ||
+                      subscriptionToReactivate?.status === "canceled" ? (
+                      <div className="font-medium text-gray-700">
+                        Your card ending in {paymentMethod?.last_4} will be
+                        charged{" "}
+                        {(() => {
+                          const details =
+                            subscriptionToReactivate?.stripe_subscription_id
+                              ? billingData.subscriptionDetails[
+                                  subscriptionToReactivate
+                                    .stripe_subscription_id
+                                ]
+                              : null;
+
+                          if (
+                            !details?.recurring_price ||
+                            !details?.recurring_currency
+                          ) {
+                            return "your subscription amount";
+                          }
+
+                          return new Intl.NumberFormat("en-US", {
+                            style: "currency",
+                            currency: details.recurring_currency.toUpperCase(),
+                          }).format(details.recurring_price / 100);
+                        })()}{" "}
+                        immediately upon reactivation.
+                      </div>
+                    ) : (
+                      <div>
+                        Your subscription will resume with your current billing
+                        cycle.
+                      </div>
+                    )}
                   </div>
                 )}
                 <div className="text-sm text-gray-500">
-                  Your subscription will renew at the same rate as before.
+                  {subscriptionToReactivate?.status === "inactive" ||
+                  subscriptionToReactivate?.status === "canceled"
+                    ? "Your subscription will continue to renew at this rate unless cancelled."
+                    : "Your next renewal will be at your regular subscription rate."}
                 </div>
               </div>
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction
+            <button
               onClick={handleReactivateSubscription}
-              className="bg-green-600 text-white hover:bg-green-700"
+              className="bg-green-600 text-white hover:bg-green-700 relative h-10 px-4 py-2 rounded-md"
             >
-              Reactivate Subscription
-            </AlertDialogAction>
+              {isReactivating ? (
+                <>
+                  <span className="opacity-0">Reactivate Subscription</span>
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <div className="h-5 w-5 animate-spin rounded-full border-b-2 border-white"></div>
+                  </div>
+                </>
+              ) : (
+                "Reactivate Subscription"
+              )}
+            </button>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>

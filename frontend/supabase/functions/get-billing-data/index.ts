@@ -82,56 +82,52 @@ serve(async (req) => {
 
     // Get detailed Stripe information for active subscriptions
     const subscriptionDetails: Record<string, SubscriptionDetails> = {};
-    const activeSubscriptions = (subscriptions || []).filter(
-      (sub) => sub.status === "active"
+    const allSubscriptions = subscriptions || [];
+
+    await Promise.all(
+      allSubscriptions.map(async (sub) => {
+        try {
+          const subscription = await stripe.subscriptions.retrieve(
+            sub.stripe_subscription_id,
+            {
+              expand: [
+                "latest_invoice",
+                "items.data.price",
+                "items.data.price.product",
+              ],
+            }
+          );
+
+          const invoice = subscription.latest_invoice as Stripe.Invoice;
+          const subscriptionItem = subscription.items.data[0];
+          const price = subscriptionItem.price;
+          const product = price.product as Stripe.Product;
+
+          subscriptionDetails[sub.stripe_subscription_id] = {
+            amount: invoice.amount_due,
+            currency: invoice.currency,
+            nextPaymentAttempt: invoice.next_payment_attempt,
+            periodEnd: subscription.current_period_end,
+            trialEnd: subscription.trial_end,
+            recurring_price: price.unit_amount || 0,
+            recurring_currency: price.currency,
+            recurring_interval: price.recurring?.interval || "month",
+            product_name: product.name || "Subscription",
+            billing_description:
+              price.nickname || product.name || "Subscription",
+            is_metered: price.type === "metered",
+            trial_end_date: subscription.trial_end
+              ? new Date(subscription.trial_end * 1000).toISOString()
+              : null,
+          };
+        } catch (error) {
+          console.error(
+            `Error fetching Stripe subscription ${sub.stripe_subscription_id}:`,
+            error
+          );
+        }
+      })
     );
-
-    if (activeSubscriptions.length > 0) {
-      await Promise.all(
-        activeSubscriptions.map(async (sub) => {
-          try {
-            const subscription = await stripe.subscriptions.retrieve(
-              sub.stripe_subscription_id,
-              {
-                expand: [
-                  "latest_invoice",
-                  "items.data.price",
-                  "items.data.price.product",
-                ],
-              }
-            );
-
-            const invoice = subscription.latest_invoice as Stripe.Invoice;
-            const subscriptionItem = subscription.items.data[0];
-            const price = subscriptionItem.price;
-            const product = price.product as Stripe.Product;
-
-            subscriptionDetails[sub.stripe_subscription_id] = {
-              amount: invoice.amount_due,
-              currency: invoice.currency,
-              nextPaymentAttempt: invoice.next_payment_attempt,
-              periodEnd: subscription.current_period_end,
-              trialEnd: subscription.trial_end,
-              recurring_price: price.unit_amount || 0,
-              recurring_currency: price.currency,
-              recurring_interval: price.recurring?.interval || "month",
-              product_name: product.name || "Subscription",
-              billing_description:
-                price.nickname || product.name || "Subscription",
-              is_metered: price.type === "metered",
-              trial_end_date: subscription.trial_end
-                ? new Date(subscription.trial_end * 1000).toISOString()
-                : null,
-            };
-          } catch (error) {
-            console.error(
-              `Error fetching Stripe subscription ${sub.stripe_subscription_id}:`,
-              error
-            );
-          }
-        })
-      );
-    }
 
     return new Response(
       JSON.stringify({
