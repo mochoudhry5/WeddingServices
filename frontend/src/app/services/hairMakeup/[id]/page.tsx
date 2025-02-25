@@ -359,6 +359,10 @@ const HairMakeupDetailsPage = () => {
               user_id: user.id,
               listing_id: hairMakeup.id,
               service_type: "hairMakeup",
+              email_entered: inquiryForm.email,
+              phone_number: inquiryForm.phone,
+              name: inquiryForm.firstName + " " + inquiryForm.lastName,
+              message: inquiryForm.message,
             });
 
           if (insertError) throw insertError;

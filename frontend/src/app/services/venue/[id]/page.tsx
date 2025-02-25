@@ -455,6 +455,10 @@ const VenueDetailsPage = () => {
               user_id: user.id,
               listing_id: venue.id,
               service_type: "venue",
+              email_entered: inquiryForm.email,
+              phone_number: inquiryForm.phone,
+              name: inquiryForm.firstName + " " + inquiryForm.lastName,
+              message: inquiryForm.message,
             });
 
           if (insertError) throw insertError;

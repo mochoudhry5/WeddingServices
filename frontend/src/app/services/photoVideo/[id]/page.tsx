@@ -410,6 +410,10 @@ const PhotographyDetailsPage = () => {
               user_id: user.id,
               listing_id: photoVideo.id,
               service_type: "photoVideo",
+              email_entered: inquiryForm.email,
+              phone_number: inquiryForm.phone,
+              name: inquiryForm.firstName + " " + inquiryForm.lastName,
+              message: inquiryForm.message,
             });
 
           if (insertError) throw insertError;

@@ -328,7 +328,92 @@ const WeddingDetailsPage = () => {
       setIsSubmitting(true);
 
       try {
-        // Rest of handleInquirySubmit implementation remains the same...
+        // First, send the inquiry
+        const response = await fetch("/api/inquiry", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            serviceType: "photo-video",
+            serviceId: weddingPlanner.id,
+            formData: inquiryForm,
+            businessName: weddingPlanner.business_name,
+          }),
+        });
+
+        if (!response.ok) {
+          const error = await response.json();
+          throw new Error(error.message || "Failed to send inquiry");
+        }
+
+        const { data: existingContact } = await supabase
+          .from("contact_history")
+          .select("id")
+          .eq("user_id", user.id)
+          .eq("listing_id", weddingPlanner.id)
+          .eq("service_type", "photoVideo")
+          .single();
+
+        if (existingContact) {
+          // Update existing contact history
+          const { error: updateError } = await supabase
+            .from("contact_history")
+            .update({ contacted_at: new Date().toISOString() })
+            .eq("id", existingContact.id);
+
+          if (updateError) throw updateError;
+        } else {
+          // Create new contact history
+          const { error: insertError } = await supabase
+            .from("contact_history")
+            .insert({
+              user_id: user.id,
+              listing_id: weddingPlanner.id,
+              service_type: "wedding_planner",
+              email_entered: inquiryForm.email,
+              phone_number: inquiryForm.phone,
+              name: inquiryForm.firstName + " " + inquiryForm.lastName,
+              message: inquiryForm.message,
+            });
+
+          if (insertError) throw insertError;
+        }
+
+        // Update state with new contact time
+        setContactHistory({
+          contacted_at: new Date().toISOString(),
+        });
+
+        // If inquiry was successful, increment the counter
+        const { error: updateError } = await supabase
+          .from("photo_video_listing")
+          .update({
+            number_of_contacted: (weddingPlanner.number_of_contacted || 0) + 1,
+          })
+          .eq("id", weddingPlanner.id);
+
+        if (updateError) {
+          console.error("Error updating contact counter:", updateError);
+          // Don't show error to user since the inquiry was still sent successfully
+        }
+
+        // Clear form after successful submission
+        setInquiryForm({
+          firstName: "",
+          lastName: "",
+          email: "",
+          phone: "",
+          eventDate: "",
+          message: "",
+        });
+
+        toast.success(
+          "Your inquiry has been sent! They will contact you soon."
+        );
+
+        // Reload the photographer details to get updated counter
+        loadWeddingPlannerDetails();
       } catch (error) {
         console.error("Error:", error);
         toast.error("Failed to send inquiry. Please try again.");

@@ -40,6 +40,7 @@ import { toast } from "sonner";
 import Link from "next/link";
 import { ProtectedRoute } from "@/components/ui/ProtectedRoute";
 import { VendorProtectedRoute } from "@/components/ui/VendorProtectedRoute";
+import ListingAnalyticsDashboard from "@/components/ui/ListingAnalyticsDashboard";
 
 // Media type for images/videos
 interface ServiceMedia {
@@ -257,13 +258,13 @@ const useListings = (user: any) => {
     } finally {
       setIsLoading(false);
     }
-  }, [user?.id]);
+  }, []);
 
   useEffect(() => {
     if (user) {
       loadAllListings();
     }
-  }, [user, loadAllListings]);
+  }, []);
 
   return { listings, setListings, isLoading };
 };
@@ -722,9 +723,14 @@ export default function MyListingsPage() {
             <NavBar />
             <div className="flex-1">
               <div className="max-w-7xl mx-auto px-4 py-8">
-                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
-                  <h1 className="text-3xl font-bold">My Listings</h1>
-                  <Button className="bg-black hover:bg-stone-500" asChild>
+                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-6 bg-gradient-to-r from-neutral-800 to-slate-100 p-4 rounded-lg shadow-lg">
+                  <span className="text-4xl font-black text-white tracking-tighter">
+                    My Listings
+                  </span>
+                  <Button
+                    className="bg-black hover:bg-stone-500 text-white"
+                    asChild
+                  >
                     <Link href="/services">
                       <Plus className="w-4 h-4 mr-2" />
                       Add New Listing
@@ -834,50 +840,12 @@ export default function MyListingsPage() {
                 </AlertDialogFooter>
               </AlertDialogContent>
             </AlertDialog>
-            {/* Analytics Dialog */}
-            <AlertDialog
-              open={!!analyticsListing}
-              onOpenChange={() => setAnalyticsListing(null)}
-            >
-              <AlertDialogContent>
-                <AlertDialogHeader>
-                  <AlertDialogTitle>Listing Analytics</AlertDialogTitle>
-                </AlertDialogHeader>
-
-                {analyticsListing && (
-                  <>
-                    <div className="grid grid-cols-2 gap-4 my-4">
-                      <div className="bg-gray-50 p-4 rounded-lg">
-                        <div className="text-sm text-gray-500">Total Likes</div>
-                        <div className="text-2xl font-semibold mt-1">
-                          {analyticsListing.like_count || 0}
-                        </div>
-                      </div>
-                      <div className="bg-gray-50 p-4 rounded-lg">
-                        <div className="text-sm text-gray-500">
-                          Total Contacts
-                        </div>
-                        <div className="text-2xl font-semibold mt-1">
-                          {analyticsListing.number_of_contacted || 0}
-                        </div>
-                      </div>
-                    </div>
-                    <div className="text-sm text-gray-500">
-                      Statistics for {analyticsListing.business_name}
-                    </div>
-                  </>
-                )}
-
-                <AlertDialogFooter>
-                  <AlertDialogAction
-                    onClick={() => setAnalyticsListing(null)}
-                    className="bg-black hover:bg-stone-500"
-                  >
-                    Close
-                  </AlertDialogAction>
-                </AlertDialogFooter>
-              </AlertDialogContent>
-            </AlertDialog>
+            {analyticsListing && (
+              <ListingAnalyticsDashboard
+                listing={analyticsListing}
+                setAnalyticsListing={setAnalyticsListing}
+              />
+            )}
           </div>
         </VendorProtectedRoute>
       </ProtectedRoute>

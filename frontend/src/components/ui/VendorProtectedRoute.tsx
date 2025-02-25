@@ -33,7 +33,7 @@ export function VendorProtectedRoute({ children }: VendorProtectedRouteProps) {
     };
 
     fetchUserPreferences();
-  }, [user]);
+  }, []);
 
   useEffect(() => {
     if (!loading && !user) {

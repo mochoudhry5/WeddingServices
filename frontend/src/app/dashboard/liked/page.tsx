@@ -697,7 +697,11 @@ export default function LikedServicesPage() {
           <NavBar />
           <div className="flex-1">
             <div className="max-w-7xl mx-auto px-4 py-8">
-              <h1 className="text-3xl font-bold mb-8">Liked Services</h1>
+              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-6 bg-gradient-to-r from-neutral-800 to-slate-100 p-4 rounded-lg shadow-lg">
+                <span className="text-4xl font-black text-white tracking-tighter">
+                  Liked Services
+                </span>
+              </div>
               {renderContent()}
             </div>
           </div>

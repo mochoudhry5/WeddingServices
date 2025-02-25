@@ -15,7 +15,6 @@ export function useVendorStatus(userId?: string) {
     queryKey: ["vendorStatus", userId],
     queryFn: async () => {
       if (!userId) return null;
-
       const { data, error } = await supabase
         .from("user_preferences")
         .select("is_vendor")
