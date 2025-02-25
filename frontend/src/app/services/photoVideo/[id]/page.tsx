@@ -367,57 +367,19 @@ const PhotographyDetailsPage = () => {
       setIsSubmitting(true);
 
       try {
-        // First, send the inquiry
-        const response = await fetch("/api/inquiry", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            serviceType: "photo-video",
-            serviceId: photoVideo.id,
-            formData: inquiryForm,
-            businessName: photoVideo.business_name,
-          }),
-        });
-
-        if (!response.ok) {
-          const error = await response.json();
-          throw new Error(error.message || "Failed to send inquiry");
-        }
-
-        const { data: existingContact } = await supabase
+        const { error: insertError } = await supabase
           .from("contact_history")
-          .select("id")
-          .eq("user_id", user.id)
-          .eq("listing_id", photoVideo.id)
-          .eq("service_type", "photoVideo")
-          .single();
+          .insert({
+            user_id: user.id,
+            listing_id: photoVideo.id,
+            service_type: "photoVideo",
+            email_entered: inquiryForm.email,
+            phone: inquiryForm.phone,
+            name: inquiryForm.firstName + " " + inquiryForm.lastName,
+            message: inquiryForm.message,
+          });
 
-        if (existingContact) {
-          // Update existing contact history
-          const { error: updateError } = await supabase
-            .from("contact_history")
-            .update({ contacted_at: new Date().toISOString() })
-            .eq("id", existingContact.id);
-
-          if (updateError) throw updateError;
-        } else {
-          // Create new contact history
-          const { error: insertError } = await supabase
-            .from("contact_history")
-            .insert({
-              user_id: user.id,
-              listing_id: photoVideo.id,
-              service_type: "photoVideo",
-              email_entered: inquiryForm.email,
-              phone_number: inquiryForm.phone,
-              name: inquiryForm.firstName + " " + inquiryForm.lastName,
-              message: inquiryForm.message,
-            });
-
-          if (insertError) throw insertError;
-        }
+        if (insertError) throw insertError;
 
         // Update state with new contact time
         setContactHistory({
@@ -435,6 +397,24 @@ const PhotographyDetailsPage = () => {
         if (updateError) {
           console.error("Error updating contact counter:", updateError);
           // Don't show error to user since the inquiry was still sent successfully
+        }
+
+        const response = await fetch("/api/inquiry", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            serviceType: "photo-video",
+            serviceId: photoVideo.id,
+            formData: inquiryForm,
+            businessName: photoVideo.business_name,
+          }),
+        });
+
+        if (!response.ok) {
+          const error = await response.json();
+          throw new Error(error.message || "Failed to send inquiry");
         }
 
         // Clear form after successful submission

@@ -282,6 +282,31 @@ const DJDetailsPage = () => {
       setIsSubmitting(true);
 
       try {
+        const { error: insertError } = await supabase
+          .from("contact_history")
+          .insert({
+            user_id: user.id,
+            listing_id: dj.id,
+            service_type: "dj",
+            email_entered: inquiryForm.email,
+            phone: inquiryForm.phone,
+            name: inquiryForm.firstName + " " + inquiryForm.lastName,
+            message: inquiryForm.message,
+          });
+
+        if (insertError) throw insertError;
+
+        // Update local state
+        setContactHistory({
+          contacted_at: new Date().toISOString(),
+        });
+
+        // Update listing contact counter
+        await supabase
+          .from("dj_listing")
+          .update({ number_of_contacted: (dj.number_of_contacted || 0) + 1 })
+          .eq("id", dj.id);
+
         const response = await fetch("/api/inquiry", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -297,49 +322,6 @@ const DJDetailsPage = () => {
           const error = await response.json();
           throw new Error(error.message || "Failed to send inquiry");
         }
-
-        // Update contact history
-        const { data: existingContact } = await supabase
-          .from("contact_history")
-          .select("id")
-          .eq("user_id", user.id)
-          .eq("listing_id", dj.id)
-          .eq("service_type", "dj")
-          .single();
-
-        if (existingContact) {
-          const { error: updateError } = await supabase
-            .from("contact_history")
-            .update({ contacted_at: new Date().toISOString() })
-            .eq("id", existingContact.id);
-
-          if (updateError) throw updateError;
-        } else {
-          const { error: insertError } = await supabase
-            .from("contact_history")
-            .insert({
-              user_id: user.id,
-              listing_id: dj.id,
-              service_type: "dj",
-              email_entered: inquiryForm.email,
-              phone_number: inquiryForm.phone,
-              name: inquiryForm.firstName + " " + inquiryForm.lastName,
-              message: inquiryForm.message,
-            });
-
-          if (insertError) throw insertError;
-        }
-
-        // Update local state
-        setContactHistory({
-          contacted_at: new Date().toISOString(),
-        });
-
-        // Update listing contact counter
-        await supabase
-          .from("dj_listing")
-          .update({ number_of_contacted: (dj.number_of_contacted || 0) + 1 })
-          .eq("id", dj.id);
 
         // Reset form
         setInquiryForm({

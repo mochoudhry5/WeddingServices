@@ -411,58 +411,19 @@ const VenueDetailsPage = () => {
       setIsSubmitting(true);
 
       try {
-        // First, send the inquiry
-        const response = await fetch("/api/venue", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            venueId: venue.id,
-            venueName: venue.business_name,
-            venueOwnerId: venue.user_id,
-            formData: inquiryForm,
-          }),
-        });
-
-        const data = await response.json();
-
-        if (!response.ok) {
-          throw new Error(data.error || "Failed to send inquiry");
-        }
-
-        const { data: existingContact } = await supabase
+        const { error: insertError } = await supabase
           .from("contact_history")
-          .select("id")
-          .eq("user_id", user.id)
-          .eq("listing_id", venue.id)
-          .eq("service_type", "venue")
-          .single();
+          .insert({
+            user_id: user.id,
+            listing_id: venue.id,
+            service_type: "venue",
+            email_entered: inquiryForm.email,
+            phone: inquiryForm.phone,
+            name: inquiryForm.firstName + " " + inquiryForm.lastName,
+            message: inquiryForm.message,
+          });
 
-        if (existingContact) {
-          // Update existing contact history
-          const { error: updateError } = await supabase
-            .from("contact_history")
-            .update({ contacted_at: new Date().toISOString() })
-            .eq("id", existingContact.id);
-
-          if (updateError) throw updateError;
-        } else {
-          // Create new contact history
-          const { error: insertError } = await supabase
-            .from("contact_history")
-            .insert({
-              user_id: user.id,
-              listing_id: venue.id,
-              service_type: "venue",
-              email_entered: inquiryForm.email,
-              phone_number: inquiryForm.phone,
-              name: inquiryForm.firstName + " " + inquiryForm.lastName,
-              message: inquiryForm.message,
-            });
-
-          if (insertError) throw insertError;
-        }
+        if (insertError) throw insertError;
 
         // Update state with new contact time
         setContactHistory({
@@ -480,6 +441,25 @@ const VenueDetailsPage = () => {
         if (updateError) {
           console.error("Error updating contact counter:", updateError);
           // Don't show error to user since the inquiry was still sent successfully
+        }
+
+        const response = await fetch("/api/venue", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            venueId: venue.id,
+            venueName: venue.business_name,
+            venueOwnerId: venue.user_id,
+            formData: inquiryForm,
+          }),
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+          throw new Error(data.error || "Failed to send inquiry");
         }
 
         // Reset form
