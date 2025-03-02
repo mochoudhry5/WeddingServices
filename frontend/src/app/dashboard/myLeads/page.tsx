@@ -13,6 +13,11 @@ import {
   DollarSign,
   SlidersHorizontal,
   MapPin,
+  Eye,
+  XCircle,
+  CheckCircle,
+  AlertTriangle,
+  Tag,
 } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
@@ -45,8 +50,18 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
+  CardFooter,
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 type ServiceType =
   | "venue"
@@ -54,6 +69,8 @@ type ServiceType =
   | "weddingPlanner"
   | "photoVideo"
   | "hairMakeup";
+
+type LeadStatus = "new" | "seen" | "followedUp" | "removed";
 
 interface Lead {
   id: string;
@@ -68,6 +85,7 @@ interface Lead {
   created_at: string;
   message?: string | null;
   service_type?: string;
+  status?: LeadStatus;
 }
 
 type Leads = {
@@ -188,13 +206,81 @@ const useLeadsData = (user: any) => {
 
       await Promise.all(
         services.map(async (serviceType) => {
-          const { data, error } = await supabase
+          // Get the main leads
+          const { data: mainLeads, error: mainError } = await supabase
             .from(SERVICE_CONFIGS[serviceType].table)
             .select("*")
             .order("created_at", { ascending: false });
 
-          if (error) throw error;
-          allLeads[serviceType] = data || [];
+          if (mainError) throw mainError;
+
+          // Get the seen leads
+          const { data: seenLeads, error: seenError } = await supabase
+            .from(`seen_${SERVICE_CONFIGS[serviceType].table}`)
+            .select("lead_id");
+
+          if (seenError)
+            console.error(
+              `Error fetching seen leads for ${serviceType}:`,
+              seenError
+            );
+
+          // Get the followed up leads
+          const { data: followedUpLeads, error: followedUpError } =
+            await supabase
+              .from(`followed_up_${SERVICE_CONFIGS[serviceType].table}`)
+              .select("lead_id");
+
+          if (followedUpError)
+            console.error(
+              `Error fetching followed up leads for ${serviceType}:`,
+              followedUpError
+            );
+
+          // Get the removed leads
+          const { data: removedLeads, error: removedError } = await supabase
+            .from(`removed_${SERVICE_CONFIGS[serviceType].table}`)
+            .select("lead_id");
+
+          if (removedError)
+            console.error(
+              `Error fetching removed leads for ${serviceType}:`,
+              removedError
+            );
+
+          // Create sets for faster lookup
+          const seenLeadIds = new Set(
+            seenLeads?.map((item) => item.lead_id) || []
+          );
+          const followedUpLeadIds = new Set(
+            followedUpLeads?.map((item) => item.lead_id) || []
+          );
+          const removedLeadIds = new Set(
+            removedLeads?.map((item) => item.lead_id) || []
+          );
+
+          // Process the leads with their status
+          const processedLeads =
+            mainLeads?.map((lead) => {
+              let status: LeadStatus = "new";
+
+              if (removedLeadIds.has(lead.id)) {
+                status = "removed";
+              } else if (followedUpLeadIds.has(lead.id)) {
+                status = "followedUp";
+              } else if (seenLeadIds.has(lead.id)) {
+                status = "seen";
+              }
+
+              return { ...lead, status };
+            }) || [];
+
+          // Filter out removed leads from the main list
+          const activeLeads = processedLeads.filter(
+            (lead) => lead.status !== "removed"
+          );
+
+          allLeads[serviceType] = activeLeads;
         })
       );
 
@@ -211,19 +297,25 @@ const useLeadsData = (user: any) => {
     }
   }, [user, checkUserListings]);
 
-  return { userListings, leads, isLoading, setLeads };
+  return { userListings, leads, isLoading, setLeads, loadLeadsForServices };
 };
 
 const useLeadsFiltering = (
   leads: Leads,
   searchTerm: string,
   sortBy: SortOption,
-  budgetRange: [number, number]
+  budgetRange: [number, number],
+  statusFilter: LeadStatus
 ) => {
   return useMemo(() => {
     const filtered = { ...leads };
     Object.keys(filtered).forEach((serviceType) => {
       let serviceLeads = [...leads[serviceType as ServiceType]];
+
+      // Filter by status
+      serviceLeads = serviceLeads.filter(
+        (lead) => lead.status === statusFilter
+      );
 
       // Filter by search term
       if (searchTerm) {
@@ -275,25 +367,30 @@ const useLeadsFiltering = (
       filtered[serviceType as ServiceType] = serviceLeads;
     });
     return filtered;
-  }, [leads, searchTerm, sortBy, budgetRange]);
+  }, [leads, searchTerm, sortBy, budgetRange, statusFilter]);
 };
 
 export default function LeadsPage() {
   const router = useRouter();
   const { user } = useAuth();
   const [activeTab, setActiveTab] = useState<ServiceType | null>(null);
-  const { userListings, leads, isLoading, setLeads } = useLeadsData(user);
+  const [activeStatusTab, setActiveStatusTab] = useState<LeadStatus>("new");
+  const { userListings, leads, isLoading, setLeads, loadLeadsForServices } =
+    useLeadsData(user);
   const [searchTerm, setSearchTerm] = useState("");
   const [sortBy, setSortBy] = useState<SortOption>("newest");
   const [isFilterSheetOpen, setIsFilterSheetOpen] = useState(false);
   const [budgetRange, setBudgetRange] = useState<[number, number]>([0, 0]);
   const [errors, setErrors] = useState({ min: "", max: "" });
+  const [removeDialogOpen, setRemoveDialogOpen] = useState(false);
+  const [leadToRemove, setLeadToRemove] = useState<Lead | null>(null);
 
   const filteredLeads = useLeadsFiltering(
     leads,
     searchTerm,
     sortBy,
-    budgetRange
+    budgetRange,
+    activeStatusTab
   );
 
   useEffect(() => {
@@ -346,6 +443,108 @@ export default function LeadsPage() {
     return format(new Date(dateString), "MMM d, yyyy");
   }, []);
 
+  const markAsSeen = async (lead: Lead) => {
+    if (!activeTab || !user) return;
+
+    try {
+      // Skip if already marked as seen
+      if (lead.status === "seen" || lead.status === "followedUp") {
+        return;
+      }
+
+      // Check if lead is already in the seen table regardless of status
+      const { data: existingRecord, error: checkError } = await supabase
+        .from(`seen_${SERVICE_CONFIGS[activeTab].table}`)
+        .select("id")
+        .eq("lead_id", lead.id)
+        .eq("user_id", user.id)
+        .maybeSingle();
+
+      if (checkError) throw checkError;
+
+      // Only insert if no existing record found
+      if (!existingRecord) {
+        const { error } = await supabase
+          .from(`seen_${SERVICE_CONFIGS[activeTab].table}`)
+          .insert([{ lead_id: lead.id, user_id: user.id }]);
+
+        if (error) throw error;
+
+        // Reload leads to update the UI
+        if (userListings.length > 0) {
+          await loadLeadsForServices([activeTab]);
+        }
+
+        toast.success("Lead marked as seen");
+      }
+    } catch (error) {
+      console.error("Error marking lead as seen:", error);
+      toast.error("Failed to update lead status");
+    }
+  };
+
+  const markAsFollowedUp = async (lead: Lead) => {
+    if (!activeTab || !user) return;
+
+    try {
+      const { error } = await supabase
+        .from(`followed_up_${SERVICE_CONFIGS[activeTab].table}`)
+        .insert([{ lead_id: lead.id, user_id: user.id }]);
+
+      if (error) throw error;
+
+      // Reload leads to update the UI
+      if (userListings.length > 0) {
+        await loadLeadsForServices([activeTab]);
+      }
+
+      toast.success("Lead marked as followed up");
+    } catch (error) {
+      console.error("Error marking lead as followed up:", error);
+      toast.error("Failed to update lead status");
+    }
+  };
+
+  const removeLead = async () => {
+    if (!activeTab || !leadToRemove || !user) return;
+
+    try {
+      const { error } = await supabase
+        .from(`removed_${SERVICE_CONFIGS[activeTab].table}`)
+        .insert([{ lead_id: leadToRemove.id, user_id: user.id }]);
+
+      if (error) throw error;
+
+      // Reload leads to update the UI
+      if (userListings.length > 0) {
+        await loadLeadsForServices([activeTab]);
+      }
+
+      setRemoveDialogOpen(false);
+      setLeadToRemove(null);
+      toast.success("Lead removed");
+    } catch (error) {
+      console.error("Error removing lead:", error);
+      toast.error("Failed to remove lead");
+    }
+  };
+
+  const handleCardClick = useCallback(
+    (e: React.MouseEvent, lead: Lead, activeTab: ServiceType) => {
+      e.preventDefault();
+      e.stopPropagation();
+      if (
+        !(e.target as HTMLElement).closest("button") &&
+        !(e.target as HTMLElement).closest("a")
+      ) {
+        // Mark as seen when opening the detail page
+        markAsSeen(lead);
+        window.open(`/services/leads/${activeTab}/${lead.id}`, "_blank");
+      }
+    },
+    [markAsSeen]
+  );
+
   // UI Component renderers
   const renderServiceNav = () => (
     <div className="flex overflow-x-auto gap-2 p-2 bg-white rounded-lg shadow-sm no-scrollbar">
@@ -364,13 +563,31 @@ export default function LeadsPage() {
           >
             <Icon className="h-4 w-4" />
             {config.displayName}
-            <span className="px-2 py-0.5 text-xs rounded-full bg-white/20">
-              {leads[serviceType].length}
-            </span>
           </button>
         );
       })}
     </div>
+  );
+
+  const renderStatusTabs = () => (
+    <Tabs
+      defaultValue="new"
+      value={activeStatusTab}
+      onValueChange={(value) => setActiveStatusTab(value as LeadStatus)}
+      className="w-full mb-6"
+    >
+      <TabsList className="grid grid-cols-3 mb-6">
+        <TabsTrigger value="new" className="relative">
+          New Leads
+        </TabsTrigger>
+        <TabsTrigger value="seen" className="relative">
+          Seen Leads
+        </TabsTrigger>
+        <TabsTrigger value="followedUp" className="relative">
+          Followed Up
+        </TabsTrigger>
+      </TabsList>
+    </Tabs>
   );
 
   const renderFilters = () => (
@@ -483,20 +700,6 @@ export default function LeadsPage() {
     </div>
   );
 
-  const handleCardClick = useCallback(
-    (e: React.MouseEvent, lead: Lead, activeTab: ServiceType) => {
-      e.preventDefault();
-      e.stopPropagation();
-      if (
-        !(e.target as HTMLElement).closest("button") &&
-        !(e.target as HTMLElement).closest("a")
-      ) {
-        window.open(`/services/leads/${activeTab}/${lead.id}`, "_blank");
-      }
-    },
-    []
-  );
-
   const renderLeadCard = (lead: Lead) => {
     // Early return if activeTab is null (shouldn't happen in practice)
     if (!activeTab) return null;
@@ -549,6 +752,34 @@ export default function LeadsPage() {
             )}
           </div>
         </CardContent>
+        <CardFooter className="mt-auto flex justify-between gap-2 pt-2 border-t">
+          <Button
+            variant="outline"
+            size="sm"
+            className="flex-1 text-red-600 border-red-200 hover:bg-red-50 hover:text-red-700"
+            onClick={(e) => {
+              e.stopPropagation();
+              setLeadToRemove(lead);
+              setRemoveDialogOpen(true);
+            }}
+          >
+            <XCircle className="h-4 w-4 mr-1" />
+            Remove
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            className="flex-1 text-purple-600 border-purple-200 hover:bg-purple-50 hover:text-purple-700"
+            onClick={(e) => {
+              e.stopPropagation();
+              markAsFollowedUp(lead);
+            }}
+            disabled={lead.status === "followedUp"}
+          >
+            <CheckCircle className="h-4 w-4 mr-1" />
+            Followed Up
+          </Button>
+        </CardFooter>
       </Card>
     );
   };
@@ -573,12 +804,33 @@ export default function LeadsPage() {
       ) : (
         <>
           <h3 className="text-lg font-medium text-gray-900 mb-2">
-            No {activeTab && SERVICE_CONFIGS[activeTab].displayName} leads yet
+            No{" "}
+            {activeStatusTab === "followedUp"
+              ? "Followed Up"
+              : activeStatusTab === "new"
+              ? "New"
+              : "Seen"}{" "}
+            {activeTab && SERVICE_CONFIGS[activeTab].displayName} leads
           </h3>
           <p className="text-gray-500 mb-6">
-            When you receive new{" "}
-            {activeTab && SERVICE_CONFIGS[activeTab].displayName.toLowerCase()}{" "}
-            leads, they will appear here
+            {activeStatusTab === "new" && (
+              <>
+                When you receive new{" "}
+                {activeTab &&
+                  SERVICE_CONFIGS[activeTab].displayName.toLowerCase()}{" "}
+                leads, they will appear here
+              </>
+            )}
+
+            {activeStatusTab === "seen" && (
+              <>
+                Leads you've viewed but haven't followed up on will appear here
+              </>
+            )}
+
+            {activeStatusTab === "followedUp" && (
+              <>Leads you've marked as followed up will appear here</>
+            )}
           </p>
         </>
       )}
@@ -620,6 +872,7 @@ export default function LeadsPage() {
                         {renderServiceNav()}
                         {activeTab && (
                           <div className="mt-6">
+                            {renderStatusTabs()}
                             {renderFilters()}
                             {filteredLeads[activeTab].length > 0 ? (
                               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -644,6 +897,38 @@ export default function LeadsPage() {
             </div>
             <Footer />
           </div>
+
+          {/* Remove Lead Confirmation Dialog */}
+          <Dialog open={removeDialogOpen} onOpenChange={setRemoveDialogOpen}>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle className="flex items-center">
+                  <AlertTriangle className="h-5 w-5 text-red-500 mr-2" />
+                  Confirm Lead Removal
+                </DialogTitle>
+              </DialogHeader>
+              <DialogDescription>
+                Are you sure you want to remove this lead? This action cannot be
+                undone, and the lead will no longer appear in your list.
+              </DialogDescription>
+              <DialogFooter className="flex flex-col sm:flex-row gap-2">
+                <Button
+                  variant="outline"
+                  onClick={() => setRemoveDialogOpen(false)}
+                  className="sm:flex-1"
+                >
+                  Cancel
+                </Button>
+                <Button
+                  variant="destructive"
+                  onClick={removeLead}
+                  className="sm:flex-1 bg-red-600 hover:bg-red-700"
+                >
+                  Remove Lead
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
         </VendorProtectedRoute>
       </ProtectedRoute>
     </ErrorBoundary>
