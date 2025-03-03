@@ -73,7 +73,7 @@ const commonWeddingPlannerServices = [
   {
     name: "Wedding Planner",
     description:
-      "Guide couples through the entire wedding planning process, from start to finish. This includes helping them define their vision, setting a budget, selecting and booking vendors, creating a timeline, designing the decor, and coordinating all the logistics leading up to the big day. ",
+      "Guide couples through the wedding planning process, from defining their vision and setting a budget to booking vendors, creating a timeline, designing decor, and coordinating logistics for the big day.",
     suggestedPrice: 0,
   },
 ];
@@ -81,7 +81,7 @@ const commonWeddingCoordinatorServices = [
   {
     name: "Day of Coordinator",
     description:
-      "Oversee the final details and manage the schedule on the event day. This includes confirming vendor arrivals, setting up decorations, assisting the host or couple, managing the timeline, troubleshooting issues, and keeping everything on track.",
+      "Manage event day details, including vendor arrivals, decor setup, timeline, troubleshooting, and ensuring everything runs smoothly.",
     suggestedPrice: 0,
   },
 ];
