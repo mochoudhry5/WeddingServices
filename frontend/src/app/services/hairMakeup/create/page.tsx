@@ -1651,19 +1651,24 @@ const CreateMakeupListing = () => {
                                               }
                                               onChange={(e) => {
                                                 const sanitizedValue =
-                                                  handleNumericInput(
-                                                    e.target.value
+                                                  e.target.value.replace(
+                                                    /[^\d]/g,
+                                                    ""
                                                   );
-                                                setSelectedServices({
-                                                  ...selectedServices,
-                                                  [service.name]: {
-                                                    ...selectedServices[
-                                                      service.name
-                                                    ],
-                                                    duration:
-                                                      Number(sanitizedValue),
-                                                  },
-                                                });
+                                                if (
+                                                  sanitizedValue.length <= 3
+                                                ) {
+                                                  setSelectedServices({
+                                                    ...selectedServices,
+                                                    [service.name]: {
+                                                      ...selectedServices[
+                                                        service.name
+                                                      ],
+                                                      duration:
+                                                        Number(sanitizedValue),
+                                                    },
+                                                  });
+                                                }
                                               }}
                                               onKeyDown={(e) => {
                                                 // Prevent decimal point and negative sign
@@ -1840,19 +1845,24 @@ const CreateMakeupListing = () => {
                                               }
                                               onChange={(e) => {
                                                 const sanitizedValue =
-                                                  handleNumericInput(
-                                                    e.target.value
+                                                  e.target.value.replace(
+                                                    /[^\d]/g,
+                                                    ""
                                                   );
-                                                setSelectedServices({
-                                                  ...selectedServices,
-                                                  [service.name]: {
-                                                    ...selectedServices[
-                                                      service.name
-                                                    ],
-                                                    duration:
-                                                      Number(sanitizedValue),
-                                                  },
-                                                });
+                                                if (
+                                                  sanitizedValue.length <= 3
+                                                ) {
+                                                  setSelectedServices({
+                                                    ...selectedServices,
+                                                    [service.name]: {
+                                                      ...selectedServices[
+                                                        service.name
+                                                      ],
+                                                      duration:
+                                                        Number(sanitizedValue),
+                                                    },
+                                                  });
+                                                }
                                               }}
                                               onKeyDown={(e) => {
                                                 // Prevent decimal point and negative sign
@@ -2030,17 +2040,21 @@ const CreateMakeupListing = () => {
                                           }
                                           onChange={(e) => {
                                             const sanitizedValue =
-                                              handleNumericInput(
-                                                e.target.value
+                                              e.target.value.replace(
+                                                /[^\d]/g,
+                                                ""
                                               );
-                                            const newServices = [
-                                              ...customServices,
-                                            ];
-                                            newServices[index] = {
-                                              ...service,
-                                              duration: Number(sanitizedValue),
-                                            };
-                                            setCustomServices(newServices);
+                                            if (sanitizedValue.length <= 3) {
+                                              const newServices = [
+                                                ...customServices,
+                                              ];
+                                              newServices[index] = {
+                                                ...service,
+                                                duration:
+                                                  Number(sanitizedValue),
+                                              };
+                                              setCustomServices(newServices);
+                                            }
                                           }}
                                           onKeyDown={(e) => {
                                             // Prevent decimal point and negative sign
