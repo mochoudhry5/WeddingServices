@@ -505,6 +505,31 @@ export default function LeadsPage() {
     }
   };
 
+  const undoFollowedUp = async (lead: Lead) => {
+    if (!activeTab || !user) return;
+
+    try {
+      // Delete the record from the followed_up table
+      const { error } = await supabase
+        .from(`followed_up_${SERVICE_CONFIGS[activeTab].table}`)
+        .delete()
+        .eq("lead_id", lead.id)
+        .eq("user_id", user.id);
+
+      if (error) throw error;
+
+      // Reload leads to update the UI
+      if (userListings.length > 0) {
+        await loadLeadsForServices([activeTab]);
+      }
+
+      toast.success("Lead marked as not followed up");
+    } catch (error) {
+      console.error("Error undoing followed up status:", error);
+      toast.error("Failed to update lead status");
+    }
+  };
+
   const removeLead = async () => {
     if (!activeTab || !leadToRemove || !user) return;
 
@@ -766,19 +791,33 @@ export default function LeadsPage() {
             <XCircle className="h-4 w-4 mr-1" />
             Remove
           </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            className="flex-1 text-purple-600 border-purple-200 hover:bg-purple-50 hover:text-purple-700"
-            onClick={(e) => {
-              e.stopPropagation();
-              markAsFollowedUp(lead);
-            }}
-            disabled={lead.status === "followedUp"}
-          >
-            <CheckCircle className="h-4 w-4 mr-1" />
-            Followed Up
-          </Button>
+          {lead.status === "followedUp" ? (
+            <Button
+              variant="outline"
+              size="sm"
+              className="flex-1 text-white bg-black hover:bg-stone-500 hover:text-white"
+              onClick={(e) => {
+                e.stopPropagation();
+                undoFollowedUp(lead);
+              }}
+            >
+              <AlertTriangle className="h-4 w-4 mr-1" />
+              Undo Follow Up
+            </Button>
+          ) : (
+            <Button
+              variant="outline"
+              size="sm"
+              className="flex-1 text-white bg-black hover:bg-stone-500 hover:text-white"
+              onClick={(e) => {
+                e.stopPropagation();
+                markAsFollowedUp(lead);
+              }}
+            >
+              <CheckCircle className="h-4 w-4 mr-1" />
+              I've Followed Up
+            </Button>
+          )}
         </CardFooter>
       </Card>
     );
