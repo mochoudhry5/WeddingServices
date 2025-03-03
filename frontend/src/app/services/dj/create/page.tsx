@@ -75,14 +75,15 @@ interface LocationState {
 const commonServices = [
   {
     name: "DJ Session",
-    description: "DJ for a full party.",
+    description:
+      "Elevate your event with a dynamic DJ session, featuring expertly curated playlists, seamless transitions, and live mixing to keep the energy high and the dance floor alive.",
     suggestedPrice: 0,
     suggestedDuration: 0,
   },
   {
     name: "Sparklers",
     description:
-      "High end Sparklers to be set off during different tracks (5 times).",
+      "Add a touch of magic to your celebration with our sparklers service, creating stunning, glowing moments that light up the night and create unforgettable memories (5 times).",
     suggestedPrice: 0,
     suggestedDuration: 0,
   },
