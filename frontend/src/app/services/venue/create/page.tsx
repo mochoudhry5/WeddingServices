@@ -509,6 +509,47 @@ export default function CreateVenueListing() {
           return false;
         }
         return true;
+      case 4:
+        // Validate common add-ons
+        for (const [name, details] of Object.entries(selectedAddOns)) {
+          if (!details.description.trim()) {
+            toast.error(`Please enter a description for ${name}`);
+            return;
+          }
+          if (!details.price || details.price <= 0) {
+            toast.error(`Please enter a valid price for ${name}`);
+            return;
+          }
+          if (details.pricingType === "per-guest" && !details.guestIncrement) {
+            toast.error(`Please select guest increment for ${name}`);
+            return;
+          }
+        }
+
+        // Validate custom add-ons
+        const nonEmptyCustomAddons = customAddOns.filter(
+          (addon) =>
+            addon.name.trim() || addon.description.trim() || addon.price > 0
+        );
+
+        for (const addon of nonEmptyCustomAddons) {
+          if (!addon.name.trim()) {
+            toast.error("Please enter a name for all custom services");
+            return;
+          }
+          if (!addon.description.trim()) {
+            toast.error(`Please enter a description for ${addon.name}`);
+            return;
+          }
+          if (!addon.price || addon.price <= 0) {
+            toast.error(`Please enter a valid price for ${addon.name}`);
+            return;
+          }
+          if (addon.pricingType === "per-guest" && !addon.guestIncrement) {
+            toast.error(`Please select guest increment for ${addon.name}`);
+            return;
+          }
+        }
       default:
         return true;
     }

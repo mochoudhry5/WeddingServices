@@ -449,6 +449,19 @@ const CreatePhotographyListing = () => {
           }
         }
         return true;
+      case 4:
+        if (!travelRange && !isWillingToTravel) {
+          toast.error(`Travel Range Must Be Entered`);
+          return false;
+        }
+        if (!experience) {
+          toast.error(`Years of Experience Must Be Entered`);
+          return false;
+        }
+        if (!availability.deposit) {
+          toast.error("Required Deposit Must Be Entered");
+          return;
+        }
       default:
         return true;
     }
