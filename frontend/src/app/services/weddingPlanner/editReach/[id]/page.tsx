@@ -501,9 +501,11 @@ export default function WeddingPlannerEditPage() {
                             value={budget === "0" ? "" : budget}
                             onChange={(e) => {
                               const sanitizedValue = e.target.value;
-                              setBudget(
-                                sanitizedValue === "" ? "0" : sanitizedValue
-                              );
+                              if (sanitizedValue.length <= 6) {
+                                setBudget(
+                                  sanitizedValue === "" ? "0" : sanitizedValue
+                                );
+                              }
                             }}
                             onKeyDown={(e) => {
                               if (e.key === "-" || e.key === ".") {

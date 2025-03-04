@@ -227,7 +227,7 @@ export default function DJEditPage() {
       window.scrollTo(0, 0);
     }
   };
-  
+
   const prevStep = () => {
     setCurrentStep((prev) => Math.max(prev - 1, 1));
     window.scrollTo(0, 0);
@@ -568,9 +568,11 @@ export default function DJEditPage() {
                               value={budget === "0" ? "" : budget}
                               onChange={(e) => {
                                 const sanitizedValue = e.target.value;
-                                setBudget(
-                                  sanitizedValue === "" ? "0" : sanitizedValue
-                                );
+                                if (sanitizedValue.length <= 6) {
+                                  setBudget(
+                                    sanitizedValue === "" ? "0" : sanitizedValue
+                                  );
+                                }
                               }}
                               onKeyDown={(e) => {
                                 if (e.key === "-" || e.key === ".") {
