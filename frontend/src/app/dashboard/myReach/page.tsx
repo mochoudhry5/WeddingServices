@@ -409,7 +409,7 @@ const InquiryCard = memo(
             </div>
             {inquiry.message && (
               <div className="mt-4">
-                <p className="text-sm text-gray-600 break-words">
+                <p className="text-sm text-gray-600 break-words line-clamp-2 overflow-hidden">
                   {inquiry.message}
                 </p>
               </div>

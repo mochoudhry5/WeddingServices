@@ -466,7 +466,10 @@ const VenueInquiryForm = () => {
                               placeholder="0"
                               value={budget === "0" ? "" : budget}
                               onChange={(e) => {
-                                const sanitizedValue = e.target.value;
+                                const sanitizedValue = e.target.value.replace(
+                                  /[^0-9]/g,
+                                  ""
+                                );
                                 if (sanitizedValue.length <= 6) {
                                   setBudget(
                                     sanitizedValue === "" ? "0" : sanitizedValue
