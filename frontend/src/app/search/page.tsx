@@ -25,7 +25,12 @@ import {
   SheetTitle,
   SheetTrigger,
 } from "@/components/ui/sheet";
-import { SlidersHorizontal, FileSearch, ArrowUpDown } from "lucide-react";
+import {
+  SlidersHorizontal,
+  FileSearch,
+  ArrowUpDown,
+  MapPin,
+} from "lucide-react";
 import ErrorBoundary from "@/components/ui/ErrorBoundary";
 
 // Type Guards with explicit validation
@@ -949,137 +954,128 @@ export default function ServicesSearchPage() {
     []
   );
 
-  const ServiceCard = useCallback(
-    ({ listing }: { listing: ServiceListingItem }) => {
-      const serviceDetails = determineServiceDetails(listing);
-      const mediaData = serviceDetails.media;
+  const ServiceCard = ({ listing }: { listing: ServiceListingItem }) => {
+    const serviceDetails = determineServiceDetails(listing);
+    const mediaData = serviceDetails.media;
 
-      return (
-        <div className="bg-white rounded-xl shadow-sm overflow-hidden hover:shadow-lg transition-shadow duration-300 group">
-          <div className="relative">
-            <MediaCarousel
-              media={mediaData}
-              serviceName={listing.business_name}
-              itemId={listing.id}
-              creatorId={listing.user_id}
-              userLoggedIn={user?.id}
-              service={serviceDetails.serviceType}
-            />
-          </div>
-
-          <a
-            href={`/services/${searchFilters.serviceType}/${listing.id}`}
-            className="block hover:cursor-pointer"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <div className="p-4">
-              <h3 className="text-lg font-semibold min-w-0 truncate">
-                <span className="block truncate">{listing.business_name}</span>
-              </h3>
-
-              {"venue_media" in listing ? (
-                <VenueCardDetails venue={listing as VenueDetails} />
-              ) : (
-                <ServiceProviderCardDetails
-                  provider={listing as ServiceProviderDetails}
-                  serviceType={searchFilters.serviceType}
-                />
-              )}
-            </div>
-          </a>
+    return (
+      <div className="bg-white rounded-xl shadow-sm overflow-hidden hover:shadow-lg transition-shadow duration-300 group">
+        <div className="relative">
+          <MediaCarousel
+            media={mediaData}
+            serviceName={listing.business_name}
+            itemId={listing.id}
+            creatorId={listing.user_id}
+            userLoggedIn={user?.id}
+            service={serviceDetails.serviceType}
+          />
         </div>
-      );
-    },
-    [user?.id, searchFilters.serviceType, determineServiceDetails]
+
+        <a
+          href={`/services/${searchFilters.serviceType}/${listing.id}`}
+          className="block hover:cursor-pointer"
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          <div className="p-4 space-y-2">
+            {/* Business Name */}
+            <h3 className="text-xl font-medium min-w-0 truncate">
+              <span className="block truncate">{listing.business_name}</span>
+            </h3>
+
+            {/* Location */}
+            <div className="flex items-center text-gray-600">
+              <MapPin className="w-4 h-4 mr-1" />
+              <span className="text-sm">
+                {listing.city}, {listing.state}
+              </span>
+            </div>
+
+            {"venue_media" in listing ? (
+              <VenueCardDetails venue={listing as VenueDetails} />
+            ) : (
+              <ServiceProviderCardDetails
+                provider={listing as ServiceProviderDetails}
+                serviceType={searchFilters.serviceType}
+              />
+            )}
+          </div>
+        </a>
+      </div>
+    );
+  };
+
+  const VenueCardDetails = ({ venue }: { venue: VenueDetails }) => (
+    <>
+      <p className="text-gray-600 text-sm">
+        Up to {venue.max_guests.toLocaleString()} guests • Venue
+      </p>
+      <p className="text-gray-600 text-sm line-clamp-2">{venue.description}</p>
+      <div className="flex justify-end pt-2 mt-1 border-t">
+        <span className="text-lg font-semibold text-green-800 truncate">
+          ${venue.base_price.toLocaleString()}
+        </span>
+      </div>
+    </>
   );
 
-  const VenueCardDetails = useCallback(
-    ({ venue }: { venue: VenueDetails }) => (
+  const ServiceProviderCardDetails = ({
+    provider,
+    serviceType,
+  }: {
+    provider: ServiceProviderDetails;
+    serviceType: ServiceType;
+  }) => {
+    const getServiceTypeDisplay = () => {
+      if ("service_type" in provider) {
+        const serviceProvider = provider as
+          | HairMakeupDetails
+          | PhotoVideoDetails
+          | WeddingPlannerDetails;
+        switch (serviceType) {
+          case "hairMakeup":
+            return serviceProvider.service_type === "both"
+              ? "Hair & Makeup"
+              : serviceProvider.service_type === "hair"
+              ? "Hair"
+              : "Makeup";
+          case "photoVideo":
+            return serviceProvider.service_type === "both"
+              ? "Photography & Videography"
+              : serviceProvider.service_type === "photography"
+              ? "Photography"
+              : "Videography";
+          case "weddingPlanner":
+            return serviceProvider.service_type === "both"
+              ? "Wedding Planner & Coordinator"
+              : serviceProvider.service_type === "weddingPlanner"
+              ? "Wedding Planner"
+              : "Wedding Coordinator";
+        }
+      }
+      return SERVICE_CONFIGS[serviceType].singularName;
+    };
+
+    return (
       <>
-        <p className="text-xs sm:text-sm text-gray-600 mb-2">
-          Up to {venue.max_guests} guests • Venue
+        <p className="text-gray-600 text-sm">
+          {provider.years_experience} years experience •{" "}
+          {getServiceTypeDisplay()}
         </p>
-        <p className="text-xs sm:text-sm text-gray-600 mb-3 line-clamp-1">
-          {venue.description}
+        <p className="text-gray-600 text-sm line-clamp-2">
+          {provider.description}
         </p>
-        <div className="pt-3 flex justify-between items-center border-t">
-          <div className="text-xs sm:text-sm text-gray-600 truncate mr-2">
-            {venue.city}, {venue.state}
-          </div>
-          <div className="text-sm sm:text-base font-semibold text-green-800 whitespace-nowrap">
-            ${venue.base_price.toLocaleString()}
-          </div>
+        <div className="flex justify-end pt-2 mt-1 border-t">
+          <span className="text-lg font-semibold text-green-800 truncate">
+            {provider.min_service_price === provider.max_service_price
+              ? `$${provider.min_service_price.toLocaleString()}`
+              : `$${provider.min_service_price.toLocaleString()} - $${provider.max_service_price.toLocaleString()}`}
+          </span>
         </div>
       </>
-    ),
-    []
-  );
+    );
+  };
 
-  const ServiceProviderCardDetails = useCallback(
-    ({
-      provider,
-      serviceType,
-    }: {
-      provider: ServiceProviderDetails;
-      serviceType: ServiceType;
-    }) => {
-      const getServiceTypeDisplay = () => {
-        if ("service_type" in provider) {
-          const serviceProvider = provider as
-            | HairMakeupDetails
-            | PhotoVideoDetails
-            | WeddingPlannerDetails;
-          switch (serviceType) {
-            case "hairMakeup":
-              return serviceProvider.service_type === "both"
-                ? "Hair & Makeup"
-                : serviceProvider.service_type === "hair"
-                ? "Hair"
-                : "Makeup";
-            case "photoVideo":
-              return serviceProvider.service_type === "both"
-                ? "Photography & Videography"
-                : serviceProvider.service_type === "photography"
-                ? "Photography"
-                : "Videography";
-            case "weddingPlanner":
-              return serviceProvider.service_type === "both"
-                ? "Wedding Planner & Coordinator"
-                : serviceProvider.service_type === "weddingPlanner"
-                ? "Wedding Planner"
-                : "Wedding Coordinator";
-          }
-        }
-        return SERVICE_CONFIGS[serviceType].singularName;
-      };
-
-      return (
-        <>
-          <p className="text-xs sm:text-sm text-gray-600 mb-2">
-            {provider.years_experience} years experience •{" "}
-            {getServiceTypeDisplay()}
-          </p>
-          <p className="text-xs sm:text-sm text-gray-600 mb-3 line-clamp-1">
-            {provider.description}
-          </p>
-          <div className="pt-3 flex justify-between items-center border-t">
-            <div className="text-xs sm:text-sm text-gray-600 truncate mr-2">
-              {provider.city}, {provider.state}
-            </div>
-            <div className="text-sm sm:text-base font-semibold text-green-800 whitespace-nowrap">
-              {provider.min_service_price === provider.max_service_price
-                ? `$${provider.min_service_price.toLocaleString()}`
-                : `$${provider.min_service_price.toLocaleString()} - ${provider.max_service_price.toLocaleString()}`}
-            </div>
-          </div>
-        </>
-      );
-    },
-    []
-  );
-
-  // JSX
   return (
     <ErrorBoundary>
       <div className="min-h-screen flex flex-col">

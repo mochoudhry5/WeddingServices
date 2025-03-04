@@ -526,11 +526,19 @@ export default function MyListingsPage() {
           </div>
         </div>
 
-        <div className="p-4 space-y-3">
+        <div className="p-4 space-y-2">
           {/* Business Name */}
           <h3 className="text-xl font-medium min-w-0 truncate">
             <span className="block truncate">{listing.business_name}</span>
           </h3>
+
+          {/* Location */}
+          <div className="flex items-center text-gray-600">
+            <MapPin className="w-4 h-4 mr-1" />
+            <span className="text-sm">
+              {listing.city}, {listing.state}
+            </span>
+          </div>
 
           {/* Service Type & Details */}
           {isVenueListing(listing) ? (
@@ -563,27 +571,19 @@ export default function MyListingsPage() {
           )}
 
           {/* Description */}
-          <p className="text-gray-600 text-sm line-clamp-1">
+          <p className="text-gray-600 text-sm line-clamp-2">
             {listing.description}
           </p>
 
-          {/* Location and Price Footer */}
-          <div className="flex justify-between items-center pt-2">
-            <div className="flex items-center text-gray-600">
-              <MapPin className="w-4 h-4 mr-1" />
-              <span className="text-sm">
-                {listing.city}, {listing.state}
-              </span>
-            </div>
-
-            {/* Price */}
+          {/* Price Footer */}
+          <div className="flex justify-end pt-2 mt-1 border-t">
             {isVenueListing(listing) ? (
-              <span className="text-lg font-semibold text-green-800">
+              <span className="text-lg font-semibold text-green-800 truncate">
                 ${listing.base_price.toLocaleString()}
               </span>
             ) : (
               isServiceBasedListing(listing) && (
-                <span className="text-lg font-semibold text-green-800">
+                <span className="text-lg font-semibold text-green-800 truncate">
                   {listing.min_service_price === listing.max_service_price
                     ? `$${listing.min_service_price.toLocaleString()}`
                     : `$${listing.min_service_price.toLocaleString()} - $${listing.max_service_price.toLocaleString()}`}
@@ -703,7 +703,7 @@ export default function MyListingsPage() {
           >
             <div className="animate-pulse">
               <div className="h-48 bg-gray-200" />
-              <div className="p-4 space-y-3">
+              <div className="p-4 space-y-4">
                 <div className="h-4 bg-gray-200 rounded w-3/4" />
                 <div className="h-3 bg-gray-200 rounded w-1/2" />
                 <div className="h-3 bg-gray-200 rounded w-5/6" />
