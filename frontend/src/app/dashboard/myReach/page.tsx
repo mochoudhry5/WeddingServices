@@ -540,7 +540,6 @@ export default function QuickReachesPage() {
     />
   );
 
-  // Rest of the rendering logic remains the same
   const renderFilters = () => (
     <div className="flex flex-col sm:flex-row gap-4 mb-6">
       <div className="relative flex-grow">
