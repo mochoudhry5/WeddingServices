@@ -313,7 +313,7 @@ export function PaymentConfirmationDialog({
 
         <AlertDialogFooter className="border-t border-gray-100 p-6 bg-gray-50 flex flex-col-reverse sm:flex-row sm:justify-end gap-3">
           <AlertDialogCancel
-            className="mt-2 sm:mt-0 border-gray-300 text-gray-700 hover:bg-gray-50"
+            className="mt-2 sm:mt-0 border-gray-300 text-gray-700 hover:bg-gray-50 w-full sm:w-auto text-sm font-medium"
             disabled={isLoading}
           >
             Cancel
@@ -321,7 +321,7 @@ export function PaymentConfirmationDialog({
           <button
             onClick={onConfirm}
             disabled={isLoading}
-            className="bg-black text-white hover:bg-stone-800 transition-colors px-8 rounded-md"
+            className="w-full sm:w-auto bg-black text-white hover:bg-stone-800 transition-colors px-5 py-2 rounded-md flex items-center justify-center text-sm font-medium"
           >
             {isLoading ? (
               <div className="flex items-center justify-center gap-2">
