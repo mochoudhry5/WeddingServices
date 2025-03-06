@@ -108,6 +108,8 @@ export default function MediaCarousel({
   };
 
   const enterFullscreen = async (element: HTMLElement) => {
+    // Try different methods for requesting fullscreen
+    // Some mobile browsers have specific requirements
     const requestFullscreen =
       element.requestFullscreen ||
       (element as any).webkitRequestFullscreen ||
@@ -116,11 +118,23 @@ export default function MediaCarousel({
 
     if (requestFullscreen) {
       try {
-        await requestFullscreen.call(element);
+        // For iOS Safari and some Android browsers, use specific options
+        if ((element as any).webkitRequestFullscreen && isMobile) {
+          // Safari-specific fullscreen without using the Element.ALLOW_KEYBOARD_INPUT constant
+          // which causes TypeScript errors
+          await (element as any).webkitRequestFullscreen();
+        } else {
+          await requestFullscreen.call(element);
+        }
         setIsFullscreen(true);
       } catch (error) {
         console.error("Fullscreen error:", error);
+        // Fallback - if true fullscreen fails, at least make it appear fullscreen with CSS
+        setIsFullscreen(true);
       }
+    } else {
+      // Fallback for devices where API isn't available
+      setIsFullscreen(true);
     }
   };
 
@@ -138,7 +152,12 @@ export default function MediaCarousel({
         setIsFullscreen(false);
       } catch (error) {
         console.error("Exit fullscreen error:", error);
+        // If we can't exit normally, still update our state
+        setIsFullscreen(false);
       }
+    } else {
+      // For devices where API isn't available
+      setIsFullscreen(false);
     }
   };
 
@@ -203,11 +222,25 @@ export default function MediaCarousel({
       // Right click zone
       handleNext();
     } else {
-      // Center zone - toggle controls on mobile, trigger fullscreen on desktop
+      // Center zone - toggle controls and fullscreen behavior
       if (isMobile) {
-        setShowControls((prev) => !prev);
-        scheduleControlsHide();
+        // On mobile: double tap detection for fullscreen
+        const now = new Date().getTime();
+        const lastTap = (containerRef.current as any)?.lastTap || 0;
+        const timeDiff = now - lastTap;
+
+        if (timeDiff < 300 && timeDiff > 0) {
+          // Double tap detected - trigger fullscreen
+          handleFullscreen();
+          (containerRef.current as any).lastTap = 0;
+        } else {
+          // Single tap - toggle controls
+          setShowControls((prev) => !prev);
+          scheduleControlsHide();
+          (containerRef.current as any).lastTap = now;
+        }
       } else {
+        // Desktop behavior - direct fullscreen
         handleFullscreen();
       }
     }
@@ -244,11 +277,17 @@ export default function MediaCarousel({
     scheduleControlsHide();
   };
 
-  // Check if device is mobile using window.matchMedia
+  // Check if device is mobile using both screen size and touch capability
   useEffect(() => {
     const checkIfMobile = () => {
       const mobileQuery = window.matchMedia("(max-width: 768px)");
-      setIsMobile(mobileQuery.matches);
+      const hasTouchScreen =
+        "ontouchstart" in window ||
+        navigator.maxTouchPoints > 0 ||
+        (navigator as any).msMaxTouchPoints > 0;
+
+      // Consider a device mobile if it has touch capabilities OR small screen
+      setIsMobile(mobileQuery.matches || hasTouchScreen);
     };
 
     checkIfMobile();
@@ -257,8 +296,12 @@ export default function MediaCarousel({
     const mobileQuery = window.matchMedia("(max-width: 768px)");
     mobileQuery.addEventListener("change", checkIfMobile);
 
+    // Check orientation changes for mobile devices
+    window.addEventListener("orientationchange", checkIfMobile);
+
     return () => {
       mobileQuery.removeEventListener("change", checkIfMobile);
+      window.removeEventListener("orientationchange", checkIfMobile);
     };
   }, []);
 
@@ -352,8 +395,25 @@ export default function MediaCarousel({
     <div
       ref={containerRef}
       className={`relative bg-black ${className} ${
-        isFullscreen ? "fixed inset-0 z-50" : "h-full"
+        isFullscreen
+          ? "fixed inset-0 z-50 w-full h-full max-h-screen"
+          : "h-full"
       }`}
+      style={
+        isFullscreen
+          ? {
+              position: "fixed",
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              zIndex: 9999,
+              backgroundColor: "#000",
+              width: "100%",
+              height: "100%",
+            }
+          : undefined
+      }
       onMouseEnter={() => !isMobile && setShowControls(true)}
       onMouseLeave={() => !isMobile && setShowControls(false)}
       onTouchStart={showControlsTemporarily}
@@ -448,38 +508,40 @@ export default function MediaCarousel({
         ))}
       </div>
 
-      {showControls && (
-        <>
-          <button
-            onClick={handlePrevious}
-            className="absolute left-2 sm:left-4 top-1/2 -translate-y-1/2 bg-black/50 text-white p-1.5 sm:p-2 rounded-full hover:bg-black/70 transition-colors z-10"
-            aria-label="Previous slide"
-          >
-            <ChevronLeft className="w-5 h-5 sm:w-6 sm:h-6" />
-          </button>
-          <button
-            onClick={handleNext}
-            className="absolute right-2 sm:right-4 top-1/2 -translate-y-1/2 bg-black/50 text-white p-1.5 sm:p-2 rounded-full hover:bg-black/70 transition-colors z-10"
-            aria-label="Next slide"
-          >
-            <ChevronRight className="w-5 h-5 sm:w-6 sm:h-6" />
-          </button>
-        </>
-      )}
+      {/* Navigation buttons with opacity transition */}
+      <button
+        onClick={handlePrevious}
+        className={`absolute left-2 sm:left-4 top-1/2 -translate-y-1/2 bg-black/50 text-white p-1.5 sm:p-2 rounded-full hover:bg-black/70 transition-all duration-300 z-10 ${
+          showControls ? "opacity-100" : "opacity-0"
+        }`}
+        aria-label="Previous slide"
+      >
+        <ChevronLeft className="w-5 h-5 sm:w-6 sm:h-6" />
+      </button>
+      <button
+        onClick={handleNext}
+        className={`absolute right-2 sm:right-4 top-1/2 -translate-y-1/2 bg-black/50 text-white p-1.5 sm:p-2 rounded-full hover:bg-black/70 transition-all duration-300 z-10 ${
+          showControls ? "opacity-100" : "opacity-0"
+        }`}
+        aria-label="Next slide"
+      >
+        <ChevronRight className="w-5 h-5 sm:w-6 sm:h-6" />
+      </button>
 
-      {showControls && (
-        <button
-          onClick={handleFullscreen}
-          className="absolute top-2 sm:top-4 right-2 sm:right-4 bg-black/50 text-white p-1.5 sm:p-2 rounded-full hover:bg-black/70 transition-colors z-10"
-          aria-label={isFullscreen ? "Exit fullscreen" : "Enter fullscreen"}
-        >
-          {isFullscreen ? (
-            <Minimize2 className="w-5 h-5 sm:w-6 sm:h-6" />
-          ) : (
-            <Maximize2 className="w-5 h-5 sm:w-6 sm:h-6" />
-          )}
-        </button>
-      )}
+      {/* Always show fullscreen button for mobile (with fade-out) */}
+      <button
+        onClick={handleFullscreen}
+        className={`absolute top-2 sm:top-4 right-2 sm:right-4 bg-black/50 text-white p-1.5 sm:p-2 rounded-full hover:bg-black/70 transition-all duration-300 z-10 ${
+          showControls || isFullscreen ? "opacity-100" : "opacity-0"
+        }`}
+        aria-label={isFullscreen ? "Exit fullscreen" : "Enter fullscreen"}
+      >
+        {isFullscreen ? (
+          <Minimize2 className="w-5 h-5 sm:w-6 sm:h-6" />
+        ) : (
+          <Maximize2 className="w-5 h-5 sm:w-6 sm:h-6" />
+        )}
+      </button>
     </div>
   );
 }
