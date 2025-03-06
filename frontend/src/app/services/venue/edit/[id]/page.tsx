@@ -1151,7 +1151,7 @@ export default function UpdateVenueListing() {
                                   e.preventDefault();
                                 }
                               }}
-                              placeholder="50"
+                              placeholder="0"
                               className="w-full"
                             />
                           </div>
@@ -1180,7 +1180,7 @@ export default function UpdateVenueListing() {
                                   e.preventDefault();
                                 }
                               }}
-                              placeholder="200"
+                              placeholder="0"
                               className="w-full"
                             />
                           </div>

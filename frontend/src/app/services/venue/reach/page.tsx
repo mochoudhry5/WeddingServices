@@ -331,7 +331,7 @@ const VenueInquiryForm = () => {
                             <Input
                               value={phone}
                               onChange={handlePhoneChange}
-                              placeholder="(555) 555-5555"
+                              placeholder="(123)456-7890"
                               className="w-full"
                               required
                             />
@@ -513,7 +513,7 @@ const VenueInquiryForm = () => {
                                   e.preventDefault();
                                 }
                               }}
-                              placeholder="50"
+                              placeholder="0"
                               className="w-full"
                             />
                           </div>
@@ -542,7 +542,7 @@ const VenueInquiryForm = () => {
                                   e.preventDefault();
                                 }
                               }}
-                              placeholder="200"
+                              placeholder="0"
                               className="w-full"
                               required
                             />

@@ -748,7 +748,7 @@ const WeddingDetailsPage = () => {
                           name="phone"
                           value={inquiryForm.phone}
                           onChange={handleInputChange}
-                          placeholder="(XXX)XXX-XXXX"
+                          placeholder="(123)456-7890"
                           required
                         />
                       </div>

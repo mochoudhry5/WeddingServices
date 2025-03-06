@@ -1189,7 +1189,7 @@ export default function CreateVenueListing() {
                                 e.preventDefault();
                               }
                             }}
-                            placeholder="50"
+                            placeholder="0"
                             className="w-full"
                           />
                         </div>
@@ -1218,7 +1218,7 @@ export default function CreateVenueListing() {
                                 e.preventDefault();
                               }
                             }}
-                            placeholder="200"
+                            placeholder="0"
                             className="w-full"
                           />
                         </div>

@@ -433,7 +433,7 @@ export default function DJEditPage() {
                             <Input
                               value={phone}
                               onChange={handlePhoneChange}
-                              placeholder="(555) 555-5555"
+                              placeholder="(123)456-7890"
                               className="w-full"
                               required
                             />

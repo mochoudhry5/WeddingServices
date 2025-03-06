@@ -388,7 +388,7 @@ export default function VenueEditPage() {
                             <Input
                               value={phone}
                               onChange={handlePhoneChange}
-                              placeholder="(555) 555-5555"
+                              placeholder="(123)456-7890"
                               className="w-full"
                               required
                             />
@@ -567,7 +567,7 @@ export default function VenueEditPage() {
                                   e.preventDefault();
                                 }
                               }}
-                              placeholder="50"
+                              placeholder="0"
                               className="w-full"
                             />
                           </div>
@@ -596,7 +596,7 @@ export default function VenueEditPage() {
                                   e.preventDefault();
                                 }
                               }}
-                              placeholder="200"
+                              placeholder="0"
                               className="w-full"
                               required
                             />
