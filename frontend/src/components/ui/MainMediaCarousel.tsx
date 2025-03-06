@@ -41,12 +41,14 @@ export default function MediaCarousel({
   const [loadedImages, setLoadedImages] = useState<Set<string>>(new Set());
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isLoading, setIsLoading] = useState<Record<string, boolean>>({});
+  const [isMobile, setIsMobile] = useState(false);
 
   const containerRef = useRef<HTMLDivElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
   const swiperRef = useRef<SwiperType>();
   const preloadQueue = useRef<string[]>([]);
   const urlCache = useRef<Map<string, string>>(new Map());
+  const controlsTimeoutRef = useRef<NodeJS.Timeout>();
 
   const getMediaType = (filePath: string) => {
     const extension = filePath?.toLowerCase().split(".").pop();
@@ -201,8 +203,13 @@ export default function MediaCarousel({
       // Right click zone
       handleNext();
     } else {
-      // Center zone - trigger fullscreen
-      handleFullscreen();
+      // Center zone - toggle controls on mobile, trigger fullscreen on desktop
+      if (isMobile) {
+        setShowControls((prev) => !prev);
+        scheduleControlsHide();
+      } else {
+        handleFullscreen();
+      }
     }
   };
 
@@ -219,6 +226,41 @@ export default function MediaCarousel({
   const handleImageLoadStart = (path: string) => {
     setIsLoading((prev) => ({ ...prev, [path]: true }));
   };
+
+  const scheduleControlsHide = () => {
+    // Clear any existing timeout
+    if (controlsTimeoutRef.current) {
+      clearTimeout(controlsTimeoutRef.current);
+    }
+
+    // Set a new timeout
+    controlsTimeoutRef.current = setTimeout(() => {
+      setShowControls(false);
+    }, 3000);
+  };
+
+  const showControlsTemporarily = () => {
+    setShowControls(true);
+    scheduleControlsHide();
+  };
+
+  // Check if device is mobile using window.matchMedia
+  useEffect(() => {
+    const checkIfMobile = () => {
+      const mobileQuery = window.matchMedia("(max-width: 768px)");
+      setIsMobile(mobileQuery.matches);
+    };
+
+    checkIfMobile();
+
+    // Add event listener for screen size changes
+    const mobileQuery = window.matchMedia("(max-width: 768px)");
+    mobileQuery.addEventListener("change", checkIfMobile);
+
+    return () => {
+      mobileQuery.removeEventListener("change", checkIfMobile);
+    };
+  }, []);
 
   useEffect(() => {
     const handleEscKey = (event: KeyboardEvent) => {
@@ -297,6 +339,13 @@ export default function MediaCarousel({
     };
 
     initialPreload();
+
+    // Clean up timeout on unmount
+    return () => {
+      if (controlsTimeoutRef.current) {
+        clearTimeout(controlsTimeoutRef.current);
+      }
+    };
   }, []);
 
   return (
@@ -305,10 +354,9 @@ export default function MediaCarousel({
       className={`relative bg-black ${className} ${
         isFullscreen ? "fixed inset-0 z-50" : "h-full"
       }`}
-      onMouseEnter={() => setShowControls(true)}
-      onMouseLeave={() => setShowControls(false)}
-      onTouchStart={() => setShowControls(true)}
-      onTouchEnd={() => setTimeout(() => setShowControls(false), 3000)}
+      onMouseEnter={() => !isMobile && setShowControls(true)}
+      onMouseLeave={() => !isMobile && setShowControls(false)}
+      onTouchStart={showControlsTemporarily}
     >
       <Swiper
         onSwiper={(swiper) => {
@@ -324,6 +372,11 @@ export default function MediaCarousel({
         allowTouchMove={true}
         speed={500}
         grabCursor={true}
+        centeredSlides={true}
+        touchRatio={1}
+        touchAngle={45}
+        simulateTouch={true}
+        threshold={5}
       >
         {media.map((item, index) => (
           <SwiperSlide key={index} className="h-full bg-black">
@@ -334,7 +387,7 @@ export default function MediaCarousel({
                     ref={videoRef}
                     muted
                     playsInline
-                    className="max-h-full w-auto object-contain"
+                    className="max-h-full max-w-full w-auto h-auto object-contain"
                     onClick={handleVideoClick}
                   >
                     <source src={getMediaUrl(item)} type="video/mp4" />
@@ -344,10 +397,10 @@ export default function MediaCarousel({
                       className="absolute inset-0 flex items-center justify-center bg-black/30 cursor-pointer"
                       onClick={handleVideoClick}
                     >
-                      <Play className="w-16 h-16 text-white" />
+                      <Play className="w-12 h-12 sm:w-16 sm:h-16 text-white" />
                     </div>
                   )}
-                  <div className="absolute bottom-0 left-0 w-full h-1 bg-gray-700">
+                  <div className="absolute bottom-0 left-0 w-full h-1 bg-gray-700 z-10">
                     <div
                       className="h-full bg-blue-500 transition-all duration-200"
                       style={{ width: `${progress}%` }}
@@ -367,7 +420,7 @@ export default function MediaCarousel({
                   <img
                     src={getMediaUrl(item)}
                     alt={`${name} - ${index + 1}`}
-                    className={`max-h-full w-auto object-contain transition-opacity duration-300 ${
+                    className={`max-h-full max-w-full w-auto h-auto object-contain transition-opacity duration-300 ${
                       loadedImages.has(getMediaUrl(item))
                         ? "opacity-100"
                         : "opacity-0"
@@ -383,21 +436,33 @@ export default function MediaCarousel({
         ))}
       </Swiper>
 
+      {/* Custom pagination indicators */}
+      <div className="absolute bottom-4 left-0 right-0 flex justify-center z-10 gap-1">
+        {media.map((_, index) => (
+          <div
+            key={index}
+            className={`h-1.5 rounded-full transition-all ${
+              index === currentIndex ? "w-4 bg-white" : "w-1.5 bg-white/50"
+            }`}
+          />
+        ))}
+      </div>
+
       {showControls && (
         <>
           <button
             onClick={handlePrevious}
-            className="absolute left-4 top-1/2 -translate-y-1/2 bg-black/50 text-white p-2 rounded-full hover:bg-black/70 transition-colors z-10"
+            className="absolute left-2 sm:left-4 top-1/2 -translate-y-1/2 bg-black/50 text-white p-1.5 sm:p-2 rounded-full hover:bg-black/70 transition-colors z-10"
             aria-label="Previous slide"
           >
-            <ChevronLeft className="w-6 h-6" />
+            <ChevronLeft className="w-5 h-5 sm:w-6 sm:h-6" />
           </button>
           <button
             onClick={handleNext}
-            className="absolute right-4 top-1/2 -translate-y-1/2 bg-black/50 text-white p-2 rounded-full hover:bg-black/70 transition-colors z-10"
+            className="absolute right-2 sm:right-4 top-1/2 -translate-y-1/2 bg-black/50 text-white p-1.5 sm:p-2 rounded-full hover:bg-black/70 transition-colors z-10"
             aria-label="Next slide"
           >
-            <ChevronRight className="w-6 h-6" />
+            <ChevronRight className="w-5 h-5 sm:w-6 sm:h-6" />
           </button>
         </>
       )}
@@ -405,13 +470,13 @@ export default function MediaCarousel({
       {showControls && (
         <button
           onClick={handleFullscreen}
-          className="absolute top-4 right-4 bg-black/50 text-white p-2 rounded-full hover:bg-black/70 transition-colors z-10"
+          className="absolute top-2 sm:top-4 right-2 sm:right-4 bg-black/50 text-white p-1.5 sm:p-2 rounded-full hover:bg-black/70 transition-colors z-10"
           aria-label={isFullscreen ? "Exit fullscreen" : "Enter fullscreen"}
         >
           {isFullscreen ? (
-            <Minimize2 className="w-6 h-6" />
+            <Minimize2 className="w-5 h-5 sm:w-6 sm:h-6" />
           ) : (
-            <Maximize2 className="w-6 h-6" />
+            <Maximize2 className="w-5 h-5 sm:w-6 sm:h-6" />
           )}
         </button>
       )}
