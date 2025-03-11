@@ -600,32 +600,119 @@ export default function ServicesSearchPage() {
     return query;
   };
 
-  const processQueryResults = (
+  const processQueryResults = async (
     data: any[],
     filtersToUse: SearchFilters,
     hasExactAddress: boolean
-  ): (ServiceListingItem & { distance?: number })[] => {
+  ): Promise<
+    (ServiceListingItem & {
+      distance?: number;
+      tierType?: string;
+      tierPriority?: number;
+    })[]
+  > => {
+    // Add mock rating for display purposes (this is already in your existing code)
     let processedData = data.map((item) => ({
       ...item,
       rating: 4.5 + Math.random() * 0.5,
     }));
 
-    if (filtersToUse.searchQuery.coordinates && !hasExactAddress) {
-      processedData = processedData
-        .map((item) => ({
-          ...item,
-          distance: calculateDistance(filtersToUse.searchQuery.coordinates!, {
-            lat: item.latitude,
-            lng: item.longitude,
-          }),
-        }))
-        .sort((a, b) => (a.distance || 0) - (b.distance || 0));
+    // Fetch subscription information for all listings in a single query
+    const listingIds = processedData.map((item) => item.id);
+
+    // Query the subscriptions table to get tier information for all listings
+    const { data: subscriptionData, error } = await supabase
+      .from("subscriptions")
+      .select("listing_id, tier_type")
+      .in("listing_id", listingIds)
+      .eq("status", "active");
+
+    if (error) {
+      console.error("Error fetching subscription data:", error);
+      // Continue with processing even if subscription data fetch fails
     }
 
-    return processedData;
+    // Create a map of listing_id to tier_type for easy lookup
+    const tierMap = new Map();
+    if (subscriptionData) {
+      subscriptionData.forEach((sub) => {
+        tierMap.set(sub.listing_id, sub.tier_type);
+      });
+    }
+
+    // Calculate distance and add tier information for each listing
+    const listingsWithDistanceAndTier = processedData.map((item) => {
+      const tierType = tierMap.get(item.id) || "none";
+      let distance = 0;
+
+      if (filtersToUse.searchQuery.coordinates && !hasExactAddress) {
+        distance = calculateDistance(filtersToUse.searchQuery.coordinates!, {
+          lat: item.latitude,
+          lng: item.longitude,
+        });
+      }
+
+      return {
+        ...item,
+        tierType,
+        tierPriority:
+          tierType?.toLowerCase() === "elite"
+            ? 3
+            : tierType?.toLowerCase() === "premium"
+            ? 2
+            : tierType?.toLowerCase() === "basic"
+            ? 1
+            : 0,
+        distance,
+      };
+    });
+
+    // Define the distance threshold (20 miles = approximately 32.19 kilometers)
+    const DISTANCE_THRESHOLD_MILES = 20;
+    const DISTANCE_THRESHOLD_KM = DISTANCE_THRESHOLD_MILES * 1.60934;
+
+    // Group listings based on tier and distance
+    const eliteWithin20Miles = listingsWithDistanceAndTier.filter(
+      (item) =>
+        item.tierType?.toLowerCase() === "elite" &&
+        item.distance <= DISTANCE_THRESHOLD_KM
+    );
+
+    const premiumWithin20Miles = listingsWithDistanceAndTier.filter(
+      (item) =>
+        item.tierType?.toLowerCase() === "premium" &&
+        item.distance <= DISTANCE_THRESHOLD_KM
+    );
+
+    // Get remaining listings (outside 20 miles or basic/none tier)
+    const remainingListings = listingsWithDistanceAndTier.filter(
+      (item) =>
+        !(
+          (item.tierType?.toLowerCase() === "elite" ||
+            item.tierType?.toLowerCase() === "premium") &&
+          item.distance <= DISTANCE_THRESHOLD_KM
+        )
+    );
+
+    // Sort each group by distance
+    eliteWithin20Miles.sort((a, b) => (a.distance || 0) - (b.distance || 0));
+    premiumWithin20Miles.sort((a, b) => (a.distance || 0) - (b.distance || 0));
+    remainingListings.sort((a, b) => (a.distance || 0) - (b.distance || 0));
+
+    console.log("Subscription data:", subscriptionData);
+    console.log("Tier map items:", Array.from(tierMap.entries()).slice(0, 5)); // Show first 5 entries
+    console.log("Location coordinates:", filtersToUse.searchQuery.coordinates);
+    console.log("Elite within 20 miles:", eliteWithin20Miles.length);
+    console.log("Premium within 20 miles:", premiumWithin20Miles.length);
+    console.log("Remaining listings:", remainingListings.length);
+
+    return [
+      ...eliteWithin20Miles,
+      ...premiumWithin20Miles,
+      ...remainingListings,
+    ];
   };
 
-  // Fetch Service Listings
   const fetchServiceListings = async (
     withFilters = false,
     filtersToUse = searchFilters
@@ -635,8 +722,6 @@ export default function ServicesSearchPage() {
       setError(null);
 
       const hasExactAddress = Boolean(filtersToUse.searchQuery.address !== "");
-      let listingsWithDistance: (ServiceListingItem & { distance?: number })[] =
-        [];
 
       // Build and execute query based on service type
       const query = supabase
@@ -660,15 +745,22 @@ export default function ServicesSearchPage() {
       const { data, error: queryError } = await query;
       if (queryError) throw queryError;
 
+      let listingsWithTierAndDistance: (ServiceListingItem & {
+        distance?: number;
+        tierType?: string;
+        tierPriority?: number;
+      })[] = [];
+
       if (data && data.length > 0) {
-        listingsWithDistance = processQueryResults(
+        // Process the results asynchronously to include subscription tier data
+        listingsWithTierAndDistance = await processQueryResults(
           data,
           filtersToUse,
           hasExactAddress
         );
       }
 
-      setServiceListings(listingsWithDistance);
+      setServiceListings(listingsWithTierAndDistance);
       setIsFiltered(withFilters);
     } catch (error: any) {
       console.error("Error fetching service listings:", error);
