@@ -77,19 +77,19 @@ const PricingPage = () => {
 
   const commonFeatures: Record<PlanType, [string, boolean][]> = {
     basic: [
-      ["Create Listing", true],
-      ["No Lead Generation Fees", true],
-      ["Extra Leads from Quick Reach", true],
+      ["Create listing", true],
+      ["No lead generation fees", true],
+      ["Extra leads from Quick Reach", true],
     ],
     premium: [
       ["Everything included in Basic Tier", true],
       ["Featured placement in search results", true],
-      ["Priority Customer Support", true],
+      ["Priority customer support", true],
     ],
     elite: [
       ["Everything included in Premium Tier", true],
       ["Top search placement", true],
-      ["Social Media Content", true],
+      ["Social media content", true],
     ],
   };
 
